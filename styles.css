@@ -1,0 +1,973 @@
+body {
+  /* Add styles here! */
+  /*background-color: #0B3B2D;*/
+  background-color: #272757;
+}
+
+
+#welcomeMessage {
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 25px;
+  color: white;
+  font-weight: 50;
+  text-align: center;
+}
+
+.goldLink {
+  text-decoration: underline;
+  color: white;
+  display: inline-block;
+  animation: bobbing 0.5s ease-in-out infinite;
+}
+
+.pageTitle {
+    -webkit-text-stroke: 0px black;
+    font-size: 36px;
+    font-family: "New Amsterdam", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 75px;
+    text-align: center;
+
+    display: incline-block;
+
+  
+    background: linear-gradient(
+      to bottom,
+      #FFFFFF 0%,
+
+      #B3B3B3 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+#clubPageTitle{
+    font-size: 36px;
+    font-family: "New Amsterdam", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 75px;
+    text-align: center;
+    color: white;
+}
+
+
+.small-title {
+  font-size: 36px;
+  font-family: "New Amsterdam", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 40px;
+  text-align: center;
+  color: white;
+}
+
+.big-label {
+  font-size: 30px;
+  font-family: "New Amsterdam", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  text-align: center;
+  color: white;
+  margin-bottom: 5px;
+}
+
+#logoutButton{
+  margin: 0 auto;
+  width: 300px;
+}
+
+#club-button{
+  margin: 0 auto;
+  width: 300px;
+}
+
+#join-club-button{
+  margin: 0 auto;
+  display: block;
+  width: 300px;
+}
+
+#create-club-button{
+  margin: 0 auto;
+  display: block;
+  width: 300px;
+}
+
+#club-name-select {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+#school-name-select {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+#main-activity-select {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+#club-name-input {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+#join-code-input {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+#description-input {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+
+}
+
+#submit-join-club-button{
+  margin: 0 auto;
+  display: block;
+}
+#submit-club-button {
+  margin: 0 auto;
+  display: block;
+  
+}
+
+#clubContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+#memberClubContainer{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+
+#requestsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+
+
+@media (max-width: 700px) {
+  .club-btn{
+    width: 85%;
+    margin-bottom: 5px;
+  }
+}
+
+@media (min-width: 701px){
+  .club-btn{
+    width: 630px;
+    margin-bottom: 5px;
+  }
+  
+}
+
+
+#clubDetails{
+  text-align: center;
+}
+
+
+#copyJoinCodeButton {
+  /* Reset default button styles */
+  background: none; /* Make the background transparent */
+  border: none;      /* Remove default border */
+  padding: 0;        /* Remove default padding */
+  /*font: inherit;     /* Inherit font-family, font-size, font-weight from parent */
+  font-size: 18px;
+  font-family: "Google Sans", sans-serif;
+  color: inherit;    /* Inherit text color from parent */
+  cursor: pointer;   /* Indicate it's clickable */
+  outline: none;     /* Remove outline on focus if desired, but be mindful of accessibility */
+
+  /* Add the white outline/border */
+  border: 2px solid white; /* A 2px solid white border */
+  border-radius: 4px; /* Slightly rounded corners for a softer look, optional */
+  padding: 4px 8px; /* Add some padding back to make the border visible around the text */
+
+  /* Optional: Add a subtle hover effect */
+  transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
+}
+
+#copyJoinCodeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Slight white background on hover */
+  transform: translateY(-1px); /* Little lift effect */
+}
+
+#copyJoinCodeButton:active {
+  background-color: rgba(255, 255, 255, 0.2); /* More visible background on click */
+  transform: translateY(0);
+}
+
+.club-info-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;  
+  gap: 90px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.club-info-container p {
+  flex-basis: auto;
+  margin: 0;
+  text-align: center;
+  line-height: 1.2; 
+}
+
+#copyJoinCodeButton {
+  vertical-align: middle; 
+  line-height: 1.2; 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 4px 8px; 
+}
+
+@media (max-width: 768px) {
+  .club-info-container {
+    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.fancy-label {
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 25px;
+  color: white;
+}
+
+.fancy-black-label {
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 25px;
+  color: rgb(0, 0, 0);
+  text-align: center;
+}
+
+.fancy-input-label {
+  display: block; 
+  text-align: center;
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 25px;
+  color: white;
+}
+
+.fancy-login-input {
+  background: linear-gradient(#FFFFFF, #B3B3B3);
+  font-family: "Roboto", sans-serif;
+  font-size: 15px;
+  color: black;
+  border: 3px solid black;
+  padding: 10px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 1px 0px #000000;
+}
+
+.fancy-input {
+  background: linear-gradient(#FFFFFF, #B3B3B3);
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 25px;
+  color: black;
+  border: 3px solid black;
+  padding: 2px 5px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 1px 0px #000000;
+}
+
+.fancy-black-button {
+  background: linear-gradient(#111111, #222222);
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 26px;
+  color: white;
+  border: 3px solid black;
+  padding: 1px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.fancy-button {
+  background: linear-gradient(#FFFFFF, #B3B3B3);
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 32px;
+  color: black;
+  border: 3px solid black;
+  padding: 5px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+
+.fancy-void-button {
+  background: linear-gradient(#7a7a7a, #B3B3B3);
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 32px;
+  color: rgb(70, 70, 70);
+  border: 3px solid black;
+  padding: 5px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 0px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.fancy-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-5px);
+  box-shadow: 0px 8px 0px #000000;
+}
+
+.fancy-button:active {
+  transform: translateY(6px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.fancy-black-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-5px);
+  box-shadow: 0px 8px 0px #000000;
+}
+
+.fancy-black-button:active {
+  transform: translateY(6px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  gap: 10px;
+  max-width: 650px;
+}
+
+@media (max-width: 700px) {
+  .button-container {
+    flex-direction: column;
+    align-items: center;
+    max-width: 85%;
+  }
+
+  #join-club-button{
+    width: 100%;
+  }
+
+  #create-club-button{
+    width: 100%;
+  }
+
+  /* .fancy-black-button {
+    max-width: 85%;
+  } */
+  .fancy-button {
+    max-width: 85%;
+  }
+  .fancy-input {
+    max-width: 85%;
+  }
+}
+
+@media (min-width: 701px){
+  .button-container {
+    flex-direction: row;
+  }
+  
+}
+
+
+
+@keyframes bobbing {
+  0% {
+    transform: translateY(2.5);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+  100% {
+    transform: translateY(2.5);
+  }
+}
+
+
+
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(2deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wiggle-container {
+  display: inline-block;
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#pendingRequestsContainer {
+    margin-top: 20px;
+    padding: 10px; /* Increased padding */
+    border: 3px solid black; /* Matches button border */
+    border-radius: 10px; /* Matches button border-radius */
+    background: linear-gradient(#f0f0f0, #e0e0e0); /* A slightly darker gradient for the container */
+    box-shadow: 0px 6px 0px #000000; /* Deeper shadow for the container */
+    width: 85%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: block;
+}
+
+#pendingRequestsContainer h3 {
+    text-align: center;
+    color: black; /* Matches button text color */
+    font-family: "New Amsterdam", sans-serif; /* Matches button font */
+    font-size: 40px; /* Adjusted size */
+    margin-bottom: 20px;
+    font-weight: normal;
+}
+
+/* Style for each individual pending member's "card" or "solid button" unit */
+.pending-member-card {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping if content is too wide */
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Applying the core button style to the card background */
+    background: linear-gradient(#FFFFFF, #B3B3B3);
+    font-family: "New Amsterdam", sans-serif; /* Apply font to card for name */
+    color: black;
+    border: 3px solid black;
+    padding: 10px 20px; /* Slightly more padding for the card */
+    border-radius: 10px;
+    cursor: default; /* Card itself isn't a button, so default cursor */
+    box-shadow:  0px 4px 0px #000000; /* Matches button shadow */
+    transition: all 0.05s ease-in-out;
+    margin-bottom: 15px; /* Space between cards */
+}
+
+#pendingRequestsContainer .fancy-label {
+    text-align: center;
+    color: #525252; /* A slightly softer color for informative text */
+    font-size: 20px;
+    padding: 10px;
+    font-family: "New Amsterdam", sans-serif
+}
+
+.pending-member-card:hover {
+    /* Slight lift effect on hover for the card */
+    transform: translateY(-2px);
+    box-shadow: 0px 6px 0px #000000;
+}
+
+/* Style for the member's name display */
+.pending-member-name-display {
+    font-size: 24px; /* Adjusted font size for name inside the card */
+    color: black;
+    flex-grow: 1; /* Allow the name to take up available space */
+    margin-right: 15px; /* Space between name and buttons */
+    white-space: nowrap; /* Prevent name from wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Add ellipsis if name is too long */
+}
+
+/* Style for the container holding the action buttons */
+.pending-member-actions {
+    display: flex;
+    gap: 10px; /* Space between the buttons */
+    margin-top: 5px; /* Add a small top margin if content wraps */
+}
+
+/* Base style for both ACCEPT and DENY buttons, using your theme */
+.approve-member-btn,
+.deny-member-btn {
+    background: linear-gradient(#FFFFFF, #B3B3B3); /* Your gradient */
+    font-family: "New Amsterdam", sans-serif;
+    font-size: 22px; /* Slightly smaller than main button to fit, adjust as needed */
+    color: black;
+    border: 3px solid black;
+    padding: 5px 15px; /* Adjusted padding to fit action buttons */
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 4px 0px #000000;
+    transition: all 0.05s ease-in-out;
+    white-space: nowrap; /* Prevent button text from wrapping */
+}
+
+.approve-member-btn:hover,
+.deny-member-btn:hover {
+    transform: translateY(2px); /* Simulate a "press" effect */
+    box-shadow: 0px 2px 0px #000000; /* Reduce shadow to complete the press effect */
+}
+
+.approve-member-btn:active,
+.deny-member-btn:active {
+    transform: translateY(4px); /* Full press effect */
+    box-shadow: 0px 0px 0px #000000; /* Shadow disappears when fully pressed */
+}
+
+/* Specific color adjustments for visual distinction (optional, but good practice) */
+.approve-member-btn {
+  color: white;
+  background: #1c801c; /* Lighter green gradient for ACCEPT */
+}
+
+.deny-member-btn {
+  color: white;
+  background: #d32727; /* Lighter red gradient for DENY */
+}
+
+.approve-member-btn:hover {
+  background: #1c911c;
+}
+
+.deny-member-btn:hover {
+  background: #f13838;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#membersContainer {
+    margin-top: 20px;
+    padding: 10px;
+    border: 3px solid black;
+    border-radius: 10px;
+    background: linear-gradient(#f0f0f0, #e0e0e0); /* Slightly darker gradient for the container */
+    box-shadow: 0px 6px 0px #000000; /* Deeper shadow for the container */
+    width: 85%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: block;
+}
+
+#membersContainer h3 {
+    text-align: center;
+    color: black;
+    font-family: "New Amsterdam", sans-serif;
+    font-size: 40px;
+    margin-bottom: 20px;
+    font-weight: normal;
+}
+
+/* Style for the "No members in this club yet." message */
+#membersContainer .fancy-label {
+    text-align: center;
+    color: #525252; /* A slightly softer color for informative text */
+    font-size: 20px;
+    padding: 10px;
+    font-family: "New Amsterdam", sans-serif
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    z-index: 999; /* Ensure it's above other content */
+    display: flex; /* Use flexbox to center the popup */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Styles for the Role Management Popup */
+#role-management-popup {
+    margin-top: 20px;
+    padding: 10px;
+    border: 3px solid black;
+    background: linear-gradient(#f0f0f0, #e0e0e0);
+    box-shadow: 0px 6px 0px #000000; 
+    width: 80%; /* Adjust as needed */
+    max-width: 500px; /* Max width for larger screens */
+    border-radius: 10px;
+    z-index: 1000; /* Ensure it's above the overlay */
+    position: fixed; /* Fixed position relative to viewport */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust for exact centering */
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 15px; /* Space between elements in the popup */
+    font-family: "New Amsterdam", sans-serif;
+    font-weight: normal;
+    text-align: center;
+    font-size: 24px;
+}
+
+#role-select-label {
+  color:#525252;
+}
+
+#role-management-popup h3 {
+    margin-top: 0;
+    font-weight: normal;
+    text-align: center;
+    font-size: 30px;
+    color: black; 
+}
+
+#role-management-popup select {
+    width: 100%;
+    padding: 10px;
+    font-family: "New Amsterdam", sans-serif;
+    color:#525252;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 3px solid #525252;
+    box-shadow: 0px -3px 0px #525252; 
+    border-radius: 5px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.popup-actions {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* --- Styles for each individual Member's "card" --- */
+.member-card {
+    display: flex;
+    /* flex-wrap: wrap; */
+    flex-wrap: nowrap; 
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(#FFFFFF, #B3B3B3);
+    font-family: "New Amsterdam", sans-serif;
+    color: black;
+    border: 3px solid black;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: default;
+    box-shadow:  0px 4px 0px #000000;
+    transition: all 0.05s ease-in-out;
+    margin-bottom: 15px; /* Space between cards */
+}
+
+.member-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 6px 0px #000000;
+}
+
+/* Style for the member's name display */
+.member-name-display {
+    font-size: 24px;
+    color: black;
+    flex-grow: 1;
+    margin-right: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Style for the container holding the action buttons */
+.member-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0; 
+    white-space: nowrap;
+}
+
+
+.manager-remove-member-btn {
+  background: transparent;
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 22px;
+  color: rgb(131, 131, 131);
+  border: 3px solid rgb(131, 131, 131);
+  padding: 5px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 0px 0px #000000;
+  transition: all 0.05s ease-in-out;
+  white-space: nowrap;
+}
+
+
+.remove-member-btn {
+    /* background: linear-gradient(#f0ad4e, #eb9316); Orange gradient for REMOVE */
+    background: linear-gradient(#ff6a6a, #ff4a4a);
+    font-family: "New Amsterdam", sans-serif;
+    font-size: 22px;
+    color: rgb(0, 0, 0); 
+    border: 3px solid black;
+    padding: 5px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 4px 0px #000000;
+    transition: all 0.05s ease-in-out;
+    white-space: nowrap;
+}
+
+.remove-member-btn:hover {
+    transform: translateY(2px);
+    box-shadow: 0px 2px 0px #000000;
+    background: linear-gradient(#ff5f5f, #fc4040);
+    /* background: linear-gradient(#f3b35a, #f09e2b); Slightly lighter orange on hover */
+}
+
+.remove-member-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0px 0px 0px #000000;
+}
+
+
+
+
+.options-member-btn {
+  background: linear-gradient(#a3a3a3, #858585);
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 22px;
+  color: rgb(0, 0, 0);
+  border: 3px solid black;
+  padding: 5px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #000000;
+  transition: all 0.05s ease-in-out;
+  white-space: nowrap;
+}
+
+.options-member-btn:hover {
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px #000000;
+  background: linear-gradient(#afafaf, #818181);
+}
+
+.options-member-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+
+/* Styling for the member role text (e.g., MEMBER, ADMIN) */
+.member-role-text {
+    color: #666666; /* A subtle gray shade */
+    font-size: 0.9em; /* Slightly smaller than the name */
+    font-weight: normal; /* Not bold, less prominent */
+    margin-left: 8px; /* Small space between name and role */
+}
+
+
+.member-actions {
+    display: flex;
+    gap: 5px; 
+}
+
+
+#dynamic-sections-wrapper {
+    display: flex;
+    flex-direction: column; /* Stacks the content vertically */
+    /* Add any other styling for the overall wrapper if needed, like a gap */
+    gap: 20px; /* Example: adds space between the two main sections */
+}
+
+
+
+@media screen and (max-width: 600px) {
+    .member-card {
+        flex-direction: column; 
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 15px 10px;
+    }
+
+    .member-name-display {
+        width: 100%;
+        text-align: center;
+        margin-right: 0;
+        margin-bottom: 5px;
+        /* IMPORTANT: Override truncation for small screens */
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .member-actions {
+        width: 100%;
+        justify-content: center;
+        margin-top: 15px;
+        gap: 8px;
+    }
+
+    .manager-remove-member-btn,
+    .member-actions .remove-member-btn,
+    .member-actions .options-member-btn {
+        font-size: 18px; 
+        padding: 6px 12px;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+.custom-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); 
+    z-index: 9999; 
+    display: none; 
+}
+
+.msgBox {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(#f0f0f0, #e0e0e0); 
+    border: 3px solid black;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0px 6px 0px #000000; 
+    z-index: 10000; 
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    font-family: "New Amsterdam", sans-serif;
+    color: black;
+    max-width: 450px;
+    min-width: 250px;
+    text-align: center;
+}
+
+.msgBox h3 {
+    margin: 0 0 10px 0;
+    font-size: 30px;
+    font-weight: normal;
+    color: black;
+}
+
+.msgBox p {
+    margin: 0;
+    font-size: 24px;
+    font-weight: normal;
+    color: black;
+}
+
+.msgBox .fancy-button { 
+    font-size: 24px;
+    padding: 8px 25px;
+}

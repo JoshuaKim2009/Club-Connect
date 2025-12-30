@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Club Connect | Join</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+
+    <form id="joinClubForm"> <!-- Changed ID for clarity -->
+      <h1 class="pageTitle">JOIN A CLUB</h1> <!-- Changed text for clarity -->
+
+      <label class="fancy-input-label" for="club-name-input">Club name</label>
+      <input class="fancy-input" id="club-name-input" placeholder="CLUB NAME" required name="club-name-input"> <!-- Changed name attribute -->
+
+      <label class="fancy-input-label" for="join-code-input">Join code</label>
+      <input class="fancy-input" id="join-code-input" placeholder="6 DIGIT JOIN CODE" required name="join-code-input" value=""> <!-- Changed name attribute -->
+
+      <hr style="background-color: transparent; height: 3px; border: none;">
+
+      <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button> <!-- Changed ID for clarity -->
+
+      <hr style="background-color: transparent; height: 150px; border: none;">
+
+      <script>
+        function goToHome(){
+          window.location.href = "your_clubs.html";
+        }
+      </script>
+
+      <script type="module" src="dialog.js"></script> 
+      <script type="module" src="join_club.js"></script>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Club Connect | Clubs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet" />
+
+    <style>
+      body {
+        padding-bottom: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="back-button" class="fancy-button" onclick="goToHome()">HOME</button>
+    <h1 id="page-title" class="pageTitle">MY CLUBS</h1>
+
+    
+    <div class="button-container">
+      <button id="create-club-button" class="fancy-black-button" >CREATE A CLUB</button>
+      <button id="join-club-button" class="fancy-black-button" >JOIN A CLUB</button>
+    </div>
+    
+    
+
+    
+    <div id="clubContainer">
+      <p class="big-label">MY CLUBS</p>
+      <p id="your-clubs-loading-text" class="fancy-label" >LOADING...</p>
+    </div>
+
+    
+    <div id="memberClubContainer">
+      <!-- <p class="big-label">CLUBS I JOINED</p> -->
+      <p id="member-clubs-loading-text" class="fancy-label" ></p>
+    </div>
+
+    
+    <div id="roleModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeRoleModal()">&times;</span>
+            <h2>Set Role for <span id="modalMemberName"></span></h2>
+            <div class="role-options">
+                <label>
+                    <input type="radio" name="memberRole" value="member" id="radioMember"> Member
+                </label>
+                <label>
+                    <input type="radio" name="memberRole" value="admin" id="radioAdmin"> Admin
+                </label>
+            </div>
+            <button id="saveRoleButton">Save Role</button>
+            <button onclick="closeRoleModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+      const createClubButton = document.getElementById("create-club-button");
+      const joinClubButton = document.getElementById("join-club-button");
+      
+      if (createClubButton) {
+        createClubButton.addEventListener("click", function() {
+          window.location.href = "create_club.html";
+        });
+      }
+      if (joinClubButton) {
+        joinClubButton.addEventListener("click", function() {
+          window.location.href = "join_club.html";
+        });
+      }
+      function goToHome(){
+        window.location.href = "index.html";
+      }
+    </script>
+    
+    <script type="module" src="dialog.js"></script> 
+    <script type="module" src="your_clubs.js"></script>
+    
+  </body>
+</html>

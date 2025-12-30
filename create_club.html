@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="styles.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    
+    
+    <title>Club Connect | Create</title>
+  </head>
+  <body>
+
+    
+    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+    <form id = "createClubForm">
+    <h1 class="pageTitle">CREATE A CLUB</h1>
+
+    
+    
+
+    <label class="fancy-input-label" >School name</label>
+    <input class="fancy-input" id="school-name-select" placeholder="SCHOOL NAME" required name = "school-name-select" value ="">
+
+    <label class="fancy-input-label" >Club name</label>
+    <input class="fancy-input" id="club-name-select" placeholder="CLUB NAME" required name = "club-name-select">
+
+    <label class="fancy-input-label" >Main Activity</label>
+    <input class="fancy-input" id="main-activity-select" placeholder="YOUR MAIN ACTIVITY IN A WORD OR TWO" required name = "main-activity-select">
+
+    <label class="fancy-input-label" >Description</label>
+
+    <textarea id="description-input" class="fancy-input" rows="3" placeholder="WRITE A SHORT DESCRIPTION ABOUT YOUR CLUB..." required name = "description-input"></textarea>
+
+
+    <hr style="background-color: transparent; height: 3px; border: none;">
+      
+    <button id = "submit-club-button" type = "submit" class = "fancy-button" >SUBMIT</button>
+
+
+    <hr style="background-color: transparent; height: 150px; border: none;">
+
+          
+   
+    <script type="module" src="dialog.js"></script> 
+    <script type="module" src="create_club.js"></script>
+
+    
+    <script>
+      
+      function goToHome(){
+        window.location.href = "your_clubs.html";
+      }
+      
+    </script>
+    
+    
+  </body>
+</html>

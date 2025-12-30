@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Club Connect | Club Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
+
+    <link href="styles.css" rel="stylesheet" />
+    
+    <style>
+      body {
+        padding-bottom: 100px; 
+      }
+    </style>
+    
+  </head>
+  <body>
+    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+    <h1 id="clubPageTitle"></h1>
+    <div id="clubDetails" class="fancy-label">
+      <p></p>
+    </div>
+    <hr style="background-color: transparent; height: 6px; border: none;">
+
+    <div id="dynamic-sections-wrapper">
+        <!-- <p class="small-title">MEMBERSHIP REQUESTS</p> -->
+        <div id="pendingRequestsContainer" class="fancy-black-label">
+          <p class="fancy-label" ></p>
+        </div>
+
+        <!-- <p class="small-title">MEMBERS</p> -->
+        <div id="membersContainer" class="fancy-black-label">
+          <p class="fancy-label" ></p>
+        </div>
+    </div>
+
+    
+
+    <div id="popup-overlay" style="display: none;"></div>
+    <!-- Role Management Popup -->
+    <div id="role-management-popup" style="display: none;">
+        <div class="popup-content">
+            <h3 id="member-name-for-role">Manage [Member Name]</h3>
+            <label for="role-select" id="role-select-label">Select New Role</label>
+            <select id="role-select">
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+            </select>
+            <div class="popup-actions">
+                <button id="submit-role-change" class="fancy-button">Update Role</button>
+                <button id="cancel-role-change" class="fancy-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+      function goToHome(){
+        window.location.href = "your_clubs.html";
+      }
+    </script>
+
+
+    <script type="module" src="dialog.js"></script> 
+    <script type="module" src="club_page_manager.js"></script>
+  </body>
+</html>
+ 
