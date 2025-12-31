@@ -84,6 +84,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 // --- END NEW AUTHENTICATION LOGIC ---
 
+function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 async function fetchClubDetails(id, currentUserId, currentUserName) {
     try {
@@ -117,8 +120,8 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
                 // Display other club details
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
-                        <p>MANAGER | ${actualManagerName}</p>
-                        <p>Your Role | ${currentUserRole.toUpperCase()}</p>
+                        <p>Manager | ${actualManagerName}</p>
+                        <p>Your Role | ${capitalizeFirstLetter(currentUserRole)}</p>
                         <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
@@ -423,7 +426,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             const memberCardDivManager = document.createElement("div");
             memberCardDivManager.className = "member-card";
             const nameDisplayDivManager = document.createElement("div");
-            nameDisplayDivManager.innerHTML = `${managerName} <span class="member-role-text">${memberRole.toUpperCase()}</span>`;
+            nameDisplayDivManager.innerHTML = `${managerName} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
             nameDisplayDivManager.className = "member-name-display";
             memberCardDivManager.appendChild(nameDisplayDivManager);
 
@@ -448,7 +451,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
             const nameDisplayDiv = document.createElement("div");
             // Changed: Removed parentheses, added span for role styling
-            nameDisplayDiv.innerHTML = `${name} <span class="member-role-text">${memberRole.toUpperCase()}</span>`;
+            nameDisplayDiv.innerHTML = `${name} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
             nameDisplayDiv.className = "member-name-display";
             memberCardDiv.appendChild(nameDisplayDiv);
 

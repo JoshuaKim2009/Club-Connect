@@ -99,10 +99,10 @@ submitButton.addEventListener("click", async function(event){
         const newClubId = newClubRef.id; // Get the auto-generated ID
 
         await setDoc(newClubRef, { // Use setDoc on the newClubRef
-            schoolName: schoolName.toUpperCase(),
-            clubName: clubName.toUpperCase(),
+            schoolName: schoolName,
+            clubName: clubName,
             description: clubDescription,
-            clubActivity: clubActivity.toUpperCase(),
+            clubActivity: clubActivity,
             managerEmail: currentUserEmail,
             joinCode: joinCode,
             // Initialize memberUIDs with the manager's UID
@@ -130,7 +130,7 @@ submitButton.addEventListener("click", async function(event){
         });
         console.log("User's managed_clubs list in 'users' collection updated successfully.");
 
-        await showAppAlert(`Club "${clubName.toUpperCase()}" saved successfully!`);
+        await showAppAlert(`Club "${clubName}" saved successfully!`);
         window.location.href = "your_clubs.html";
 
         // Optionally, clear the form fields after successful submission

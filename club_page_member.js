@@ -71,6 +71,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 // --- END NEW AUTHENTICATION LOGIC ---
 
+function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 async function fetchClubDetails(id, currentUserId, currentUserName) {
     try {
@@ -105,8 +108,8 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
 
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
-                        <p>MANAGER | ${actualManagerName}</p>
-                        <p>Your Role | ${myCurrentRoleInClub.toUpperCase()}</p> <!-- Display user's role -->
+                        <p>Manager | ${actualManagerName}</p>
+                        <p>Your Role | ${capitalizeFirstLetter(myCurrentRoleInClub)}</p> <!-- Display user's role -->
                         <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
@@ -260,7 +263,7 @@ function displayMembersForMemberPage(memberNames, memberUids, memberRoles) {
         let displayName = name;
         displayName = `${name}`;
 
-        nameDisplayDiv.innerHTML = `${displayName} <span class="member-role-text">${memberRole.toUpperCase()}</span>`;
+        nameDisplayDiv.innerHTML = `${displayName} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
         nameDisplayDiv.className = "member-name-display";
         memberCardDiv.appendChild(nameDisplayDiv);
         

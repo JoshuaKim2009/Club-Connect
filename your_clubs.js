@@ -206,12 +206,12 @@ function displayList(listNames, listIds) {
         const uid = listIds[i]; 
 
         const btn = document.createElement("button");
-        //btn.textContent = name + " | MANAGER ";
+        //btn.textContent = name + " | Manager ";
 
         btn.textContent = name; // Only the club name initially
         // Create a span for the role
         const roleSpan = document.createElement("span");
-        roleSpan.textContent = " MANAGER";
+        roleSpan.textContent = " Manager";
         roleSpan.classList.add("club-role-text"); // Add a class for styling
         btn.appendChild(roleSpan);
 
@@ -227,6 +227,9 @@ function displayList(listNames, listIds) {
     }
 }
 
+function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 async function displayMemberClubs(listNames, listIds) {
     const container = document.getElementById("memberClubContainer");
@@ -266,7 +269,7 @@ async function displayMemberClubs(listNames, listIds) {
 
         // Create a span for the role
         const roleSpan = document.createElement("span");
-        roleSpan.textContent = ` ${currentRole.toUpperCase()}`; // Role in parentheses
+        roleSpan.textContent = ` ${capitalizeFirstLetter(currentRole)}`; // Role in parentheses
         roleSpan.classList.add("club-role-text"); // Add a class for styling
 
         btn.appendChild(roleSpan); // Append the role span to the button
