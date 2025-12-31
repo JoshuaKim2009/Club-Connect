@@ -891,6 +891,12 @@ body {
     margin-left: 8px; /* Small space between name and role */
 }
 
+.club-role-text {
+    color: rgb(100, 100, 100); 
+    font-size: 0.9em; 
+    margin-left: 5px; 
+}
+
 
 .member-actions {
     display: flex;

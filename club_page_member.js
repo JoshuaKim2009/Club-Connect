@@ -105,7 +105,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
 
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
-                        <p>MANAGER | ${actualManaferName}</p>
+                        <p>MANAGER | ${actualManagerName}</p>
                         <p>Your Role | ${myCurrentRoleInClub.toUpperCase()}</p> <!-- Display user's role -->
                         <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>

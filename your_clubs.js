@@ -206,7 +206,16 @@ function displayList(listNames, listIds) {
         const uid = listIds[i]; 
 
         const btn = document.createElement("button");
-        btn.textContent = name + " | MANAGER ";
+        //btn.textContent = name + " | MANAGER ";
+
+        btn.textContent = name; // Only the club name initially
+        // Create a span for the role
+        const roleSpan = document.createElement("span");
+        roleSpan.textContent = " MANAGER";
+        roleSpan.classList.add("club-role-text"); // Add a class for styling
+        btn.appendChild(roleSpan);
+
+
         btn.dataset.clubId = uid;
         btn.className = "club-btn fancy-button"; // Ensure 'club-btn' class is always added
 
@@ -252,7 +261,17 @@ async function displayMemberClubs(listNames, listIds) {
         }
 
         const btn = document.createElement("button");
-        btn.textContent = `${name} | ${currentRole.toUpperCase()}`; 
+        //btn.textContent = `${name} | ${currentRole.toUpperCase()}`; 
+        btn.textContent = name; // Only the club name initially
+
+        // Create a span for the role
+        const roleSpan = document.createElement("span");
+        roleSpan.textContent = ` ${currentRole.toUpperCase()}`; // Role in parentheses
+        roleSpan.classList.add("club-role-text"); // Add a class for styling
+
+        btn.appendChild(roleSpan); // Append the role span to the button
+
+
         btn.dataset.clubId = clubId;
         btn.dataset.userRole = currentRole; 
         btn.className = "club-btn fancy-button member-club-btn"; 
