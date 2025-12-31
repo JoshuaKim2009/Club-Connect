@@ -4,9 +4,14 @@ body {
   background-color: #272757;
 }
 
+:root {
+  --primary-font-family: "Teko", sans-serif;
+
+
+}
 
 #welcomeMessage {
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: white;
   font-weight: 50;
@@ -67,7 +72,7 @@ body {
 
 .big-label {
   font-size: 30px;
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-weight: normal;
   font-style: normal;
   text-align: center;
@@ -266,13 +271,13 @@ body {
 }
 
 .fancy-label {
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: white;
 }
 
 .fancy-link-label {
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: rgb(112, 174, 255);
 }
@@ -292,7 +297,7 @@ body {
 
 
 .fancy-black-label {
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: rgb(0, 0, 0);
   text-align: center;
@@ -301,14 +306,14 @@ body {
 .fancy-input-label {
   display: block; 
   text-align: center;
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: white;
 }
 
 .fancy-login-input {
   background: linear-gradient(#FFFFFF, #B3B3B3);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 15px;
   color: black;
   border: 3px solid black;
@@ -320,7 +325,7 @@ body {
 
 .fancy-input {
   background: linear-gradient(#FFFFFF, #B3B3B3);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: black;
   border: 3px solid black;
@@ -332,7 +337,7 @@ body {
 
 .fancy-black-button {
   background: linear-gradient(#111111, #222222);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 26px;
   color: white;
   border: 3px solid black;
@@ -345,7 +350,7 @@ body {
 
 .fancy-button {
   background: linear-gradient(#FFFFFF, #B3B3B3);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 32px;
   color: black;
   border: 3px solid black;
@@ -360,7 +365,7 @@ body {
   margin: 0 auto;
   display: block;
   background: transparent;
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 25px;
   color: rgb(112, 174, 255);
   padding: 5px 25px;
@@ -372,7 +377,7 @@ body {
 
 .fancy-void-button {
   background: linear-gradient(#7a7a7a, #B3B3B3);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 32px;
   color: rgb(70, 70, 70);
   border: 3px solid black;
@@ -508,7 +513,7 @@ body {
 #pendingRequestsContainer h3 {
     text-align: center;
     color: black; /* Matches button text color */
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     font-size: 40px; /* Adjusted size */
     margin-bottom: 20px;
     font-weight: normal;
@@ -523,7 +528,7 @@ body {
     
     /* Applying the core button style to the card background */
     background: linear-gradient(#FFFFFF, #B3B3B3);
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     color: black;
     border: 3px solid black;
     padding: 10px 20px; /* Slightly more padding for the card */
@@ -539,7 +544,7 @@ body {
     color: #525252; /* A slightly softer color for informative text */
     font-size: 20px;
     padding: 10px;
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
 }
 
 .pending-member-card:hover {
@@ -570,7 +575,7 @@ body {
 .approve-member-btn,
 .deny-member-btn {
     background: linear-gradient(#FFFFFF, #B3B3B3); /* Your gradient */
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     font-size: 22px; /* Slightly smaller than main button to fit, adjust as needed */
     color: black;
     border: 3px solid black;
@@ -657,7 +662,7 @@ body {
 #membersContainer h3 {
     text-align: center;
     color: black;
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     font-size: 40px;
     margin-bottom: 20px;
     font-weight: normal;
@@ -669,7 +674,7 @@ body {
     color: #525252; /* A slightly softer color for informative text */
     font-size: 20px;
     padding: 10px;
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
 }
 
 
@@ -714,7 +719,7 @@ body {
     display: none; /* Hidden by default */
     flex-direction: column;
     gap: 15px; /* Space between elements in the popup */
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     font-weight: normal;
     text-align: center;
     font-size: 24px;
@@ -735,7 +740,7 @@ body {
 #role-management-popup select {
     width: 100%;
     padding: 10px;
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     color:#525252;
     margin-top: 5px;
     border-radius: 5px;
@@ -774,7 +779,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(#FFFFFF, #B3B3B3);
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     color: black;
     border: 3px solid black;
     padding: 10px 20px;
@@ -814,7 +819,7 @@ body {
 
 .manager-remove-member-btn {
   background: transparent;
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 22px;
   color: rgb(131, 131, 131);
   border: 3px solid rgb(131, 131, 131);
@@ -830,7 +835,7 @@ body {
 .remove-member-btn {
     /* background: linear-gradient(#f0ad4e, #eb9316); Orange gradient for REMOVE */
     background: linear-gradient(#ff6a6a, #ff4a4a);
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     font-size: 22px;
     color: rgb(0, 0, 0); 
     border: 3px solid black;
@@ -859,7 +864,7 @@ body {
 
 .options-member-btn {
   background: linear-gradient(#a3a3a3, #858585);
-  font-family: "Share Tech", sans-serif;
+  font-family: var(--primary-font-family);
   font-size: 22px;
   color: rgb(0, 0, 0);
   border: 3px solid black;
@@ -985,7 +990,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    font-family: "Share Tech", sans-serif;
+    font-family: var(--primary-font-family);
     color: black;
     max-width: 450px;
     min-width: 250px;
