@@ -759,7 +759,9 @@ body {
 }
 
 
-
+#role-management-popup .fancy-button {
+    font-size: 25px; 
+}
 
 
 
