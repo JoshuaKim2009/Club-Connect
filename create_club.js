@@ -65,7 +65,7 @@ submitButton.disabled = true;
 submitButton.addEventListener("click", async function(event){
     event.preventDefault(); // Prevent default form submission
     submitButton.disabled = true; // Disable the button
-    submitButton.textContent = "Creating Club..."; // Optional: change button text for feedback
+    // submitButton.textContent = "Creating Club...";
 
     // --- CRITICAL CHECK: Ensure a user is logged in ---
     if (!currentUser || !currentUser.uid) {

@@ -19,7 +19,7 @@
   <body>
 
     
-    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+    <button id="back-button-edit" class="fancy-button">BACK</button>
     <form id = "createClubForm">
     <h1 class="pageTitle">EDIT DETAILS</h1>
 
@@ -41,26 +41,25 @@
 
 
     <hr style="background-color: transparent; height: 3px; border: none;">
-      
-    <button id = "submit-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
+    
+    <div class="edit-page-actions-container">
+        <button id = "update-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
+        <button id = "delete-club-button" class = "fancy-button" >DELETE CLUB</button>
+    </div>
+    
+    
 
 
     <hr style="background-color: transparent; height: 150px; border: none;">
-
+    
+    
           
    
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="club_edit_page.js"></script>
 
     
-    <script>
-      
-      function goToHome(){
-        window.location.href = "your_clubs.html";
-      }
-      
-    </script>
-    
+
     
   </body>
 </html>
