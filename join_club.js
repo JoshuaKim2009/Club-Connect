@@ -62,6 +62,10 @@ if (submitButton) {
             const clubUID = await checkIfClubExists(enteredClubName, enteredJoinCode);
             console.log("Result from checkIfClubExists (clubUID):", clubUID);
 
+            if (!clubUID){
+                await showAppAlert("This club does not exist", "No club found");
+            }
+
             
 
 
