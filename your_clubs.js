@@ -46,6 +46,7 @@ async function loadManagedClubs() {
     if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
         const managedClubs = userData.managed_clubs || [];
+        const memberClubs = userData.member_clubs || [];
 
         if (managedClubs.length === 0) {
             console.log("User does not manage any clubs.");
@@ -56,11 +57,13 @@ async function loadManagedClubs() {
             btn.textContent = "NO CLUBS YET";
             btn.className = "club-btn fancy-void-button";
             container.appendChild(btn);
-            Array.from(container.children).forEach(child => {
+            if(memberClubs.length !== 0){
+              Array.from(container.children).forEach(child => {
                 if (child.classList.contains("club-btn")) { // Ensure it targets the class of your buttons
                     container.removeChild(child);
                 }
-            });
+              });
+            }
             return;
         }
 
