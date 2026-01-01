@@ -90,6 +90,12 @@ body {
   width: 300px;
 }
 
+#edit-club-button{
+  margin: 0 auto;
+  display: block;
+  margin-bottom: 15px;
+}
+
 #join-club-button{
   margin: 0 auto;
   display: block;
@@ -100,6 +106,16 @@ body {
   margin: 0 auto;
   display: block;
   width: 300px;
+}
+
+#school-name-edit,
+#club-name-edit,
+#main-activity-edit,
+#description-edit {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
 }
 
 #club-name-select {

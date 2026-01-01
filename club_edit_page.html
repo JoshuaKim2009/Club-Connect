@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="styles.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+
+
+
+
+    
+    
+    <title>Club Connect | Edit</title>
+  </head>
+  <body>
+
+    
+    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+    <form id = "createClubForm">
+    <h1 class="pageTitle">EDIT DETAILS</h1>
+
+    
+    
+
+    <label class="fancy-input-label" >School name</label>
+    <input class="fancy-input" id="school-name-edit" placeholder="School name" required value ="">
+
+    <label class="fancy-input-label" >Club name</label>
+    <input class="fancy-input" id="club-name-edit" placeholder="Club name" required>
+
+    <label class="fancy-input-label" >Main Activity</label>
+    <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required>
+
+    <label class="fancy-input-label" >Description</label>
+
+    <textarea id="description-edit" class="fancy-input" rows="3" placeholder="A short description about your club..." required></textarea>
+
+
+    <hr style="background-color: transparent; height: 3px; border: none;">
+      
+    <button id = "submit-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
+
+
+    <hr style="background-color: transparent; height: 150px; border: none;">
+
+          
+   
+    <script type="module" src="dialog.js"></script> 
+    <script type="module" src="club_edit_page.js"></script>
+
+    
+    <script>
+      
+      function goToHome(){
+        window.location.href = "your_clubs.html";
+      }
+      
+    </script>
+    
+    
+  </body>
+</html>

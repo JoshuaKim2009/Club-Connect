@@ -761,3 +761,11 @@ submitRoleChangeButton.addEventListener('click', async () => {
         await showAppAlert("Failed to change member role: " + error.message);
     }
 });
+
+
+
+const editClubButton = document.getElementById("edit-club-button");
+
+editClubButton.addEventListener('click', async () => {
+    window.location.href = `club_edit_page.html?clubId=${clubId}`;
+});
