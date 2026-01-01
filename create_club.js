@@ -64,6 +64,8 @@ submitButton.disabled = true;
 // Event listener for the submit button
 submitButton.addEventListener("click", async function(event){
     event.preventDefault(); // Prevent default form submission
+    submitButton.disabled = true; // Disable the button
+    submitButton.textContent = "Creating Club..."; // Optional: change button text for feedback
 
     // --- CRITICAL CHECK: Ensure a user is logged in ---
     if (!currentUser || !currentUser.uid) {
@@ -142,6 +144,9 @@ submitButton.addEventListener("click", async function(event){
     } catch (error) {
         console.error("Error creating club or updating user profile:", error);
         await showAppAlert("Failed to create club: " + error.message);
+    } finally {
+        submitButton.disabled = false; // Re-enable the button
+        submitButton.textContent = "Create Club"; // Reset button text
     }
 });
 
