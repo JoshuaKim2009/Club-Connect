@@ -63,7 +63,7 @@ if (submitButton) {
             console.log("Result from checkIfClubExists (clubUID):", clubUID);
 
             if (!clubUID){
-                await showAppAlert("This club does not exist", "No club found");
+                await showAppAlert("This club does not exist", "Club not found");
             }
 
             
