@@ -1,18 +1,14 @@
 body {
-    /* background-color: #272757; */
+  /* background-color: #272757; */
     background-color: #131330;
-    /* Apply the radial gradient to the body */
-    background-image: radial-gradient(circle at center, #474799, #131330);
-    
-    /* This is the key: fixes the background to the viewport */
-    background-attachment: fixed; 
-    
-    /* Ensure the background covers the entire viewport */
+    /* The first linear-gradient acts as a mask, the second is your original circle */
+    background-image: 
+        linear-gradient(to bottom, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
+        radial-gradient(circle at center, #474799, #131330);
+    background-attachment: fixed;
     background-size: cover;
     background-repeat: no-repeat;
-    
-    /* Optional: sets a minimum height to enable body scrolling if content is short */
-    min-height: 100vh; 
+    min-height: 100vh;
 }
 
 :root {
