@@ -45,7 +45,7 @@ input[type="submit"], button {
     font-family: "New Amsterdam", sans-serif;
     font-weight: 400;
     font-style: normal;
-    font-size: min(75px, 25vw);
+    font-size: min(75px, 12vw);
     white-space: nowrap;
     text-align: center;
 
@@ -69,7 +69,7 @@ input[type="submit"], button {
     font-family: "New Amsterdam", sans-serif;
     font-weight: 400;
     font-style: normal;
-    font-size: min(75px, 25vw);
+    font-size: min(75px, 12vw);
     text-align: center;
     color: white;
     white-space: nowrap;
