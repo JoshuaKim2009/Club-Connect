@@ -22,7 +22,7 @@ body {
 }
 
 input[type="submit"] {
-  font-weight: normal;
+  --webkit-appearance: none;
 }
 
 #welcomeMessage {
