@@ -769,3 +769,52 @@ const editClubButton = document.getElementById("edit-club-button");
 editClubButton.addEventListener('click', async () => {
     window.location.href = `club_edit_page.html?clubId=${clubId}`;
 });
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const viewScheduleButton = document.getElementById('viewScheduleButton');
+
+    if (viewScheduleButton) {
+        viewScheduleButton.addEventListener('click', () => {
+            window.location.href = `schedule.html?id=${clubId}`;
+        });
+    } else {
+        console.warn("Element with ID 'viewScheduleButton' not found. Schedule button functionality may be impacted.");
+    }
+
+    // Future Enhancement: Function to fetch and display the closest event
+    // You would integrate Firebase Firestore queries here to get the next event.
+    // Example placeholder function:
+    /*
+    async function displayClosestEvent(currentClubId) {
+        const closestEventDisplay = document.getElementById('closestEventDisplay');
+        if (!closestEventDisplay) return;
+
+        // Simulate fetching an event
+        // In reality, you'd query Firestore for events in this club, ordered by date, and pick the next one.
+        const mockEvent = {
+            name: "Weekly Club Meeting",
+            date: "January 20th, 2026",
+            start_time: "3:00 PM",
+            end_time: "4:30 PM"
+            address: "Winston Churchill High School"
+            location: "Room 132"
+        };
+
+        closestEventDisplay.innerHTML = `
+            <h4>${mockEvent.name}</h4>
+            <p><i class="material-icons">calendar_today</i> ${mockEvent.date} at ${mockEvent.time}</p>
+            <p><i class="material-icons">location_on</i> ${mockEvent.location}</p>
+        `;
+    }
+
+    // Call this function once the clubId is available and a user is authenticated
+    // You might need to ensure authentication state is known before fetching events for a club
+    // if (clubId) {
+    //    displayClosestEvent(clubId);
+    // }
+    */
+});
