@@ -21,8 +21,10 @@ body {
 
 }
 
-input[type="submit"] {
+input[type="submit"], button {
   --webkit-appearance: none;
+  appearance: none;
+  font-weight: normal;
 }
 
 #welcomeMessage {
