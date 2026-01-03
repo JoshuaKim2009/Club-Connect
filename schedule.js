@@ -175,6 +175,20 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
         </div>
     `;
 
+    const weeklyStartDateInputFieldHtml = `
+        <div id="weekly-start-date-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
+            <label for="edit-weekly-start-date-${tempDomId}">Weekly Recurrence Start Date:</label>
+            <input type="date" id="edit-weekly-start-date-${tempDomId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly ? 'disabled' : ''} required>
+        </div>
+    `;
+
+    const weeklyEndDateInputFieldHtml = `
+        <div id="weekly-end-date-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
+            <label for="edit-weekly-end-date-${tempDomId}">Weekly Recurrence End Date:</label>
+            <input type="date" id="edit-weekly-end-date-${tempDomId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly ? 'disabled' : ''} required>
+        </div>
+    `;
+
     const eventDateInputFieldHtml = `
         <div id="date-input-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'none' : 'block'};">
             <label for="edit-date-${tempDomId}">Event Date:</label>
@@ -238,6 +252,8 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
         ${weeklyEventCheckboxHtml}
         ${eventDateInputFieldHtml}
         ${daysOfWeekCheckboxesHtml}
+        ${weeklyStartDateInputFieldHtml}
+        ${weeklyEndDateInputFieldHtml}
         ${startTimeInputFieldHtml}
         ${endTimeInputFieldHtml}
         ${eventAddressInputFieldHtml}
@@ -263,8 +279,12 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
     const dateInputGroup = cardDiv.querySelector(`#date-input-group-${tempDomId}`);
     const eventDateInput = cardDiv.querySelector(`#edit-date-${tempDomId}`); // The actual date input
     const daysOfWeekGroup = cardDiv.querySelector(`#days-of-week-group-${tempDomId}`);
+    const weeklyStartDateGroup = cardDiv.querySelector(`#weekly-start-date-group-${tempDomId}`);
+    const weeklyEndDateGroup = cardDiv.querySelector(`#weekly-end-date-group-${tempDomId}`);
+    const weeklyStartDateInput = cardDiv.querySelector(`#edit-weekly-start-date-${tempDomId}`);
+    const weeklyEndDateInput = cardDiv.querySelector(`#edit-weekly-end-date-${tempDomId}`);
 
-    if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup) {
+    if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup && weeklyStartDateGroup && weeklyEndDateGroup && weeklyStartDateInput && weeklyEndDateInput) {
         // Function to toggle display and disabled states
         const toggleRecurringFields = () => {
             const isChecked = isWeeklyCheckbox.checked;
@@ -279,6 +299,22 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
                 checkbox.disabled = !isChecked; // Disable checkboxes when hidden
             });
 
+            // Toggle Weekly Start Date Group
+            weeklyStartDateGroup.style.display = isChecked ? 'block' : 'none';
+            weeklyStartDateInput.disabled = !isChecked;
+            // Toggle Weekly End Date Group
+            weeklyEndDateGroup.style.display = isChecked ? 'block' : 'none';
+            weeklyEndDateInput.disabled = !isChecked;
+
+            // Set required attributes based on weekly status
+            if(isChecked) {
+                weeklyStartDateInput.setAttribute('required', 'true');
+                weeklyEndDateInput.setAttribute('required', 'true');
+            } else {
+                weeklyStartDateInput.removeAttribute('required');
+                weeklyEndDateInput.removeAttribute('required');
+            }
+
             // --- Clear relevant fields based on state change for data consistency ---
             if(isChecked) {
                 eventDateInput.value = ''; // Clear date if becoming weekly
@@ -287,6 +323,8 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
                 daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                     checkbox.checked = false; // Uncheck all days if not weekly
                 });
+                weeklyStartDateInput.value = ''; // Clear weekly start date if not weekly
+                weeklyEndDateInput.value = ''; // Clear weekly end date if not weekly
                 eventDateInput.setAttribute('required', 'true'); // Add required back if not weekly
             }
         };
