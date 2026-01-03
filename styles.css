@@ -1,7 +1,17 @@
 body {
-  /* Add styles here! */
-  /*background-color: #0B3B2D;*/
-  background-color: #272757;
+    background-color: #272757;
+    /* Apply the radial gradient to the body */
+    background-image: radial-gradient(circle at center, #3b3b83, #131330);
+    
+    /* This is the key: fixes the background to the viewport */
+    background-attachment: fixed; 
+    
+    /* Ensure the background covers the entire viewport */
+    background-size: cover;
+    background-repeat: no-repeat;
+    
+    /* Optional: sets a minimum height to enable body scrolling if content is short */
+    min-height: 100vh; 
 }
 
 :root {
