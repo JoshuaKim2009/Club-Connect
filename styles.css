@@ -21,6 +21,10 @@ body {
 
 }
 
+input[type="submit"] {
+  font-weight: normal;
+}
+
 #welcomeMessage {
   font-family: var(--primary-font-family);
   font-size: 25px;
