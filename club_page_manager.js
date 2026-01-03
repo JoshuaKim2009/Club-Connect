@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
-            window.location.href = `schedule.html?id=${clubId}`;
+            window.location.href = `schedule.html?clubId=${clubId}`;
         });
     } else {
         console.warn("Element with ID 'viewScheduleButton' not found. Schedule button functionality may be impacted.");
