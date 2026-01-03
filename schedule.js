@@ -152,7 +152,7 @@ onAuthStateChanged(auth, async (user) => {
 function _createEditingCardElement(initialData = {}, isNewEvent = true) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card editing-event-card'; // Add both classes
-    
+    const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     // Generate a temporary unique ID for this new card in the DOM
     // This is useful for linking labels to inputs if you have multiple editing cards.
     const tempDomId = `new-${Date.now()}`;
@@ -165,10 +165,35 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
         </div>
     `;
 
+    const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
+    const weeklyEventCheckboxHtml = `
+        <div class="weekly-event-checkbox">
+            <label>
+                <input type="checkbox" id="edit-is-weekly-${tempDomId}" ${isWeeklyChecked}>
+                Weekly Event
+            </label>
+        </div>
+    `;
+
     const eventDateInputFieldHtml = `
-        <div>
+        <div id="date-input-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'none' : 'block'};">
             <label for="edit-date-${tempDomId}">Event Date:</label>
-            <input type="date" id="edit-date-${tempDomId}" value="${initialData.eventDate || ''}" required>
+            <input type="date" id="edit-date-${tempDomId}" value="${initialData.eventDate || ''}" ${initialData.isWeekly ? 'disabled' : ''} required>
+        </div>
+    `;
+
+    const selectedDays = initialData.daysOfWeek || []; // Ensure this is defined
+    const daysOfWeekCheckboxesHtml = `
+        <div class="days-of-week-selection" id="days-of-week-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
+            <label>Days of Week:</label>
+            <div class="checkbox-group">
+                ${daysOfWeekOptions.map(day => `
+                    <label>
+                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${!initialData.isWeekly ? 'disabled' : ''}>
+                        ${day}
+                    </label>
+                `).join('')}
+            </div>
         </div>
     `;
 
@@ -210,7 +235,9 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
 
     cardDiv.innerHTML = `
         ${eventNameInputFieldHtml}
+        ${weeklyEventCheckboxHtml}
         ${eventDateInputFieldHtml}
+        ${daysOfWeekCheckboxesHtml}
         ${startTimeInputFieldHtml}
         ${endTimeInputFieldHtml}
         ${eventAddressInputFieldHtml}
@@ -231,6 +258,46 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
             <button class="cancel-btn">CANCEL</button>
         </div>
     `;
+
+    const isWeeklyCheckbox = cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`);
+    const dateInputGroup = cardDiv.querySelector(`#date-input-group-${tempDomId}`);
+    const eventDateInput = cardDiv.querySelector(`#edit-date-${tempDomId}`); // The actual date input
+    const daysOfWeekGroup = cardDiv.querySelector(`#days-of-week-group-${tempDomId}`);
+
+    if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup) {
+        // Function to toggle display and disabled states
+        const toggleRecurringFields = () => {
+            const isChecked = isWeeklyCheckbox.checked;
+
+            // Toggle Date Input Group
+            dateInputGroup.style.display = isChecked ? 'none' : 'block';
+            eventDateInput.disabled = isChecked; // Disable actual date input when hidden
+
+            // Toggle Days of Week Group
+            daysOfWeekGroup.style.display = isChecked ? 'block' : 'none';
+            daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.disabled = !isChecked; // Disable checkboxes when hidden
+            });
+
+            // --- Clear relevant fields based on state change for data consistency ---
+            if(isChecked) {
+                eventDateInput.value = ''; // Clear date if becoming weekly
+                eventDateInput.removeAttribute('required'); // Remove required if becoming weekly
+            } else {
+                daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false; // Uncheck all days if not weekly
+                });
+                eventDateInput.setAttribute('required', 'true'); // Add required back if not weekly
+            }
+        };
+
+        // Attach event listener
+        isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
+
+        // Call once on creation to set initial state based on initialData
+        // This ensures the fields are correctly shown/hidden when the card first appears
+        toggleRecurringFields();
+    }
 
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         console.log('SAVE button clicked for new event card:', tempDomId);
@@ -253,15 +320,8 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
 
 
 async function addNewEventEditingCard() {
-    // Basic checks (copied from your base script's onAuthStateChanged logic)
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to add events.");
-        return;
-    }
-
-    // Optional: Prevent multiple "add new event" cards from appearing
-    if (eventsContainer && eventsContainer.querySelector('.editing-event-card[data-is-new-event="true"]')) {
-        await showAppAlert("Please finish or cancel the current new event before adding another.");
         return;
     }
 
@@ -272,10 +332,9 @@ async function addNewEventEditingCard() {
     if (eventsContainer) {
         const header = eventsContainer.querySelector('h3.fancy-label');
         if (header) {
-            header.after(newCardElement); // Insert after the H3 header
+            header.after(newCardElement); 
             if (noEventsMessage) noEventsMessage.style.display = 'none'; // Hide "no events" message
         } else {
-            // Fallback: append if no header is found (less ideal, but safe)
             eventsContainer.appendChild(newCardElement);
         }
     }

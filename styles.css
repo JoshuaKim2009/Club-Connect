@@ -1137,6 +1137,73 @@ input[type="submit"], button {
     font-size: 0.9em;
 }
 
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  padding: 0;
+  vertical-align: middle;
+  border: 3px solid #000000;
+  border-radius: 3px;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #000000;
+}
+
+
+.weekly-event-checkbox {
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.weekly-event-checkbox label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    color: black;
+    cursor: pointer;
+    font-family: var(--primary-font-family, sans-serif);
+}
+
+.days-of-week-selection {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    border: 3px solid #000000;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #ffffff;
+}
+
+.days-of-week-selection > label {
+    font-weight: normal;
+    margin-bottom: 8px;
+    display: block;
+    color: black;
+    font-family: var(--primary-font-family, sans-serif);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    color: #4b5563;
+    cursor: pointer;
+    font-family: var(--primary-font-family, sans-serif);
+}
+
+
+
 .editing-event-card input[type="text"],
 .editing-event-card input[type="date"],
 .editing-event-card input[type="time"],
