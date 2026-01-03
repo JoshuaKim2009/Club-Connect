@@ -4,6 +4,7 @@ body {
     /* The first linear-gradient acts as a mask, the second is your original circle */
     background-image: 
         linear-gradient(to bottom, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
+        linear-gradient(to left, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
         radial-gradient(circle at center, #474799, #131330);
     background-attachment: fixed;
     background-size: cover;
