@@ -106,6 +106,7 @@ input[type="submit"], button {
   width: 300px;
 }
 
+#add-event-button,
 #edit-club-button{
   margin: 0 auto;
   display: block;
@@ -1095,4 +1096,110 @@ input[type="submit"], button {
   border-radius: 8px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Inner shadow for depth */
   color: #555;
+}
+
+
+
+
+
+
+
+
+.event-card {
+    border: 3px solid black;
+    border-radius: 10px;
+    background: linear-gradient(#f0f0f0, #e0e0e0);
+    box-shadow: 0px 6px 0px #000000;
+    padding: 10px;
+    margin: 10px auto;
+    width: calc(100% - 20px);
+    max-width: 600px;
+    text-align: left;
+    font-family: var(--primary-font-family, sans-serif);
+}
+
+.editing-event-card {
+    border: 3px solid #000000;
+    box-shadow: 0px 6px 0px #000000;
+    background: linear-gradient(#f0f0f0, #e0e0e0);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.editing-event-card label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: normal;
+    color: black;
+    font-family: var(--primary-font-family, sans-serif);
+    font-size: 0.9em;
+}
+
+.editing-event-card input[type="text"],
+.editing-event-card input[type="date"],
+.editing-event-card input[type="time"],
+.editing-event-card textarea {
+    width: calc(100% - 20px);
+    padding: 8px;
+    border: 3px solid black;
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: var(--primary-font-family, sans-serif);
+    background-color: #ffffff;
+}
+.editing-event-card input[type="text"]:focus,
+.editing-event-card input[type="date"]:focus,
+.editing-event-card input[type="time"]:focus,
+.editing-event-card textarea:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 0 0 0 1px #000000;
+}
+
+.event-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.event-card-actions button {
+    background: linear-gradient(#FFFFFF, #B3B3B3);
+    font-family: var(--primary-font-family, sans-serif);
+    font-size: 0.9em;
+    color: black;
+    border: 3px solid black;
+    padding: 4px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 4px 0px #000000;
+    transition: all 0.05s ease-in-out;
+}
+
+.event-card-actions button:hover {
+    background: linear-gradient(#E0E0E0, #999999);
+    box-shadow: 0px 2px 0px #000000;
+    transform: translateY(2px);
+}
+
+.event-card-actions button:active {
+    background: #B3B3B3;
+    box-shadow: 0px 0px 0px #000000;
+    transform: translateY(4px);
+}
+
+.no-events-message {
+    color: #777;
+    font-style: italic;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    width: calc(100% - 20px);
+    text-align: center;
+    font-family: var(--primary-font-family, sans-serif);
+    font-size: 1em;
+    margin: 10px auto;
 }

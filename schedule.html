@@ -18,12 +18,19 @@
     
   </head>
   <body>
-    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+    <button id="back-button" class="fancy-button" onclick="goToClubPage()">BACK</button>
     <h1 id="clubScheduleTitle"></h1>
+    <button id="add-event-button" class="fancy-button" style="display: none;">ADD NEW EVENT</button>
 
+    <div id="eventsContainer" class="fancy-black-label">
+        <!-- Event cards will be dynamically loaded here by schedule.js -->
+    </div>
+    
 
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="schedule.js"></script>
   </body>
 </html>
  
+
+
