@@ -1,5 +1,6 @@
 body {
-    background-color: #272757;
+    /* background-color: #272757; */
+    background-color: #131330;
     /* Apply the radial gradient to the body */
     background-image: radial-gradient(circle at center, #3b3b83, #131330);
     
