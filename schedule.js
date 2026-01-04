@@ -465,7 +465,23 @@ async function addNewEventEditingCard() {
     }
 }
 
-
+function formatTime(timeString) {
+    if (!timeString) return 'N/A';
+    try {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const date = new Date(); // Use a dummy date to leverage Date object for formatting
+        date.setHours(hours, minutes);
+        // Use toLocaleTimeString to format, specifying 12-hour format and no seconds
+        return date.toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch (e) {
+        console.error("Error formatting time:", e);
+        return timeString; // Return original if invalid time string
+    }
+}
 
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
@@ -762,11 +778,10 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
     cardDiv.innerHTML = `
         <h3>${eventData.eventName} ${isExcepted ? '<span class="canceled-tag">(CANCELED)</span>' : ''}</h3>
         <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${eventData.startTime} - ${eventData.endTime}</p>
+        <p><strong>Time:</strong> ${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}</p>
         <p><strong>Address:</strong> ${eventData.address}</p>
         <p><strong>Location:</strong> ${eventData.location}</p>
         ${eventData.notes ? `<p><strong>Notes:</strong> ${eventData.notes}</p>` : ''}
-        <p class="event-meta">Created by ${eventData.createdByName} on ${eventData.createdAt ? new Date(eventData.createdAt.toDate()).toLocaleDateString() : 'N/A'}</p>
         ${actionButtonsHtml}
     `;
 
