@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
 
@@ -506,7 +506,8 @@ function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
     try {
-        return new Date(dateString).toLocaleDateString(undefined, options);
+        // NEW/MODIFIED CODE: Explicitly parse the date string as UTC midnight for consistency
+        return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
     } catch (e) {
         return dateString; // Return original if invalid date string
     }
@@ -527,18 +528,15 @@ function formatDaysOfWeek(daysArray) {
  * @param {HTMLElement} cardDiv - The editing event card element.
  */
 async function saveEvent(cardDiv, existingEventId = null) {
-    const tempDomId = cardDiv.dataset.editId; // This might be a temporary DOM ID or an actual Firestore ID
+    const tempDomId = cardDiv.dataset.editId;
     const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
     const isEditingInstance = cardDiv.dataset.isEditingInstance === 'true';
-    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; // <--- CORRECTED KEY
-    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate;
+    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; // ID of the parent recurring event
+    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate; // The specific date of the instance being overridden
 
     // --- Collect Data from Input Fields ---
     const eventName = cardDiv.querySelector(`#edit-name-${tempDomId}`).value.trim();
-    // For editing an instance, the isWeekly checkbox is disabled, so we rely on the original event's isWeekly status
-    // or assume it's a one-time override.
     const isWeekly = isEditingInstance ? false : cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`).checked;
-
 
     let eventDate = '';
     let weeklyStartDate = '';
@@ -562,35 +560,13 @@ async function saveEvent(cardDiv, existingEventId = null) {
 
 
     // --- Basic Validation ---
-    if (!eventName) {
-        await showAppAlert("Event Name is required!");
-        return;
-    }
-    if (!isWeekly && !eventDate) {
-        await showAppAlert("Please provide an Event Date for one-time events.");
-        return;
-    }
-    if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) {
-        await showAppAlert("Weekly events require both a start and end date for recurrence.");
-        return;
-    }
-    if (isWeekly && daysOfWeek.length === 0) {
-        await showAppAlert("Please select at least one day of the week for weekly events.");
-        return;
-    }
-    if (!startTime || !endTime) {
-        await showAppAlert("Start Time and End Time are required.");
-        return;
-    }
-    if (!address) {
-        await showAppAlert("Address is required.");
-        return;
-    }
-    if (!location) {
-        await showAppAlert("Specific Location (e.g., Room 132) is required.");
-        return;
-    }
-    // Add more validation as needed
+    if (!eventName) { await showAppAlert("Event Name is required!"); return; }
+    if (!isWeekly && !eventDate) { await showAppAlert("Please provide an Event Date for one-time events."); return; }
+    if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Weekly events require both a start and end date for recurrence."); return; }
+    if (isWeekly && daysOfWeek.length === 0) { await showAppAlert("Please select at least one day of the week for weekly events."); return; }
+    if (!startTime || !endTime) { await showAppAlert("Start Time and End Time are required."); return; }
+    if (!address) { await showAppAlert("Address is required."); return; }
+    if (!location) { await showAppAlert("Specific Location (e.g., Room 132) is required."); return; }
 
 
     // --- Prepare Event Data Object ---
@@ -605,12 +581,10 @@ async function saveEvent(cardDiv, existingEventId = null) {
         ...(isWeekly ? { weeklyStartDate, weeklyEndDate, daysOfWeek } : { eventDate }),
     };
 
-    // Add/Update creator info and timestamp only for new events
-    if (isNewEvent || isEditingInstance) { // An instance override is essentially a new event
-        eventDataToSave.createdAt = serverTimestamp();
-        eventDataToSave.createdByUid = currentUser.uid;
-        eventDataToSave.createdByName = currentUser.displayName || "Anonymous";
-    }
+    // Add/Update creator info and timestamp
+    eventDataToSave.createdAt = serverTimestamp(); // Always set on creation or override
+    eventDataToSave.createdByUid = currentUser.uid;
+    eventDataToSave.createdByName = currentUser.displayName || "Anonymous";
 
     try {
         const eventsRef = collection(db, "clubs", clubId, "events");
@@ -618,7 +592,8 @@ async function saveEvent(cardDiv, existingEventId = null) {
         if (isEditingInstance) {
             // Case 1: Editing a specific instance of a weekly event
             // This creates a new one-time event that overrides the weekly instance.
-            // First, add the original occurrence date to the exceptions of the parent weekly event.
+
+            // 1. Add the original occurrence date to the exceptions of the parent weekly event.
             if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
                 const parentEventDocRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
                 await updateDoc(parentEventDocRef, {
@@ -627,26 +602,52 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 console.log(`Original instance ${originalOccurrenceDateForInstance} added to exceptions for event ${originalEventIdForInstance}`);
             }
 
-            // Then, add the new one-time event (the override)
+            // 2. Add the new one-time event (the override)
             const overrideEventData = {
                 ...eventDataToSave,
-                parentRecurringEventId: originalEventIdForInstance // <--- ADD THIS LINE
+                parentRecurringEventId: originalEventIdForInstance // Link to the original recurring series
             };
-            await addDoc(eventsRef, overrideEventData); // <--- Use overrideEventData
+            const newOverrideEventRef = await addDoc(eventsRef, overrideEventData); // Get ref to the new document
+            const newOverrideEventId = newOverrideEventRef.id; // Get the ID of the newly created override event
+
+            // 3. Transfer RSVPs from the original occurrence to the new override event
+            if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
+                const rsvpsToTransferQuery = query(
+                    collection(db, "occurrenceRsvps"),
+                    where("eventId", "==", originalEventIdForInstance),
+                    where("occurrenceDate", "==", originalOccurrenceDateForInstance)
+                );
+                const rsvpsToTransferSnap = await getDocs(rsvpsToTransferQuery);
+
+                if (!rsvpsToTransferSnap.empty) {
+                    const rsvpBatch = writeBatch(db);
+                    rsvpsToTransferSnap.forEach((rsvpDoc) => {
+                        // Create a new RSVP doc ID for the new override event
+                        const newRsvpDocId = `${newOverrideEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
+                        const newRsvpDocRef = doc(db, "occurrenceRsvps", newRsvpDocId);
+
+                        // Copy existing RSVP data, updating eventId to the new override event's ID
+                        const newRsvpData = { ...rsvpDoc.data(), eventId: newOverrideEventId };
+                        rsvpBatch.set(newRsvpDocRef, newRsvpData); // Create the new RSVP document
+                        rsvpBatch.delete(rsvpDoc.ref); // Delete the old RSVP document
+                    });
+                    await rsvpBatch.commit();
+                    console.log(`Transferred ${rsvpsToTransferSnap.size} RSVPs to new override event ${newOverrideEventId}.`);
+                }
+            }
             await showAppAlert("Event updated successfully!");
 
         } else if (existingEventId) {
             // Case 2: Updating an existing full event (one-time or weekly series)
             const eventDocRef = doc(eventsRef, existingEventId);
-            // Fetch the existing document to preserve any exceptions array
             const existingDocSnap = await getDoc(eventDocRef);
             if (existingDocSnap.exists()) {
                 const existingData = existingDocSnap.data();
-                // Merge new data with existing data, ensuring 'exceptions' (and potentially other unedited fields) are preserved
+                // Preserve existing exceptions and any RSVPs if they were on the event document (which they shouldn't be now)
                 const updatedData = {
                     ...eventDataToSave,
-                    exceptions: existingData.exceptions || [] // Preserve existing exceptions
-                    // You might also want to preserve other fields not explicitly in eventDataToSave here
+                    exceptions: existingData.exceptions || [],
+                    // Any other fields you want to preserve during update
                 };
                 await updateDoc(eventDocRef, updatedData);
                 await showAppAlert("Event updated successfully!");
@@ -727,6 +728,7 @@ async function fetchAndDisplayEvents() {
                 // One-time events don't typically have 'exceptions' but this ensures consistency
                 const eventDateString = new Date(eventData.eventDate).toISOString().split('T')[0];
                 if (!exceptions.includes(eventDateString)) { // This check is mostly for robustness, should rarely be true for one-time
+                    // FIX: Changed allPossibleOccurrences.push to allEventOccurrences.push
                     allEventOccurrences.push({
                         eventData: eventData,
                         occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'), // Force UTC midnight for one-time too
@@ -736,8 +738,12 @@ async function fetchAndDisplayEvents() {
             }
         });
 
-        // Sort all occurrences chronologically for display
-        allEventOccurrences.sort((a, b) => a.occurrenceDate.getTime() - b.occurrenceDate.getTime());
+        // MODIFIED CODE: Sort all occurrences chronologically, first by date, then by time
+        allEventOccurrences.sort((a, b) => {
+            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
+            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
+            return dateTimeA - dateTimeB;
+        });
 
         if (allEventOccurrences.length === 0) {
             console.log("No events found for this club.");
@@ -801,11 +807,14 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                 `;
             }
         } else {
-            // For one-time events, offer standard Edit/Delete
+            // For one-time events or instances that are overrides of a recurring event
             actionButtonsHtml = `
                 <div class="event-card-actions">
-                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT</button>
-                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE</button>
+                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT INSTANCE</button>
+                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE INSTANCE</button>
+                    ${eventData.parentRecurringEventId ? `
+                        <button class="delete-parent-series-btn" data-parent-event-id="${eventData.parentRecurringEventId}">DELETE SERIES</button>
+                    ` : ''}
                 </div>
             `;
         }
@@ -824,9 +833,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             <div class="rsvp-box"> 
                 <h4>Your Availability:</h4>
                 <div class="rsvp-buttons">
-                    <button class="rsvp-button" data-status="YES" data-event-id="${originalEventId}">YES</button>
-                    <button class="rsvp-button" data-status="MAYBE" data-event-id="${originalEventId}">MAYBE</button>
-                    <button class="rsvp-button" data-status="NO" data-event-id="${originalEventId}">NO</button>
+                    <button class="rsvp-button" data-status="YES" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">YES</button>
+                    <button class="rsvp-button" data-status="MAYBE" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">MAYBE</button>
+                    <button class="rsvp-button" data-status="NO" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">NO</button>
                 </div>
             </div> 
         </div>
@@ -841,13 +850,14 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
     rsvpButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const eventId = e.target.dataset.eventId;
+            const occurrenceDate = e.target.dataset.occurrenceDate; // <--- Get occurrenceDate from button
             const status = e.target.dataset.status;
-            saveRsvpStatus(eventId, status);
+            saveRsvpStatus(eventId, occurrenceDate, status); // <--- Pass occurrenceDate
         });
     });
 
     // Call fetchAndSetUserRsvp for this event to highlight current status on load
-    fetchAndSetUserRsvp(originalEventId);
+    fetchAndSetUserRsvp(originalEventId, occurrenceDateString);
 
     // Attach event listeners for edit/delete buttons
     if (canEditDelete) {
@@ -892,15 +902,89 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         }
     }
 
+    const deleteParentSeriesBtn = cardDiv.querySelector('.delete-parent-series-btn');
+    if (deleteParentSeriesBtn) {
+        deleteParentSeriesBtn.addEventListener('click', (e) => {
+            const parentEventId = e.target.dataset.parentEventId;
+            deleteEntireSeriesAndOverrides(parentEventId);
+        });
+    }
+
     return cardDiv;
 }
 
+async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
+    if (!parentEventIdToDelete) {
+        await showAppAlert("Error: No parent series ID provided for deletion.");
+        return;
+    }
+
+    const confirmed = await showAppConfirm("Are you sure you want to delete this ENTIRE EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.");
+    if (!confirmed) {
+        console.log("Series and overrides deletion cancelled by user.");
+        return;
+    }
+
+    const batch = writeBatch(db);
+    let deletedCount = 0;
+
+    try {
+        // 1. Delete the main recurring event document
+        const mainEventRef = doc(db, "clubs", clubId, "events", parentEventIdToDelete);
+        batch.delete(mainEventRef);
+        deletedCount++;
+        console.log(`Marked main recurring event ${parentEventIdToDelete} for deletion.`);
+
+        // 2. Find and delete all override events linked to this parent series
+        const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", parentEventIdToDelete));
+        const overridesSnap = await getDocs(overridesQuery);
+        overridesSnap.forEach((overrideDoc) => {
+            batch.delete(overrideDoc.ref);
+            deletedCount++;
+            console.log(`Marked override event ${overrideDoc.id} for deletion.`);
+        });
+
+        // 3. Find and delete all RSVPs associated with the main series
+        // (If RSVPs were stored with originalEventId as the parent series ID)
+        // NOTE: Our current RSVP system uses `originalEventId` + `occurrenceDateString` + `userId` as the document ID for `occurrenceRsvps`.
+        // So, we need to query based on the `eventId` field within `occurrenceRsvps`.
+
+        const rsvpsQueryForMainSeries = query(collection(db, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
+        const rsvpsSnapForMainSeries = await getDocs(rsvpsQueryForMainSeries);
+        rsvpsSnapForMainSeries.forEach((rsvpDoc) => {
+            batch.delete(rsvpDoc.ref);
+            console.log(`Marked RSVP ${rsvpDoc.id} for main series for deletion.`);
+        });
+
+        // 4. Find and delete all RSVPs associated with each override event
+        // This requires getting the IDs of all override events first
+        const overrideEventIds = overridesSnap.docs.map(doc => doc.id);
+        if (overrideEventIds.length > 0) {
+            // Firestore 'in' query limited to 10. If more, you'd need multiple queries or a different approach.
+            const rsvpsQueryForOverrides = query(collection(db, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
+            const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
+            rsvpsSnapForOverrides.forEach((rsvpDoc) => {
+                batch.delete(rsvpDoc.ref);
+                console.log(`Marked RSVP ${rsvpDoc.id} for override event for deletion.`);
+            });
+        }
+
+
+        await batch.commit();
+        //await showAppAlert(`Successfully deleted the recurring series and ${deletedCount - 1} associated overrides and all their RSVPs!`);
+        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+
+    } catch (error) {
+        console.error("Error deleting entire series and overrides:", error);
+        await showAppAlert("Failed to delete the series and its overrides: " + error.message);
+    }
+}
 
 async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) { // <--- ADDED skipConfirm PARAMETER
     if (!skipConfirm) { // Only show confirm if skipConfirm is false
         let confirmMessage;
         if (isWeeklyEvent) {
-            confirmMessage = "Are you sure you want to delete this ENTIRE RECURRING EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.";
+            confirmMessage = "Are you sure you want to delete this ENTIRE EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.";
         } else {
             confirmMessage = "Are you sure you want to delete this event? This action cannot be undone.";
         }
@@ -915,23 +999,46 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
     // The rest of the try/catch block remains the same, executing the deletion
     try {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
+        const eventSnap = await getDoc(eventDocRef); // Fetch to check if it's weekly
+        const eventData = eventSnap.exists() ? eventSnap.data() : null;
 
-        // --- If deleting a recurring series, also delete its instance overrides ---
-        if (isWeeklyEvent) {
+        const batch = writeBatch(db); // Use a batch for multiple deletes
+        batch.delete(eventDocRef); // Mark the main event document for deletion
+
+        // --- Delete RSVPs for the event itself ---
+        const rsvpsQueryForEvent = query(collection(db, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
+        const rsvpsSnapForEvent = await getDocs(rsvpsQueryForEvent);
+        rsvpsSnapForEvent.forEach((rsvpDoc) => {
+            batch.delete(rsvpDoc.ref);
+            console.log(`Marked RSVP ${rsvpDoc.id} for event ${eventIdToDelete} for deletion.`);
+        });
+
+        // --- If deleting a recurring series, also delete its instance overrides and their RSVPs ---
+        if (eventData && eventData.isWeekly) {
             console.log(`Deleting all instance overrides for recurring event series: ${eventIdToDelete}`);
             const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", eventIdToDelete));
             const overridesSnap = await getDocs(overridesQuery);
-            const deleteOverridesPromises = [];
+            const overrideEventIds = overridesSnap.docs.map(doc => doc.id); // Collect override IDs
+
             overridesSnap.forEach((overrideDoc) => {
-                deleteOverridesPromises.push(deleteDoc(overrideDoc.ref));
+                batch.delete(overrideDoc.ref);
             });
-            await Promise.all(deleteOverridesPromises);
+
+            // Also delete RSVPs for these overrides
+            if (overrideEventIds.length > 0) {
+                const rsvpsQueryForOverrides = query(collection(db, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
+                const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
+                rsvpsSnapForOverrides.forEach((rsvpDoc) => {
+                    batch.delete(rsvpDoc.ref);
+                    console.log(`Marked RSVP ${rsvpDoc.id} for override event for deletion.`);
+                });
+            }
             console.log(`Deleted ${overridesSnap.size} instance overrides for event series ${eventIdToDelete}.`);
         }
 
-        await deleteDoc(eventDocRef); // Delete the main event document
+        await batch.commit(); // Commit all deletions in a single batch
 
-        if (!skipConfirm) { // Only show this alert if it wasn't an auto-delete
+        if (!skipConfirm) {
             await showAppAlert("Event deleted successfully!");
         }
         await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
@@ -1116,70 +1223,49 @@ async function cleanUpEmptyRecurringEvents() {
 }
 
 
-async function saveRsvpStatus(eventId, status) {
+async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { // Added occurrenceDateString
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to RSVP.");
         return;
     }
 
     try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
         const userUid = currentUser.uid;
+        // Create a unique document ID for this specific user's RSVP for this specific occurrence
+        const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
+        const rsvpDocRef = doc(db, "occurrenceRsvps", rsvpDocId);
 
-        // First, get the current state of the event to determine user's existing RSVP
-        const eventSnap = await getDoc(eventDocRef);
-        let currentRsvpStatus = null; // To store if user is already YES/MAYBE/NO
+        // Fetch the existing RSVP for this occurrence, if any
+        const rsvpSnap = await getDoc(rsvpDocRef);
+        let currentRsvpStatus = rsvpSnap.exists() ? rsvpSnap.data().status : null;
 
-        if (eventSnap.exists()) {
-            const eventData = eventSnap.data();
-            if (eventData.rsvpsYes && eventData.rsvpsYes.includes(userUid)) {
-                currentRsvpStatus = 'YES';
-            } else if (eventData.rsvpsMaybe && eventData.rsvpsMaybe.includes(userUid)) {
-                currentRsvpStatus = 'MAYBE';
-            } else if (eventData.rsvpsNo && eventData.rsvpsNo.includes(userUid)) {
-                currentRsvpStatus = 'NO';
-            }
-        }
-
-        const updateData = {};
         let newRsvpStatus = null; // What the UI should show after the operation
+        const rsvpDataToSave = {
+            eventId: originalEventId,
+            occurrenceDate: occurrenceDateString,
+            userId: userUid,
+            userName: currentUser.displayName || "Anonymous User",
+            timestamp: serverTimestamp(),
+            clubId: clubId,
+        };
 
         if (currentRsvpStatus === status) {
             // User clicked on the status they are already selected for -> REMOVE RSVP
-            if (status === 'YES') {
-                updateData.rsvpsYes = arrayRemove(userUid);
-            } else if (status === 'MAYBE') {
-                updateData.rsvpsMaybe = arrayRemove(userUid);
-            } else if (status === 'NO') {
-                updateData.rsvpsNo = arrayRemove(userUid);
-            }
-            await updateDoc(eventDocRef, updateData);
-            console.log(`User ${userUid} removed RSVP for event ${eventId}.`);
-            //await showAppAlert(`Your RSVP has been removed for this event.`);
+            await deleteDoc(rsvpDocRef);
+            console.log(`User ${userUid} removed RSVP for event ${originalEventId} on ${occurrenceDateString}.`);
+            //await showAppAlert(`Your RSVP has been removed for the event on ${formatDate(occurrenceDateString)}.`);
             newRsvpStatus = null; // No status selected
         } else {
-            // User clicked a different status or was not RSVP'd -> CHANGE/SET RSVP
-            // Atomically remove the user's UID from all three lists first
-            updateData.rsvpsYes = arrayRemove(userUid);
-            updateData.rsvpsMaybe = arrayRemove(userUid);
-            updateData.rsvpsNo = arrayRemove(userUid);
-
-            // Then, add the user's UID to the chosen list
-            if (status === 'YES') {
-                updateData.rsvpsYes = arrayUnion(userUid);
-            } else if (status === 'MAYBE') {
-                updateData.rsvpsMaybe = arrayUnion(userUid);
-            } else if (status === 'NO') {
-                updateData.rsvpsNo = arrayUnion(userUid);
-            }
-            await updateDoc(eventDocRef, updateData);
-            console.log(`User ${userUid} RSVP'd ${status} for event ${eventId}.`);
-            //await showAppAlert(`Your RSVP (${status}) has been saved for this event.`);
+            // User clicked a different status or was not RSVP'd -> SET/CHANGE RSVP
+            rsvpDataToSave.status = status;
+            await setDoc(rsvpDocRef, rsvpDataToSave); // Use setDoc to create or overwrite the RSVP document
+            console.log(`User ${userUid} RSVP'd ${status} for event ${originalEventId} on ${occurrenceDateString}.`);
+            //await showAppAlert(`Your RSVP (${status}) has been saved for the event on ${formatDate(occurrenceDateString)}.`);
             newRsvpStatus = status; // This status is now selected
         }
 
-        // Update the UI for all event cards related to this eventId
-        updateRsvpButtonsUI(eventId, newRsvpStatus);
+        // Update the UI for only the specific event occurrence card
+        updateRsvpButtonsUI(originalEventId, occurrenceDateString, newRsvpStatus);
 
     } catch (error) {
         console.error("Error saving RSVP status:", error);
@@ -1188,53 +1274,48 @@ async function saveRsvpStatus(eventId, status) {
 }
 
 
-function updateRsvpButtonsUI(eventId, currentStatus) {
-    // Find all event cards related to this eventId (for weekly events, they share the same ID)
-    const eventCards = document.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`);
-    eventCards.forEach(card => {
-        const rsvpButtons = card.querySelectorAll('.rsvp-button');
-        rsvpButtons.forEach(button => {
-            if (button.dataset.status === currentStatus) {
-                button.classList.add('selected-rsvp');
-            } else {
-                button.classList.remove('selected-rsvp');
-            }
-        });
+function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) { // Added occurrenceDateString
+    // Find the specific event occurrence card in the DOM
+    const card = document.querySelector(`.event-card[data-original-event-id="${originalEventId}"][data-occurrence-date="${occurrenceDateString}"]`);
+    if (!card) {
+        console.warn(`Could not find card for event ${originalEventId} on ${occurrenceDateString} to update RSVP UI.`);
+        return;
+    }
+
+    const rsvpButtons = card.querySelectorAll('.rsvp-button');
+    rsvpButtons.forEach(button => {
+        if (button.dataset.status === currentStatus) {
+            button.classList.add('selected-rsvp');
+        } else {
+            button.classList.remove('selected-rsvp');
+        }
     });
 }
 
 
-async function fetchAndSetUserRsvp(eventId) {
+async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // Added occurrenceDateString
     if (!currentUser || !clubId) {
         return;
     }
 
     try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-        const eventSnap = await getDoc(eventDocRef);
+        const userUid = currentUser.uid;
+        const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
+        const rsvpDocRef = doc(db, "occurrenceRsvps", rsvpDocId);
+        const rsvpSnap = await getDoc(rsvpDocRef);
 
-        if (eventSnap.exists()) {
-            const eventData = eventSnap.data();
-            const userUid = currentUser.uid;
+        let currentRsvpStatus = null; // Default to no status selected
 
-            // Check which list the current user's UID is in
-            if (eventData.rsvpsYes && eventData.rsvpsYes.includes(userUid)) {
-                updateRsvpButtonsUI(eventId, 'YES');
-            } else if (eventData.rsvpsMaybe && eventData.rsvpsMaybe.includes(userUid)) {
-                updateRsvpButtonsUI(eventId, 'MAYBE');
-            } else if (eventData.rsvpsNo && eventData.rsvpsNo.includes(userUid)) {
-                updateRsvpButtonsUI(eventId, 'NO');
-            } else {
-                // IMPORTANT: If user's UID is not found in any list, clear selection.
-                updateRsvpButtonsUI(eventId, null);
-            }
-        } else {
-            // Event doesn't exist, ensure no buttons are selected
-            updateRsvpButtonsUI(eventId, null);
+        if (rsvpSnap.exists()) {
+            currentRsvpStatus = rsvpSnap.data().status;
         }
+        
+        // Update the UI for only the specific event occurrence card
+        updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentRsvpStatus);
+        
     } catch (error) {
-        console.error("Error fetching user RSVP status:", error);
-        // On error, also ensure no buttons are selected
-        updateRsvpButtonsUI(eventId, null);
+        console.error("Error fetching user RSVP status for occurrence:", error);
+        // On error, ensure no buttons are selected for this specific occurrence
+        updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
     }
 }

@@ -826,7 +826,6 @@ function formatDate(dateString) {
 }
 
 
-
 async function fetchAndDisplayUpcomingEvent(currentClubId) {
     const closestEventDisplay = document.getElementById('closestEventDisplay'); // Match your HTML ID
     if (!closestEventDisplay) {
@@ -837,6 +836,8 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
     const now = new Date(); // Current date and time in local timezone
+    // NEW CODE: Create a UTC version of 'now' for consistent comparison
+    const nowUTC = new Date(now.toISOString());
     const todayUTCString = now.toISOString().split('T')[0]; // Current date as YYYY-MM-DD UTC
 
     try {
@@ -893,7 +894,8 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
         for (const occ of allPossibleOccurrences) {
             const eventDateTimeString = occ.occurrenceDate.toISOString().split('T')[0] + 'T' + occ.eventData.startTime + ':00Z';
             const eventDateTime = new Date(eventDateTimeString);
-            if (eventDateTime.getTime() >= now.getTime()) { // Compare actual date AND time with current local time
+            // MODIFIED CODE: Compare event date/time against the UTC current time for accuracy
+            if (eventDateTime.getTime() >= nowUTC.getTime()) {
                 nextEvent = occ;
                 break;
             }
