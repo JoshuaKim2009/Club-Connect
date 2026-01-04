@@ -1096,6 +1096,7 @@ input[type="submit"], button {
   border-radius: 8px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Inner shadow for depth */
   color: #555;
+  font-size: 20px;
 }
 
 
