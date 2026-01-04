@@ -341,7 +341,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         console.log('SAVE button clicked for new event card:', tempDomId);
         // You'll add Firebase saving logic here later
-        //await saveEvent(cardDiv);
+        await saveEvent(cardDiv);
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         console.log('CANCEL button clicked for new event card:', tempDomId);
