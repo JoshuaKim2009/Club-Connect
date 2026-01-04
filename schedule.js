@@ -103,6 +103,7 @@ onAuthStateChanged(auth, async (user) => {
                     currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
                     console.log(`User ${currentUser.uid} role for club ${clubId}: ${currentUserRole}`);
 
+                    await fetchAndDisplayEvents(); 
                     
                     if (addEventButton) {
                         if (currentUserRole === 'manager' || currentUserRole === 'admin') {
@@ -340,7 +341,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         console.log('SAVE button clicked for new event card:', tempDomId);
         // You'll add Firebase saving logic here later
-        await showAppAlert("Save functionality not yet implemented!");
+        //await saveEvent(cardDiv);
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         console.log('CANCEL button clicked for new event card:', tempDomId);
@@ -376,4 +377,144 @@ async function addNewEventEditingCard() {
             eventsContainer.appendChild(newCardElement);
         }
     }
+}
+
+
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    try {
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    } catch (e) {
+        return dateString; // Return original if invalid date string
+    }
+}
+
+// Helper to format days of week for display (assuming you have this, if not, add it)
+function formatDaysOfWeek(daysArray) {
+    if (!daysArray || daysArray.length === 0) return 'N/A';
+    const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; // Define order
+    return daysArray.sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b)).join(', ');
+}
+
+
+/**
+ * Saves a new event to Firestore.
+ * This function is designed to be called when the "SAVE" button on an editing card is clicked.
+ * It currently only handles NEW events.
+ * @param {HTMLElement} cardDiv - The editing event card element.
+ */
+async function saveEvent(cardDiv) {
+    // For now, we only handle new events, so eventId will be the temporary DOM ID
+    const eventId = cardDiv.dataset.tempId; // This is a temporary DOM ID, not a Firestore Doc ID yet
+    const isNewEvent = cardDiv.dataset.isNewEvent === 'true'; // This should always be true for now
+
+    // --- Collect Data from Input Fields ---
+    const eventName = cardDiv.querySelector(`#edit-name-${eventId}`).value.trim();
+    const isWeekly = cardDiv.querySelector(`#edit-is-weekly-${eventId}`).checked;
+
+    let eventDate = '';
+    let weeklyStartDate = '';
+    let weeklyEndDate = '';
+    let daysOfWeek = [];
+
+    if (isWeekly) {
+        // For weekly events, collect start/end dates for recurrence and selected days
+        weeklyStartDate = cardDiv.querySelector(`#edit-weekly-start-date-${eventId}`).value;
+        weeklyEndDate = cardDiv.querySelector(`#edit-weekly-end-date-${eventId}`).value;
+        const selectedDaysCheckboxes = cardDiv.querySelectorAll(`#days-of-week-group-${eventId} input[type="checkbox"]:checked`);
+        daysOfWeek = Array.from(selectedDaysCheckboxes).map(cb => cb.value);
+    } else {
+        // For one-time events, collect the single event date
+        eventDate = cardDiv.querySelector(`#edit-date-${eventId}`).value;
+    }
+
+    const startTime = cardDiv.querySelector(`#edit-start-time-${eventId}`).value;
+    const endTime = cardDiv.querySelector(`#edit-end-time-${eventId}`).value;
+    const address = cardDiv.querySelector(`#edit-address-${eventId}`).value.trim();
+    const location = cardDiv.querySelector(`#edit-location-${eventId}`).value.trim();
+    const notes = cardDiv.querySelector(`#edit-notes-${eventId}`).value.trim();
+
+
+    // --- Basic Validation ---
+    if (!eventName) {
+        await showAppAlert("Event Name is required!");
+        return;
+    }
+    if (!isWeekly && !eventDate) {
+        await showAppAlert("Please provide an Event Date for one-time events.");
+        return;
+    }
+    if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) {
+        await showAppAlert("Weekly events require both a start and end date for recurrence.");
+        return;
+    }
+    if (isWeekly && daysOfWeek.length === 0) {
+        await showAppAlert("Please select at least one day of the week for weekly events.");
+        return;
+    }
+    if (!startTime || !endTime) {
+        await showAppAlert("Start Time and End Time are required.");
+        return;
+    }
+    if (!address) {
+        await showAppAlert("Address is required.");
+        return;
+    }
+    if (!location) {
+        await showAppAlert("Specific Location (e.g., Room 132) is required.");
+        return;
+    }
+    // Add more validation as needed (e.g., end time after start time, end date after start date)
+
+
+    // --- Prepare Event Data Object ---
+    const eventDataToSave = {
+        eventName,
+        isWeekly,
+        startTime,
+        endTime,
+        address,
+        location,
+        notes,
+        // Conditionally add date/recurrence fields
+        ...(isWeekly ? { weeklyStartDate, weeklyEndDate, daysOfWeek } : { eventDate }),
+        // Add creator info and timestamp
+        createdAt: serverTimestamp(),
+        createdByUid: currentUser.uid,
+        createdByName: currentUser.displayName || "Anonymous"
+    };
+
+    try {
+        // --- Add New Event to Firestore ---
+        const eventsRef = collection(db, "clubs", clubId, "events");
+        await addDoc(eventsRef, eventDataToSave);
+        
+        await showAppAlert("New event added successfully!");
+        cardDiv.remove(); // Remove the editing card after saving
+
+        // Refresh the entire list of events to show the new event in display mode
+        // This will be fully implemented later. For now, it just logs.
+        await fetchAndDisplayEvents();
+
+    } catch (error) {
+        console.error("Error saving event:", error);
+        await showAppAlert("Failed to save event: " + error.message);
+    }
+}
+
+
+
+async function fetchAndDisplayEvents() {
+    console.log("Fetching and displaying events... (function not yet fully implemented)");
+    // For now, if eventsContainer is empty, show the noEventsMessage
+    if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
+        noEventsMessage.style.display = 'block';
+    } else if (eventsContainer && noEventsMessage) {
+        // If there are cards (possibly just the editing one), hide the no events message
+        noEventsMessage.style.display = 'none';
+    }
+    // You'll implement the actual Firestore fetching and rendering logic here.
+    // When this is fully implemented, it will clear the eventsContainer and re-render everything.
 }
