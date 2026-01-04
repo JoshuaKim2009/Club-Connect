@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
 
@@ -103,6 +103,8 @@ onAuthStateChanged(auth, async (user) => {
                     // Fetch current user's role for this club
                     currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
                     console.log(`User ${currentUser.uid} role for club ${clubId}: ${currentUserRole}`);
+
+                    await cleanUpEmptyRecurringEvents();
 
                     await fetchAndDisplayEvents(); 
                     
@@ -609,14 +611,32 @@ async function saveEvent(cardDiv, existingEventId = null) {
             }
 
             // Then, add the new one-time event (the override)
-            await addDoc(eventsRef, eventDataToSave);
-            await showAppAlert("Event instance override saved successfully!");
+            const overrideEventData = {
+                ...eventDataToSave,
+                parentRecurringEventId: originalEventIdForInstance // <--- ADD THIS LINE
+            };
+            await addDoc(eventsRef, overrideEventData); // <--- Use overrideEventData
+            await showAppAlert("Event updated successfully!");
 
         } else if (existingEventId) {
             // Case 2: Updating an existing full event (one-time or weekly series)
             const eventDocRef = doc(eventsRef, existingEventId);
-            await updateDoc(eventDocRef, eventDataToSave);
-            await showAppAlert("Event updated successfully!");
+            // Fetch the existing document to preserve any exceptions array
+            const existingDocSnap = await getDoc(eventDocRef);
+            if (existingDocSnap.exists()) {
+                const existingData = existingDocSnap.data();
+                // Merge new data with existing data, ensuring 'exceptions' (and potentially other unedited fields) are preserved
+                const updatedData = {
+                    ...eventDataToSave,
+                    exceptions: existingData.exceptions || [] // Preserve existing exceptions
+                    // You might also want to preserve other fields not explicitly in eventDataToSave here
+                };
+                await updateDoc(eventDocRef, updatedData);
+                await showAppAlert("Event updated successfully!");
+            } else {
+                console.error("Error: Attempted to update non-existent event document:", existingEventId);
+                await showAppAlert("Failed to update event: Original event not found.");
+            }
         } else {
             // Case 3: Adding a brand new event
             await addDoc(eventsRef, eventDataToSave);
@@ -851,8 +871,22 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
     // The rest of the try/catch block remains the same, executing the deletion
     try {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
-        await deleteDoc(eventDocRef);
-        // We will show a more specific alert message in cancelSingleOccurrence if it's auto-deleted
+
+        // --- If deleting a recurring series, also delete its instance overrides ---
+        if (isWeeklyEvent) {
+            console.log(`Deleting all instance overrides for recurring event series: ${eventIdToDelete}`);
+            const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", eventIdToDelete));
+            const overridesSnap = await getDocs(overridesQuery);
+            const deleteOverridesPromises = [];
+            overridesSnap.forEach((overrideDoc) => {
+                deleteOverridesPromises.push(deleteDoc(overrideDoc.ref));
+            });
+            await Promise.all(deleteOverridesPromises);
+            console.log(`Deleted ${overridesSnap.size} instance overrides for event series ${eventIdToDelete}.`);
+        }
+
+        await deleteDoc(eventDocRef); // Delete the main event document
+
         if (!skipConfirm) { // Only show this alert if it wasn't an auto-delete
             await showAppAlert("Event deleted successfully!");
         }
@@ -947,5 +981,92 @@ async function editEvent(eventId, occurrenceDateString = null) {
     } catch (error) {
         console.error("Error initiating event edit:", error);
         await showAppAlert("Failed to start event edit: " + error.message);
+    }
+}
+
+
+
+
+
+function calculateActiveOccurrences(eventData, exceptions) {
+    if (!eventData.isWeekly) {
+        // One-time events are either active (if no exceptions) or not.
+        // This function is primarily for calculating remaining instances of recurring events.
+        return (exceptions && exceptions.includes(eventData.eventDate)) ? 0 : 1;
+    }
+
+    let activeCount = 0;
+    const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+    const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+    const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+    let currentDate = new Date(startDate);
+    while (currentDate.getTime() <= endDate.getTime()) {
+        const currentOccDateString = currentDate.toISOString().split('T')[0];
+        if (daysToMatch.includes(currentDate.getUTCDay()) && !(exceptions && exceptions.includes(currentOccDateString))) {
+            activeCount++;
+        }
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+    return activeCount;
+}
+
+
+async function cleanUpEmptyRecurringEvents() {
+    console.log("Running cleanup for empty recurring events and orphaned overrides...");
+    if (!clubId) {
+        console.warn("Cleanup function called without a clubId.");
+        return;
+    }
+
+    const eventsRef = collection(db, "clubs", clubId, "events");
+    const batch = writeBatch(db);
+    let cleanedUpCount = 0;
+
+    try {
+        const querySnapshot = await getDocs(eventsRef);
+        const recurringEventIds = new Set(); // Store IDs of actual recurring events
+
+        // First pass: Identify all active recurring event IDs
+        querySnapshot.forEach(doc => {
+            const eventData = doc.data();
+            if (eventData.isWeekly) {
+                recurringEventIds.add(doc.id);
+            }
+        });
+
+        // Second pass: Check for empty recurring events and orphaned overrides
+        querySnapshot.forEach(doc => {
+            const eventData = doc.data();
+            const eventId = doc.id;
+
+            if (eventData.isWeekly) {
+                // Check if this recurring event has zero active instances remaining
+                const activeOccurrences = calculateActiveOccurrences(eventData, eventData.exceptions);
+                if (activeOccurrences === 0) {
+                    console.log(`Found empty recurring event: ${eventData.eventName} (ID: ${eventId}). Marking for deletion.`);
+                    batch.delete(doc.ref);
+                    cleanedUpCount++;
+                }
+            } else if (eventData.parentRecurringEventId) {
+                // This is an instance override. Check if its parent recurring event still exists.
+                if (!recurringEventIds.has(eventData.parentRecurringEventId)) {
+                    console.log(`Found orphaned instance override: ${eventData.eventName} (ID: ${eventId}) with parent ${eventData.parentRecurringEventId}. Marking for deletion.`);
+                    batch.delete(doc.ref);
+                    cleanedUpCount++;
+                }
+            }
+        });
+
+        if (cleanedUpCount > 0) {
+            await batch.commit();
+            console.log(`Cleanup complete. Deleted ${cleanedUpCount} empty events/orphaned overrides.`);
+            // No need to fetchAndDisplayEvents here, as it will be called by the main flow.
+        } else {
+            console.log("No empty events or orphaned overrides found for cleanup.");
+        }
+
+    } catch (error) {
+        console.error("Error during empty event cleanup:", error);
     }
 }
