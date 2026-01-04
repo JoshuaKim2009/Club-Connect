@@ -71,12 +71,29 @@ async function getMemberRoleForClub(clubID, memberUid) {
 // IMPORTANT: This uses 'clubId' to retrieve the ID from schedule.html's URL,
 //            and then passes it as 'id' to club_page_manager.html.
 window.goToClubPage = function() {
-    const currentClubId = getUrlParameter('clubId'); // Get the clubId from *this* page's URL (schedule.html)
+    const currentClubId = getUrlParameter('clubId');
+    const returnToPage = getUrlParameter('returnTo'); // <--- NEW: Get the returnTo parameter from the URL
+
+    console.log("goToClubPage: clubId = ", currentClubId);
+    console.log("goToClubPage: returnToPage = ", returnToPage); // <--- Add this log to debug
+
     if (currentClubId) {
-        // Pass it back to club_page_manager.html using the 'id' parameter name
-        window.location.href = `club_page_manager.html?id=${currentClubId}`;
+        let redirectUrl = 'your_clubs.html'; // Default fallback if something goes wrong
+
+        if (returnToPage === 'manager') {
+            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
+        } else if (returnToPage === 'member') {
+            redirectUrl = `club_page_member.html?id=${currentClubId}`;
+        } else {
+            // If returnTo is missing or an unexpected value, fall back to the manager page.
+            // This is a safe default, assuming manager has more permissions.
+            console.warn("Invalid or missing 'returnTo' parameter, defaulting to manager page.");
+            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
+        }
+        window.location.href = redirectUrl;
     } else {
-        window.location.href = 'your_clubs.html'; // Fallback to the general clubs list
+        // If no clubId is found in the URL, go to the general clubs list
+        window.location.href = 'your_clubs.html';
     }
 }
 

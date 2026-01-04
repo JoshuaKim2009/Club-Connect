@@ -450,3 +450,16 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
         upcomingEventDisplay.innerHTML = '<p class="fancy-black-label">Error loading upcoming event.</p>';
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const viewScheduleButton = document.getElementById('viewScheduleButton');
+
+    if (viewScheduleButton) {
+        viewScheduleButton.addEventListener('click', () => {
+            // clubId is a global constant in club_page_member.js
+            window.location.href = `schedule.html?clubId=${clubId}&returnTo=member`;
+        });
+    } else {
+        console.warn("Element with ID 'viewScheduleButton' not found. Schedule button functionality may be impacted.");
+    }
+});
