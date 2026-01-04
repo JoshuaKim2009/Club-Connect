@@ -1285,13 +1285,11 @@ input[type="checkbox"]:checked {
 }
 
 .event-card-actions button:hover {
-    background: linear-gradient(#E0E0E0, #999999);
     box-shadow: 0px 2px 0px #000000;
     transform: translateY(2px);
 }
 
 .event-card-actions button:active {
-    background: #B3B3B3;
     box-shadow: 0px 0px 0px #000000;
     transform: translateY(4px);
 }

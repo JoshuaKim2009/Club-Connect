@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction, query, orderBy, where, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
@@ -201,6 +201,8 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
                 membersContainer.style.order = -1;
                 pendingRequestsContainer.style.order = 0;
             }
+
+            await fetchAndDisplayUpcomingEvent(clubId);
             
 
 
@@ -818,3 +820,146 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
     */
 });
+
+
+
+// Map Date.getUTCDay() (0 for Sunday, 1 for Monday, etc.) to day names
+const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// Helper to format a time string from "HH:mm" to "h:mm AM/PM"
+function formatTime(timeString) {
+    if (!timeString) return 'N/A';
+    try {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const date = new Date(); // Use a dummy date to leverage Date object for formatting
+        date.setHours(hours, minutes);
+        return date.toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch (e) {
+        console.error("Error formatting time:", e);
+        return timeString; // Return original if invalid time string
+    }
+}
+
+// Helper to format a date string for display (ensuring UTC consistency)
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+    try {
+        // Ensure the date is parsed in UTC for consistent formatting
+        return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
+    } catch (e) {
+        console.error("Error formatting date:", e);
+        return dateString; // Return original if invalid date string
+    }
+}
+
+
+
+async function fetchAndDisplayUpcomingEvent(currentClubId) {
+    const closestEventDisplay = document.getElementById('closestEventDisplay'); // Match your HTML ID
+    if (!closestEventDisplay) {
+        console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
+        return;
+    }
+    closestEventDisplay.innerHTML = '<p class="fancy-black-label">Loading upcoming event...</p>'; // Loading state with your class
+
+    const eventsRef = collection(db, "clubs", currentClubId, "events");
+    const now = new Date(); // Current date and time in local timezone
+    const todayUTCString = now.toISOString().split('T')[0]; // Current date as YYYY-MM-DD UTC
+
+    try {
+        const querySnapshot = await getDocs(eventsRef);
+        let allPossibleOccurrences = [];
+
+        querySnapshot.forEach(doc => {
+            const eventData = doc.data();
+            const eventId = doc.id;
+            const exceptions = eventData.exceptions || [];
+
+            if (eventData.isWeekly) {
+                // Ensure dates are parsed as UTC midnight for consistent iteration
+                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+                let currentDate = new Date(startDate);
+                while (currentDate.getTime() <= endDate.getTime()) {
+                    const currentOccDateString = currentDate.toISOString().split('T')[0];
+
+                    // Check if it's a matching day, not an exception, and not in the past relative to todayUTCString
+                    if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(currentOccDateString) && currentOccDateString >= todayUTCString) {
+                        allPossibleOccurrences.push({
+                            eventData: eventData,
+                            occurrenceDate: new Date(currentDate), // Keep as Date object for sorting
+                            originalEventId: eventId
+                        });
+                    }
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                }
+            } else { // One-time event
+                const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
+                // Check if not an exception and not in the past relative to todayUTCString
+                if (!exceptions.includes(eventDateString) && eventDateString >= todayUTCString) {
+                    allPossibleOccurrences.push({
+                        eventData: eventData,
+                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'),
+                        originalEventId: eventId
+                    });
+                }
+            }
+        });
+
+        // Sort all possible upcoming occurrences by date and then by time
+        allPossibleOccurrences.sort((a, b) => {
+            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
+            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
+            return dateTimeA - dateTimeB;
+        });
+
+        // Find the very next event that is actually in the future (compared to `now` with time)
+        let nextEvent = null;
+        for (const occ of allPossibleOccurrences) {
+            const eventDateTimeString = occ.occurrenceDate.toISOString().split('T')[0] + 'T' + occ.eventData.startTime + ':00Z';
+            const eventDateTime = new Date(eventDateTimeString);
+            if (eventDateTime.getTime() >= now.getTime()) { // Compare actual date AND time with current local time
+                nextEvent = occ;
+                break;
+            }
+        }
+
+
+        if (nextEvent) {
+            // Create a new div element to represent the card
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'event-card display-event-card'; // Use the same classes as schedule.js cards
+
+            const formattedDate = formatDate(nextEvent.occurrenceDate.toISOString().split('T')[0]);
+            const formattedStartTime = formatTime(nextEvent.eventData.startTime);
+            const formattedEndTime = formatTime(nextEvent.eventData.endTime);
+
+            cardDiv.innerHTML = `
+                <h3>${nextEvent.eventData.eventName}</h3>
+                <p>Date: ${formattedDate}</p>
+                <p>Time: ${formattedStartTime} - ${formattedEndTime}</p>
+                <p>Address: ${nextEvent.eventData.address}</p>
+                <p>Location: ${nextEvent.eventData.location}</p>
+                ${nextEvent.eventData.notes ? `<p>Notes: ${nextEvent.eventData.notes}</p>` : ''}
+            `;
+            
+            // Clear previous content and append the new card
+            closestEventDisplay.innerHTML = ''; 
+            closestEventDisplay.appendChild(cardDiv);
+
+        } else {
+            closestEventDisplay.innerHTML = '<p class="fancy-black-label">No upcoming events scheduled.</p>';
+        }
+
+    } catch (error) {
+        console.error("Error fetching upcoming event:", error);
+        closestEventDisplay.innerHTML = '<p class="fancy-black-label">Error loading upcoming event.</p>';
+    }
+}
