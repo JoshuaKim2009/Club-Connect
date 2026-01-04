@@ -1110,12 +1110,51 @@ input[type="submit"], button {
     border-radius: 10px;
     background: linear-gradient(#f0f0f0, #e0e0e0);
     box-shadow: 0px 6px 0px #000000;
-    padding: 10px;
-    margin: 10px auto;
+    padding: 8px; /* Reduced padding for a more condensed look */
+    margin: 8px auto; /* Reduced external margin between cards */
     width: 85%;
     max-width: 600px;
     text-align: left;
     font-family: var(--primary-font-family, sans-serif);
+    /* Optional: further condense internal spacing if needed */
+    line-height: 1.4; /* Slightly tighter line height for all text in the card */
+}
+
+.event-card h3 {
+    font-weight: normal; /* Makes the title not bold */
+    font-size: 1.6em; /* Makes the title bigger */
+    text-align: center; /* Centers the title text */
+    margin-top: 0; /* Remove default top margin on h3 */
+    margin-bottom: 8px; /* Adjust spacing below the title */
+}
+
+/* Optional: To make the rest of the text even more condensed,
+   you could add rules for paragraphs and their margins within the card */
+.event-card p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    /* font-size: 0.9em; */ /* Uncomment and adjust if you want the other text smaller */
+}
+
+/* Ensure action buttons are also compact if many */
+.event-card-actions {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap; /* Allows buttons to wrap to next line if space is tight */
+    gap: 5px; /* Space between buttons */
+    justify-content: center; /* Center the buttons group */
+}
+.event-card-actions button {
+    padding: 5px 10px;
+    font-size: 0.9em;
+}
+
+/* For the canceled tag */
+.canceled-tag {
+    font-size: 0.8em;
+    color: #cc0000;
+    font-weight: bold;
+    margin-left: 5px;
 }
 
 .editing-event-card {

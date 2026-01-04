@@ -439,7 +439,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         } else if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
             noEventsMessage.style.display = 'block';
         }
-        await showAppAlert("Event editing/creation cancelled.");
+        //await showAppAlert("Event editing/creation cancelled.");
     });
 
     return cardDiv;
@@ -777,11 +777,11 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
 
     cardDiv.innerHTML = `
         <h3>${eventData.eventName} ${isExcepted ? '<span class="canceled-tag">(CANCELED)</span>' : ''}</h3>
-        <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}</p>
-        <p><strong>Address:</strong> ${eventData.address}</p>
-        <p><strong>Location:</strong> ${eventData.location}</p>
-        ${eventData.notes ? `<p><strong>Notes:</strong> ${eventData.notes}</p>` : ''}
+        <p>Date: ${formattedDate}</p>
+        <p>Time: ${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}</p>
+        <p>Address: ${eventData.address}</p>
+        <p>Location: ${eventData.location}</p>
+        ${eventData.notes ? `<p>Notes: ${eventData.notes}</p>` : ''}
         ${actionButtonsHtml}
     `;
 
