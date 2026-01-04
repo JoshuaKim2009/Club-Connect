@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
 
@@ -149,7 +149,100 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+async function cancelSingleOccurrence(eventId, occurrenceDateString) {
+    const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${occurrenceDateString}? It will no longer appear on the schedule.`);
+    if (!confirmed) {
+        console.log("Cancellation cancelled by user.");
+        return;
+    }
 
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        const eventSnap = await getDoc(eventDocRef);
+
+        if (!eventSnap.exists()) {
+            await showAppAlert("Error: Event not found.");
+            return;
+        }
+
+        const eventData = eventSnap.data();
+        const existingExceptions = eventData.exceptions || [];
+
+        // Temporarily add the current occurrence to check if it's the last one
+        const hypotheticalExceptions = [...existingExceptions, occurrenceDateString];
+
+        // --- Calculate active occurrences with hypothetical exceptions ---
+        let activeOccurrencesCount = 0;
+        if (eventData.isWeekly) {
+            const startDate = new Date(eventData.weeklyStartDate);
+            const endDate = new Date(eventData.weeklyEndDate);
+            const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+            let currentDate = new Date(startDate);
+            // Ensure currentDate doesn't go beyond the end date
+            while (currentDate <= endDate) {
+                const currentOccDateString = currentDate.toISOString().split('T')[0];
+                if (daysToMatch.includes(currentDate.getDay()) && !hypotheticalExceptions.includes(currentOccDateString)) {
+                    activeOccurrencesCount++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        } else {
+            // If this function is called for a one-time event, it means we are trying to delete it.
+            // If it's a one-time event, and we're cancelling it, it *is* the last instance.
+            activeOccurrencesCount = 0; // Force delete logic for one-time events
+        }
+
+        if (activeOccurrencesCount === 0) {
+            // This is the last remaining active occurrence, so prompt to delete the entire event document
+            const finalConfirm = await showAppConfirm("This is the last active instance of this event. Do you want to delete the entire event?");
+            if (finalConfirm) {
+                deleteEntireEvent(eventId, eventData.isWeekly); // Call the function to delete the entire document
+                await showAppAlert("Last event instance canceled, entire event deleted.");
+            } else {
+                console.log("Deletion of entire event declined by user. Cancelling just this instance.");
+                // User decided not to delete the series, so just add to exceptions
+                await updateDoc(eventDocRef, {
+                    exceptions: arrayUnion(occurrenceDateString)
+                });
+                await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
+            }
+        } else {
+            // Not the last instance, just add to exceptions
+            await updateDoc(eventDocRef, {
+                exceptions: arrayUnion(occurrenceDateString)
+            });
+            await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
+        }
+
+        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+    } catch (error) {
+        console.error("Error canceling single event occurrence:", error);
+        await showAppAlert("Failed to cancel event occurrence: " + error.message);
+    }
+}
+
+
+async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
+    const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
+    if (!confirmed) {
+        console.log("Un-cancellation cancelled by user.");
+        return;
+    }
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        // Remove the date string from the 'exceptions' array
+        await updateDoc(eventDocRef, {
+            exceptions: arrayRemove(occurrenceDateString)
+        });
+        await showAppAlert(`Event on ${occurrenceDateString} has been un-canceled.`);
+        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+    } catch (error) {
+        console.error("Error un-canceling single event occurrence:", error);
+        await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
+    }
+}
 
 function _createEditingCardElement(initialData = {}, isNewEvent = true) {
     const cardDiv = document.createElement('div');
@@ -529,34 +622,44 @@ async function fetchAndDisplayEvents() {
 
         querySnapshot.forEach((doc) => {
             const eventData = doc.data();
-            const eventId = doc.id; // The Firestore Document ID
+            const eventId = doc.id;
+
+            // Get exceptions if they exist, default to empty array
+            const exceptions = eventData.exceptions || [];
 
             if (eventData.isWeekly) {
                 // Generate occurrences for weekly events
                 const startDate = new Date(eventData.weeklyStartDate);
                 const endDate = new Date(eventData.weeklyEndDate);
-                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day)); // Convert names to numeric day values
+                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
 
-                // Iterate from start to end date to find matching days
                 let currentDate = new Date(startDate);
-                // Ensure currentDate doesn't go beyond the end date
                 while (currentDate <= endDate) {
+                    const currentOccDateString = currentDate.toISOString().split('T')[0];
+
                     if (daysToMatch.includes(currentDate.getDay())) {
-                        allEventOccurrences.push({
-                            eventData: eventData,
-                            occurrenceDate: new Date(currentDate), // Clone date to avoid reference issues
-                            originalEventId: eventId
-                        });
+                        // ONLY ADD TO DISPLAY IF NOT IN EXCEPTIONS
+                        if (!exceptions.includes(currentOccDateString)) {
+                            allEventOccurrences.push({
+                                eventData: eventData,
+                                occurrenceDate: new Date(currentDate),
+                                originalEventId: eventId
+                            });
+                        }
                     }
-                    currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             } else {
                 // For one-time events, add directly
-                allEventOccurrences.push({
-                    eventData: eventData,
-                    occurrenceDate: new Date(eventData.eventDate),
-                    originalEventId: eventId
-                });
+                // One-time events don't typically have 'exceptions' but this ensures consistency
+                const eventDateString = new Date(eventData.eventDate).toISOString().split('T')[0];
+                if (!exceptions.includes(eventDateString)) { // This check is mostly for robustness, should rarely be true for one-time
+                    allEventOccurrences.push({
+                        eventData: eventData,
+                        occurrenceDate: new Date(eventData.eventDate),
+                        originalEventId: eventId
+                    });
+                }
             }
         });
 
@@ -591,57 +694,118 @@ async function fetchAndDisplayEvents() {
 function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card display-event-card';
-    cardDiv.dataset.originalEventId = originalEventId; // Store the original Firestore ID
-    // Store specific date for this occurrence (useful for potential future single-occurrence edits/deletes)
-    cardDiv.dataset.occurrenceDate = occurrenceDate.toISOString().split('T')[0];
+    cardDiv.dataset.originalEventId = originalEventId;
+    const occurrenceDateString = occurrenceDate.toISOString().split('T')[0]; // Use for comparison and for cancellation function
+    cardDiv.dataset.occurrenceDate = occurrenceDateString;
 
     const formattedDate = occurrenceDate.toLocaleDateString(undefined, {
-        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC' 
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
     });
 
-    // Determine if edit/delete buttons should be shown based on user role
+    // Check if this specific occurrence date is in the 'exceptions' array
+    const isExcepted = eventData.exceptions && eventData.exceptions.includes(occurrenceDateString);
+
     const canEditDelete = (currentUserRole === 'manager' || currentUserRole === 'admin');
-    const actionButtonsHtml = canEditDelete ? `
-        <div class="event-card-actions">
-            <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${cardDiv.dataset.occurrenceDate}">EDIT</button>
-            <button class="delete-btn" data-event-id="${originalEventId}" data-occurrence-date="${cardDiv.dataset.occurrenceDate}">DELETE</button>
-        </div>
-    ` : '';
+    let actionButtonsHtml = '';
+
+    if (canEditDelete) {
+        if (eventData.isWeekly) {
+            // For weekly events, offer "Cancel Instance" or "Uncancel"
+            if (isExcepted) {
+                actionButtonsHtml = `
+                    <div class="event-card-actions">
+                        <button class="uncancel-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">UN-CANCEL INSTANCE</button>
+                        <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
+                    </div>
+                `;
+            } else {
+                actionButtonsHtml = `
+                    <div class="event-card-actions">
+                        <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT INSTANCE</button>
+                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">CANCEL INSTANCE</button>
+                        <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
+                    </div>
+                `;
+            }
+        } else {
+            // For one-time events, offer standard Edit/Delete
+            actionButtonsHtml = `
+                <div class="event-card-actions">
+                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT</button>
+                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE</button>
+                </div>
+            `;
+        }
+    }
+
 
     cardDiv.innerHTML = `
-        <h3>${eventData.eventName}</h3>
-        <p>Date: ${formattedDate}</p>
-        <p>Time: ${eventData.startTime} - ${eventData.endTime}</p>
-        <p>Address: ${eventData.address}</p>
-        <p>Location: ${eventData.location}</p>
-        ${eventData.notes ? `<p>Notes: ${eventData.notes}</p>` : ''}
+        <h3>${eventData.eventName} ${isExcepted ? '<span class="canceled-tag">(CANCELED)</span>' : ''}</h3>
+        <p><strong>Date:</strong> ${formattedDate}</p>
+        <p><strong>Time:</strong> ${eventData.startTime} - ${eventData.endTime}</p>
+        <p><strong>Address:</strong> ${eventData.address}</p>
+        <p><strong>Location:</strong> ${eventData.location}</p>
+        ${eventData.notes ? `<p><strong>Notes:</strong> ${eventData.notes}</p>` : ''}
         <p class="event-meta">Created by ${eventData.createdByName} on ${eventData.createdAt ? new Date(eventData.createdAt.toDate()).toLocaleDateString() : 'N/A'}</p>
         ${actionButtonsHtml}
     `;
 
     // Attach event listeners for edit/delete buttons
     if (canEditDelete) {
-        cardDiv.querySelector('.edit-btn').addEventListener('click', (e) => {
-            const eventId = e.target.dataset.eventId;
-            const occDate = e.target.dataset.occurrenceDate;
-            console.log(`Edit button clicked for event ID: ${eventId}, Occurrence Date: ${occDate}`);
-            // TODO: Implement edit functionality for a specific event occurrence
-            showAppAlert(`Editing not yet implemented for event ID: ${eventId}, Date: ${occDate}`);
-        });
-        cardDiv.querySelector('.delete-btn').addEventListener('click', (e) => {
-            const eventId = e.target.dataset.eventId;
-            console.log(`Delete button clicked for event ID: ${eventId}`);
-            // Calling a separate delete function that will handle Firestore deletion
-            deleteEvent(eventId);
-        });
+        // Edit button (for single instance edit - more complex, leave placeholder for now)
+        const editBtn = cardDiv.querySelector('.edit-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                const eventId = e.target.dataset.eventId;
+                const occDate = e.target.dataset.occurrenceDate;
+                console.log(`Edit button clicked for event ID: ${eventId}, Occurrence Date: ${occDate}`);
+                showAppAlert(`Editing not yet implemented for event ID: ${eventId}, Date: ${occDate}`);
+            });
+        }
+
+        // Delete One-Time Event / Delete Entire Series (calls deleteEntireEvent)
+        const deleteEntireBtn = cardDiv.querySelector('.delete-btn') || cardDiv.querySelector('.delete-series-btn');
+        if (deleteEntireBtn) {
+            deleteEntireBtn.addEventListener('click', (e) => {
+                const eventId = e.target.dataset.eventId;
+                deleteEntireEvent(eventId, eventData.isWeekly); // Call the function to delete the entire document
+            });
+        }
+
+        // Cancel Single Instance (for weekly events)
+        const cancelInstanceBtn = cardDiv.querySelector('.cancel-instance-btn');
+        if (cancelInstanceBtn) {
+            cancelInstanceBtn.addEventListener('click', (e) => {
+                const eventId = e.target.dataset.eventId;
+                const occDateString = e.target.dataset.occurrenceDate;
+                cancelSingleOccurrence(eventId, occDateString);
+            });
+        }
+
+        // Uncancel Single Instance (for weekly events)
+        const uncancelBtn = cardDiv.querySelector('.uncancel-btn');
+        if (uncancelBtn) {
+             uncancelBtn.addEventListener('click', async (e) => {
+                const eventId = e.target.dataset.eventId;
+                const occDateString = e.target.dataset.occurrenceDate;
+                uncancelSingleOccurrence(eventId, occDateString);
+             });
+        }
     }
 
     return cardDiv;
 }
 
 
-async function deleteEvent(eventIdToDelete) {
-    const confirmed = await showAppConfirm("Are you sure you want to delete this event? This action cannot be undone.");
+async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false) { // <--- ADDED isWeeklyEvent PARAMETER
+    let confirmMessage;
+    if (isWeeklyEvent) {
+        confirmMessage = "Are you sure you want to delete this ENTIRE RECURRING EVENT SERIES? This action cannot be undone.";
+    } else {
+        confirmMessage = "Are you sure you want to delete this event? This action cannot be undone.";
+    }
+
+    const confirmed = await showAppConfirm(confirmMessage);
     if (!confirmed) {
         console.log("Event deletion cancelled by user.");
         return;
@@ -651,7 +815,7 @@ async function deleteEvent(eventIdToDelete) {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
         await deleteDoc(eventDocRef);
         await showAppAlert("Event deleted successfully!");
-        fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
     } catch (error) {
         console.error("Error deleting event:", error);
         await showAppAlert("Failed to delete event: " + error.message);
