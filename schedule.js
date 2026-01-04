@@ -801,7 +801,7 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                 actionButtonsHtml = `
                     <div class="event-card-actions">
                         <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT INSTANCE</button>
-                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">CANCEL INSTANCE</button>
+                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">DELETE INSTANCE</button>
                         <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
                     </div>
                 `;
