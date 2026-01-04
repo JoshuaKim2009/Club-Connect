@@ -174,18 +174,19 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         // --- Calculate active occurrences with hypothetical exceptions ---
         let activeOccurrencesCount = 0;
         if (eventData.isWeekly) {
-            const startDate = new Date(eventData.weeklyStartDate);
-            const endDate = new Date(eventData.weeklyEndDate);
+            // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
+            const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
+            const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
             const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
 
-            let currentDate = new Date(startDate);
-            // Ensure currentDate doesn't go beyond the end date
-            while (currentDate <= endDate) {
+            let currentDate = new Date(startDate); // Start iteration from UTC midnight
+            while (currentDate.getTime() <= endDate.getTime()) { // Compare timestamps for safety
                 const currentOccDateString = currentDate.toISOString().split('T')[0];
-                if (daysToMatch.includes(currentDate.getDay()) && !hypotheticalExceptions.includes(currentOccDateString)) {
+                // Count this occurrence only if it's a valid day of the week AND it's NOT in the hypothetical exceptions list
+                if (daysToMatch.includes(currentDate.getUTCDay()) && !hypotheticalExceptions.includes(currentOccDateString)) {
                     activeOccurrencesCount++;
                 }
-                currentDate.setDate(currentDate.getDate() + 1);
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1); // <--- Use setUTCDate to increment UTC day
             }
         } else {
             // If this function is called for a one-time event, it means we are trying to delete it.
@@ -194,26 +195,20 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         }
 
         if (activeOccurrencesCount === 0) {
-            // This is the last remaining active occurrence, so prompt to delete the entire event document
-            const finalConfirm = await showAppConfirm("This is the last active instance of this event. Do you want to delete the entire event?");
-            if (finalConfirm) {
-                deleteEntireEvent(eventId, eventData.isWeekly); // Call the function to delete the entire document
-                await showAppAlert("Last event instance canceled, entire event deleted.");
-            } else {
-                console.log("Deletion of entire event declined by user. Cancelling just this instance.");
-                // User decided not to delete the series, so just add to exceptions
-                await updateDoc(eventDocRef, {
-                    exceptions: arrayUnion(occurrenceDateString)
-                });
-                await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
-            }
-        } else {
-            // Not the last instance, just add to exceptions
-            await updateDoc(eventDocRef, {
-                exceptions: arrayUnion(occurrenceDateString)
-            });
-            await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
+            // It IS the last active instance. Auto-delete the entire event without any further prompt.
+            await deleteEntireEvent(eventId, eventData.isWeekly, true); // <--- Call deleteEntireEvent with skipConfirm = true
+            //await showAppAlert("This was the last active instance. The event has been automatically deleted."); // Inform user
+            // No need to update 'exceptions' or call fetchAndDisplayEvents here, as deleteEntireEvent handles that.
+            return; // Exit the function here
         }
+
+        // If not the last instance (or if the event is one-time), just add this specific occurrence to exceptions
+        await updateDoc(eventDocRef, {
+            exceptions: arrayUnion(occurrenceDateString)
+        });
+        await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
+        // fetchAndDisplayEvents is called at the end of cancelSingleOccurrence, which is correct for this branch.
+        
 
         await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
     } catch (error) {
@@ -244,61 +239,73 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     }
 }
 
-function _createEditingCardElement(initialData = {}, isNewEvent = true) {
+function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card editing-event-card'; // Add both classes
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    // Generate a temporary unique ID for this new card in the DOM
-    // This is useful for linking labels to inputs if you have multiple editing cards.
-    const tempDomId = `new-${Date.now()}`;
-    cardDiv.dataset.tempId = tempDomId; // Store it as a data attribute
+
+    // If editing an existing event, its ID is known
+    // If it's a new event, use a temporary DOM ID
+    const currentEditId = eventIdToUpdate || `new-${Date.now()}`;
+    cardDiv.dataset.editId = currentEditId; // Store actual event ID or temporary ID
+    cardDiv.dataset.isNewEvent = isNewEvent;
+    if (isEditingInstance) {
+        cardDiv.dataset.isEditingInstance = 'true';
+        cardDiv.dataset.originalEventIdForInstance = originalEventIdForInstance; // <--- CHANGED THIS LINE (using the new parameter)
+        cardDiv.dataset.originalOccurrenceDate = originalOccurrenceDate; // The specific instance date
+    }
 
     const eventNameInputFieldHtml = `
         <div>
-            <label for="edit-name-${tempDomId}">Event Name:</label>
-            <input type="text" id="edit-name-${tempDomId}" value="${initialData.eventName || ''}" required>
+            <label for="edit-name-${currentEditId}">Event Name:</label>
+            <input type="text" id="edit-name-${currentEditId}" value="${initialData.eventName || ''}" required>
         </div>
     `;
 
+    // isWeekly checkbox should be disabled if editing an instance
+    const isWeeklyDisabled = isEditingInstance ? 'disabled' : '';
     const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
     const weeklyEventCheckboxHtml = `
         <div class="weekly-event-checkbox">
             <label>
-                <input type="checkbox" id="edit-is-weekly-${tempDomId}" ${isWeeklyChecked}>
+                <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isWeeklyDisabled}>
                 Weekly Event
             </label>
         </div>
     `;
 
     const weeklyStartDateInputFieldHtml = `
-        <div id="weekly-start-date-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
-            <label for="edit-weekly-start-date-${tempDomId}">Weekly Recurrence Start Date:</label>
-            <input type="date" id="edit-weekly-start-date-${tempDomId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly ? 'disabled' : ''} required>
+        <div id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+            <label for="edit-weekly-start-date-${currentEditId}">Weekly Recurrence Start Date:</label>
+            <input type="date" id="edit-weekly-start-date-${currentEditId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
     `;
 
     const weeklyEndDateInputFieldHtml = `
-        <div id="weekly-end-date-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
-            <label for="edit-weekly-end-date-${tempDomId}">Weekly Recurrence End Date:</label>
-            <input type="date" id="edit-weekly-end-date-${tempDomId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly ? 'disabled' : ''} required>
+        <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+            <label for="edit-weekly-end-date-${currentEditId}">Weekly Recurrence End Date:</label>
+            <input type="date" id="edit-weekly-end-date-${currentEditId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
     `;
 
+    // eventDate input field should be enabled/disabled based on isWeekly and isEditingInstance
+    const eventDateInputDisabled = initialData.isWeekly && !isEditingInstance ? 'disabled' : '';
     const eventDateInputFieldHtml = `
-        <div id="date-input-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'none' : 'block'};">
-            <label for="edit-date-${tempDomId}">Event Date:</label>
-            <input type="date" id="edit-date-${tempDomId}" value="${initialData.eventDate || ''}" ${initialData.isWeekly ? 'disabled' : ''} required>
+        <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
+            <label for="edit-date-${currentEditId}">Event Date:</label>
+            <input type="date" id="edit-date-${currentEditId}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${eventDateInputDisabled} required>
         </div>
     `;
 
-    const selectedDays = initialData.daysOfWeek || []; // Ensure this is defined
+    const selectedDays = initialData.daysOfWeek || [];
+    const daysOfWeekInputDisabled = !initialData.isWeekly || isEditingInstance ? 'disabled' : '';
     const daysOfWeekCheckboxesHtml = `
-        <div class="days-of-week-selection" id="days-of-week-group-${tempDomId}" style="display: ${initialData.isWeekly ? 'block' : 'none'};">
+        <div class="days-of-week-selection" id="days-of-week-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
             <label>Days of Week:</label>
             <div class="checkbox-group">
                 ${daysOfWeekOptions.map(day => `
                     <label>
-                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${!initialData.isWeekly ? 'disabled' : ''}>
+                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${daysOfWeekInputDisabled}>
                         ${day}
                     </label>
                 `).join('')}
@@ -308,39 +315,38 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
 
     const startTimeInputFieldHtml = `
         <div>
-            <label for="edit-start-time-${tempDomId}">Start Time:</label>
-            <input type="time" id="edit-start-time-${tempDomId}" value="${initialData.startTime || ''}"required>
+            <label for="edit-start-time-${currentEditId}">Start Time:</label>
+            <input type="time" id="edit-start-time-${currentEditId}" value="${initialData.startTime || ''}"required>
         </div>
     `;
 
     const endTimeInputFieldHtml = `
         <div>
-            <label for="edit-end-time-${tempDomId}">End Time:</label>
-            <input type="time" id="edit-end-time-${tempDomId}" value="${initialData.endTime || ''}"required>
+            <label for="edit-end-time-${currentEditId}">End Time:</label>
+            <input type="time" id="edit-end-time-${currentEditId}" value="${initialData.endTime || ''}"required>
         </div>
     `;
 
     const eventAddressInputFieldHtml = `
         <div>
-            <label for="edit-address-${tempDomId}">Address:</label>
-            <input type="text" id="edit-address-${tempDomId}" value="${initialData.address || ''}"required>
+            <label for="edit-address-${currentEditId}">Address:</label>
+            <input type="text" id="edit-address-${currentEditId}" value="${initialData.address || ''}"required>
         </div>
     `;
     const eventLocationInputFieldHtml = `
         <div>
-            <label for="edit-location-${tempDomId}">Location (e.g., Room 132):</label>
-            <input type="text" id="edit-location-${tempDomId}" value="${initialData.location || ''}"required>
+            <label for="edit-location-${currentEditId}">Location (e.g., Room 132):</label>
+            <input type="text" id="edit-location-${currentEditId}" value="${initialData.location || ''}"required>
         </div>
     `;
 
     const eventNotesInputFieldHtml = `
         <div>
-            <label for="edit-notes-${tempDomId}">Notes (Optional):</label>
-            <input type="text" id="edit-notes-${tempDomId}" value="${initialData.notes || ''}">
+            <label for="edit-notes-${currentEditId}">Notes (Optional):</label>
+            <input type="text" id="edit-notes-${currentEditId}" value="${initialData.notes || ''}">
         </div>
     `;
 
-    
 
     cardDiv.innerHTML = `
         ${eventNameInputFieldHtml}
@@ -354,15 +360,6 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
         ${eventAddressInputFieldHtml}
         ${eventLocationInputFieldHtml}
         ${eventNotesInputFieldHtml}
-        
-        <!-- You will add more input fields here, following the same template pattern -->
-        <!-- Example for a date field: -->
-        <!--
-        <div>
-            <label for="edit-date-${tempDomId}">Date:</label>
-            <input type="date" id="edit-date-${tempDomId}" value="${initialData.eventDate || ''}">
-        </div>
-        -->
 
         <div class="event-card-actions">
             <button class="save-btn">SAVE</button>
@@ -370,82 +367,79 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true) {
         </div>
     `;
 
-    const isWeeklyCheckbox = cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`);
-    const dateInputGroup = cardDiv.querySelector(`#date-input-group-${tempDomId}`);
-    const eventDateInput = cardDiv.querySelector(`#edit-date-${tempDomId}`); // The actual date input
-    const daysOfWeekGroup = cardDiv.querySelector(`#days-of-week-group-${tempDomId}`);
-    const weeklyStartDateGroup = cardDiv.querySelector(`#weekly-start-date-group-${tempDomId}`);
-    const weeklyEndDateGroup = cardDiv.querySelector(`#weekly-end-date-group-${tempDomId}`);
-    const weeklyStartDateInput = cardDiv.querySelector(`#edit-weekly-start-date-${tempDomId}`);
-    const weeklyEndDateInput = cardDiv.querySelector(`#edit-weekly-end-date-${tempDomId}`);
+    const isWeeklyCheckbox = cardDiv.querySelector(`#edit-is-weekly-${currentEditId}`);
+    const dateInputGroup = cardDiv.querySelector(`#date-input-group-${currentEditId}`);
+    const eventDateInput = cardDiv.querySelector(`#edit-date-${currentEditId}`);
+    const daysOfWeekGroup = cardDiv.querySelector(`#days-of-week-group-${currentEditId}`);
+    const weeklyStartDateGroup = cardDiv.querySelector(`#weekly-start-date-group-${currentEditId}`);
+    const weeklyEndDateGroup = cardDiv.querySelector(`#weekly-end-date-group-${currentEditId}`);
+    const weeklyStartDateInput = cardDiv.querySelector(`#edit-weekly-start-date-${currentEditId}`);
+    const weeklyEndDateInput = cardDiv.querySelector(`#edit-weekly-end-date-${currentEditId}`);
 
     if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup && weeklyStartDateGroup && weeklyEndDateGroup && weeklyStartDateInput && weeklyEndDateInput) {
-        // Function to toggle display and disabled states
         const toggleRecurringFields = () => {
+            if (isEditingInstance) return; // Logic only applies if not editing an instance
+
             const isChecked = isWeeklyCheckbox.checked;
 
-            // Toggle Date Input Group
             dateInputGroup.style.display = isChecked ? 'none' : 'block';
-            eventDateInput.disabled = isChecked; // Disable actual date input when hidden
+            eventDateInput.disabled = isChecked;
 
-            // Toggle Days of Week Group
             daysOfWeekGroup.style.display = isChecked ? 'block' : 'none';
             daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                checkbox.disabled = !isChecked; // Disable checkboxes when hidden
+                checkbox.disabled = !isChecked;
             });
 
-            // Toggle Weekly Start Date Group
             weeklyStartDateGroup.style.display = isChecked ? 'block' : 'none';
             weeklyStartDateInput.disabled = !isChecked;
-            // Toggle Weekly End Date Group
             weeklyEndDateGroup.style.display = isChecked ? 'block' : 'none';
             weeklyEndDateInput.disabled = !isChecked;
 
-            // Set required attributes based on weekly status
-            if(isChecked) {
+            if (isChecked) {
                 weeklyStartDateInput.setAttribute('required', 'true');
                 weeklyEndDateInput.setAttribute('required', 'true');
+                eventDateInput.removeAttribute('required');
             } else {
                 weeklyStartDateInput.removeAttribute('required');
                 weeklyEndDateInput.removeAttribute('required');
+                eventDateInput.setAttribute('required', 'true');
             }
 
-            // --- Clear relevant fields based on state change for data consistency ---
-            if(isChecked) {
-                eventDateInput.value = ''; // Clear date if becoming weekly
-                eventDateInput.removeAttribute('required'); // Remove required if becoming weekly
+            if (isChecked) {
+                eventDateInput.value = '';
             } else {
                 daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = false; // Uncheck all days if not weekly
+                    checkbox.checked = false;
                 });
-                weeklyStartDateInput.value = ''; // Clear weekly start date if not weekly
-                weeklyEndDateInput.value = ''; // Clear weekly end date if not weekly
-                eventDateInput.setAttribute('required', 'true'); // Add required back if not weekly
+                weeklyStartDateInput.value = '';
+                weeklyEndDateInput.value = '';
             }
         };
 
-        // Attach event listener
-        isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
+        if (!isEditingInstance) { // Only attach listener if not editing an instance
+            isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
+        }
 
         // Call once on creation to set initial state based on initialData
-        // This ensures the fields are correctly shown/hidden when the card first appears
         toggleRecurringFields();
     }
 
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
-        console.log('SAVE button clicked for new event card:', tempDomId);
-        // You'll add Firebase saving logic here later
-        await saveEvent(cardDiv);
+        console.log('SAVE button clicked for editing card:', currentEditId);
+        await saveEvent(cardDiv, eventIdToUpdate); // Pass eventIdToUpdate
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
-        console.log('CANCEL button clicked for new event card:', tempDomId);
-        // Remove the card from the DOM
+        console.log('CANCEL button clicked for editing card:', currentEditId);
+        // Remove the editing card
         cardDiv.remove();
-        // If no other event cards remain, show the "no events" message
-        if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
+        // If it was an edit, re-fetch all to show the original display card again
+        // If it was a new event, check if eventsContainer is now empty
+        if (!isNewEvent) {
+            await fetchAndDisplayEvents(); // Re-render if canceling an edit
+        } else if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
             noEventsMessage.style.display = 'block';
         }
-        await showAppAlert("Event creation cancelled.");
+        await showAppAlert("Event editing/creation cancelled.");
     });
 
     return cardDiv;
@@ -497,14 +491,19 @@ function formatDaysOfWeek(daysArray) {
  * It currently only handles NEW events.
  * @param {HTMLElement} cardDiv - The editing event card element.
  */
-async function saveEvent(cardDiv) {
-    // For now, we only handle new events, so eventId will be the temporary DOM ID
-    const eventId = cardDiv.dataset.tempId; // This is a temporary DOM ID, not a Firestore Doc ID yet
-    const isNewEvent = cardDiv.dataset.isNewEvent === 'true'; // This should always be true for now
+async function saveEvent(cardDiv, existingEventId = null) {
+    const tempDomId = cardDiv.dataset.editId; // This might be a temporary DOM ID or an actual Firestore ID
+    const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
+    const isEditingInstance = cardDiv.dataset.isEditingInstance === 'true';
+    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; // <--- CORRECTED KEY
+    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate;
 
     // --- Collect Data from Input Fields ---
-    const eventName = cardDiv.querySelector(`#edit-name-${eventId}`).value.trim();
-    const isWeekly = cardDiv.querySelector(`#edit-is-weekly-${eventId}`).checked;
+    const eventName = cardDiv.querySelector(`#edit-name-${tempDomId}`).value.trim();
+    // For editing an instance, the isWeekly checkbox is disabled, so we rely on the original event's isWeekly status
+    // or assume it's a one-time override.
+    const isWeekly = isEditingInstance ? false : cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`).checked;
+
 
     let eventDate = '';
     let weeklyStartDate = '';
@@ -512,21 +511,19 @@ async function saveEvent(cardDiv) {
     let daysOfWeek = [];
 
     if (isWeekly) {
-        // For weekly events, collect start/end dates for recurrence and selected days
-        weeklyStartDate = cardDiv.querySelector(`#edit-weekly-start-date-${eventId}`).value;
-        weeklyEndDate = cardDiv.querySelector(`#edit-weekly-end-date-${eventId}`).value;
-        const selectedDaysCheckboxes = cardDiv.querySelectorAll(`#days-of-week-group-${eventId} input[type="checkbox"]:checked`);
+        weeklyStartDate = cardDiv.querySelector(`#edit-weekly-start-date-${tempDomId}`).value;
+        weeklyEndDate = cardDiv.querySelector(`#edit-weekly-end-date-${tempDomId}`).value;
+        const selectedDaysCheckboxes = cardDiv.querySelectorAll(`#days-of-week-group-${tempDomId} input[type="checkbox"]:checked`);
         daysOfWeek = Array.from(selectedDaysCheckboxes).map(cb => cb.value);
     } else {
-        // For one-time events, collect the single event date
-        eventDate = cardDiv.querySelector(`#edit-date-${eventId}`).value;
+        eventDate = cardDiv.querySelector(`#edit-date-${tempDomId}`).value;
     }
 
-    const startTime = cardDiv.querySelector(`#edit-start-time-${eventId}`).value;
-    const endTime = cardDiv.querySelector(`#edit-end-time-${eventId}`).value;
-    const address = cardDiv.querySelector(`#edit-address-${eventId}`).value.trim();
-    const location = cardDiv.querySelector(`#edit-location-${eventId}`).value.trim();
-    const notes = cardDiv.querySelector(`#edit-notes-${eventId}`).value.trim();
+    const startTime = cardDiv.querySelector(`#edit-start-time-${tempDomId}`).value;
+    const endTime = cardDiv.querySelector(`#edit-end-time-${tempDomId}`).value;
+    const address = cardDiv.querySelector(`#edit-address-${tempDomId}`).value.trim();
+    const location = cardDiv.querySelector(`#edit-location-${tempDomId}`).value.trim();
+    const notes = cardDiv.querySelector(`#edit-notes-${tempDomId}`).value.trim();
 
 
     // --- Basic Validation ---
@@ -558,7 +555,7 @@ async function saveEvent(cardDiv) {
         await showAppAlert("Specific Location (e.g., Room 132) is required.");
         return;
     }
-    // Add more validation as needed (e.g., end time after start time, end date after start date)
+    // Add more validation as needed
 
 
     // --- Prepare Event Data Object ---
@@ -570,32 +567,54 @@ async function saveEvent(cardDiv) {
         address,
         location,
         notes,
-        // Conditionally add date/recurrence fields
         ...(isWeekly ? { weeklyStartDate, weeklyEndDate, daysOfWeek } : { eventDate }),
-        // Add creator info and timestamp
-        createdAt: serverTimestamp(),
-        createdByUid: currentUser.uid,
-        createdByName: currentUser.displayName || "Anonymous"
     };
 
-    try {
-        // --- Add New Event to Firestore ---
-        const eventsRef = collection(db, "clubs", clubId, "events");
-        await addDoc(eventsRef, eventDataToSave);
-        
-        await showAppAlert("New event added successfully!");
-        cardDiv.remove(); // Remove the editing card after saving
+    // Add/Update creator info and timestamp only for new events
+    if (isNewEvent || isEditingInstance) { // An instance override is essentially a new event
+        eventDataToSave.createdAt = serverTimestamp();
+        eventDataToSave.createdByUid = currentUser.uid;
+        eventDataToSave.createdByName = currentUser.displayName || "Anonymous";
+    }
 
-        // Refresh the entire list of events to show the new event in display mode
-        // This will be fully implemented later. For now, it just logs.
-        await fetchAndDisplayEvents();
+    try {
+        const eventsRef = collection(db, "clubs", clubId, "events");
+
+        if (isEditingInstance) {
+            // Case 1: Editing a specific instance of a weekly event
+            // This creates a new one-time event that overrides the weekly instance.
+            // First, add the original occurrence date to the exceptions of the parent weekly event.
+            if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
+                const parentEventDocRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
+                await updateDoc(parentEventDocRef, {
+                    exceptions: arrayUnion(originalOccurrenceDateForInstance)
+                });
+                console.log(`Original instance ${originalOccurrenceDateForInstance} added to exceptions for event ${originalEventIdForInstance}`);
+            }
+
+            // Then, add the new one-time event (the override)
+            await addDoc(eventsRef, eventDataToSave);
+            await showAppAlert("Event instance override saved successfully!");
+
+        } else if (existingEventId) {
+            // Case 2: Updating an existing full event (one-time or weekly series)
+            const eventDocRef = doc(eventsRef, existingEventId);
+            await updateDoc(eventDocRef, eventDataToSave);
+            await showAppAlert("Event updated successfully!");
+        } else {
+            // Case 3: Adding a brand new event
+            await addDoc(eventsRef, eventDataToSave);
+            await showAppAlert("New event added successfully!");
+        }
+        
+        cardDiv.remove(); // Remove the editing card after saving
+        await fetchAndDisplayEvents(); // Re-fetch and display all events
 
     } catch (error) {
         console.error("Error saving event:", error);
         await showAppAlert("Failed to save event: " + error.message);
     }
 }
-
 
 
 async function fetchAndDisplayEvents() {
@@ -629,25 +648,26 @@ async function fetchAndDisplayEvents() {
 
             if (eventData.isWeekly) {
                 // Generate occurrences for weekly events
-                const startDate = new Date(eventData.weeklyStartDate);
-                const endDate = new Date(eventData.weeklyEndDate);
+                // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
+                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
+                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
                 const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
 
-                let currentDate = new Date(startDate);
-                while (currentDate <= endDate) {
+                let currentDate = new Date(startDate); // Start iteration from UTC midnight
+                while (currentDate.getTime() <= endDate.getTime()) { // Compare timestamps for safety
                     const currentOccDateString = currentDate.toISOString().split('T')[0];
 
-                    if (daysToMatch.includes(currentDate.getDay())) {
+                    if (daysToMatch.includes(currentDate.getUTCDay())) { // <--- Now getUTCDay() is correctly applied to a UTC-initialized date
                         // ONLY ADD TO DISPLAY IF NOT IN EXCEPTIONS
                         if (!exceptions.includes(currentOccDateString)) {
                             allEventOccurrences.push({
                                 eventData: eventData,
-                                occurrenceDate: new Date(currentDate),
+                                occurrenceDate: new Date(currentDate), // Clone date to avoid reference issues
                                 originalEventId: eventId
                             });
                         }
                     }
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1); // <--- Use setUTCDate to increment UTC day
                 }
             } else {
                 // For one-time events, add directly
@@ -656,7 +676,7 @@ async function fetchAndDisplayEvents() {
                 if (!exceptions.includes(eventDateString)) { // This check is mostly for robustness, should rarely be true for one-time
                     allEventOccurrences.push({
                         eventData: eventData,
-                        occurrenceDate: new Date(eventData.eventDate),
+                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'), // Force UTC midnight for one-time too
                         originalEventId: eventId
                     });
                 }
@@ -755,11 +775,11 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         // Edit button (for single instance edit - more complex, leave placeholder for now)
         const editBtn = cardDiv.querySelector('.edit-btn');
         if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
+            editBtn.addEventListener('click', async (e) => {
                 const eventId = e.target.dataset.eventId;
-                const occDate = e.target.dataset.occurrenceDate;
+                const occDate = e.target.dataset.occurrenceDate; // Will be null for full event edit
                 console.log(`Edit button clicked for event ID: ${eventId}, Occurrence Date: ${occDate}`);
-                showAppAlert(`Editing not yet implemented for event ID: ${eventId}, Date: ${occDate}`);
+                await editEvent(eventId, occDate); // <--- Call the new editEvent function
             });
         }
 
@@ -797,27 +817,120 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
 }
 
 
-async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false) { // <--- ADDED isWeeklyEvent PARAMETER
-    let confirmMessage;
-    if (isWeeklyEvent) {
-        confirmMessage = "Are you sure you want to delete this ENTIRE RECURRING EVENT SERIES? This action cannot be undone.";
-    } else {
-        confirmMessage = "Are you sure you want to delete this event? This action cannot be undone.";
+async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) { // <--- ADDED skipConfirm PARAMETER
+    if (!skipConfirm) { // Only show confirm if skipConfirm is false
+        let confirmMessage;
+        if (isWeeklyEvent) {
+            confirmMessage = "Are you sure you want to delete this ENTIRE RECURRING EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.";
+        } else {
+            confirmMessage = "Are you sure you want to delete this event? This action cannot be undone.";
+        }
+
+        const confirmed = await showAppConfirm(confirmMessage);
+        if (!confirmed) {
+            console.log("Event deletion cancelled by user.");
+            return; // Exit if user cancels
+        }
     }
 
-    const confirmed = await showAppConfirm(confirmMessage);
-    if (!confirmed) {
-        console.log("Event deletion cancelled by user.");
-        return;
-    }
-
+    // The rest of the try/catch block remains the same, executing the deletion
     try {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
         await deleteDoc(eventDocRef);
-        await showAppAlert("Event deleted successfully!");
+        // We will show a more specific alert message in cancelSingleOccurrence if it's auto-deleted
+        if (!skipConfirm) { // Only show this alert if it wasn't an auto-delete
+            await showAppAlert("Event deleted successfully!");
+        }
         await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
     } catch (error) {
         console.error("Error deleting event:", error);
         await showAppAlert("Failed to delete event: " + error.message);
+    }
+}
+
+
+async function editEvent(eventId, occurrenceDateString = null) {
+    if (!currentUser || !clubId) {
+        await showAppAlert("You must be logged in and viewing a club to edit events.");
+        return;
+    }
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        const eventSnap = await getDoc(eventDocRef);
+
+        if (!eventSnap.exists()) {
+            await showAppAlert("Error: Event not found.");
+            return;
+        }
+
+        const eventData = eventSnap.data();
+
+        // Find the display card in the DOM that corresponds to this edit action
+        // This is the card that will be replaced by the editing card.
+        // For weekly events, find the specific occurrence card if editing instance.
+        // For one-time, or edit series, any card with this originalEventId will do.
+        let targetDisplayCard;
+        if (eventData.isWeekly && occurrenceDateString) { // Editing a specific instance of a weekly event
+             targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
+        } else { // Editing an entire one-time event or entire weekly series
+             targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
+        }
+
+        if (!targetDisplayCard) {
+            console.error("Could not find the target display card in the DOM for editing.");
+            await showAppAlert("Could not find the event card to edit. Please refresh.");
+            return;
+        }
+
+        // --- Handle 'Edit Entire Series' for weekly events ---
+        if (eventData.isWeekly && !occurrenceDateString) { // This means "Edit entire event/series" was clicked for a weekly event
+            // Create an editing card with the event's original data
+            const editingCard = _createEditingCardElement(eventData, false, eventId); // false for not new, pass eventId
+            targetDisplayCard.replaceWith(editingCard); // Replace display card with editing card
+            // We need to fetch and re-render all events after saving or canceling,
+            // so we don't handle partial DOM updates for weekly series edits.
+            return; // Exit after replacing, fetchAndDisplayEvents will re-render later
+        }
+
+        // --- Handle 'Edit' for one-time events, and 'Edit Instance' for weekly events ---
+        // For one-time events, `eventData` is already the specific event.
+        // For editing an instance of a weekly event, we need to create a *new* one-time event based on the instance's data.
+        let dataForEditingCard = {};
+        let isEditingInstance = false;
+        let tempOriginalEventId = eventId; // Store original event ID for saving
+
+        if (eventData.isWeekly && occurrenceDateString) {
+            isEditingInstance = true;
+            // For editing an instance, create a new one-time event document in Firestore.
+            // This new event will represent the *override* for this specific instance.
+            // The original weekly event will then have this occurrence date added to its exceptions.
+            dataForEditingCard = {
+                eventName: eventData.eventName,
+                isWeekly: false, // This will be a one-time override
+                eventDate: occurrenceDateString, // The specific date of this instance
+                startTime: eventData.startTime,
+                endTime: eventData.endTime,
+                address: eventData.address,
+                location: eventData.location,
+                notes: eventData.notes,
+                createdByUid: eventData.createdByUid,
+                createdByName: eventData.createdByName
+                // We don't copy createdAt for overrides, as it will be newly created
+            };
+            // Note: The original eventId is still passed to save as `tempOriginalEventId`
+            // and the `occurrenceDateString` is passed to mark as exception.
+        } else {
+            // This is for a one-time event being edited
+            dataForEditingCard = eventData;
+        }
+
+        // Create the editing card using the appropriate data
+        const editingCard = _createEditingCardElement(dataForEditingCard, false, tempOriginalEventId, isEditingInstance, eventId, occurrenceDateString);
+        targetDisplayCard.replaceWith(editingCard);
+
+    } catch (error) {
+        console.error("Error initiating event edit:", error);
+        await showAppAlert("Failed to start event edit: " + error.message);
     }
 }
