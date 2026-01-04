@@ -613,7 +613,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
             // 3. Transfer RSVPs from the original occurrence to the new override event
             if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
                 const rsvpsToTransferQuery = query(
-                    collection(db, "occurrenceRsvps"),
+                    collection(db, "clubs", clubId, "occurrenceRsvps"),
                     where("eventId", "==", originalEventIdForInstance),
                     where("occurrenceDate", "==", originalOccurrenceDateForInstance)
                 );
@@ -624,7 +624,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
                     rsvpsToTransferSnap.forEach((rsvpDoc) => {
                         // Create a new RSVP doc ID for the new override event
                         const newRsvpDocId = `${newOverrideEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
-                        const newRsvpDocRef = doc(db, "occurrenceRsvps", newRsvpDocId);
+                        const newRsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", newRsvpDocId);
 
                         // Copy existing RSVP data, updating eventId to the new override event's ID
                         const newRsvpData = { ...rsvpDoc.data(), eventId: newOverrideEventId };
@@ -949,7 +949,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
         // NOTE: Our current RSVP system uses `originalEventId` + `occurrenceDateString` + `userId` as the document ID for `occurrenceRsvps`.
         // So, we need to query based on the `eventId` field within `occurrenceRsvps`.
 
-        const rsvpsQueryForMainSeries = query(collection(db, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
+        const rsvpsQueryForMainSeries = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
         const rsvpsSnapForMainSeries = await getDocs(rsvpsQueryForMainSeries);
         rsvpsSnapForMainSeries.forEach((rsvpDoc) => {
             batch.delete(rsvpDoc.ref);
@@ -961,7 +961,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
         const overrideEventIds = overridesSnap.docs.map(doc => doc.id);
         if (overrideEventIds.length > 0) {
             // Firestore 'in' query limited to 10. If more, you'd need multiple queries or a different approach.
-            const rsvpsQueryForOverrides = query(collection(db, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
+            const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
             const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
             rsvpsSnapForOverrides.forEach((rsvpDoc) => {
                 batch.delete(rsvpDoc.ref);
@@ -1006,7 +1006,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
         batch.delete(eventDocRef); // Mark the main event document for deletion
 
         // --- Delete RSVPs for the event itself ---
-        const rsvpsQueryForEvent = query(collection(db, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
+        const rsvpsQueryForEvent = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
         const rsvpsSnapForEvent = await getDocs(rsvpsQueryForEvent);
         rsvpsSnapForEvent.forEach((rsvpDoc) => {
             batch.delete(rsvpDoc.ref);
@@ -1026,7 +1026,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
 
             // Also delete RSVPs for these overrides
             if (overrideEventIds.length > 0) {
-                const rsvpsQueryForOverrides = query(collection(db, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
+                const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
                 const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
                 rsvpsSnapForOverrides.forEach((rsvpDoc) => {
                     batch.delete(rsvpDoc.ref);
@@ -1233,7 +1233,7 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { /
         const userUid = currentUser.uid;
         // Create a unique document ID for this specific user's RSVP for this specific occurrence
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
-        const rsvpDocRef = doc(db, "occurrenceRsvps", rsvpDocId);
+        const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
 
         // Fetch the existing RSVP for this occurrence, if any
         const rsvpSnap = await getDoc(rsvpDocRef);
@@ -1301,7 +1301,7 @@ async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // A
     try {
         const userUid = currentUser.uid;
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
-        const rsvpDocRef = doc(db, "occurrenceRsvps", rsvpDocId);
+        const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
         const rsvpSnap = await getDoc(rsvpDocRef);
 
         let currentRsvpStatus = null; // Default to no status selected
