@@ -30,6 +30,7 @@ const eventsContainer = document.getElementById('eventsContainer'); // This will
 const noEventsMessage = document.getElementById('noEventsMessage'); // Message for when no events are found
 const addEventButton = document.getElementById('add-event-button'); // Button to add new events
 
+const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // --- Helper Functions ---
 
@@ -369,13 +370,11 @@ async function addNewEventEditingCard() {
 
     // Insert the new card into the DOM
     if (eventsContainer) {
-        const header = eventsContainer.querySelector('h3.fancy-label');
-        if (header) {
-            header.after(newCardElement); 
-            if (noEventsMessage) noEventsMessage.style.display = 'none'; // Hide "no events" message
-        } else {
-            eventsContainer.appendChild(newCardElement);
-        }
+        // Ensure noEventsMessage is hidden if an editing card is present
+        if (noEventsMessage) noEventsMessage.style.display = 'none';
+
+        // Prepend the new card to the eventsContainer, placing it at the very beginning
+        eventsContainer.prepend(newCardElement);
     }
 }
 
@@ -383,7 +382,7 @@ async function addNewEventEditingCard() {
 
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
     try {
         return new Date(dateString).toLocaleDateString(undefined, options);
     } catch (e) {
@@ -507,14 +506,154 @@ async function saveEvent(cardDiv) {
 
 
 async function fetchAndDisplayEvents() {
-    console.log("Fetching and displaying events... (function not yet fully implemented)");
-    // For now, if eventsContainer is empty, show the noEventsMessage
-    if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
-        noEventsMessage.style.display = 'block';
-    } else if (eventsContainer && noEventsMessage) {
-        // If there are cards (possibly just the editing one), hide the no events message
-        noEventsMessage.style.display = 'none';
+    if (!clubId) {
+        console.warn("fetchAndDisplayEvents called without a clubId.");
+        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
+        return;
     }
-    // You'll implement the actual Firestore fetching and rendering logic here.
-    // When this is fully implemented, it will clear the eventsContainer and re-render everything.
+
+    // Clear existing events before fetching new ones
+    if (eventsContainer) {
+        eventsContainer.innerHTML = '';
+    }
+
+    console.log(`Fetching events for club ID: ${clubId}`);
+    const eventsRef = collection(db, "clubs", clubId, "events");
+    // Query events, ordering them by creation time. You might change this to order by an actual event date later.
+    const q = query(eventsRef, orderBy("createdAt", "desc"));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        const allEventOccurrences = []; // To store all individual event occurrences, including weekly ones
+
+        querySnapshot.forEach((doc) => {
+            const eventData = doc.data();
+            const eventId = doc.id; // The Firestore Document ID
+
+            if (eventData.isWeekly) {
+                // Generate occurrences for weekly events
+                const startDate = new Date(eventData.weeklyStartDate);
+                const endDate = new Date(eventData.weeklyEndDate);
+                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day)); // Convert names to numeric day values
+
+                // Iterate from start to end date to find matching days
+                let currentDate = new Date(startDate);
+                // Ensure currentDate doesn't go beyond the end date
+                while (currentDate <= endDate) {
+                    if (daysToMatch.includes(currentDate.getDay())) {
+                        allEventOccurrences.push({
+                            eventData: eventData,
+                            occurrenceDate: new Date(currentDate), // Clone date to avoid reference issues
+                            originalEventId: eventId
+                        });
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+                }
+            } else {
+                // For one-time events, add directly
+                allEventOccurrences.push({
+                    eventData: eventData,
+                    occurrenceDate: new Date(eventData.eventDate),
+                    originalEventId: eventId
+                });
+            }
+        });
+
+        // Sort all occurrences chronologically for display
+        allEventOccurrences.sort((a, b) => a.occurrenceDate.getTime() - b.occurrenceDate.getTime());
+
+        if (allEventOccurrences.length === 0) {
+            console.log("No events found for this club.");
+            if (noEventsMessage) noEventsMessage.style.display = 'block';
+            return;
+        }
+
+        if (noEventsMessage) noEventsMessage.style.display = 'none'; // Hide "no events" message
+
+        // Render all sorted occurrences
+        allEventOccurrences.forEach(occurrence => {
+            const eventDisplayCard = _createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
+            if (eventsContainer) {
+                eventsContainer.appendChild(eventDisplayCard);
+            }
+        });
+        console.log(`Displayed ${allEventOccurrences.length} event occurrences.`);
+
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">Error loading events. Please try again later.</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
+    }
+}
+
+
+function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'event-card display-event-card';
+    cardDiv.dataset.originalEventId = originalEventId; // Store the original Firestore ID
+    // Store specific date for this occurrence (useful for potential future single-occurrence edits/deletes)
+    cardDiv.dataset.occurrenceDate = occurrenceDate.toISOString().split('T')[0];
+
+    const formattedDate = occurrenceDate.toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC' 
+    });
+
+    // Determine if edit/delete buttons should be shown based on user role
+    const canEditDelete = (currentUserRole === 'manager' || currentUserRole === 'admin');
+    const actionButtonsHtml = canEditDelete ? `
+        <div class="event-card-actions">
+            <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${cardDiv.dataset.occurrenceDate}">EDIT</button>
+            <button class="delete-btn" data-event-id="${originalEventId}" data-occurrence-date="${cardDiv.dataset.occurrenceDate}">DELETE</button>
+        </div>
+    ` : '';
+
+    cardDiv.innerHTML = `
+        <h3>${eventData.eventName}</h3>
+        <p>Date: ${formattedDate}</p>
+        <p>Time: ${eventData.startTime} - ${eventData.endTime}</p>
+        <p>Address: ${eventData.address}</p>
+        <p>Location: ${eventData.location}</p>
+        ${eventData.notes ? `<p>Notes: ${eventData.notes}</p>` : ''}
+        <p class="event-meta">Created by ${eventData.createdByName} on ${eventData.createdAt ? new Date(eventData.createdAt.toDate()).toLocaleDateString() : 'N/A'}</p>
+        ${actionButtonsHtml}
+    `;
+
+    // Attach event listeners for edit/delete buttons
+    if (canEditDelete) {
+        cardDiv.querySelector('.edit-btn').addEventListener('click', (e) => {
+            const eventId = e.target.dataset.eventId;
+            const occDate = e.target.dataset.occurrenceDate;
+            console.log(`Edit button clicked for event ID: ${eventId}, Occurrence Date: ${occDate}`);
+            // TODO: Implement edit functionality for a specific event occurrence
+            showAppAlert(`Editing not yet implemented for event ID: ${eventId}, Date: ${occDate}`);
+        });
+        cardDiv.querySelector('.delete-btn').addEventListener('click', (e) => {
+            const eventId = e.target.dataset.eventId;
+            console.log(`Delete button clicked for event ID: ${eventId}`);
+            // Calling a separate delete function that will handle Firestore deletion
+            deleteEvent(eventId);
+        });
+    }
+
+    return cardDiv;
+}
+
+
+async function deleteEvent(eventIdToDelete) {
+    const confirmed = await showAppConfirm("Are you sure you want to delete this event? This action cannot be undone.");
+    if (!confirmed) {
+        console.log("Event deletion cancelled by user.");
+        return;
+    }
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
+        await deleteDoc(eventDocRef);
+        await showAppAlert("Event deleted successfully!");
+        fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+    } catch (error) {
+        console.error("Error deleting event:", error);
+        await showAppAlert("Failed to delete event: " + error.message);
+    }
 }
