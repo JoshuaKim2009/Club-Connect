@@ -819,8 +819,35 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         <p>Address: ${eventData.address}</p>
         <p>Location: ${eventData.location}</p>
         ${eventData.notes ? `<p>Notes: ${eventData.notes}</p>` : ''}
-        ${actionButtonsHtml}
+
+        <div class="rsvp-section">
+            <div class="rsvp-box"> 
+                <h4>Your Availability:</h4>
+                <div class="rsvp-buttons">
+                    <button class="rsvp-button" data-status="YES" data-event-id="${originalEventId}">YES</button>
+                    <button class="rsvp-button" data-status="MAYBE" data-event-id="${originalEventId}">MAYBE</button>
+                    <button class="rsvp-button" data-status="NO" data-event-id="${originalEventId}">NO</button>
+                </div>
+            </div> 
+        </div>
+
+
+        <div class="event-card-actions">
+            ${actionButtonsHtml}
+        </div>
     `;
+
+    const rsvpButtons = cardDiv.querySelectorAll('.rsvp-button');
+    rsvpButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const eventId = e.target.dataset.eventId;
+            const status = e.target.dataset.status;
+            saveRsvpStatus(eventId, status);
+        });
+    });
+
+    // Call fetchAndSetUserRsvp for this event to highlight current status on load
+    fetchAndSetUserRsvp(originalEventId);
 
     // Attach event listeners for edit/delete buttons
     if (canEditDelete) {
@@ -1085,5 +1112,129 @@ async function cleanUpEmptyRecurringEvents() {
 
     } catch (error) {
         console.error("Error during empty event cleanup:", error);
+    }
+}
+
+
+async function saveRsvpStatus(eventId, status) {
+    if (!currentUser || !clubId) {
+        await showAppAlert("You must be logged in to RSVP.");
+        return;
+    }
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        const userUid = currentUser.uid;
+
+        // First, get the current state of the event to determine user's existing RSVP
+        const eventSnap = await getDoc(eventDocRef);
+        let currentRsvpStatus = null; // To store if user is already YES/MAYBE/NO
+
+        if (eventSnap.exists()) {
+            const eventData = eventSnap.data();
+            if (eventData.rsvpsYes && eventData.rsvpsYes.includes(userUid)) {
+                currentRsvpStatus = 'YES';
+            } else if (eventData.rsvpsMaybe && eventData.rsvpsMaybe.includes(userUid)) {
+                currentRsvpStatus = 'MAYBE';
+            } else if (eventData.rsvpsNo && eventData.rsvpsNo.includes(userUid)) {
+                currentRsvpStatus = 'NO';
+            }
+        }
+
+        const updateData = {};
+        let newRsvpStatus = null; // What the UI should show after the operation
+
+        if (currentRsvpStatus === status) {
+            // User clicked on the status they are already selected for -> REMOVE RSVP
+            if (status === 'YES') {
+                updateData.rsvpsYes = arrayRemove(userUid);
+            } else if (status === 'MAYBE') {
+                updateData.rsvpsMaybe = arrayRemove(userUid);
+            } else if (status === 'NO') {
+                updateData.rsvpsNo = arrayRemove(userUid);
+            }
+            await updateDoc(eventDocRef, updateData);
+            console.log(`User ${userUid} removed RSVP for event ${eventId}.`);
+            //await showAppAlert(`Your RSVP has been removed for this event.`);
+            newRsvpStatus = null; // No status selected
+        } else {
+            // User clicked a different status or was not RSVP'd -> CHANGE/SET RSVP
+            // Atomically remove the user's UID from all three lists first
+            updateData.rsvpsYes = arrayRemove(userUid);
+            updateData.rsvpsMaybe = arrayRemove(userUid);
+            updateData.rsvpsNo = arrayRemove(userUid);
+
+            // Then, add the user's UID to the chosen list
+            if (status === 'YES') {
+                updateData.rsvpsYes = arrayUnion(userUid);
+            } else if (status === 'MAYBE') {
+                updateData.rsvpsMaybe = arrayUnion(userUid);
+            } else if (status === 'NO') {
+                updateData.rsvpsNo = arrayUnion(userUid);
+            }
+            await updateDoc(eventDocRef, updateData);
+            console.log(`User ${userUid} RSVP'd ${status} for event ${eventId}.`);
+            //await showAppAlert(`Your RSVP (${status}) has been saved for this event.`);
+            newRsvpStatus = status; // This status is now selected
+        }
+
+        // Update the UI for all event cards related to this eventId
+        updateRsvpButtonsUI(eventId, newRsvpStatus);
+
+    } catch (error) {
+        console.error("Error saving RSVP status:", error);
+        await showAppAlert("Failed to save your RSVP: " + error.message);
+    }
+}
+
+
+function updateRsvpButtonsUI(eventId, currentStatus) {
+    // Find all event cards related to this eventId (for weekly events, they share the same ID)
+    const eventCards = document.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`);
+    eventCards.forEach(card => {
+        const rsvpButtons = card.querySelectorAll('.rsvp-button');
+        rsvpButtons.forEach(button => {
+            if (button.dataset.status === currentStatus) {
+                button.classList.add('selected-rsvp');
+            } else {
+                button.classList.remove('selected-rsvp');
+            }
+        });
+    });
+}
+
+
+async function fetchAndSetUserRsvp(eventId) {
+    if (!currentUser || !clubId) {
+        return;
+    }
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        const eventSnap = await getDoc(eventDocRef);
+
+        if (eventSnap.exists()) {
+            const eventData = eventSnap.data();
+            const userUid = currentUser.uid;
+
+            // Check which list the current user's UID is in
+            if (eventData.rsvpsYes && eventData.rsvpsYes.includes(userUid)) {
+                updateRsvpButtonsUI(eventId, 'YES');
+            } else if (eventData.rsvpsMaybe && eventData.rsvpsMaybe.includes(userUid)) {
+                updateRsvpButtonsUI(eventId, 'MAYBE');
+            } else if (eventData.rsvpsNo && eventData.rsvpsNo.includes(userUid)) {
+                updateRsvpButtonsUI(eventId, 'NO');
+            } else {
+                // IMPORTANT: If user's UID is not found in any list, clear selection.
+                updateRsvpButtonsUI(eventId, null);
+            }
+        } else {
+            // Event doesn't exist, ensure no buttons are selected
+            updateRsvpButtonsUI(eventId, null);
+        }
+    } catch (error) {
+        console.error("Error fetching user RSVP status:", error);
+        // On error, also ensure no buttons are selected
+        updateRsvpButtonsUI(eventId, null);
     }
 }

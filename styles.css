@@ -1307,3 +1307,75 @@ input[type="checkbox"]:checked {
     font-size: 1em;
     margin: 10px auto;
 }
+
+
+
+
+
+
+.rsvp-section {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: none;
+}
+
+.rsvp-box {
+  border: 3px solid #000000; 
+  border-radius: 8px; 
+  padding: 10px; 
+  margin: 10px auto;
+  max-width: 300px;
+  background-color: transparent; 
+  text-align: center;
+}
+
+.rsvp-box h4 {
+  margin-top: 0; 
+  margin-bottom: 10px; 
+  font-weight: normal;
+}
+
+.rsvp-buttons {
+  display: flex;
+  justify-content: space-around;
+  gap: 5px;
+  flex-wrap: wrap; 
+}
+
+/* Styles for individual RSVP buttons */
+.rsvp-buttons button {
+  flex: 1; 
+  min-width: 80px; 
+  box-sizing: border-box; 
+  font-family: var(--primary-font-family, sans-serif);
+  background-color: #f0f0f0;
+  border: 3px solid #000000;
+  padding: 8px 15px;
+  margin: 0; 
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.rsvp-buttons button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Selected state styles remain the same */
+.rsvp-buttons button.selected-rsvp {
+  background-color: #333;
+  color: white;
+  border-color: #000000;
+}
+
+.rsvp-buttons button[data-status="YES"].selected-rsvp {
+  background-color: #4CAF50;
+}
+
+.rsvp-buttons button[data-status="MAYBE"].selected-rsvp {
+  background-color: #858585;
+}
+
+.rsvp-buttons button[data-status="NO"].selected-rsvp {
+  background-color: #F44336;
+}
