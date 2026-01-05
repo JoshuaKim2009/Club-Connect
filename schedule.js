@@ -793,15 +793,15 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             if (isExcepted) {
                 actionButtonsHtml = `
                     <div class="event-card-actions">
-                        <button class="uncancel-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">UN-CANCEL INSTANCE</button>
+                        <button class="uncancel-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">UN-CANCEL EVENT</button>
                         <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
                     </div>
                 `;
             } else {
                 actionButtonsHtml = `
                     <div class="event-card-actions">
-                        <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT INSTANCE</button>
-                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">DELETE INSTANCE</button>
+                        <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT EVENT</button>
+                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">DELETE EVENT</button>
                         <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
                     </div>
                 `;
@@ -810,8 +810,8 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             // For one-time events or instances that are overrides of a recurring event
             actionButtonsHtml = `
                 <div class="event-card-actions">
-                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT INSTANCE</button>
-                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE INSTANCE</button>
+                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT EVENT</button>
+                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE EVENT</button>
                     ${eventData.parentRecurringEventId ? `
                         <button class="delete-parent-series-btn" data-parent-event-id="${eventData.parentRecurringEventId}">DELETE SERIES</button>
                     ` : ''}
