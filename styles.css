@@ -1340,22 +1340,33 @@ input[type="checkbox"]:checked {
   display: flex;
   justify-content: space-around;
   gap: 5px;
-  flex-wrap: wrap; 
+  flex-wrap: nowrap;
 }
 
 /* Styles for individual RSVP buttons */
 .rsvp-buttons button {
-  flex: 1; 
-  min-width: 80px; 
-  box-sizing: border-box; 
+  flex-grow: 1;   /* Allows buttons to grow and take available space */
+  flex-shrink: 1;   /* Allows buttons to shrink if needed */
+  flex-basis: 0;    /* Establishes a zero base for equal distribution */
+  min-width: 70px; /* <--- ADD/ADJUST THIS: Set a minimum width, but make it smaller than 80px to allow more shrinking. You can experiment with this value. */
+
+  box-sizing: border-box;
   font-family: var(--primary-font-family, sans-serif);
   background-color: #f0f0f0;
   border: 3px solid #000000;
   padding: 8px 15px;
-  margin: 0; 
+  margin: 0;
   cursor: pointer;
   border-radius: 4px;
   font-size: 0.9em;
+  text-align: center; /* Ensures text is centered within the button */
+
+  /* Fix for iPhone blue text issue */
+  color: black; /* <--- ADD THIS: Explicitly set text color to black */
+  -webkit-appearance: none; /* <--- ADD THIS: Remove default iOS button styling */
+  -moz-appearance: none;
+  appearance: none;
+  text-decoration: none; /* <--- ADD THIS: Ensure no default underline for button text */
 }
 
 .rsvp-buttons button:hover {
