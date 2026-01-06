@@ -67,9 +67,6 @@ async function getMemberRoleForClub(clubID, memberUid) {
 }
 
 // Function to go back to the club manager page
-// This is made global so the onclick="goToClubPage()" in schedule.html can find it.
-// IMPORTANT: This uses 'clubId' to retrieve the ID from schedule.html's URL,
-//            and then passes it as 'id' to club_page_manager.html.
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo'); // <--- NEW: Get the returnTo parameter from the URL
@@ -96,7 +93,6 @@ window.goToClubPage = function() {
         window.location.href = 'your_clubs.html';
     }
 }
-
 
 // --- Authentication State Listener ---
 // This runs whenever the user's authentication state changes (on page load and sign in/out)
@@ -235,7 +231,6 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         await showAppAlert("Failed to cancel event occurrence: " + error.message);
     }
 }
-
 
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
@@ -464,7 +459,6 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
     return cardDiv;
 }
 
-
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to add events.");
@@ -670,7 +664,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
     }
 }
 
-
 async function fetchAndDisplayEvents() {
     if (!clubId) {
         console.warn("fetchAndDisplayEvents called without a clubId.");
@@ -768,7 +761,6 @@ async function fetchAndDisplayEvents() {
         if (noEventsMessage) noEventsMessage.style.display = 'block';
     }
 }
-
 
 function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
@@ -1048,7 +1040,6 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
     }
 }
 
-
 async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to edit events.");
@@ -1134,10 +1125,6 @@ async function editEvent(eventId, occurrenceDateString = null) {
         await showAppAlert("Failed to start event edit: " + error.message);
     }
 }
-
-
-
-
 
 function calculateActiveOccurrences(eventData, exceptions) {
     if (!eventData.isWeekly) {
