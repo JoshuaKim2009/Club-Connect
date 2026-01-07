@@ -902,11 +902,11 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
 
             cardDiv.innerHTML = `
                 <h3>${nextEvent.eventData.eventName}</h3>
-                <p>Date: ${formattedDate}</p>
-                <p>Time: ${formattedStartTime} - ${formattedEndTime}</p>
-                <p>Address: ${nextEvent.eventData.address}</p>
-                <p>Location: ${nextEvent.eventData.location}</p>
-                ${nextEvent.eventData.notes ? `<p>Notes: ${nextEvent.eventData.notes}</p>` : ''}
+                <p>•  Date: ${formattedDate}</p>
+                <p>•  Time: ${formattedStartTime} - ${formattedEndTime}</p>
+                <p>•  Address: ${nextEvent.eventData.address}</p>
+                <p>•  Location: ${nextEvent.eventData.location}</p>
+                ${nextEvent.eventData.notes ? `<p>•  Notes: ${nextEvent.eventData.notes}</p>` : ''}
             `;
 
             closestEventDisplay.innerHTML = '';

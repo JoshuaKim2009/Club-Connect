@@ -815,11 +815,11 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
 
     cardDiv.innerHTML = `
         <h3>${eventData.eventName} ${isExcepted ? '<span class="canceled-tag">(CANCELED)</span>' : ''}</h3>
-        <p>Date: ${formattedDate}</p>
-        <p>Time: ${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}</p>
-        <p>Address: ${eventData.address}</p>
-        <p>Location: ${eventData.location}</p>
-        ${eventData.notes ? `<p>Notes: ${eventData.notes}</p>` : ''}
+        <p>•  Date: ${formattedDate}</p>
+        <p>•  Time: ${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}</p>
+        <p>•  Address: ${eventData.address}</p>
+        <p>•  Location: ${eventData.location}</p>
+        ${eventData.notes ? `<p>•  Notes: ${eventData.notes}</p>` : ''}
 
         <div class="rsvp-section">
             <div class="rsvp-box"> 
@@ -911,7 +911,18 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
         return;
     }
 
-    const confirmed = await showAppConfirm("Are you sure you want to delete this ENTIRE EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.");
+    const mainEventRef = doc(db, "clubs", clubId, "events", parentEventIdToDelete);
+    const mainEventSnap = await getDoc(mainEventRef);
+
+    if (!mainEventSnap.exists()) {
+        await showAppAlert("Error: The main event series to delete was not found.");
+        return;
+    }
+    const mainEventData = mainEventSnap.data();
+    const eventName = mainEventData.eventName || "Untitled Event Series"; // Declare eventName here
+
+    const confirmed = await showAppConfirm(`Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`);
+
     if (!confirmed) {
         console.log("Series and overrides deletion cancelled by user.");
         return;
@@ -963,6 +974,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
 
 
         await batch.commit();
+        await showAppAlert("Event deleted successfully!");
         //await showAppAlert(`Successfully deleted the recurring series and ${deletedCount - 1} associated overrides and all their RSVPs!`);
         await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
 
@@ -973,12 +985,17 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
 }
 
 async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) { // <--- ADDED skipConfirm PARAMETER
+    const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
+    const eventSnap = await getDoc(eventDocRef);
+    const eventData = eventSnap.exists() ? eventSnap.data() : null;
+    const eventName = eventData ? eventData.eventName : "Untitled Event";
+
     if (!skipConfirm) { // Only show confirm if skipConfirm is false
         let confirmMessage;
         if (isWeeklyEvent) {
-            confirmMessage = "Are you sure you want to delete this ENTIRE EVENT SERIES? All instances of this event type will be deleted. This action cannot be undone.";
+            confirmMessage = `Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`;
         } else {
-            confirmMessage = "Are you sure you want to delete this event? This action cannot be undone.";
+            confirmMessage = `Are you sure you want to delete the event "${eventName}"? This action cannot be undone.`;
         }
 
         const confirmed = await showAppConfirm(confirmMessage);

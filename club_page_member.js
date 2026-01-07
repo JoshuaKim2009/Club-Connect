@@ -423,11 +423,11 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
 
             cardDiv.innerHTML = `
                 <h3>${eventDataToDisplay.eventName}</h3>
-                <p>Date: ${formattedDate}</p>
-                <p>Time: ${formattedStartTime} - ${formattedEndTime}</p>
-                <p>Address: ${eventDataToDisplay.address}</p>
-                <p>Location: ${eventDataToDisplay.location}</p>
-                ${eventDataToDisplay.notes ? `<p>Notes: ${eventDataToDisplay.notes}</p>` : ''}
+                <p>•  Date: ${formattedDate}</p>
+                <p>•  Time: ${formattedStartTime} - ${formattedEndTime}</p>
+                <p>•  Address: ${eventDataToDisplay.address}</p>
+                <p>•  Location: ${eventDataToDisplay.location}</p>
+                ${eventDataToDisplay.notes ? `<p>•  Notes: ${eventDataToDisplay.notes}</p>` : ''}
             `;
 
             // Clear previous content and append the new card
