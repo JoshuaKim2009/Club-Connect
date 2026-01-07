@@ -277,12 +277,22 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
     `;
 
     // isWeekly checkbox should be disabled if editing an instance
-    const isWeeklyDisabled = isEditingInstance ? 'disabled' : '';
+    // const isWeeklyDisabled = isEditingInstance ? 'disabled' : '';
+    // const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
+    // const weeklyEventCheckboxHtml = `
+    //     <div class="weekly-event-checkbox">
+    //         <label>
+    //             <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isWeeklyDisabled}>
+    //             Weekly Event
+    //         </label>
+    //     </div>
+    // `;
     const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
+    // Only show the "Weekly Event" checkbox if it's a new event
     const weeklyEventCheckboxHtml = `
-        <div class="weekly-event-checkbox">
+        <div class="weekly-event-checkbox" style="display: ${isNewEvent ? 'block' : 'none'};">
             <label>
-                <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isWeeklyDisabled}>
+                <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isNewEvent ? '' : 'disabled'}>
                 Weekly Event
             </label>
         </div>
@@ -394,7 +404,8 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         const toggleRecurringFields = () => {
             if (isEditingInstance) return; // Logic only applies if not editing an instance
 
-            const isChecked = isWeeklyCheckbox.checked;
+            // const isChecked = isWeeklyCheckbox.checked;
+            const isChecked = isWeeklyCheckbox ? isWeeklyCheckbox.checked : initialData.isWeekly;
 
             dateInputGroup.style.display = isChecked ? 'none' : 'block';
             eventDateInput.disabled = isChecked;
