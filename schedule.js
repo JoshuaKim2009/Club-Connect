@@ -404,7 +404,12 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         const toggleRecurringFields = () => {
             if (isEditingInstance) return; // Logic only applies if not editing an instance
 
-            // const isChecked = isWeeklyCheckbox.checked;
+            // let isChecked;
+            // if (isWeeklyCheckbox) {
+            //     isChecked = isWeeklyCheckbox.checked;
+            // } else {
+            //     isChecked = initialData.isWeekly;
+            // }
             const isChecked = isWeeklyCheckbox ? isWeeklyCheckbox.checked : initialData.isWeekly;
 
             dateInputGroup.style.display = isChecked ? 'none' : 'block';
