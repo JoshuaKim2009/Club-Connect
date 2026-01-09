@@ -391,6 +391,18 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
             }
         });
 
+        const now = new Date(); // Get current local time once for efficiency
+
+        allPossibleOccurrences = allPossibleOccurrences.filter(occurrence => {
+            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0]; // e.g., "YYYY-MM-DD"
+            const eventEndTimeStr = occurrence.eventData.endTime; // e.g., "HH:mm"
+
+            // Construct event end time in local timezone for comparison
+            const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
+
+            return eventEndMomentLocal.getTime() > now.getTime(); // Keep only events that end in the future
+        });
+
         // Sort all possible occurrences by date and then by time (this remains the same and is crucial)
         allPossibleOccurrences.sort((a, b) => {
             const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();

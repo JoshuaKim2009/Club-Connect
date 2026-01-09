@@ -700,8 +700,8 @@ async function fetchAndDisplayEvents() {
 
     try {
         const querySnapshot = await getDocs(q);
-        const allEventOccurrences = []; // To store all individual event occurrences, including weekly ones
-
+        //const allEventOccurrences = []; // To store all individual event occurrences, including weekly ones
+        let allEventOccurrences = [];
         querySnapshot.forEach((doc) => {
             const eventData = doc.data();
             const eventId = doc.id;
@@ -747,7 +747,21 @@ async function fetchAndDisplayEvents() {
             }
         });
 
-        // MODIFIED CODE: Sort all occurrences chronologically, first by date, then by time
+        const now = new Date(); // Get current local time once for efficiency
+
+        allEventOccurrences = allEventOccurrences.filter(occurrence => {
+            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0]; // e.g., "2025-01-01"
+            const eventEndTimeStr = occurrence.eventData.endTime; // e.g., "18:30"
+
+            // Construct event end time in local timezone for comparison
+            // This combines the event's date (YYYY-MM-DD) and its end time (HH:mm)
+            // The `new Date()` constructor will interpret this string in the local timezone.
+            const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
+
+            return eventEndMomentLocal.getTime() > now.getTime(); // Keep only events that end in the future
+        });
+
+        // Sort all occurrences chronologically, first by date, then by time
         allEventOccurrences.sort((a, b) => {
             const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
             const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
