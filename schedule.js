@@ -770,6 +770,10 @@ async function fetchAndDisplayEvents() {
 
         if (allEventOccurrences.length === 0) {
             console.log("No events found for this club.");
+            if (currentUserRole === 'member') {
+                eventsContainer.innerHTML = '<p class="fancy-label">NO EVENTS YET</p>';
+            }
+            
             if (noEventsMessage) noEventsMessage.style.display = 'block';
             return;
         }
