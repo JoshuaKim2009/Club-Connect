@@ -578,6 +578,11 @@ async function saveEvent(cardDiv, existingEventId = null) {
     if (!address) { await showAppAlert("Address is required."); return; }
     if (!location) { await showAppAlert("Specific Location (e.g., Room 132) is required."); return; }
 
+    if (startTime >= endTime) {
+        await showAppAlert("End time cannot be earlier than or the same as the start time!");
+        return; 
+    }
+
 
     // --- Prepare Event Data Object ---
     const eventDataToSave = {
