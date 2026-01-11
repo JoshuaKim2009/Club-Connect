@@ -1486,9 +1486,12 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         </div>
     `;
 
+    document.body.classList.add('no-scroll');
+
     document.getElementById('close-rsvp-modal').addEventListener('click', () => {
         overlay.style.display = 'none';
         modal.style.display = 'none';
+        document.body.classList.remove('no-scroll');
     });
 
     overlay.style.display = 'flex';
