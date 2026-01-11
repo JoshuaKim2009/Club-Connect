@@ -1375,8 +1375,6 @@ async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // A
     }
 }
 
-
-
 async function getAllClubMembers(clubID) {
     const members = [];
     try {
