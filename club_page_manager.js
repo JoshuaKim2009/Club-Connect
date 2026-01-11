@@ -696,6 +696,7 @@ async function transferClubManagement(clubID, newManagerUid) {
 
 
 function openRoleManagementPopup(memberUid, memberName, currentRole) {
+    document.body.classList.add('no-scroll');
     selectedMemberUid = memberUid;
     currentMemberRoleInPopup = currentRole;
 
@@ -710,6 +711,7 @@ function closeRoleManagementPopup() {
     selectedMemberUid = null; 
     popupOverlay.style.display = 'none';
     roleManagementPopup.style.display = 'none';
+    document.body.classList.remove('no-scroll');
 }
 
 cancelRoleChangeButton.addEventListener('click', closeRoleManagementPopup);
