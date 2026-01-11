@@ -731,7 +731,7 @@ input[type="submit"], button {
 #membersContainer .fancy-label {
     text-align: center;
     color: #525252; /* A slightly softer color for informative text */
-    font-size: 20px;
+    font-size: 25px;
     padding: 10px;
     font-family: var(--primary-font-family);
 }
