@@ -1480,7 +1480,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             <ul id="rsvp-not-going-list"></ul>
             <h3>Maybe (<span id="rsvp-maybe-count">0</span>)</h3>
             <ul id="rsvp-maybe-list"></ul>
-            <h3>Not Responded (<span id="not-responded-count">0</span>)</h3>
+            <h3>No Response (<span id="not-responded-count">0</span>)</h3>
             <ul id="rsvp-not-responded-list"></ul>
             <button id="close-rsvp-modal" class="fancy-button">Close</button>
         </div>
