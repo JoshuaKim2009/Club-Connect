@@ -1357,7 +1357,7 @@ input[type="checkbox"]:checked {
   padding: 8px 15px;
   margin: 0;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 0.9em;
   text-align: center; /* Ensures text is centered within the button */
 
@@ -1381,7 +1381,7 @@ input[type="checkbox"]:checked {
 }
 
 .rsvp-buttons button[data-status="YES"].selected-rsvp {
-  background-color: #4CAF50;
+  background-color: #3e9e41;
 }
 
 .rsvp-buttons button[data-status="MAYBE"].selected-rsvp {
@@ -1390,4 +1390,42 @@ input[type="checkbox"]:checked {
 
 .rsvp-buttons button[data-status="NO"].selected-rsvp {
   background-color: #F44336;
+}
+
+
+#view-availability-btn {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0;
+  min-width: 70px;
+
+  box-sizing: border-box;
+  font-family: var(--primary-font-family, sans-serif);
+  background: linear-gradient(#868686, #747474);
+  border: 3px solid #000000;
+  padding: 6px 10px; 
+  margin: 0; 
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 0.9em;
+  text-align: center;
+
+  color: rgb(255, 255, 255);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-decoration: none;
+
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+
+
+#view-availability-btn:hover {
+  background: linear-gradient(#5f5f5f, #646464);
+}
+
+#view-availability-btn:active {
+  background: linear-gradient(#5f5f5f, #646464);
 }

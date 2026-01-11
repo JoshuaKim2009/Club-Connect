@@ -861,14 +861,17 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         ${eventData.notes ? `<p>•  Notes: ${eventData.notes}</p>` : ''}
 
         <div class="rsvp-section">
-            <div class="rsvp-box"> 
+            <div class="rsvp-box">
                 <h4>Your Availability</h4>
                 <div class="rsvp-buttons">
                     <button class="rsvp-button" data-status="YES" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">YES</button>
                     <button class="rsvp-button" data-status="MAYBE" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">MAYBE</button>
                     <button class="rsvp-button" data-status="NO" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">NO</button>
                 </div>
-            </div> 
+                <div class="availability-actions">
+                    <button id="view-availability-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">CHECK RESPONSES</button>
+                </div>
+            </div>
         </div>
 
 
