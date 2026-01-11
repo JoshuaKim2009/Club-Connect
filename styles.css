@@ -1551,6 +1551,7 @@ input[type="checkbox"]:checked {
 #edit-club-button,
 #viewScheduleButton{
   width: 300px;
+  max-width: 85%;
 }
 
 #rsvp-details-modal {
