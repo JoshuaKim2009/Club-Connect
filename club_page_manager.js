@@ -95,6 +95,12 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
 
         const currentUserRole = await getMemberRoleForClub(id, currentUserId);
 
+        if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
+            console.log(`User ${currentUserId} is a ${currentUserRole} for club ${id}. Redirecting to member page.`);
+            window.location.href = `club_page_member.html?id=${id}`;
+            return; // Important: Exit the function after redirecting
+        }
+
         if (clubSnap.exists()) {
             const clubData = clubSnap.data();
             console.log("Fetched club data:", clubData);
