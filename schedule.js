@@ -869,7 +869,7 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                     <button class="rsvp-button" data-status="NO" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">NO</button>
                 </div>
                 <div class="availability-actions">
-                    <button id="view-availability-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">CHECK RESPONSES</button>
+                    <button class="view-availability-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">CHECK RESPONSES</button>
                 </div>
             </div>
         </div>
@@ -889,6 +889,15 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             saveRsvpStatus(eventId, occurrenceDate, status); // <--- Pass occurrenceDate
         });
     });
+
+    const viewAvailabilityBtn = cardDiv.querySelector('.view-availability-btn');
+    if (viewAvailabilityBtn) {
+        viewAvailabilityBtn.addEventListener('click', (e) => {
+            const eventId = e.target.dataset.eventId;
+            const occurrenceDate = e.target.dataset.occurrenceDate;
+            showRsvpDetailsModal(eventId, occurrenceDate);
+        });
+    }
 
     // Call fetchAndSetUserRsvp for this event to highlight current status on load
     fetchAndSetUserRsvp(originalEventId, occurrenceDateString);
@@ -1363,5 +1372,191 @@ async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // A
         console.error("Error fetching user RSVP status for occurrence:", error);
         // On error, ensure no buttons are selected for this specific occurrence
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
+    }
+}
+
+
+
+async function getAllClubMembers(clubID) {
+    const members = [];
+    try {
+        // Fetch manager info first from the club document
+        const clubDocRef = doc(db, "clubs", clubID);
+        const clubDocSnap = await getDoc(clubDocRef);
+        let managerUid = null;
+        if (clubDocSnap.exists()) {
+            const clubData = clubDocSnap.data();
+            managerUid = clubData.managerUid;
+            if (managerUid) {
+                // Assuming manager's name can be fetched from 'users' collection
+                const managerUserDoc = await getDoc(doc(db, "users", managerUid));
+                const managerName = managerUserDoc.exists() ? managerUserDoc.data().displayName || managerUserDoc.data().name : "Unknown Manager";
+                members.push({ uid: managerUid, name: managerName, role: 'manager' });
+            }
+        }
+
+        // Fetch other members from the 'members' subcollection
+        const membersCollectionRef = collection(db, "clubs", clubID, "members");
+        const membersSnapshot = await getDocs(membersCollectionRef);
+        for (const memberDoc of membersSnapshot.docs) {
+            const memberData = memberDoc.data();
+            // Ensure we don't duplicate the manager if they also have a member document
+            if (memberDoc.id !== managerUid) {
+                const memberUserDoc = await getDoc(doc(db, "users", memberDoc.id));
+                const memberName = memberUserDoc.exists() ? memberUserDoc.data().displayName || memberUserDoc.data().name : "Unknown User";
+                members.push({ uid: memberDoc.id, name: memberName, role: memberData.role || 'member' });
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching all club members:", error);
+    }
+    return members;
+}
+
+
+// Function to display the RSVP details popup
+async function showRsvpDetailsModal(eventId, occurrenceDateString) {
+    if (!clubId) {
+        await showAppAlert("Error: Club ID not found.");
+        return;
+    }
+
+    // Create modal elements if they don't exist
+    let overlay = document.getElementById('rsvp-details-overlay');
+    let modal = document.getElementById('rsvp-details-modal');
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'rsvp-details-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+            z-index: 999; /* Ensure it's above other content */
+            display: flex; /* Use flexbox to center the popup */
+            justify-content: center;
+            align-items: center;
+        `;
+        document.body.appendChild(overlay);
+    }
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'rsvp-details-modal';
+        modal.style.cssText = `
+            margin-top: 20px;
+            padding: 10px;
+            border: 3px solid black;
+            background: linear-gradient(#f0f0f0, #e0e0e0);
+            box-shadow: 0px 6px 0px #000000;
+            width: 85%; /* Adjust as needed */
+            max-width: 500px; /* Max width for larger screens */
+            border-radius: 10px;
+            z-index: 1000; /* Ensure it's above the overlay */
+            position: fixed; /* Fixed position relative to viewport */
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Adjust for exact centering */
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 15px; /* Space between elements in the popup */
+            font-family: var(--primary-font-family); /* Assuming this var is defined in your CSS */
+            font-weight: normal;
+            text-align: center;
+            font-size: 20px; /* Adjusted slightly smaller for content */
+            color: black;
+            max-height: 80vh; /* Limit height for scrollable content */
+            overflow-y: auto; /* Enable vertical scrolling */
+        `;
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <h2>Responses for ${formatDate(occurrenceDateString)}</h2>
+        <div id="rsvp-lists" style="text-align: left; padding: 0 15px;">
+            <h3>Going (<span id="going-count">0</span>)</h3>
+            <ul id="rsvp-going-list"></ul>
+            <h3>Not Going (<span id="not-going-count">0</span>)</h3>
+            <ul id="rsvp-not-going-list"></ul>
+            <h3>Maybe (<span id="rsvp-maybe-count">0</span>)</h3>
+            <ul id="rsvp-maybe-list"></ul>
+            <h3>Not Responded (<span id="not-responded-count">0</span>)</h3>
+            <ul id="rsvp-not-responded-list"></ul>
+            <button id="close-rsvp-modal" class="fancy-button">Close</button>
+        </div>
+    `;
+
+    document.getElementById('close-rsvp-modal').addEventListener('click', () => {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    overlay.style.display = 'flex';
+    modal.style.display = 'flex';
+
+    try {
+        // Fetch all RSVPs for this occurrence
+        const rsvpsQuery = query(
+            collection(db, "clubs", clubId, "occurrenceRsvps"),
+            where("eventId", "==", eventId),
+            where("occurrenceDate", "==", occurrenceDateString)
+        );
+        const rsvpsSnap = await getDocs(rsvpsQuery);
+        const rsvpsMap = {}; // { userId: { status: "YES", userName: "..." } }
+        rsvpsSnap.forEach(doc => {
+            const data = doc.data();
+            rsvpsMap[data.userId] = { status: data.status, userName: data.userName };
+        });
+
+        // Fetch all club members
+        const allMembers = await getAllClubMembers(clubId);
+
+        const goingList = document.getElementById('rsvp-going-list');
+        const notGoingList = document.getElementById('rsvp-not-going-list');
+        const maybeList = document.getElementById('rsvp-maybe-list');
+        const notRespondedList = document.getElementById('rsvp-not-responded-list');
+
+        goingList.innerHTML = '';
+        notGoingList.innerHTML = '';
+        maybeList.innerHTML = '';
+        notRespondedList.innerHTML = '';
+
+        let goingCount = 0;
+        let notGoingCount = 0;
+        let maybeCount = 0;
+        let notRespondedCount = 0;
+
+        // Categorize members based on RSVPs
+        allMembers.forEach(member => {
+            const rsvp = rsvpsMap[member.uid];
+            if (rsvp) {
+                if (rsvp.status === 'YES') {
+                    goingList.innerHTML += `<li>${rsvp.userName}</li>`;
+                    goingCount++;
+                } else if (rsvp.status === 'NO') {
+                    notGoingList.innerHTML += `<li>${rsvp.userName}</li>`;
+                    notGoingCount++;
+                } else if (rsvp.status === 'MAYBE') {
+                    maybeList.innerHTML += `<li>${rsvp.userName}</li>`;
+                    maybeCount++;
+                }
+            } else {
+                notRespondedList.innerHTML += `<li>${member.name}</li>`; // Use member.name if no RSVP
+                notRespondedCount++;
+            }
+        });
+
+        document.getElementById('going-count').textContent = goingCount;
+        document.getElementById('not-going-count').textContent = notGoingCount;
+        document.getElementById('rsvp-maybe-count').textContent = maybeCount;
+        document.getElementById('not-responded-count').textContent = notRespondedCount;
+
+    } catch (error) {
+        console.error("Error fetching RSVP details:", error);
+        await showAppAlert("Failed to load RSVP details: " + error.message);
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
     }
 }
