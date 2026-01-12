@@ -6,6 +6,65 @@ body {
   position: relative; /* Sometimes needed */
 }
 
+#loading-overlay {
+  position: fixed; /* Stays in place when scrolling */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #131330;
+  background-image: linear-gradient(
+      to bottom,
+      #131330 0%,
+      transparent 5%,
+      transparent 95%,
+      #131330 100%
+    ),
+    linear-gradient(
+      to left,
+      #131330 0%,
+      transparent 5%,
+      transparent 95%,
+      #131330 100%
+    ),
+    radial-gradient(circle at center, #474799, #131330);
+  display: flex; /* Use flexbox to center content */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's on top of everything */
+  transition: opacity 0.5s ease-out; /* Smooth transition when fading out */
+  opacity: 1; /* Initially visible */
+}
+
+#loading-overlay p {
+  color: white;
+  font-size: 24px;
+  margin-top: 20px;
+  font-family: var(--primary-font-family);
+}
+
+#loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none; /* Allows clicks on elements behind it when hidden */
+}
+
+/* Basic spinner style (you can use more complex CSS animations or SVG/GIF) */
+.loading-spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
 /* Add this new rule for the fixed background layer */
 body::before {
   content: "";
@@ -105,7 +164,7 @@ button {
 }
 #clubScheduleTitle,
 #clubPageTitle {
-  min-height: 78px; /* to help with shifting */
+  /* min-height: 78px; */
   font-size: 36px;
   font-family: "New Amsterdam", sans-serif;
   font-weight: 400;
@@ -274,7 +333,7 @@ button {
 }
 
 #clubDetails {
-  min-height: 33.59px; /* to help with shifting */
+  /* min-height: 33.59px; */
   text-align: center;
 }
 
@@ -1026,7 +1085,7 @@ button {
 }
 
 #scheduleSection {
-  min-height: 525px; /* to help with shifting */
+  /* min-height: 525px; */
   font-family: var(--primary-font-family);
   margin-top: 20px;
   padding: 10px;
@@ -1051,7 +1110,7 @@ button {
 }
 
 #closestEventDisplay {
-  min-height: 305px; /* to help with shifting */
+  /* min-height: 305px; */
   font-family: var(--primary-font-family);
   padding: 15px;
   border: 3px dashed #474747; /* A subtle border to show it's a placeholder */
@@ -1492,7 +1551,7 @@ input[type="checkbox"]:checked {
 
 #edit-club-button,
 #viewScheduleButton {
-  min-height: 62px; /* to help with shifting */
+  /* min-height: 62px; */
   width: min(300px, 85vw);
   max-width: 100%;
   box-sizing: border-box;

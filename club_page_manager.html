@@ -23,56 +23,64 @@
     
   </head>
   <body>
-    <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
-    <h1 id="clubPageTitle"></h1>
-    <div id="clubDetails" class="fancy-label">
-      <p></p>
-    </div>
-    <hr style="background-color: transparent; height: 6px; border: none;">
-
-    <button id = "edit-club-button" class = "fancy-button" >EDIT CLUB</button>
-
-
-    <div id="scheduleSection">
-        <h3>UPCOMING EVENTS</h3>
-        <div id="closestEventDisplay">
-            
-        </div>
-        <button id="viewScheduleButton" class="fancy-button">EDIT SCHEDULE</button>
+    <div id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>LOADING CLUB PAGE...</p>
     </div>
 
+    <div id="content">  
+      <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
+      <h1 id="clubPageTitle"></h1>
+      <div id="clubDetails" class="fancy-label">
+        <p></p>
+      </div>
+      <hr style="background-color: transparent; height: 6px; border: none;">
 
-    <div id="dynamic-sections-wrapper">
-        <!-- <p class="small-title">MEMBERSHIP REQUESTS</p> -->
-        <div id="pendingRequestsContainer" class="fancy-black-label">
-          <p class="fancy-label" ></p>
-        </div>
+      <button id = "edit-club-button" class = "fancy-button" >EDIT CLUB</button>
 
-        <!-- <p class="small-title">MEMBERS</p> -->
-        <div id="membersContainer" class="fancy-black-label">
-          <p class="fancy-label" ></p>
-        </div>
+
+      <div id="scheduleSection">
+          <h3>UPCOMING EVENTS</h3>
+          <div id="closestEventDisplay">
+              
+          </div>
+          <button id="viewScheduleButton" class="fancy-button">EDIT SCHEDULE</button>
+      </div>
+
+
+      <div id="dynamic-sections-wrapper">
+          <!-- <p class="small-title">MEMBERSHIP REQUESTS</p> -->
+          <div id="pendingRequestsContainer" class="fancy-black-label">
+            <p class="fancy-label" ></p>
+          </div>
+
+          <!-- <p class="small-title">MEMBERS</p> -->
+          <div id="membersContainer" class="fancy-black-label">
+            <p class="fancy-label" ></p>
+          </div>
+      </div>
+
+      
+
+      <div id="popup-overlay" style="display: none;"></div>
+      <!-- Role Management Popup -->
+      <div id="role-management-popup" style="display: none;">
+          <div class="popup-content">
+              <h3 id="member-name-for-role">Manage [Member Name]</h3>
+              <label for="role-select" id="role-select-label">Select New Role</label>
+              <select id="role-select">
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+              </select>
+              <div class="popup-actions">
+                  <button id="submit-role-change" class="fancy-button">Update</button>
+                  <button id="cancel-role-change" class="fancy-button">Cancel</button>
+              </div>
+          </div>
+      </div>
     </div>
-
     
-
-    <div id="popup-overlay" style="display: none;"></div>
-    <!-- Role Management Popup -->
-    <div id="role-management-popup" style="display: none;">
-        <div class="popup-content">
-            <h3 id="member-name-for-role">Manage [Member Name]</h3>
-            <label for="role-select" id="role-select-label">Select New Role</label>
-            <select id="role-select">
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-            </select>
-            <div class="popup-actions">
-                <button id="submit-role-change" class="fancy-button">Update</button>
-                <button id="cancel-role-change" class="fancy-button">Cancel</button>
-            </div>
-        </div>
-    </div>
 
 
 
@@ -82,7 +90,7 @@
       }
     </script>
 
-
+    <script type="module" src="loading.js"></script>
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="club_page_manager.js"></script>
   </body>
