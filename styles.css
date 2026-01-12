@@ -1103,21 +1103,7 @@ button {
   font-size: 0.9em;
 }
 
-@media (max-width: 700px) {
-  /* Adjust this breakpoint as needed for your specific mobile view */
-  .event-card-actions {
-    flex-wrap: nowrap; /* Forces buttons onto a single line */
-    justify-content: center; /* Centers the buttons on that line */
-    gap: 5px; /* Slightly reduce the gap between buttons */
-  }
 
-  .event-card-actions button {
-    padding: 4px 8px; /* Reduce padding to make buttons smaller */
-    font-size: 0.75em; /* Reduce font size for button text */
-    flex-shrink: 1; /* Allows buttons to shrink to fit the space */
-    white-space: nowrap; /* Prevents button text from wrapping */
-  }
-}
 
 /* For the canceled tag */
 .canceled-tag {
