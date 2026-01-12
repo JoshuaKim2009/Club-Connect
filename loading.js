@@ -1,6 +1,6 @@
 // loading.js
 
-const MINIMUM_LOADER_DISPLAY_TIME_MS = 1000; // The requested 500 ms minimum display time
+const MINIMUM_LOADER_DISPLAY_TIME_MS = 1750;
 
 let loadCompleted = false; // Flag to track if window.onload has fired
 let minTimePassed = false; // Flag to track if the minimum display time has passed
