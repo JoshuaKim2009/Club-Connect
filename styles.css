@@ -462,7 +462,7 @@ input[type="submit"], button {
 
 .fancy-button:hover {
   filter: brightness(1.1);
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: 0px 8px 0px #000000;
 }
 
@@ -473,7 +473,7 @@ input[type="submit"], button {
 
 .fancy-black-button:hover {
   filter: brightness(1.1);
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: 0px 8px 0px #000000;
 }
 
@@ -1558,6 +1558,21 @@ input[type="checkbox"]:checked {
   box-sizing: border-box;
   margin-top: 30px;
   margin-bottom: 30px;
+  
+  box-shadow: 0px 2px 0px #000000;
+  transition: all 0.05s ease-in-out;
+
+}
+
+#rsvp-details-modal #rsvp-lists #close-rsvp-modal:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0px 4px 0px #000000;
+}
+
+#rsvp-details-modal #rsvp-lists #close-rsvp-modal:active {
+  transform: translateY(3px);
+  box-shadow: 0px 0px 0px #000000;
 }
 
 #edit-club-button,
