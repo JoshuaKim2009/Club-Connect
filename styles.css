@@ -97,6 +97,8 @@ body::before {
 
 body.no-scroll {
   overflow: hidden;
+  touch-action: none;
+  -webkit-overflow-scrolling: none;
 }
 
 ::-webkit-scrollbar {
@@ -164,7 +166,7 @@ button {
 }
 #clubScheduleTitle,
 #clubPageTitle {
-  /* min-height: 78px; */
+  min-height: 78px;
   font-size: 36px;
   font-family: "New Amsterdam", sans-serif;
   font-weight: 400;
@@ -333,7 +335,7 @@ button {
 }
 
 #clubDetails {
-  /* min-height: 33.59px; */
+  min-height: 33.59px;
   text-align: center;
 }
 
@@ -1085,7 +1087,7 @@ button {
 }
 
 #scheduleSection {
-  /* min-height: 525px; */
+  /* min-height: 530px; */
   font-family: var(--primary-font-family);
   margin-top: 20px;
   padding: 10px;
@@ -1110,7 +1112,7 @@ button {
 }
 
 #closestEventDisplay {
-  /* min-height: 305px; */
+  min-height: 200px;
   font-family: var(--primary-font-family);
   padding: 15px;
   border: 3px dashed #474747; /* A subtle border to show it's a placeholder */
@@ -1551,7 +1553,7 @@ input[type="checkbox"]:checked {
 
 #edit-club-button,
 #viewScheduleButton {
-  /* min-height: 62px; */
+  min-height: 62px;
   width: min(300px, 85vw);
   max-width: 100%;
   box-sizing: border-box;
