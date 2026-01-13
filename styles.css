@@ -6,6 +6,33 @@ body {
   position: relative; /* Sometimes needed */
 }
 
+#content {
+    display: none; /* Initially hidden */
+}
+
+/* Initial hidden state for ALL direct children of #content */
+/* They start invisible and slightly below their final position */
+#content > * {
+    opacity: 0;
+    transform: translateY(20px); /* RESTORED: Start slightly below its final position */
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out; /* RESTORED: Smooth animation for both */
+}
+
+/* When the JavaScript adds .revealed-child, they become visible and move up */
+#content > *.revealed-child {
+    opacity: 1;
+    transform: translateY(0); /* RESTORED: Move to its final position */
+}
+
+
+/* Ensure the .hidden class is robust for other elements too if still used */
+.hidden {
+  display: none !important;
+}
+.show {
+  display: block;
+}
+
 #loading-overlay {
   position: fixed; /* Stays in place when scrolling */
   top: 0;
@@ -335,7 +362,7 @@ button {
 }
 
 #clubDetails {
-  min-height: 33.59px;
+  min-height: 30px;
   text-align: center;
 }
 
