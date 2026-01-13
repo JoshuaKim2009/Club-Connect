@@ -8,7 +8,7 @@ if (referrer.includes("your_clubs")) {
     MINIMUM_LOADER_DISPLAY_TIME_MS = 1750;
     console.log(`[LOADING SCRIPT] Coming from 'your_clubs', setting minimum loader display time to ${MINIMUM_LOADER_DISPLAY_TIME_MS}ms.`);
 } else {
-    MINIMUM_LOADER_DISPLAY_TIME_MS = 100;
+    MINIMUM_LOADER_DISPLAY_TIME_MS = 250;
     console.log(`[LOADING SCRIPT] Not coming from 'your_clubs', setting minimum loader display time to ${MINIMUM_LOADER_DISPLAY_TIME_MS}ms.`);
 }
 
