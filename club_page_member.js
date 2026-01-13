@@ -349,7 +349,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
         return;
     }
-    upcomingEventDisplay.innerHTML = '<p class="fancy-black-label">Loading...</p>'; // Adjusted loading message
+    upcomingEventDisplay.innerHTML = '<p class="fancy-black-label"></p>'; // Adjusted loading message
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
     // REMOVED: const now = new Date(); // Current date and time in local timezone
