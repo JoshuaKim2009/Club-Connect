@@ -834,22 +834,45 @@ function formatDate(dateString) {
 }
 
 
+
+function createLoadingEventCardHtml() {
+    return `
+        <div class="event-card-loading">
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+        </div>
+    `;
+}
+
+function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
+    // This function now returns a div element, not just innerHTML
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'event-card animate-in'; // Start with animate-in class
+    cardDiv.innerHTML = `
+        <p class="fancy-black-label">${message}</p>
+    `;
+    return cardDiv;
+}
+
 async function fetchAndDisplayUpcomingEvent(currentClubId) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
     if (!closestEventDisplay) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
         return;
     }
-    closestEventDisplay.innerHTML = '<p class="fancy-black-label"></p>'; // Adjusted loading message
+
+    // closestEventDisplay.innerHTML = createLoadingEventCardHtml(); // THIS LINE IS NOW REMOVED
+    // The loading card is now in the HTML by default
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
-    // Removed: const now = new Date();
-    // Removed: const nowUTC = new Date(now.toISOString());
-    // Removed: const todayUTCString = now.toISOString().split('T')[0];
 
     try {
         const querySnapshot = await getDocs(eventsRef);
         let allPossibleOccurrences = [];
+
 
         querySnapshot.forEach(doc => {
             const eventData = doc.data();
@@ -865,7 +888,6 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
                 while (currentDate.getTime() <= endDate.getTime()) {
                     const currentOccDateString = currentDate.toISOString().split('T')[0];
 
-                    // MODIFIED CODE: Remove future-date check (currentOccDateString >= todayUTCString)
                     if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(currentOccDateString)) {
                         allPossibleOccurrences.push({
                             eventData: eventData,
@@ -877,7 +899,6 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
                 }
             } else { // One-time event
                 const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
-                // MODIFIED CODE: Remove future-date check (eventDateString >= todayUTCString)
                 if (!exceptions.includes(eventDateString)) {
                     allPossibleOccurrences.push({
                         eventData: eventData,
@@ -889,39 +910,40 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
         });
 
 
-        const now = new Date(); // Get current local time once for efficiency
+        const now = new Date();
 
         allPossibleOccurrences = allPossibleOccurrences.filter(occurrence => {
-            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0]; // e.g., "YYYY-MM-DD"
-            const eventEndTimeStr = occurrence.eventData.endTime; // e.g., "HH:mm"
+            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0];
+            const eventEndTimeStr = occurrence.eventData.endTime;
 
-            // Construct event end time in local timezone for comparison
             const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
 
-            return eventEndMomentLocal.getTime() > now.getTime(); // Keep only events that end in the future
+            return eventEndMomentLocal.getTime() > now.getTime();
         });
 
-        // This sorting remains the same as it correctly orders all events chronologically
         allPossibleOccurrences.sort((a, b) => {
             const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
             const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
             return dateTimeA - dateTimeB;
         });
 
-        // Find the very first event in the sorted list (which will be the earliest)
-        // MODIFIED CODE: Simplified to just take the first event
         let nextEvent = allPossibleOccurrences.length > 0 ? allPossibleOccurrences[0] : null;
+
+        let finalCardElement;
+
+        closestEventDisplay.innerHTML = '';
 
         if (nextEvent) {
             console.log("There is an event scheduled:", nextEvent.eventData.eventName, "on", nextEvent.occurrenceDate.toISOString().split('T')[0], "at", nextEvent.eventData.startTime);
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'event-card display-event-card';
+
+            finalCardElement = document.createElement('div'); 
+            finalCardElement.className = 'event-card animate-in';
 
             const formattedDate = formatDate(nextEvent.occurrenceDate.toISOString().split('T')[0]);
             const formattedStartTime = formatTime(nextEvent.eventData.startTime);
             const formattedEndTime = formatTime(nextEvent.eventData.endTime);
 
-            cardDiv.innerHTML = `
+            finalCardElement.innerHTML = `
                 <h3>${nextEvent.eventData.eventName}</h3>
                 <p>•  Date: ${formattedDate}</p>
                 <p>•  Time: ${formattedStartTime} - ${formattedEndTime}</p>
@@ -929,17 +951,25 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
                 <p>•  Location: ${nextEvent.eventData.location}</p>
                 ${nextEvent.eventData.notes ? `<p>•  Notes: ${nextEvent.eventData.notes}</p>` : ''}
             `;
-
-            closestEventDisplay.innerHTML = '';
-            closestEventDisplay.appendChild(cardDiv);
+            closestEventDisplay.appendChild(finalCardElement);
 
         } else {
-            console.log("No events found at all."); // Adjusted message
-            closestEventDisplay.innerHTML = '<p class="fancy-black-label">No events scheduled.</p>'; // Adjusted message
+            console.log("No events found at all.");
+            finalCardElement = createNoEventsCardHtml(); 
+            closestEventDisplay.appendChild(finalCardElement);
         }
 
+        setTimeout(() => {
+            finalCardElement.classList.add('is-visible');
+        }, 10);
+
     } catch (error) {
-        console.error("Error fetching event:", error); // Adjusted error message
-        closestEventDisplay.innerHTML = '<p class="fancy-black-label">Error loading event.</p>'; // Adjusted error message
+        console.error("Error fetching event:", error);
+        closestEventDisplay.innerHTML = ''; 
+        const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
+        closestEventDisplay.appendChild(errorCard);
+        setTimeout(() => {
+            errorCard.classList.add('is-visible');
+        }, 10);
     }
 }
