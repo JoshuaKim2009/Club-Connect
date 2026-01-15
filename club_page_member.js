@@ -161,7 +161,8 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
                 
                 await fetchAndDisplayUpcomingEvent(id); 
                 // Call the simplified display function for members
-                displayMembersForMemberPage(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
+                const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
+                displayMembersForMemberPage(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
 
 
             } else { // User is neither manager, admin, nor member
@@ -363,6 +364,24 @@ function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
     return cardDiv;
 }
 
+function sortMembersAlphabetically(names, uids, roles = null) {
+    // Create an array of objects to keep name, UID, and role together during sorting
+    const combinedMembers = names.map((name, index) => ({
+        name: name,
+        uid: uids[index],
+        role: roles ? roles[index] : undefined // Only add role if it exists
+    }));
+
+    // Sort the combined array by name
+    combinedMembers.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Separate them back into sorted arrays
+    const sortedNames = combinedMembers.map(member => member.name);
+    const sortedUids = combinedMembers.map(member => member.uid);
+    const sortedRoles = roles ? combinedMembers.map(member => member.role) : null;
+
+    return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
+}
 
 async function fetchAndDisplayUpcomingEvent(currentClubId) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');

@@ -197,8 +197,13 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
                 }
             }
 
-            displayPendingMembers(memberNames, memberIds);
-            displayMembers(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
+            //Sorting for Pending Members
+            const sortedPending = sortMembersAlphabetically(memberNames, memberIds);
+            displayPendingMembers(sortedPending.names, sortedPending.uids);
+
+            //Sorting for Approved Members
+            const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
+            displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
             
             if (pendingMemberUids.length > 0) {
                 pendingRequestsContainer.style.order = -1; 
@@ -855,6 +860,26 @@ function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
         <p class="fancy-black-label">${message}</p>
     `;
     return cardDiv;
+}
+
+
+function sortMembersAlphabetically(names, uids, roles = null) {
+    // Create an array of objects to keep name, UID, and role together during sorting
+    const combinedMembers = names.map((name, index) => ({
+        name: name,
+        uid: uids[index],
+        role: roles ? roles[index] : undefined // Only add role if it exists
+    }));
+
+    // Sort the combined array by name
+    combinedMembers.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Separate them back into sorted arrays
+    const sortedNames = combinedMembers.map(member => member.name);
+    const sortedUids = combinedMembers.map(member => member.uid);
+    const sortedRoles = roles ? combinedMembers.map(member => member.role) : null;
+
+    return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
 }
 
 async function fetchAndDisplayUpcomingEvent(currentClubId) {
