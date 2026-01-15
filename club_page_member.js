@@ -58,7 +58,8 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
         if (clubId) {
             clubPageTitle.textContent = ""; // Clear initial title
-            await fetchClubDetails(clubId, myUid, myName); 
+            // Pass true for initial load animation
+            await fetchClubDetails(clubId, myUid, myName, true); 
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -78,7 +79,8 @@ function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-async function fetchClubDetails(id, currentUserId, currentUserName) {
+// Modified to accept animateCardEntry parameter
+async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry = true) {
     try {
         const clubRef = doc(db, "clubs", id);
         const clubSnap = await getDoc(clubRef);
@@ -159,7 +161,8 @@ async function fetchClubDetails(id, currentUserId, currentUserName) {
                     }
                 }
                 
-                await fetchAndDisplayUpcomingEvent(id); 
+                // Pass animateCardEntry to the upcoming event function
+                await fetchAndDisplayUpcomingEvent(id, animateCardEntry); 
                 // Call the simplified display function for members
                 const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
                 displayMembersForMemberPage(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
@@ -383,15 +386,12 @@ function sortMembersAlphabetically(names, uids, roles = null) {
     return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
 }
 
-async function fetchAndDisplayUpcomingEvent(currentClubId) {
+async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = true) { // Added animateCardEntry parameter
     const closestEventDisplay = document.getElementById('closestEventDisplay');
     if (!closestEventDisplay) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
         return;
     }
-
-    // closestEventDisplay.innerHTML = createLoadingEventCardHtml(); // THIS LINE IS NOW REMOVED
-    // The loading card is now in the HTML by default
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
 
@@ -462,8 +462,11 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
         if (nextEvent) {
             console.log("There is an event scheduled:", nextEvent.eventData.eventName, "on", nextEvent.occurrenceDate.toISOString().split('T')[0], "at", nextEvent.eventData.startTime);
 
-            finalCardElement = document.createElement('div'); 
-            finalCardElement.className = 'event-card animate-in';
+            finalCardElement = document.createElement('div');
+            finalCardElement.className = 'event-card'; // Start with just the base class
+            if (animateCardEntry) { // <--- ADDED THIS BLOCK
+                finalCardElement.classList.add('animate-in');
+            }
 
             const formattedDate = formatDate(nextEvent.occurrenceDate.toISOString().split('T')[0]);
             const formattedStartTime = formatTime(nextEvent.eventData.startTime);
@@ -481,22 +484,37 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
 
         } else {
             console.log("No events found at all.");
-            finalCardElement = createNoEventsCardHtml(); 
+           finalCardElement = createNoEventsCardHtml();
+            if (!animateCardEntry) { // <--- ADDED THIS BLOCK: If no animation, remove the animate-in class
+                finalCardElement.classList.remove('animate-in');
+            }
             closestEventDisplay.appendChild(finalCardElement);
         }
 
-        setTimeout(() => {
-            finalCardElement.classList.add('is-visible');
-        }, 10);
+        if (animateCardEntry) { // <--- ADDED THIS conditional check
+            setTimeout(() => {
+                if (finalCardElement) {
+                  finalCardElement.classList.add('is-visible');
+                }
+            }, 10);
+        } else { // <--- ADDED THIS ELSE BLOCK: If no animation, make it immediately visible
+            if (finalCardElement) {
+                finalCardElement.classList.add('is-visible');
+            }
+        }
 
     } catch (error) {
         console.error("Error fetching event:", error);
         closestEventDisplay.innerHTML = ''; 
         const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
         closestEventDisplay.appendChild(errorCard);
-        setTimeout(() => {
+        if (animateCardEntry) { // <--- ADDED THIS conditional check
+            setTimeout(() => {
+                errorCard.classList.add('is-visible');
+            }, 10);
+        } else { // <--- ADDED THIS ELSE BLOCK: If no animation, make it immediately visible
             errorCard.classList.add('is-visible');
-        }, 10);
+        }
     }
 }
 
