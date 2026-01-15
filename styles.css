@@ -1112,6 +1112,31 @@ button {
   padding: 8px 25px;
 }
 
+
+#adminActionsSection {
+  font-family: var(--primary-font-family);
+  /* margin-top: 20px; */
+  padding: 10px;
+  border: 3px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#f0f0f0, #e0e0e0);
+  box-shadow: 0px 6px 0px #000000;
+  width: 85%;
+  max-width: 600px;
+  margin: 20px auto;
+  display: block;
+  text-align: center;
+}
+
+#adminActionsSection h3 {
+  font-family: var(--primary-font-family);
+  text-align: center;
+  color: #000000;
+  margin-bottom: 15px;
+  font-size: 40px;
+  font-weight: normal;
+}
+
 #scheduleSection {
   /* min-height: 530px; */
   font-family: var(--primary-font-family);

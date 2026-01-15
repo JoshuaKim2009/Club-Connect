@@ -342,30 +342,51 @@ function calculateActiveOccurrences(eventData, exceptions) {
 }
 
 
+function createLoadingEventCardHtml() {
+    return `
+        <div class="event-card-loading">
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+            <div class="loading-line"></div>
+        </div>
+    `;
+}
+
+function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'event-card animate-in'; // Start with animate-in class
+    cardDiv.innerHTML = `
+        <p class="fancy-black-label">${message}</p>
+    `;
+    return cardDiv;
+}
+
 
 async function fetchAndDisplayUpcomingEvent(currentClubId) {
-    const upcomingEventDisplay = document.getElementById('closestEventDisplay'); // ID matches your HTML
-    if (!upcomingEventDisplay) {
+    const closestEventDisplay = document.getElementById('closestEventDisplay');
+    if (!closestEventDisplay) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
         return;
     }
-    upcomingEventDisplay.innerHTML = '<p class="fancy-black-label"></p>'; // Adjusted loading message
+
+    // closestEventDisplay.innerHTML = createLoadingEventCardHtml(); // THIS LINE IS NOW REMOVED
+    // The loading card is now in the HTML by default
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
-    // REMOVED: const now = new Date(); // Current date and time in local timezone
-    // REMOVED: const todayUTCString = now.toISOString().split('T')[0]; // Current date as YYYY-MM-DD UTC
 
     try {
         const querySnapshot = await getDocs(eventsRef);
         let allPossibleOccurrences = [];
 
+
         querySnapshot.forEach(doc => {
             const eventData = doc.data();
-            const eventId = doc.id; // The Firestore Document ID
+            const eventId = doc.id;
             const exceptions = eventData.exceptions || [];
 
             if (eventData.isWeekly) {
-                // Ensure dates are parsed as UTC midnight for consistent iteration
                 const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
                 const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
                 const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
@@ -374,11 +395,10 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
                 while (currentDate.getTime() <= endDate.getTime()) {
                     const currentOccDateString = currentDate.toISOString().split('T')[0];
 
-                    // MODIFIED CODE: Removed filtering based on `todayUTCString`
                     if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(currentOccDateString)) {
                         allPossibleOccurrences.push({
                             eventData: eventData,
-                            occurrenceDate: new Date(currentDate), // Keep as Date object for sorting
+                            occurrenceDate: new Date(currentDate),
                             originalEventId: eventId
                         });
                     }
@@ -386,7 +406,6 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
                 }
             } else { // One-time event
                 const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
-                // MODIFIED CODE: Removed filtering based on `todayUTCString`
                 if (!exceptions.includes(eventDateString)) {
                     allPossibleOccurrences.push({
                         eventData: eventData,
@@ -397,71 +416,71 @@ async function fetchAndDisplayUpcomingEvent(currentClubId) {
             }
         });
 
-        const now = new Date(); // Get current local time once for efficiency
+
+        const now = new Date();
 
         allPossibleOccurrences = allPossibleOccurrences.filter(occurrence => {
-            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0]; // e.g., "YYYY-MM-DD"
-            const eventEndTimeStr = occurrence.eventData.endTime; // e.g., "HH:mm"
+            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0];
+            const eventEndTimeStr = occurrence.eventData.endTime;
 
-            // Construct event end time in local timezone for comparison
             const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
 
-            return eventEndMomentLocal.getTime() > now.getTime(); // Keep only events that end in the future
+            return eventEndMomentLocal.getTime() > now.getTime();
         });
 
-        // Sort all possible occurrences by date and then by time (this remains the same and is crucial)
         allPossibleOccurrences.sort((a, b) => {
             const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
             const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
             return dateTimeA - dateTimeB;
         });
 
-        // MODIFIED CODE: Find the very first event in the sorted list (which will be the earliest)
         let nextEvent = allPossibleOccurrences.length > 0 ? allPossibleOccurrences[0] : null;
 
+        let finalCardElement;
+
+        closestEventDisplay.innerHTML = '';
+
         if (nextEvent) {
-            console.log("Found earliest event:", nextEvent.eventData.eventName, "on", nextEvent.occurrenceDate.toISOString().split('T')[0], "at", nextEvent.eventData.startTime);
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'event-card display-event-card'; // Use the same classes as schedule.js cards
+            console.log("There is an event scheduled:", nextEvent.eventData.eventName, "on", nextEvent.occurrenceDate.toISOString().split('T')[0], "at", nextEvent.eventData.startTime);
+
+            finalCardElement = document.createElement('div'); 
+            finalCardElement.className = 'event-card animate-in';
 
             const formattedDate = formatDate(nextEvent.occurrenceDate.toISOString().split('T')[0]);
             const formattedStartTime = formatTime(nextEvent.eventData.startTime);
             const formattedEndTime = formatTime(nextEvent.eventData.endTime);
 
-            // Re-fetch the eventData from Firestore to ensure we have the most up-to-date data for the card
-            // This part is generally fine, though if 'nextEvent.eventData' already contains all needed fields,
-            // this extra fetch might not be strictly necessary unless there's a specific reason.
-            const eventDocRef = doc(db, "clubs", currentClubId, "events", nextEvent.originalEventId);
-            const eventSnap = await getDoc(eventDocRef);
-            let eventDataToDisplay = nextEvent.eventData; // Fallback to what we have
-            if (eventSnap.exists()) {
-                eventDataToDisplay = eventSnap.data();
-            }
-
-
-            cardDiv.innerHTML = `
-                <h3>${eventDataToDisplay.eventName}</h3>
+            finalCardElement.innerHTML = `
+                <h3>${nextEvent.eventData.eventName}</h3>
                 <p>•  Date: ${formattedDate}</p>
                 <p>•  Time: ${formattedStartTime} - ${formattedEndTime}</p>
-                <p>•  Address: ${eventDataToDisplay.address}</p>
-                <p>•  Location: ${eventDataToDisplay.location}</p>
-                ${eventDataToDisplay.notes ? `<p>•  Notes: ${eventDataToDisplay.notes}</p>` : ''}
+                <p>•  Address: ${nextEvent.eventData.address}</p>
+                <p>•  Location: ${nextEvent.eventData.location}</p>
+                ${nextEvent.eventData.notes ? `<p>•  Notes: ${nextEvent.eventData.notes}</p>` : ''}
             `;
-
-            // Clear previous content and append the new card
-            upcomingEventDisplay.innerHTML = '';
-            upcomingEventDisplay.appendChild(cardDiv);
+            closestEventDisplay.appendChild(finalCardElement);
 
         } else {
-            console.log("No events found at all."); // Adjusted message
-            upcomingEventDisplay.innerHTML = '<p class="fancy-black-label">No events scheduled.</p>'; // Adjusted message
+            console.log("No events found at all.");
+            finalCardElement = createNoEventsCardHtml(); 
+            closestEventDisplay.appendChild(finalCardElement);
         }
 
+        setTimeout(() => {
+            finalCardElement.classList.add('is-visible');
+        }, 10);
+
     } catch (error) {
-        console.error("Error fetching event:", error); // Adjusted error message
-        upcomingEventDisplay.innerHTML = '<p class="fancy-black-label">Error loading event.</p>'; // Adjusted error message
+        console.error("Error fetching event:", error);
+        closestEventDisplay.innerHTML = ''; 
+        const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
+        closestEventDisplay.appendChild(errorCard);
+        setTimeout(() => {
+            errorCard.classList.add('is-visible');
+        }, 10);
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const viewScheduleButton = document.getElementById('viewScheduleButton');
