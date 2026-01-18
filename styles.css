@@ -1671,10 +1671,10 @@ input[type="checkbox"]:checked {
 
 #edit-club-button,
 #viewScheduleButton {
-  min-height: 62px;
+  /* min-height: 62px;
   width: min(300px, 85vw);
   max-width: 100%;
-  box-sizing: border-box;
+  box-sizing: border-box; */
 }
 
 #rsvp-details-modal {
