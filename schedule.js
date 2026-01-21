@@ -23,6 +23,7 @@ const auth = getAuth(app);
 let currentUser = null;     // Will store the authenticated Firebase user object (Firebase User object)
 let clubId = null;          // Will store the club ID from the URL (string)
 let currentUserRole = null; // Will store the user's role for THIS club ('manager', 'admin', 'member', 'guest')
+let isEditingEvent = false;
 
 // Get references to key DOM elements you'll likely use
 const clubScheduleTitle = document.getElementById('clubScheduleTitle');
@@ -254,6 +255,7 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
 }
 
 function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
+    isEditingEvent = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card editing-event-card'; // Add both classes
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -457,11 +459,13 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         console.log('SAVE button clicked for editing card:', currentEditId);
         await saveEvent(cardDiv, eventIdToUpdate); // Pass eventIdToUpdate
+        isEditingEvent = false;
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         console.log('CANCEL button clicked for editing card:', currentEditId);
         // Remove the editing card
         cardDiv.remove();
+        isEditingEvent = false; // <--- ADD THIS LINE
         // If it was an edit, re-fetch all to show the original display card again
         // If it was a new event, check if eventsContainer is now empty
         if (!isNewEvent) {
@@ -478,6 +482,10 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to add events.");
+        return;
+    }
+    if (isEditingEvent) { // NEW check
+        await showAppAlert("Please finish editing the current event before adding a new one.");
         return;
     }
 
@@ -677,10 +685,12 @@ async function saveEvent(cardDiv, existingEventId = null) {
         }
         
         cardDiv.remove(); // Remove the editing card after saving
+        isEditingEvent = false;
         await fetchAndDisplayEvents(); // Re-fetch and display all events
 
     } catch (error) {
         console.error("Error saving event:", error);
+        isEditingEvent = false;
         await showAppAlert("Failed to save event: " + error.message);
     }
 }
@@ -1111,6 +1121,11 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
 async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to edit events.");
+        return;
+    }
+
+    if (isEditingEvent) {
+        await showAppAlert("Please finish editing the current event before starting another edit.");
         return;
     }
 
