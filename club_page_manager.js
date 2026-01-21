@@ -208,9 +208,11 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
             if (pendingMemberUids.length > 0) {
                 pendingRequestsContainer.style.order = -1; 
                 membersContainer.style.order = 0;
+                pendingRequestsContainer.style.display = '';
             } else {
                 membersContainer.style.order = -1;
                 pendingRequestsContainer.style.order = 0;
+                pendingRequestsContainer.style.display = 'none';
             }
 
             await fetchAndDisplayUpcomingEvent(id, animateCardEntry);
