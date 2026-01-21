@@ -32,13 +32,18 @@ const db = getFirestore(app); // Initialize Firestore
 //submit
 const submit = document.getElementById("register-submit");
 
-submit.addEventListener("click", function(event){
+submit.addEventListener("click", async function(event){
 
   event.preventDefault()
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
   // Get the display name from an input field (make sure you have an input with id="name" in your HTML)
   const displayName = document.getElementById("name").value;
+  if (password !== confirmPassword) {
+    await showAppAlert("Passwords do not match. Please try again.");
+    return; // Stop the function if passwords don't match
+  }
 
   createUserWithEmailAndPassword(auth, email, password)
     .then(async (userCredential) => { // <--- **IMPORTANT: Added 'async' here**
@@ -79,10 +84,27 @@ submit.addEventListener("click", function(event){
       window.location.href = "index.html";
     })
     .catch(async (error) => {
-      // This catch block handles errors from createUserWithEmailAndPassword itself
       const errorCode = error.code;
-      const errorMessage = error.message;
-      await showAppAlert("Invalid submission: " + errorMessage)
+      let userFriendlyMessage = "An unexpected error occurred. Please try again.";
+
+      switch (errorCode) {
+        case 'auth/email-already-in-use': //
+          userFriendlyMessage = "This email is already registered. Please sign in or use a different email.";
+          break;
+        case 'auth/invalid-email': //
+          userFriendlyMessage = "The email address is not valid.";
+          break;
+        case 'auth/weak-password': //
+          userFriendlyMessage = "The password is too weak. Please choose a stronger password.";
+          break;
+        case 'auth/operation-not-allowed': //
+          userFriendlyMessage = "Email/password sign-up is not enabled. Please contact support.";
+          break;
+        default:
+          userFriendlyMessage = `Error: ${error.message}`; // Fallback for other errors
+          break;
+      }
+      await showAppAlert(userFriendlyMessage);
     });
 
 });

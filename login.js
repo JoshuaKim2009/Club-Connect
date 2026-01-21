@@ -45,10 +45,31 @@ submit.addEventListener("click", function(event){
       
       // ...
     })
-    .catch((error) => {
+    .catch(async (error) => {
       const errorCode = error.code;
-      const errorMessage = error.message;
-      // ..
+      let userFriendlyMessage = "An unexpected error occurred during login. Please try again.";
+
+      switch (errorCode) {
+        case 'auth/invalid-email': //
+          userFriendlyMessage = "The email address you entered is not valid.";
+          break;
+        case 'auth/user-disabled': //
+          userFriendlyMessage = "This account has been disabled. Please contact support.";
+          break;
+        case 'auth/user-not-found': //
+          userFriendlyMessage = "No user found with this email. Please check your email or register.";
+          break;
+        case 'auth/wrong-password': //
+          userFriendlyMessage = "Incorrect password. Please try again.";
+          break;
+        case 'auth/invalid-credential': //
+          userFriendlyMessage = "Invalid login credentials. Please check your email and password.";
+          break;
+        default:
+          userFriendlyMessage = `Error: ${error.message}`; // Fallback for other errors
+          break;
+      }
+      await showAppAlert(userFriendlyMessage);
     });
 
 });
