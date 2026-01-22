@@ -883,7 +883,7 @@ function sortMembersAlphabetically(names, uids, roles = null) {
     return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
 }
 
-async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = true) {
+async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
     if (!closestEventDisplay) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
