@@ -67,7 +67,7 @@ onAuthStateChanged(auth, async (user) => {
             clubPageTitle.textContent = "";
             myName = user.displayName;
             myUid = user.uid;
-             await fetchClubDetails(clubId, myUid, myName, true);
+            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true);
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -88,7 +88,7 @@ function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry = true) {
+async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry) {
     try {
         const clubRef = doc(db, "clubs", id);
         const clubSnap = await getDoc(clubRef);
@@ -499,7 +499,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                         await removeMember(clubId, memberUid);
                         // Re-fetch club details to update both pending and approved member lists
                         if (currentUser && clubId) {
-                            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+                            await fetchClubDetails(clubId, myUid, myName, false); 
                         }
                     }
                 });
