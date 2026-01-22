@@ -1023,12 +1023,34 @@ async function updatePagePart(newData) {
     await fetchClubDetails(newData.clubId, newData.currentUser.uid, newData.currentUser.displayName, false);
 }
 
-// Subscribe to snapshot changes with an async callback
-const unsubscribe = onSnapshot(docRef, async (docSnap) => { // <-- Mark callback as async
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        await updatePagePart(data);
-    } else {
-        console.log("No such document!");
-    }
+const docRef = doc(db, "clubs", clubId);
+
+
+let isInitialSnapshot = true;
+
+
+const unsubscribe = onSnapshot(docRef, async (docSnap) => {
+   if (docSnap.exists()) {
+       if (isInitialSnapshot) {
+           console.log("Snapshot initialized: skipping first update to preserve animation.");
+           isInitialSnapshot = false;
+           return; 
+       }
+
+
+       console.log("Database update detected. Syncing UI...");
+       const data = docSnap.data();
+       
+       // Ensure data has the keys updatePagePart expects
+       const updatePayload = {
+           clubId: clubId,
+           currentUser: currentUser,
+           ...data
+       };
+
+
+       await updatePagePart(updatePayload);
+   } else {
+       console.log("No such club document found via snapshot.");
+   }
 });
