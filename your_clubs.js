@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 // You'll need getAuth and onAuthStateChanged to get the current user
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 // You'll need getFirestore, doc, and getDoc to fetch user and club documents
-import { getFirestore, doc, getDoc, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
 // Your web app's Firebase configuration
@@ -26,6 +26,8 @@ let clubIds = [];   // Stores IDs of managed clubs
 let currentUser = null; // Stores the current Firebase Auth user object
 let memberClubNames = []; // Stores names of clubs the user is a MEMBER OF
 let memberClubIds = [];   // Stores IDs of clubs the user is a MEMBER OF
+let userDocRef = null; // Reference to the current user's document in Firestore
+let unsubscribeUserDoc = null;
 
 
 async function loadManagedClubs() {
@@ -42,7 +44,7 @@ async function loadManagedClubs() {
     
     console.log(`Fetching document for user: ${currentUser.uid}`);
     const userDocRef = doc(db, "users", currentUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
+    const userDocSnap = await getDoc(userDocRef, { source: 'server' });
     if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
         const managedClubs = userData.managed_clubs || [];
@@ -112,7 +114,7 @@ async function loadMemberClubs() {
   try {
     console.log(`Fetching document for user: ${currentUser.uid}`);
     const userDocRef = doc(db, "users", currentUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
+    const userDocSnap = await getDoc(userDocRef, { source: 'server' });
 
     if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
@@ -165,8 +167,12 @@ onAuthStateChanged(auth, (user) => {
   currentUser = user; 
   if (user) {
     console.log("Auth state changed: User is logged in.", user.uid);
-    loadManagedClubs(); // Load managed clubs
-    loadMemberClubs(); // Load member clubs
+    
+    // NEW: Set the userDocRef
+    userDocRef = doc(db, "users", currentUser.uid);
+    // NEW: Call the function to set up real-time updates
+    setupRealtimeClubUpdates();
+
   } else {
     console.log("Auth state changed: No user is logged in.");
     clubNames = []; 
@@ -177,6 +183,12 @@ onAuthStateChanged(auth, (user) => {
     memberClubIds = [];
     document.getElementById("memberClubContainer").innerHTML = "";
     document.getElementById('member-clubs-loading-text').textContent = "NO CLUBS YET";
+
+    // NEW: Unsubscribe from the user document listener when logging out
+    if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null; // Clear the reference
+    }
   }
 });
 
@@ -316,12 +328,12 @@ async function getMemberRoleForClub(clubID, memberUid) {
   }
   try {
     const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
+    const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' }); 
     if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
       return memberRoleSnap.data().role;
     } else {
       const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
+      const clubSnap = await getDoc(clubRef, { source: 'server' }); 
       if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
           return 'manager'; 
       }
@@ -336,3 +348,26 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 
 
+
+
+function setupRealtimeClubUpdates() {
+    // Unsubscribe from any previous listener to avoid duplicates,
+    // important if onAuthStateChanged fires multiple times in complex scenarios.
+    if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+    }
+
+    // Set up the real-time listener for the user's document
+    unsubscribeUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
+        console.log("User document updated in real-time. Refreshing club lists.");
+        // We don't need to check userDocSnap.exists() here because
+        // loadManagedClubs and loadMemberClubs already handle that logic internally.
+
+        // Simply re-call your existing functions to re-load and re-display the clubs
+        loadManagedClubs();
+        loadMemberClubs();
+    }, (error) => {
+        console.error("Error listening to user document for club updates:", error);
+        showAppAlert("Real-time club updates failed: " + error.message);
+    });
+}
