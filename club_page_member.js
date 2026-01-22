@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 // Only import necessary Firestore functions for reading data
-import { getFirestore, doc, getDoc, collection, query, orderBy, where, getDocs  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, orderBy, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
@@ -57,8 +57,9 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
         if (clubId) {
             clubPageTitle.textContent = ""; // Clear initial title
-            // Pass true for initial load animation
-            await fetchClubDetails(clubId, myUid, myName, true); 
+            
+            setupClubMemberPageListeners(clubId, myUid, myName);
+
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -530,3 +531,63 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Element with ID 'viewScheduleButton' not found. Schedule button functionality may be impacted.");
     }
 });
+
+
+
+// NEW: Flag to track initial snapshot load
+let isInitialSnapshot = true;
+
+// NEW: Firestore document and collection references
+const docRef = doc(db, "clubs", clubId);
+const membersRef = collection(db, "clubs", clubId, "members");
+
+
+
+async function setupClubMemberPageListeners(id, currentUserId, currentUserName) {
+    // Listener for the main club document
+    onSnapshot(docRef, async (docSnap) => {
+        if (isInitialSnapshot) {
+            console.log("Initial club doc snapshot for member page.");
+        } else {
+            console.log("Club document changed in real-time for member page, refreshing UI.");
+        }
+        
+        if (!docSnap.exists()) {
+            clubPageTitle.textContent = "Club Not Found";
+            clubDetailsDiv.innerHTML = "<p>Sorry, this club does not exist.</p>";
+            console.warn(`Club document with ID ${id} not found.`);
+            setTimeout(() => {
+                window.location.href = 'your_clubs.html';
+            }, 2000);
+            return;
+        }
+
+        // Call your existing fetchClubDetails to update the UI based on the new data.
+        // The `isInitialSnapshot` flag determines if the event card animation should play.
+        await fetchClubDetails(id, currentUserId, currentUserName, isInitialSnapshot);
+
+        if (isInitialSnapshot) {
+            isInitialSnapshot = false; // After the first full load, set to false
+        }
+    }, (error) => {
+        console.error("Error listening to club document on member page:", error);
+        // Handle errors appropriately, e.g., show an alert
+        clubPageTitle.textContent = "Error Loading Club";
+        clubDetailsDiv.innerHTML = "<p>An error occurred while loading club details. Please try again.</p>";
+    });
+
+    
+    onSnapshot(membersRef, async (snapshot) => {
+        if (isInitialSnapshot) {
+            // console.log("Skipping initial members subcollection snapshot (handled by main club doc).");
+            return; // Skip initial run as fetchClubDetails already processes members.
+        }
+
+        console.log("Members subcollection changed in real-time, refreshing member list.");
+        // Re-fetch club details, but specifically tell it NOT to animate the event card
+        await fetchClubDetails(id, currentUserId, currentUserName, false);
+
+    }, (error) => {
+        console.error("Error listening to members subcollection on member page:", error);
+    });
+}
