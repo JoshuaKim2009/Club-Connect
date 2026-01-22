@@ -1008,12 +1008,27 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
         closestEventDisplay.innerHTML = ''; 
         const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
         closestEventDisplay.appendChild(errorCard);
-        if (animateCardEntry) { // <--- ADD THIS conditional check
+        if (animateCardEntry) {
             setTimeout(() => {
                 errorCard.classList.add('is-visible');
             }, 10);
-        } else { // <--- ADD THIS ELSE BLOCK: If no animation, make it immediately visible
+        } else { 
             errorCard.classList.add('is-visible');
         }
     }
 }
+
+
+async function updatePagePart(newData) {
+    await fetchClubDetails(newData.clubId, newData.currentUser.uid, newData.currentUser.displayName, false);
+}
+
+// Subscribe to snapshot changes with an async callback
+const unsubscribe = onSnapshot(docRef, async (docSnap) => { // <-- Mark callback as async
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        await updatePagePart(data);
+    } else {
+        console.log("No such document!");
+    }
+});
