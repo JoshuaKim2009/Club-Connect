@@ -771,9 +771,9 @@ submitRoleChangeButton.addEventListener('click', async () => {
         if (updatePerformed && newRole !== "manager") {
             closeRoleManagementPopup();
 
-            // if (currentUser && clubId) {
-            //     fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
-            // }
+            if (currentUser && clubId) {
+                fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+            }
         }
 
     } catch (error) {
@@ -1051,20 +1051,3 @@ onSnapshot(docRef, async (docSnap) => {
    }
 });
 
-
-// Listener for the Members Subcollection (Role changes)
-onSnapshot(membersRef, async (snapshot) => {
-   // Skip the very first run
-   if (!isMembersCollInitialized) {
-       isMembersCollInitialized = true;
-       console.log("Members subcollection listener initialized.");
-       return;
-   }
-
-
-   // Now it only runs when a role actually changes in the DB
-   if (currentUser) {
-       console.log("Member role changed via snapshot.");
-       await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
-   }
-});
