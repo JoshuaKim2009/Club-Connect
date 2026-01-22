@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction, query, orderBy, where, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction, query, orderBy, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
@@ -329,7 +329,7 @@ function displayPendingMembers(memberNames, memberUids) {
                 console.log(`Approving member: ${name} (UID: ${memberUid})`);
                 await approveMember(clubId, memberUid);
                 if (currentUser && clubId) {
-                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName);
+                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
                 }
             });
             actionButtonsDiv.appendChild(approveBtn);
@@ -344,7 +344,7 @@ function displayPendingMembers(memberNames, memberUids) {
                 console.log(`Denying member: ${name} (UID: ${memberUid})`);
                 await denyMember(clubId, memberUid);
                 if (currentUser && clubId) {
-                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName);
+                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
                 }
             });
             actionButtonsDiv.appendChild(denyBtn);
@@ -499,7 +499,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                         await removeMember(clubId, memberUid);
                         // Re-fetch club details to update both pending and approved member lists
                         if (currentUser && clubId) {
-                            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName);
+                            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
                         }
                     }
                 });
