@@ -329,7 +329,7 @@ function displayPendingMembers(memberNames, memberUids) {
                 console.log(`Approving member: ${name} (UID: ${memberUid})`);
                 await approveMember(clubId, memberUid);
                 if (currentUser && clubId) {
-                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+                    //await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
                 }
             });
             actionButtonsDiv.appendChild(approveBtn);
@@ -344,7 +344,7 @@ function displayPendingMembers(memberNames, memberUids) {
                 console.log(`Denying member: ${name} (UID: ${memberUid})`);
                 await denyMember(clubId, memberUid);
                 if (currentUser && clubId) {
-                    await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+                    //await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
                 }
             });
             actionButtonsDiv.appendChild(denyBtn);
@@ -499,7 +499,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                         await removeMember(clubId, memberUid);
                         // Re-fetch club details to update both pending and approved member lists
                         if (currentUser && clubId) {
-                            await fetchClubDetails(clubId, myUid, myName, false); 
+                            //await fetchClubDetails(clubId, myUid, myName, false); 
                         }
                     }
                 });
@@ -769,7 +769,7 @@ submitRoleChangeButton.addEventListener('click', async () => {
             closeRoleManagementPopup();
 
             if (currentUser && clubId) {
-                await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+                //await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
             }
         }
 
