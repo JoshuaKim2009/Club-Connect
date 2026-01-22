@@ -48,7 +48,6 @@ var myName = "";
 var myUid = "";
 var myCurrentRoleInClub = ""; // To store the current user's role for this specific club
 
-// --- NEW AUTHENTICATION LOGIC ---
 onAuthStateChanged(auth, async (user) => {
     currentUser = user; 
     if (user) {
@@ -73,7 +72,7 @@ onAuthStateChanged(auth, async (user) => {
         }, 2000);
     }
 });
-// --- END NEW AUTHENTICATION LOGIC ---
+
 
 function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
