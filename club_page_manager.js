@@ -88,7 +88,7 @@ function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry) {
+async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry, skipEvents = false) {
     try {
         const clubRef = doc(db, "clubs", id);
         const clubSnap = await getDoc(clubRef);
@@ -215,8 +215,11 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 pendingRequestsContainer.style.display = 'none';
             }
 
-            await fetchAndDisplayUpcomingEvent(id, animateCardEntry);
             
+            if (!skipEvents) {
+                await fetchAndDisplayUpcomingEvent(id, animateCardEntry);
+            }
+
 
 
         } else {
@@ -768,9 +771,9 @@ submitRoleChangeButton.addEventListener('click', async () => {
         if (updatePerformed && newRole !== "manager") {
             closeRoleManagementPopup();
 
-            if (currentUser && clubId) {
-                //await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
-            }
+            // if (currentUser && clubId) {
+            //     fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+            // }
         }
 
     } catch (error) {
@@ -1019,38 +1022,44 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
 }
 
 
-async function updatePagePart(newData) {
-    await fetchClubDetails(newData.clubId, newData.currentUser.uid, newData.currentUser.displayName, false);
-}
+// --- CONSOLIDATED REAL-TIME LISTENERS ---
 
+
+// 1. Define the references
 const docRef = doc(db, "clubs", clubId);
+const membersRef = collection(db, "clubs", clubId, "members");
 
 
+// 2. This flag prevents the snapshots from firing 
+// immediately and killing your first-load animation.
 let isInitialSnapshot = true;
 
 
-const unsubscribe = onSnapshot(docRef, async (docSnap) => {
-   if (docSnap.exists()) {
-       if (isInitialSnapshot) {
-           console.log("Snapshot initialized: skipping first update to preserve animation.");
-           isInitialSnapshot = false;
-           return; 
-       }
+// Listener for the Main Club Document (Member joins/leaves)
+onSnapshot(docRef, async (docSnap) => {
+    if (isInitialSnapshot) {
+        // We do nothing on the very first hit; 
+        // onAuthStateChanged is already handling the first load.
+        isInitialSnapshot = false;
+        return;
+    }
 
 
-       console.log("Database update detected. Syncing UI...");
-       const data = docSnap.data();
-       
-       // Ensure data has the keys updatePagePart expects
-       const updatePayload = {
-           clubId: clubId,
-           currentUser: currentUser,
-           ...data
-       };
-
-
-       await updatePagePart(updatePayload);
-   } else {
-       console.log("No such club document found via snapshot.");
-   }
+    if (docSnap.exists() && currentUser) {
+        console.log("Club members list updated via snapshot.");
+        // Pass 'true' as the 5th argument to skip the event card reload/shimmer
+        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+    }
 });
+
+
+// Listener for the Members Subcollection (Role changes)
+onSnapshot(membersRef, async (snapshot) => {
+    // Check if it's past the first load and we have a user
+    if (!isInitialSnapshot && currentUser) {
+        console.log("Member role changed via snapshot.");
+        // Pass 'true' as the 5th argument to skip the event card reload/shimmer
+        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+    }
+});
+
