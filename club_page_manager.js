@@ -771,9 +771,9 @@ submitRoleChangeButton.addEventListener('click', async () => {
         if (updatePerformed && newRole !== "manager") {
             closeRoleManagementPopup();
 
-            if (currentUser && clubId) {
-                fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
-            }
+            // if (currentUser && clubId) {
+            //     fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false);
+            // }
         }
 
     } catch (error) {
@@ -1022,32 +1022,39 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
 }
 
 
-// --- CONSOLIDATED REAL-TIME LISTENERS ---
-
-
-// 1. Define the references
 const docRef = doc(db, "clubs", clubId);
 const membersRef = collection(db, "clubs", clubId, "members");
 
 
-// 2. Separate flags for each listener to ensure they both skip their first "auto-fire"
-let isClubDocInitialized = false;
-let isMembersCollInitialized = false;
+let isInitialSnapshot = true;
 
 
-// Listener for the Main Club Document (Member joins/leaves)
+// 1. Listen for Main Club Doc (Handles Join/Leave)
 onSnapshot(docRef, async (docSnap) => {
-   // Skip the very first run
-   if (!isClubDocInitialized) {
-       isClubDocInitialized = true;
-       console.log("Main Club Document listener initialized.");
-       return;
-   }
-
-
-   if (docSnap.exists() && currentUser) {
-       console.log("Club members list updated via snapshot (Join/Leave).");
-       await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
-   }
+    if (isInitialSnapshot) return; // Skip first run
+    
+    if (docSnap.exists() && currentUser) {
+        console.log("Main doc changed, full UI sync...");
+        // This updates the join code and internal arrays
+        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+    }
 });
 
+
+// 2. Listen for Members Subcollection (Handles ROLE changes)
+onSnapshot(membersRef, async (snapshot) => {
+    if (isInitialSnapshot) {
+        isInitialSnapshot = false; 
+        return;
+    }
+
+
+    console.log("Role update detected! Updating the Member List UI...");
+    
+    // Instead of just calling fetchClubDetails, we force a refresh of the member list
+    if (currentUser && clubId) {
+        // We call fetchClubDetails with 'true' for skipEvents 
+        // to ensure the event card doesn't shimmer.
+        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+    }
+});
