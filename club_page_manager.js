@@ -883,7 +883,7 @@ function sortMembersAlphabetically(names, uids, roles = null) {
     return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
 }
 
-async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry) {
+async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
     if (!closestEventDisplay) {
         console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
@@ -964,7 +964,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry) {
 
             finalCardElement = document.createElement('div');
             finalCardElement.className = 'event-card'; // Start with just the base class
-            if (animateCardEntry) { // <--- ADD THIS BLOCK
+            if (animateCard) { // <--- ADD THIS BLOCK
                 finalCardElement.classList.add('animate-in');
             }
 
@@ -985,13 +985,13 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry) {
         } else {
             console.log("No events found at all.");
            finalCardElement = createNoEventsCardHtml();
-            if (!animateCardEntry) { // <--- ADD THIS BLOCK: If no animation, remove the animate-in class
+            if (!animateCard) { // <--- ADD THIS BLOCK: If no animation, remove the animate-in class
                 finalCardElement.classList.remove('animate-in');
             }
             closestEventDisplay.appendChild(finalCardElement);
         }
 
-        if (animateCardEntry) { // <--- ADD THIS conditional check
+        if (animateCard) { // <--- ADD THIS conditional check
             setTimeout(() => {
                 if (finalCardElement) {
                   finalCardElement.classList.add('is-visible');
@@ -1008,7 +1008,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry) {
         closestEventDisplay.innerHTML = ''; 
         const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
         closestEventDisplay.appendChild(errorCard);
-        if (animateCardEntry) {
+        if (animateCard) {
             setTimeout(() => {
                 errorCard.classList.add('is-visible');
             }, 10);
