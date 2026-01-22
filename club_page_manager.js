@@ -1030,36 +1030,41 @@ const docRef = doc(db, "clubs", clubId);
 const membersRef = collection(db, "clubs", clubId, "members");
 
 
-// 2. This flag prevents the snapshots from firing 
-// immediately and killing your first-load animation.
-let isInitialSnapshot = true;
+// 2. Separate flags for each listener to ensure they both skip their first "auto-fire"
+let isClubDocInitialized = false;
+let isMembersCollInitialized = false;
 
 
 // Listener for the Main Club Document (Member joins/leaves)
 onSnapshot(docRef, async (docSnap) => {
-    if (isInitialSnapshot) {
-        // We do nothing on the very first hit; 
-        // onAuthStateChanged is already handling the first load.
-        isInitialSnapshot = false;
-        return;
-    }
+   // Skip the very first run
+   if (!isClubDocInitialized) {
+       isClubDocInitialized = true;
+       console.log("Main Club Document listener initialized.");
+       return;
+   }
 
 
-    if (docSnap.exists() && currentUser) {
-        console.log("Club members list updated via snapshot.");
-        // Pass 'true' as the 5th argument to skip the event card reload/shimmer
-        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
-    }
+   if (docSnap.exists() && currentUser) {
+       console.log("Club members list updated via snapshot (Join/Leave).");
+       await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+   }
 });
 
 
 // Listener for the Members Subcollection (Role changes)
 onSnapshot(membersRef, async (snapshot) => {
-    // Check if it's past the first load and we have a user
-    if (!isInitialSnapshot && currentUser) {
-        console.log("Member role changed via snapshot.");
-        // Pass 'true' as the 5th argument to skip the event card reload/shimmer
-        await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
-    }
-});
+   // Skip the very first run
+   if (!isMembersCollInitialized) {
+       isMembersCollInitialized = true;
+       console.log("Members subcollection listener initialized.");
+       return;
+   }
 
+
+   // Now it only runs when a role actually changes in the DB
+   if (currentUser) {
+       console.log("Member role changed via snapshot.");
+       await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
+   }
+});
