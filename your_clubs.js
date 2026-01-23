@@ -166,29 +166,29 @@ async function loadMemberClubs() {
 onAuthStateChanged(auth, (user) => {
   currentUser = user; 
   if (user) {
-    console.log("Auth state changed: User is logged in.", user.uid);
-    
-    // NEW: Set the userDocRef
-    userDocRef = doc(db, "users", currentUser.uid);
-    // NEW: Call the function to set up real-time updates
-    setupRealtimeClubUpdates();
+      console.log("Auth state changed: User is logged in.", user.uid);
+      
+      // NEW: Set the global userDocRef based on the authenticated user
+      userDocRef = doc(db, "users", currentUser.uid);
+      // NEW: Call the function to set up real-time updates
+      setupRealtimeClubUpdates();
 
   } else {
-    console.log("Auth state changed: No user is logged in.");
-    clubNames = []; 
-    clubIds = [];
-    document.getElementById("clubContainer").innerHTML = ""; 
+      console.log("Auth state changed: No user is logged in.");
+      clubNames = []; 
+      clubIds = [];
+      document.getElementById("clubContainer").innerHTML = ""; 
 
-    memberClubNames = [];
-    memberClubIds = [];
-    document.getElementById("memberClubContainer").innerHTML = "";
-    document.getElementById('member-clubs-loading-text').textContent = "NO CLUBS YET";
+      memberClubNames = [];
+      memberClubIds = [];
+      document.getElementById("memberClubContainer").innerHTML = "";
+      document.getElementById('member-clubs-loading-text').textContent = "NO CLUBS YET";
 
-    // NEW: Unsubscribe from the user document listener when logging out
-    if (unsubscribeUserDoc) {
-        unsubscribeUserDoc();
-        unsubscribeUserDoc = null; // Clear the reference
-    }
+      // NEW: Unsubscribe from the user document listener when logging out
+      if (unsubscribeUserDoc) {
+          unsubscribeUserDoc();
+          unsubscribeUserDoc = null; // Clear the reference
+      }
   }
 });
 
@@ -328,7 +328,7 @@ async function getMemberRoleForClub(clubID, memberUid) {
   }
   try {
     const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' }); 
+    const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
     if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
       return memberRoleSnap.data().role;
     } else {
@@ -351,8 +351,7 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 
 function setupRealtimeClubUpdates() {
-    // Unsubscribe from any previous listener to avoid duplicates,
-    // important if onAuthStateChanged fires multiple times in complex scenarios.
+    // Unsubscribe from any previous listener to avoid duplicates.
     if (unsubscribeUserDoc) {
         unsubscribeUserDoc();
     }
@@ -360,10 +359,8 @@ function setupRealtimeClubUpdates() {
     // Set up the real-time listener for the user's document
     unsubscribeUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
         console.log("User document updated in real-time. Refreshing club lists.");
-        // We don't need to check userDocSnap.exists() here because
-        // loadManagedClubs and loadMemberClubs already handle that logic internally.
-
-        // Simply re-call your existing functions to re-load and re-display the clubs
+        // Your existing loadManagedClubs and loadMemberClubs functions will now be re-called
+        // with the latest data implicitly due to the { source: 'server' } fetches they perform.
         loadManagedClubs();
         loadMemberClubs();
     }, (error) => {
