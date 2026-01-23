@@ -96,9 +96,9 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
         const clubSnap = await getDoc(clubRef, { source: 'server' });
 
         const currentUserRole = await getMemberRoleForClub(id, currentUserId);
-        if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== currentUserRole) {
-            await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(currentUserRole)}!`);
-        }
+        //if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== currentUserRole) {
+            //await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(currentUserRole)}!`);
+        //}
         lastKnownCurrentUserRole = currentUserRole;
 
         if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
