@@ -47,6 +47,7 @@ var managerUid = "";
 var myName = "";
 var myUid = "";
 var myCurrentRoleInClub = ""; // To store the current user's role for this specific club
+let lastKnownCurrentUserRole = null;
 
 onAuthStateChanged(auth, async (user) => {
     currentUser = user; 
@@ -83,10 +84,14 @@ function capitalizeFirstLetter(str) {
 async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry = true) {
     try {
         const clubRef = doc(db, "clubs", id);
-        const clubSnap = await getDoc(clubRef);
+        const clubSnap = await getDoc(clubRef, { source: 'server' });
 
         // Fetch the current user's role for this specific club
         myCurrentRoleInClub = await getMemberRoleForClub(id, currentUserId);
+        if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== myCurrentRoleInClub) {
+            await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(myCurrentRoleInClub)}!`);
+        }
+        lastKnownCurrentUserRole = myCurrentRoleInClub; // Always update the last known role after processing
 
         if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin') {
             console.log(`User ${currentUserId} is a ${myCurrentRoleInClub} for club ${id}. Redirecting to manager page.`);
@@ -106,7 +111,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
                 if (actualManagerUid) {
                     const managerUserRef = doc(db, "users", actualManagerUid);
-                    const managerUserSnap = await getDoc(managerUserRef);
+                    const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });
                     if (managerUserSnap.exists() && managerUserSnap.data().name) {
                         actualManagerName = managerUserSnap.data().name;
                     }
@@ -146,7 +151,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 for (let i = 0; i < approvedMemberUids.length; i++) {
                     const memberUid = approvedMemberUids[i];
                     const userRef = doc(db, "users", memberUid);
-                    const userSnap = await getDoc(userRef);
+                    const userSnap = await getDoc(userRef, { source: 'server' });
 
                     if (userSnap.exists()) {
                         const userData = userSnap.data();
@@ -203,13 +208,13 @@ async function getMemberRoleForClub(clubID, memberUid) {
   }
   try {
     const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
+    const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
     if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
       return memberRoleSnap.data().role;
     } else {
       // Fallback: Check if they are the manager from the main club document
       const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
+      const clubSnap = await getDoc(clubRef, { source: 'server' });
       if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
           return 'manager'; 
       }

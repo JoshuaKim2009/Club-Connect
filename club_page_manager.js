@@ -43,6 +43,7 @@ var managerName = "";
 var managerUid = "";
 var myName = "";
 var myUid = "";
+let lastKnownCurrentUserRole = null;
 
 
 
@@ -91,9 +92,14 @@ function capitalizeFirstLetter(str) {
 async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry, skipEvents = false) {
     try {
         const clubRef = doc(db, "clubs", id);
-        const clubSnap = await getDoc(clubRef);
+        
+        const clubSnap = await getDoc(clubRef, { source: 'server' });
 
         const currentUserRole = await getMemberRoleForClub(id, currentUserId);
+        if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== currentUserRole) {
+            await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(currentUserRole)}!`);
+        }
+        lastKnownCurrentUserRole = currentUserRole;
 
         if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
             console.log(`User ${currentUserId} is a ${currentUserRole} for club ${id}. Redirecting to member page.`);
@@ -114,7 +120,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
                 if (actualManagerUid) {
                     const managerUserRef = doc(db, "users", actualManagerUid);
-                    const managerUserSnap = await getDoc(managerUserRef);
+                    const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });
                     if (managerUserSnap.exists() && managerUserSnap.data().name) {
                         actualManagerName = managerUserSnap.data().name;
                     }
@@ -150,7 +156,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
             for (const memberUid of pendingMemberUids) {
                 const userRef = doc(db, "users", memberUid);
-                const userSnap = await getDoc(userRef);
+                const userSnap = await getDoc(userRef, { source: 'server' });
 
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
@@ -173,11 +179,11 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
             for (const memberUid of approvedMemberUids) {
                 const userRef = doc(db, "users", memberUid);
-                const userSnap = await getDoc(userRef);
+                const userSnap = await getDoc(userRef, { source: 'server' });
 
                 // Fetch member role from subcollection
                 const memberRoleRef = doc(db, "clubs", id, "members", memberUid);
-                const memberRoleSnap = await getDoc(memberRoleRef);
+                const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
                 let memberRole = 'member'; // Default role if not found
 
                 if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
@@ -241,12 +247,12 @@ async function getMemberRoleForClub(clubID, memberUid) {
   }
   try {
     const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
+    const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
     if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
       return memberRoleSnap.data().role;
     } else {
       const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
+      const clubSnap = await getDoc(clubRef, { source: 'server' });
       if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
           return 'manager'; 
       }
