@@ -1760,89 +1760,181 @@ input[type="checkbox"]:checked {
 
 
 
-
-
 #clubAnnouncementsTitle {
-  min-height: 78px; /* Maintain height consistency */
-  font-size: 65px; /* Use the larger title font size */
+  min-height: 78px; 
+  font-size: 65px; 
   font-family: "New Amsterdam", sans-serif;
   font-weight: 400;
   font-style: normal;
   text-align: center;
-  color: white; /* Or use the gradient effect if preferred, like .pageTitle */
-  margin-top: 20px; /* Add some space above the title */
-  margin-bottom: 20px; /* Add some space below the title */
+  color: white; 
+  margin-top: 20px; 
+  margin-bottom: 20px; 
 }
 
-/* Style for the "Add Announcement" button - reuses existing fancy-button styles */
 #add-announcement-button {
-  margin: 0 auto 20px auto; /* Center button horizontally and add margin below */
-  display: block; /* Ensures it takes full width for centering */
-  /* No other specific styles needed as it already has .fancy-button class */
+  margin: 0 auto 20px auto; 
+  display: block; 
+
 }
 
-/* Style for the container that holds the announcements */
 #announcementsContainer {
-  /* Inherits from .fancy-black-label, which provides font, size, color */
-  /* Add container-specific styling here if needed, e.g., max-width, padding */
+
   width: 85%;
   max-width: 600px;
-  margin: 0 auto; /* Center the container */
-  padding: 10px 0; /* Some vertical padding for the container */
+  margin: 0 auto; 
+  padding: 10px 0; 
 }
 
-/* Style for the "No announcements yet" message */
 #noAnnouncementsMessage {
-    /* Inherits font and color from .fancy-label */
+
     text-align: center;
-    padding: 20px; /* Add some padding around the message */
-    font-style: italic; /* Make it italic for an informative look */
-    color: #cccccc; /* A lighter color for subtle text */
+    padding: 20px; 
+    font-style: italic; 
+    color: #cccccc; 
 }
 
-/* Style for individual announcement cards */
 .announcement-card {
   border: 3px solid black;
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
   box-shadow: 0px 6px 0px #000000;
-  padding: 15px;
-  margin: 10px auto; /* Space between cards and center them */
-  width: 100%; /* Take full width of its container */
-  max-width: 600px; /* Max width to prevent it from getting too wide */
-  text-align: left;
+  padding: 8px; 
+  margin: 8px auto; 
+  width: 85%; 
+  max-width: 600px; 
+  text-align: center;
   font-family: var(--primary-font-family, sans-serif);
-  color: black;
-  line-height: 1.5;
+  color: black; 
+  line-height: 1.4; 
 }
 
 .announcement-card h3 {
   font-weight: normal;
-  font-size: 1.8em; /* Slightly larger heading for announcements */
+  font-size: 1.6em; 
   text-align: center;
   margin-top: 0;
-  margin-bottom: 10px;
-  color: #333; /* Darker color for headings */
+  margin-bottom: 8px; 
 }
 
 .announcement-card p {
-  margin-top: 5px;
+  margin-top: 4px; 
+  margin-bottom: 4px; 
+  font-size: 1em; 
+}
+
+.announcement-card .announcement-meta {
+  display: block; 
+  text-align: center;
+  font-size: 0.8em; 
+  color: #666; 
+  margin-top: 10px; 
+}
+
+.announcement-card .announcement-card-actions {
+  margin-top: 8px; 
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; 
+  justify-content: center; 
+}
+
+.announcement-card .announcement-card-actions button {
+  padding: 5px 10px; 
+  font-size: 0.9em; 
+  background: linear-gradient(#ffffff, #b3b3b3);
+  font-family: var(--primary-font-family, sans-serif);
+  color: black;
+  border: 3px solid black;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.announcement-card .announcement-card-actions button:hover {
+  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(2px);
+}
+
+.announcement-card .announcement-card-actions button:active {
+  box-shadow: 0px 0px 0px #000000;
+  transform: translateY(4px);
+}
+
+.announcement-card.editing-announcement-card {
+  border: 3px solid #000000;
+  box-shadow: 0px 6px 0px #000000;
+  background: linear-gradient(#f0f0f0, #e0e0e0);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 85%; 
+  max-width: 600px; 
+  margin: 8px auto; 
+}
+
+.editing-announcement-card label {
+  display: block;
   margin-bottom: 5px;
-  font-size: 1.1em;
+  font-weight: normal;
+  color: black;
+  font-family: var(--primary-font-family, sans-serif);
+  font-size: 0.9em;
 }
 
-.announcement-card small {
-  display: block; /* Ensures timestamp/author is on its own line */
-  text-align: right;
-  font-size: 0.8em;
-  color: #666;
-  margin-top: 10px;
+.editing-announcement-card input[type="text"],
+.editing-announcement-card textarea {
+  width: calc(100% - 20px);
+  padding: 8px;
+  border: 3px solid black;
+  border-radius: 5px;
+  font-size: 1em;
+  font-family: var(--primary-font-family, sans-serif);
+  background-color: #ffffff;
 }
 
-/* Media query for smaller screens to adjust announcement card appearance */
+.editing-announcement-card input[type="text"]:focus,
+.editing-announcement-card textarea:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 1px #000000;
+}
+
+.editing-announcement-card .announcement-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.editing-announcement-card .announcement-card-actions button {
+  background: linear-gradient(#ffffff, #b3b3b3);
+  font-family: var(--primary-font-family, sans-serif);
+  font-size: 0.9em;
+  color: black;
+  border: 3px solid black;
+  padding: 4px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.editing-announcement-card .announcement-card-actions button:hover {
+  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(2px);
+}
+
+.editing-announcement-card .announcement-card-actions button:active {
+  box-shadow: 0px 0px 0px #000000;
+  transform: translateY(4px);
+}
+
 @media (max-width: 700px) {
   #clubAnnouncementsTitle {
-    font-size: 45px; /* Adjust title size for mobile */
+    font-size: 45px; 
     min-height: auto;
   }
   .announcement-card {
