@@ -385,6 +385,8 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
         }
     }
 
+    markAnnouncementAsRead(announcementId);
+
     return cardDiv;
 }
 
@@ -456,5 +458,40 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
     } catch (error) {
         console.error("Error deleting announcement:", error);
         await showAppAlert("Failed to delete announcement: " + error.message);
+    }
+}
+
+
+// Function to mark an announcement as read by the current user
+async function markAnnouncementAsRead(announcementId) {
+    if (!currentUser || !clubId) {
+        console.warn("Cannot mark announcement as read: user not logged in or clubId missing.");
+        return;
+    }
+
+    const userUid = currentUser.uid;
+    const userName = currentUser.displayName || "Anonymous User"; // Fallback if displayName is not set
+    
+    try {
+        // Reference to the 'readBy' subcollection under the specific announcement
+        const readByRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
+        // Document reference for this specific user's read status
+        const userReadDocRef = doc(readByRef, userUid); 
+
+        const userReadSnap = await getDoc(userReadDocRef);
+
+        if (!userReadSnap.exists()) {
+            // If the user hasn't read it yet, record their read
+            await setDoc(userReadDocRef, {
+                userId: userUid,
+                userName: userName,
+                readAt: serverTimestamp() // Record the time it was read
+            });
+            console.log(`User ${userName} (${userUid}) marked announcement ${announcementId} as read.`);
+        } else {
+            console.log(`User ${userName} (${userUid}) has already read announcement ${announcementId}. No update needed.`);
+        }
+    } catch (error) {
+        console.error("Error marking announcement as read:", error);
     }
 }

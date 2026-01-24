@@ -322,6 +322,18 @@ async function deleteClub(clubId) {
         await Promise.all(deleteRsvpSubcollectionPromises); // Wait for all RSVP documents to be deleted
         console.log(`All occurrenceRsvps subcollection documents for club ${clubId} deleted.`);
 
+        // 1d. Delete all documents in the 'announcements' subcollection
+        console.log(`Deleting announcements subcollection for club ${clubId}...`);
+        const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
+        const announcementDocsSnap = await getDocs(announcementsCollectionRef);
+        const deleteAnnouncementSubcollectionPromises = [];
+        announcementDocsSnap.forEach((announcementDoc) => {
+            deleteAnnouncementSubcollectionPromises.push(deleteDoc(announcementDoc.ref));
+        });
+        await Promise.all(deleteAnnouncementSubcollectionPromises); // Wait for all announcement documents to be deleted
+        console.log(`All announcements subcollection documents for club ${clubId} deleted.`);
+
+        
         // 2. Delete the main club document
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);
