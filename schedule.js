@@ -576,6 +576,9 @@ async function saveEvent(cardDiv, existingEventId = null) {
     const location = cardDiv.querySelector(`#edit-location-${tempDomId}`).value.trim();
     const notes = cardDiv.querySelector(`#edit-notes-${tempDomId}`).value.trim();
 
+    let savedEventId = null;
+    let savedOccurrenceDate = null;
+
 
     // --- Basic Validation ---
     if (!eventName) { await showAppAlert("Event Name is required!"); return; }
@@ -631,6 +634,8 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 parentRecurringEventId: originalEventIdForInstance // Link to the original recurring series
             };
             const newOverrideEventRef = await addDoc(eventsRef, overrideEventData); // Get ref to the new document
+            savedEventId = newOverrideEventRef.id; // Capture the ID of the newly created override event
+            savedOccurrenceDate = eventDataToSave.eventDate;
             const newOverrideEventId = newOverrideEventRef.id; // Get the ID of the newly created override event
 
             // 3. Transfer RSVPs from the original occurrence to the new override event
@@ -673,6 +678,8 @@ async function saveEvent(cardDiv, existingEventId = null) {
                     // Any other fields you want to preserve during update
                 };
                 await updateDoc(eventDocRef, updatedData);
+                savedEventId = existingEventId; // Capture the ID of the updated event
+                savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate; 
                 await showAppAlert("Event updated successfully!");
             } else {
                 console.error("Error: Attempted to update non-existent event document:", existingEventId);
@@ -680,13 +687,19 @@ async function saveEvent(cardDiv, existingEventId = null) {
             }
         } else {
             // Case 3: Adding a brand new event
-            await addDoc(eventsRef, eventDataToSave);
+            const newDocRef = await addDoc(eventsRef, eventDataToSave);
+            savedEventId = newDocRef.id; // Capture the ID of the newly added event
+            savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate;
             await showAppAlert("New event added successfully!");
         }
         
         cardDiv.remove(); // Remove the editing card after saving
         isEditingEvent = false;
         await fetchAndDisplayEvents(); // Re-fetch and display all events
+
+        if (savedEventId) {
+            scrollToEditedEvent(savedEventId, savedOccurrenceDate); // Add this line
+        }
 
     } catch (error) {
         console.error("Error saving event:", error);
@@ -1574,5 +1587,31 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         await showAppAlert("Failed to load RSVP details: " + error.message);
         overlay.style.display = 'none';
         modal.style.display = 'none';
+    }
+}
+
+
+
+function scrollToEditedEvent(eventId, occurrenceDateString = null) {
+    let selector;
+    if (occurrenceDateString) {
+        // For a specific instance (e.g., an override or a one-time event)
+        selector = `.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`;
+    } else {
+        // For a general event or series, find the first displayed card for that event ID
+        selector = `.event-card[data-original-event-id="${eventId}"]`;
+    }
+
+    const targetElement = document.querySelector(selector);
+
+    if (targetElement) {
+        const topPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({
+            top: topPosition - 10, // 10px margin
+            behavior: 'smooth'
+        });
+        console.log(`Scrolled to event card with ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
+    } else {
+        console.warn(`Could not find event card to scroll to for ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
     }
 }
