@@ -594,6 +594,13 @@ async function saveEvent(cardDiv, existingEventId = null) {
         return; 
     }
 
+    if (isWeekly && !isEditingInstance) { // Only apply this check for new or updated weekly series (not single instance overrides)
+        const futureOccurrences = calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime);
+        if (futureOccurrences === 0) {
+            await showAppAlert("This weekly event configuration results in no events. Please adjust the dates or days of the week.");
+            return; 
+        }
+    }
 
     // --- Prepare Event Data Object ---
     const eventDataToSave = {
@@ -1614,4 +1621,39 @@ function scrollToEditedEvent(eventId, occurrenceDateString = null) {
     } else {
         console.warn(`Could not find event card to scroll to for ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
     }
+}
+
+
+
+
+function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, exceptions = [], startTime = '00:00', endTime = '23:59') {
+    let futureCount = 0;
+    const now = new Date(); // Current time for "future" comparison
+    
+    // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
+    const startIterDate = new Date(weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
+    const endIterDate = new Date(weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
+    const daysToMatch = daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+    let currentDate = new Date(startIterDate); // Start iteration from UTC midnight
+    while (currentDate.getTime() <= endIterDate.getTime()) { // Compare timestamps for safety
+        const currentOccDateString = currentDate.toISOString().split('T')[0];
+        
+        if (daysToMatch.includes(currentDate.getUTCDay())) {
+            // Check if this specific occurrence date is an exception
+            if (!exceptions.includes(currentOccDateString)) {
+                // Construct event end time in local timezone for comparison
+                // This combines the event's date (YYYY-MM-DD) and its end time (HH:mm)
+                // The `new Date()` constructor will interpret this string in the local timezone.
+                const eventEndMomentLocal = new Date(`${currentOccDateString}T${endTime}`);
+
+                // Only count if the event ends in the future
+                if (eventEndMomentLocal.getTime() > now.getTime()) {
+                    futureCount++;
+                }
+            }
+        }
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Increment by one day (UTC)
+    }
+    return futureCount;
 }
