@@ -802,13 +802,21 @@ editClubButton.addEventListener('click', async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const viewScheduleButton = document.getElementById('viewScheduleButton');
-
+    const announcementsButton = document.getElementById('announcementsButton');
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
             window.location.href = `schedule.html?clubId=${clubId}&returnTo=manager`;
         });
     } else {
         console.warn("Element with ID 'viewScheduleButton' not found. Schedule button functionality may be impacted.");
+    }
+
+    if (announcementsButton) {
+        announcementsButton.addEventListener('click', () => {
+            window.location.href = `announcements.html?clubId=${clubId}&returnTo=manager`;
+        });
+    } else {
+        console.warn("Element with ID 'announcementsButton' not found. Announcement button functionality may be impacted.");
     }
 
 });

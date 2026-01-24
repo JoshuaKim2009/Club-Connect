@@ -1171,6 +1171,7 @@ button {
   font-weight: normal;
 }
 
+#communicationSection,
 #scheduleSection {
   /* min-height: 530px; */
   font-family: var(--primary-font-family);
@@ -1187,6 +1188,7 @@ button {
   text-align: center; /* Centers text and inline-block elements like the button */
 }
 
+#communicationSection h3,
 #scheduleSection h3 {
   font-family: var(--primary-font-family);
   text-align: center;
@@ -1703,6 +1705,8 @@ input[type="checkbox"]:checked {
   box-shadow: 0px 0px 0px #000000;
 }
 
+#announcementsButton,
+#chatButton,
 #edit-club-button,
 #viewScheduleButton {
   min-height: 62px;
@@ -1749,4 +1753,106 @@ input[type="checkbox"]:checked {
 #rsvp-details-modal {
   scrollbar-width: thin;
   scrollbar-color: #747474 transparent;
+}
+
+
+
+
+
+
+
+
+#clubAnnouncementsTitle {
+  min-height: 78px; /* Maintain height consistency */
+  font-size: 65px; /* Use the larger title font size */
+  font-family: "New Amsterdam", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  text-align: center;
+  color: white; /* Or use the gradient effect if preferred, like .pageTitle */
+  margin-top: 20px; /* Add some space above the title */
+  margin-bottom: 20px; /* Add some space below the title */
+}
+
+/* Style for the "Add Announcement" button - reuses existing fancy-button styles */
+#add-announcement-button {
+  margin: 0 auto 20px auto; /* Center button horizontally and add margin below */
+  display: block; /* Ensures it takes full width for centering */
+  /* No other specific styles needed as it already has .fancy-button class */
+}
+
+/* Style for the container that holds the announcements */
+#announcementsContainer {
+  /* Inherits from .fancy-black-label, which provides font, size, color */
+  /* Add container-specific styling here if needed, e.g., max-width, padding */
+  width: 85%;
+  max-width: 600px;
+  margin: 0 auto; /* Center the container */
+  padding: 10px 0; /* Some vertical padding for the container */
+}
+
+/* Style for the "No announcements yet" message */
+#noAnnouncementsMessage {
+    /* Inherits font and color from .fancy-label */
+    text-align: center;
+    padding: 20px; /* Add some padding around the message */
+    font-style: italic; /* Make it italic for an informative look */
+    color: #cccccc; /* A lighter color for subtle text */
+}
+
+/* Style for individual announcement cards */
+.announcement-card {
+  border: 3px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#f0f0f0, #e0e0e0);
+  box-shadow: 0px 6px 0px #000000;
+  padding: 15px;
+  margin: 10px auto; /* Space between cards and center them */
+  width: 100%; /* Take full width of its container */
+  max-width: 600px; /* Max width to prevent it from getting too wide */
+  text-align: left;
+  font-family: var(--primary-font-family, sans-serif);
+  color: black;
+  line-height: 1.5;
+}
+
+.announcement-card h3 {
+  font-weight: normal;
+  font-size: 1.8em; /* Slightly larger heading for announcements */
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333; /* Darker color for headings */
+}
+
+.announcement-card p {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  font-size: 1.1em;
+}
+
+.announcement-card small {
+  display: block; /* Ensures timestamp/author is on its own line */
+  text-align: right;
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 10px;
+}
+
+/* Media query for smaller screens to adjust announcement card appearance */
+@media (max-width: 700px) {
+  #clubAnnouncementsTitle {
+    font-size: 45px; /* Adjust title size for mobile */
+    min-height: auto;
+  }
+  .announcement-card {
+    padding: 10px;
+    margin: 8px auto;
+  }
+  .announcement-card h3 {
+    font-size: 1.5em;
+  }
+  .announcement-card p {
+    font-size: 1em;
+  }
 }
