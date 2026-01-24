@@ -1950,29 +1950,30 @@ input[type="checkbox"]:checked {
 }
 
 
-/* CSS for the notification badge */
 .notification-badge {
-    background-color: red;
-    color: white;
-    border-radius: 50%; /* Makes it a circle */
-    padding: 2px 6px; /* Adjust padding as needed for content */
-    font-size: 0.7em; /* Smaller font size */
-    position: absolute; /* Position relative to the button */
-    top: -8px; /* Adjust vertical position */
-    right: -8px; /* Adjust horizontal position */
-    min-width: 20px; /* Ensure it's wide enough for two digits, e.g., "10" */
-    text-align: center;
-    line-height: 1.2; /* Center text vertically */
-    display: flex; /* Use flexbox to center content */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
-    box-sizing: border-box; /* Include padding in width/height */
-    height: 20px; /* Ensure consistent height for circular appearance */
-    border: 1px solid white; /* Optional: white border for better contrast */
-    font-weight: bold;
+  background-color: rgb(182, 16, 16); /* A good, deep red */
+  color: white;
+  border-radius: 4px; /* Rounded square shape */
+  padding: 3px 6px; /* Increased padding for larger size */
+  font-size: 20px; /* Increased font size for better readability in a larger badge */
+  position: absolute;
+  top: -10px;      /* Adjusted vertical position for larger badge */
+  right: -10px;    /* Adjusted horizontal position for larger badge */
+  min-width: 28px; /* Increased minimum width for a larger badge */
+  height: 28px;   /* Increased height for a larger badge */
+  display: flex;  /* Use flexbox for robust centering of text */
+  justify-content: center; /* Center content horizontally */
+  align-items: center;   /* Center content vertically */
+  box-sizing: border-box; /* Ensures padding and border are included in the height/min-width */
+  border: 2px solid rgb(112, 13, 13); /* Darker red border */
+  font-weight: normal; /* Text is now normal weight */
+  font-family: var(--primary-font-family, sans-serif);
+  z-index: 10; /* Ensure it's above other elements if needed */
+  display: none; /* Hidden by default, JavaScript shows it when count > 0 */
 }
-/* Ensure the announcements button is positioned relative so the badge positions correctly */
+
+/* Ensure the announcements button has position: relative for the badge to position correctly */
 #announcementsButton {
-    position: relative;
-    /* ... your existing button styles for #announcementsButton ... */
+  position: relative;
+  /* ... your existing button styles for #announcementsButton ... */
 }

@@ -1129,6 +1129,7 @@ async function getUnreadAnnouncementCount(clubId, userId) {
         console.error("Error getting unread announcement count:", error);
         return 0;
     }
+    console.log(`User ${userId} has ${unreadCount} unread announcements in club ${clubId}.`);
     return unreadCount;
 }
 
