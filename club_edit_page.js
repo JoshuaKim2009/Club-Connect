@@ -322,18 +322,33 @@ async function deleteClub(clubId) {
         await Promise.all(deleteRsvpSubcollectionPromises); // Wait for all RSVP documents to be deleted
         console.log(`All occurrenceRsvps subcollection documents for club ${clubId} deleted.`);
 
-        // 1d. Delete all documents in the 'announcements' subcollection
-        console.log(`Deleting announcements subcollection for club ${clubId}...`);
+        // 1d. Delete all documents in the 'announcements' subcollection and their 'readBy' subcollections
+        console.log(`Deleting announcements subcollection and nested 'readBy' subcollections for club ${clubId}...`);
         const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
         const announcementDocsSnap = await getDocs(announcementsCollectionRef);
-        const deleteAnnouncementSubcollectionPromises = [];
-        announcementDocsSnap.forEach((announcementDoc) => {
-            deleteAnnouncementSubcollectionPromises.push(deleteDoc(announcementDoc.ref));
-        });
-        await Promise.all(deleteAnnouncementSubcollectionPromises); // Wait for all announcement documents to be deleted
-        console.log(`All announcements subcollection documents for club ${clubId} deleted.`);
 
-        
+        const deletePromises = []; // Collect all deletion promises
+
+        for (const announcementDoc of announcementDocsSnap.docs) {
+            const announcementId = announcementDoc.id;
+
+            // Delete all documents in the 'readBy' subcollection for this announcement
+            const readByCollectionRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
+            const readByDocsSnap = await getDocs(readByCollectionRef);
+            readByDocsSnap.forEach((readByDoc) => {
+                deletePromises.push(deleteDoc(readByDoc.ref));
+                console.log(`  Marked readBy doc ${readByDoc.id} for announcement ${announcementId} for deletion.`);
+            });
+
+            // Delete the announcement document itself
+            deletePromises.push(deleteDoc(announcementDoc.ref));
+            console.log(`  Marked announcement doc ${announcementId} for deletion.`);
+        }
+
+        await Promise.all(deletePromises); // Wait for all collected deletion promises to resolve
+        console.log(`All announcements and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
+
+
         // 2. Delete the main club document
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);

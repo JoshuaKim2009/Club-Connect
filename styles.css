@@ -1948,3 +1948,31 @@ input[type="checkbox"]:checked {
     font-size: 1em;
   }
 }
+
+
+/* CSS for the notification badge */
+.notification-badge {
+    background-color: red;
+    color: white;
+    border-radius: 50%; /* Makes it a circle */
+    padding: 2px 6px; /* Adjust padding as needed for content */
+    font-size: 0.7em; /* Smaller font size */
+    position: absolute; /* Position relative to the button */
+    top: -8px; /* Adjust vertical position */
+    right: -8px; /* Adjust horizontal position */
+    min-width: 20px; /* Ensure it's wide enough for two digits, e.g., "10" */
+    text-align: center;
+    line-height: 1.2; /* Center text vertically */
+    display: flex; /* Use flexbox to center content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    box-sizing: border-box; /* Include padding in width/height */
+    height: 20px; /* Ensure consistent height for circular appearance */
+    border: 1px solid white; /* Optional: white border for better contrast */
+    font-weight: bold;
+}
+/* Ensure the announcements button is positioned relative so the badge positions correctly */
+#announcementsButton {
+    position: relative;
+    /* ... your existing button styles for #announcementsButton ... */
+}

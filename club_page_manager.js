@@ -69,6 +69,13 @@ onAuthStateChanged(auth, async (user) => {
             myName = user.displayName;
             myUid = user.uid;
             await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true);
+
+            // Initial load of unread count when the page loads
+            const unreadCount = await getUnreadAnnouncementCount(clubId, currentUser.uid);
+            updateUnreadBadge(unreadCount);
+
+            // Setup real-time listeners for changes in announcements that might affect the unread count
+            setupAnnouncementListeners(clubId, currentUser.uid);
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -1072,3 +1079,82 @@ onSnapshot(membersRef, async (snapshot) => {
         await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
     }
 });
+
+
+
+// Function to update the unread announcements badge in the UI
+function updateUnreadBadge(count) {
+    const badgeElement = document.getElementById('unreadAnnouncementsBadge');
+    if (badgeElement) {
+        if (count > 0) {
+            badgeElement.textContent = count;
+            badgeElement.style.display = 'flex'; // Show the badge (using flex for centering)
+        } else {
+            badgeElement.style.display = 'none'; // Hide the badge
+        }
+    }
+}
+
+// Function to get the count of unread announcements for the current user
+async function getUnreadAnnouncementCount(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot get unread count: clubId or userId missing.");
+        return 0;
+    }
+
+    let unreadCount = 0;
+    try {
+        const announcementsRef = collection(db, "clubs", clubId, "announcements");
+        const announcementsSnapshot = await getDocs(announcementsRef); // Get all announcements
+
+        for (const annDoc of announcementsSnapshot.docs) {
+            const announcementData = annDoc.data();
+            const announcementId = annDoc.id;
+
+            // NEW CONDITION: If the current user created this announcement,
+            // it's considered "read" by them, so we skip it.
+            if (announcementData.createdByUid === userId) {
+                continue; // Skip this announcement for unread count
+            }
+
+            // Check if a document exists in the 'readBy' subcollection for this user and announcement
+            const readByRef = doc(db, "clubs", clubId, "announcements", announcementId, "readBy", userId);
+            const readBySnap = await getDoc(readByRef);
+
+            if (!readBySnap.exists()) { // If the 'readBy' document for this user doesn't exist
+                unreadCount++;
+            }
+        }
+    } catch (error) {
+        console.error("Error getting unread announcement count:", error);
+        return 0;
+    }
+    return unreadCount;
+}
+
+
+// NEW: Function to set up real-time listeners for unread announcements
+function setupAnnouncementListeners(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot setup announcement listeners: clubId or userId missing.");
+        return;
+    }
+
+    const announcementsRef = collection(db, "clubs", clubId, "announcements");
+
+    // This listener will react to new announcements being added, or existing ones being deleted/modified.
+    // If an announcement is added or removed, the total count of announcements will change,
+    // and thus the unread count calculation will be re-triggered.
+    onSnapshot(announcementsRef, async (announcementsSnapshot) => {
+        console.log("Announcements collection activity detected, re-calculating unread count.");
+        const unreadCount = await getUnreadAnnouncementCount(clubId, userId);
+        updateUnreadBadge(unreadCount);
+    }, (error) => {
+        console.error("Error listening to announcements collection:", error);
+    });
+
+    // Note: If a user reads an announcement on a separate `announcements.html` page,
+    // and then navigates back to `club_page_manager.html`, the `onAuthStateChanged`
+    // block will re-execute, recalculating the count. This provides sufficient real-time
+    // updates for most user flows.
+}

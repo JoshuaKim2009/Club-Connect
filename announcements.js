@@ -270,7 +270,18 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
         } else {
             // Adding a brand new announcement
             announcementDataToSave.createdAt = serverTimestamp(); // Only set on creation
-            await addDoc(announcementsRef, announcementDataToSave);
+            const newDocRef = await addDoc(announcementsRef, announcementDataToSave); // Capture the new document reference
+            const newAnnouncementId = newDocRef.id; // Get the ID of the newly created announcement
+
+            // NEW: Mark the creator as having read their own announcement
+            // This ensures the readBy subcollection is initialized and the creator isn't counted as 'unread' for their own post
+            await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || "Anonymous",
+                readAt: serverTimestamp()
+            });
+            console.log(`Creator ${currentUser.displayName} (${currentUser.uid}) marked announcement ${newAnnouncementId} as read upon creation.`);
+
             await showAppAlert("New announcement added successfully!");
         }
         
