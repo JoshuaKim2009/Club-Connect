@@ -1104,6 +1104,18 @@ async function getUnreadAnnouncementCount(clubId, userId) {
 
     let unreadCount = 0;
     try {
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberDocSnap = await getDoc(memberDocRef);
+        let userJoinedAt = null;
+
+        if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
+            userJoinedAt = memberDocSnap.data().joinedAt; // This will be a Firestore Timestamp
+        } else {
+            console.warn(`User ${userId} does not have a joinedAt timestamp for club ${clubId}. Counting all announcements.`);
+            // If joinedAt is not found, assume they can see all announcements (or handle as an error)
+            // For now, if no joinedAt, we won't filter by it.
+        }
+
         const announcementsRef = collection(db, "clubs", clubId, "announcements");
         const announcementsSnapshot = await getDocs(announcementsRef); // Get all announcements
 
@@ -1111,7 +1123,10 @@ async function getUnreadAnnouncementCount(clubId, userId) {
             const announcementData = annDoc.data();
             const announcementId = annDoc.id;
 
-            // NEW CONDITION: If the current user created this announcement,
+            if (userJoinedAt && announcementData.createdAt && announcementData.createdAt.toDate() < userJoinedAt.toDate()) {
+                continue; // Skip this announcement as it was made before the user joined
+            }
+
             // it's considered "read" by them, so we skip it.
             if (announcementData.createdByUid === userId) {
                 continue; // Skip this announcement for unread count
