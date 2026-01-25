@@ -1152,7 +1152,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
                 year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
             });
             const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-            announcementPromptMessage = `Event "${eventName}" on ${formattedDate} has been canceled. Would you like to make an announcement about this cancellation?`;
+            announcementPromptMessage = `The event "${eventName}" has been canceled. Would you like to make an announcement about this cancellation?`;
             defaultTitle = `Canceled ${eventName}`;
             defaultContent = `The event "${eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
 
