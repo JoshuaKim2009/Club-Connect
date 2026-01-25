@@ -560,13 +560,6 @@ function formatDaysOfWeek(daysArray) {
     return daysArray.sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b)).join(', ');
 }
 
-
-/**
- * Saves a new event to Firestore.
- * This function is designed to be called when the "SAVE" button on an editing card is clicked.
- * It currently only handles NEW events.
- * @param {HTMLElement} cardDiv - The editing event card element.
- */
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
     const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
@@ -1355,7 +1348,6 @@ async function cleanUpEmptyRecurringEvents() {
     }
 }
 
-
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { // Added occurrenceDateString
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to RSVP.");
@@ -1406,7 +1398,6 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { /
     }
 }
 
-
 function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) { // Added occurrenceDateString
     // Find the specific event occurrence card in the DOM
     const card = document.querySelector(`.event-card[data-original-event-id="${originalEventId}"][data-occurrence-date="${occurrenceDateString}"]`);
@@ -1424,7 +1415,6 @@ function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatu
         }
     });
 }
-
 
 async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // Added occurrenceDateString
     if (!currentUser || !clubId) {
@@ -1488,7 +1478,6 @@ async function getAllClubMembers(clubID) {
     }
     return members;
 }
-
 
 // Function to display the RSVP details popup
 async function showRsvpDetailsModal(eventId, occurrenceDateString) {
@@ -1640,8 +1629,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     }
 }
 
-
-
 function scrollToEditedEvent(eventId, occurrenceDateString = null) {
     let selector;
     if (occurrenceDateString) {
@@ -1665,9 +1652,6 @@ function scrollToEditedEvent(eventId, occurrenceDateString = null) {
         console.warn(`Could not find event card to scroll to for ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
     }
 }
-
-
-
 
 function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, exceptions = [], startTime = '00:00', endTime = '23:59') {
     let futureCount = 0;
@@ -1700,12 +1684,6 @@ function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, 
     }
     return futureCount;
 }
-
-
-
-
-
-
 
 async function _createAnnouncementPopup(initialData = {}) {
     return new Promise((resolve) => {
@@ -1807,14 +1785,7 @@ async function _createAnnouncementPopup(initialData = {}) {
     });
 }
 
-/**
- * Saves the announcement data to Firestore and marks the creator as having read it.
- * This function should only be called by _createAnnouncementPopup.
- *
- * @param {string} title - The title of the announcement.
- * @param {string} content - The content of the announcement.
- * @returns {Promise<boolean>} Resolves to `true` if save was successful, `false` otherwise.
- */
+
 async function _saveAnnouncementFromPopup(title, content) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to create announcements.");
