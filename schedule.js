@@ -223,7 +223,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
                 });
                 const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-                const defaultTitle = `Cancelled ${eventData.eventName} on ${formattedDate}`;
+                const defaultTitle = `Canceled ${eventData.eventName}`;
                 const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
                 await _createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
             }
@@ -241,7 +241,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
                 });
                 const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-                const defaultTitle = `Cancelled ${eventData.eventName} on ${formattedDate}`;
+                const defaultTitle = `Canceled ${eventData.eventName}`;
                 const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
                 await _createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
             }
@@ -1160,7 +1160,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             });
             const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
             announcementPromptMessage = `Event "${eventName}" on ${formattedDate} has been canceled. Would you like to make an announcement about this cancellation?`;
-            defaultTitle = `Cancelled ${eventName} on ${formattedDate}`;
+            defaultTitle = `Canceled ${eventName}`;
             defaultContent = `The event "${eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
 
             const makeAnnouncementConfirm = await showAppConfirm(announcementPromptMessage);
