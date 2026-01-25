@@ -10,6 +10,8 @@ export async function showAppAlert(message, title = 'Notification') {
     return new Promise(resolve => {
         const body = document.body;
 
+        body.classList.add('no-scroll');
+
         // --- Create Overlay ---
         const overlay = document.createElement("div");
         overlay.className = "custom-dialog-overlay";
@@ -41,6 +43,7 @@ export async function showAppAlert(message, title = 'Notification') {
             if (body.contains(overlay)) body.removeChild(overlay);
             if (body.contains(panel)) body.removeChild(panel);
             okBtn.removeEventListener("click", closeDialog); // Clean up
+            body.classList.remove('no-scroll');
             resolve(); // Resolve the promise when dialog is closed
         };
 
@@ -66,6 +69,8 @@ export async function showAppAlert(message, title = 'Notification') {
 export async function showAppConfirm(message, title = 'Confirm Action') {
     return new Promise(resolve => {
         const body = document.body;
+
+        body.classList.add('no-scroll');
 
         // --- Create Overlay ---
         const overlay = document.createElement("div");
@@ -111,6 +116,7 @@ export async function showAppConfirm(message, title = 'Confirm Action') {
             if (body.contains(panel)) body.removeChild(panel);
             yesBtn.removeEventListener("click", handleYes); 
             noBtn.removeEventListener("click", handleNo);
+            body.classList.remove('no-scroll');
             resolve(result); 
         };
 
