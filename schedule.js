@@ -210,23 +210,45 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             activeOccurrencesCount = 0; // Force delete logic for one-time events
         }
 
-        if (activeOccurrencesCount === 0) {
-            // It IS the last active instance. Auto-delete the entire event without any further prompt.
-            await deleteEntireEvent(eventId, eventData.isWeekly, true); // <--- Call deleteEntireEvent with skipConfirm = true
-            //await showAppAlert("This was the last active instance. The event has been automatically deleted."); // Inform user
-            // No need to update 'exceptions' or call fetchAndDisplayEvents here, as deleteEntireEvent handles that.
-            return; // Exit the function here
-        }
+        let finalAlertMessage = ''; // Message to show after all operations
 
-        // If not the last instance (or if the event is one-time), just add this specific occurrence to exceptions
-        await updateDoc(eventDocRef, {
-            exceptions: arrayUnion(occurrenceDateString)
-        });
-        await showAppAlert(`Event on ${occurrenceDateString} has been canceled.`);
-        // fetchAndDisplayEvents is called at the end of cancelSingleOccurrence, which is correct for this branch.
+        if (activeOccurrencesCount === 0) {
+            // It IS the last active instance. Auto-delete the entire event.
+            await deleteEntireEvent(eventId, eventData.isWeekly, true); // `true` skips additional confirmation in deleteEntireEvent
+            finalAlertMessage = "This was the last active instance. The event has been automatically deleted.";
+
+            const makeAnnouncementConfirm = await showAppConfirm(`Event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            if (makeAnnouncementConfirm) {
+                const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
+                });
+                const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
+                const defaultTitle = `CANCELLATION: ${eventData.eventName} on ${formattedDate}`;
+                const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
+                await _createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
+            }
+
+        } else {
+            // Not the last instance, just add this specific occurrence to exceptions
+            await updateDoc(eventDocRef, {
+                exceptions: arrayUnion(occurrenceDateString)
+            });
+            finalAlertMessage = `Event on ${occurrenceDateString} has been canceled.`;
+
+            const makeAnnouncementConfirm = await showAppConfirm(`Event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            if (makeAnnouncementConfirm) {
+                const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
+                });
+                const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
+                const defaultTitle = `CANCELLATION: ${eventData.eventName} on ${formattedDate}`;
+                const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
+                await _createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
+            }
+        }
         
 
-        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+        await fetchAndDisplayEvents(); 
     } catch (error) {
         console.error("Error canceling single event occurrence:", error);
         await showAppAlert("Failed to cancel event occurrence: " + error.message);
@@ -1126,6 +1148,27 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             console.log(`Deleted ${overridesSnap.size} instance overrides for event series ${eventIdToDelete}.`);
         }
 
+        if (!skipConfirm && eventData && !isWeeklyEvent) { // This condition now triggers for ANY explicit deletion
+            let announcementPromptMessage = "";
+            let defaultTitle = "";
+            let defaultContent = "";
+
+                
+            const eventDateString = eventData.eventDate; // Get the date of the one-time event
+            const formattedDate = new Date(eventDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
+                year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
+            });
+            const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
+            announcementPromptMessage = `Event "${eventName}" on ${formattedDate} has been canceled. Would you like to make an announcement about this cancellation?`;
+            defaultTitle = `CANCELLATION: ${eventName} on ${formattedDate}`;
+            defaultContent = `The event "${eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
+
+            const makeAnnouncementConfirm = await showAppConfirm(announcementPromptMessage);
+            if (makeAnnouncementConfirm) {
+                await _createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
+            }
+        }
+
         await batch.commit(); // Commit all deletions in a single batch
 
         if (!skipConfirm) {
@@ -1656,4 +1699,150 @@ function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, 
         currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Increment by one day (UTC)
     }
     return futureCount;
+}
+
+
+
+
+
+
+
+async function _createAnnouncementPopup(initialData = {}) {
+    return new Promise((resolve) => {
+        let overlay = document.getElementById('announcement-popup-overlay');
+        let modal = document.getElementById('announcement-popup-modal');
+
+        // Create overlay if it doesn't exist
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'announcement-popup-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+                z-index: 1000; /* Ensure it's above other content */
+                display: flex; /* Use flexbox to center the popup */
+                justify-content: center;
+                align-items: center;
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Create modal if it doesn't exist
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'announcement-popup-modal';
+            // ADD THIS CLASS NAME TO APPLY YOUR CSS STYLES
+            modal.className = 'announcement-card editing-announcement-card'; // Add the class here
+            modal.style.cssText = `
+                /* Keep only essential positioning styles inline for dynamic modals */
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1001; /* Ensure it's above the overlay */
+                font-weight: normal;
+                /* All other aesthetic styles will now come from the CSS class 'editing-announcement-card' */
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Populate modal content
+        modal.innerHTML = `
+            <h2>Create Announcement</h2>
+            <div>
+                <label for="announcement-popup-title">Title:</label>
+                <input type="text" id="announcement-popup-title" value="${initialData.title || ''}" required>
+            </div>
+            <div>
+                <label for="announcement-popup-content">Content:</label>
+                <textarea id="announcement-popup-content" rows="10" required>${initialData.content || ''}</textarea>
+            </div>
+            <div class="announcement-card-actions">
+                <button id="announcement-popup-save-btn" class="fancy-button">SAVE</button>
+                <button id="announcement-popup-cancel-btn" class="fancy-button">CANCEL</button>
+            </div>
+        `;
+
+        // Prevent body scrolling
+        document.body.classList.add('no-scroll');
+        overlay.style.display = 'flex';
+        modal.style.display = 'flex';
+
+        // Event listeners for Save and Cancel buttons
+        document.getElementById('announcement-popup-save-btn').addEventListener('click', async () => {
+            const title = document.getElementById('announcement-popup-title').value.trim();
+            const content = document.getElementById('announcement-popup-content').value.trim();
+
+            if (!title || !content || title.length === 0 || content.length === 0) {
+                await showAppAlert("Title and Content are required for the announcement.");
+                return; // Keep modal open for user to correct
+            }
+
+            // Attempt to save the announcement
+            const saveSuccessful = await _saveAnnouncementFromPopup(title, content);
+            if (saveSuccessful) {
+                overlay.style.display = 'none';
+                modal.style.display = 'none';
+                document.body.classList.remove('no-scroll');
+                resolve(true); // Announcment saved
+            } else {
+                // Error already handled by _saveAnnouncementFromPopup, but resolve as false to indicate failure.
+                resolve(false);
+            }
+        });
+
+        document.getElementById('announcement-popup-cancel-btn').addEventListener('click', () => {
+            console.log("Announcement creation cancelled by user.");
+            overlay.style.display = 'none';
+            modal.style.display = 'none';
+            document.body.classList.remove('no-scroll');
+            resolve(false); // User cancelled
+        });
+    });
+}
+
+/**
+ * Saves the announcement data to Firestore and marks the creator as having read it.
+ * This function should only be called by _createAnnouncementPopup.
+ *
+ * @param {string} title - The title of the announcement.
+ * @param {string} content - The content of the announcement.
+ * @returns {Promise<boolean>} Resolves to `true` if save was successful, `false` otherwise.
+ */
+async function _saveAnnouncementFromPopup(title, content) {
+    if (!currentUser || !clubId) {
+        await showAppAlert("You must be logged in and viewing a club to create announcements.");
+        return false;
+    }
+
+    try {
+        const announcementsRef = collection(db, "clubs", clubId, "announcements");
+        const announcementDataToSave = {
+            title,
+            content,
+            createdByUid: currentUser.uid,
+            createdByName: currentUser.displayName || "Anonymous",
+            clubId: clubId,
+            createdAt: serverTimestamp()
+        };
+        const newDocRef = await addDoc(announcementsRef, announcementDataToSave);
+        const newAnnouncementId = newDocRef.id;
+
+        // Mark the creator as having read their own announcement
+        await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "Anonymous",
+            readAt: serverTimestamp()
+        });
+        console.log(`Announcement "${title}" saved successfully.`);
+        return true;
+    } catch (error) {
+        console.error("Error saving announcement from popup:", error);
+        await showAppAlert("Failed to save announcement: " + error.message);
+        return false;
+    }
 }
