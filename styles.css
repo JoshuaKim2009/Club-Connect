@@ -1881,7 +1881,7 @@ input[type="checkbox"]:checked {
   font-weight: normal;
   color: black;
   font-family: var(--primary-font-family, sans-serif);
-  font-size: 0.9em;
+  font-size: 1em;
 }
 
 .editing-announcement-card input[type="text"],

@@ -168,7 +168,7 @@ onAuthStateChanged(auth, async (user) => {
 async function cancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${occurrenceDateString}? It will no longer appear on the schedule.`);
     if (!confirmed) {
-        console.log("Cancellation cancelled by user.");
+        console.log("Cancellation canceled by user.");
         return;
     }
 
@@ -206,7 +206,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             }
         } else {
             // If this function is called for a one-time event, it means we are trying to delete it.
-            // If it's a one-time event, and we're cancelling it, it *is* the last instance.
+            // If it's a one-time event, and we're canceling it, it *is* the last instance.
             activeOccurrencesCount = 0; // Force delete logic for one-time events
         }
 
@@ -217,7 +217,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             await deleteEntireEvent(eventId, eventData.isWeekly, true); // `true` skips additional confirmation in deleteEntireEvent
             finalAlertMessage = "This was the last active instance. The event has been automatically deleted.";
 
-            const makeAnnouncementConfirm = await showAppConfirm(`Event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
             if (makeAnnouncementConfirm) {
                 const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
@@ -233,9 +233,9 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             await updateDoc(eventDocRef, {
                 exceptions: arrayUnion(occurrenceDateString)
             });
-            finalAlertMessage = `Event on ${occurrenceDateString} has been canceled.`;
+            finalAlertMessage = `The event on ${occurrenceDateString} has been canceled.`;
 
-            const makeAnnouncementConfirm = await showAppConfirm(`Event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
             if (makeAnnouncementConfirm) {
                 const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
@@ -258,7 +258,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
     if (!confirmed) {
-        console.log("Un-cancellation cancelled by user.");
+        console.log("Un-cancellation canceled by user.");
         return;
     }
 
@@ -268,7 +268,7 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
         await updateDoc(eventDocRef, {
             exceptions: arrayRemove(occurrenceDateString)
         });
-        await showAppAlert(`Event on ${occurrenceDateString} has been un-canceled.`);
+        await showAppAlert(`The event on ${occurrenceDateString} has been un-canceled.`);
         await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
     } catch (error) {
         console.error("Error un-canceling single event occurrence:", error);
@@ -495,7 +495,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         } else if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
             noEventsMessage.style.display = 'block';
         }
-        //await showAppAlert("Event editing/creation cancelled.");
+        //await showAppAlert("Event editing/creation canceled.");
     });
 
     return cardDiv;
@@ -1027,7 +1027,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     const confirmed = await showAppConfirm(`Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`);
 
     if (!confirmed) {
-        console.log("Series and overrides deletion cancelled by user.");
+        console.log("Series and overrides deletion canceled by user.");
         return;
     }
 
@@ -1098,12 +1098,12 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
         if (isWeeklyEvent) {
             confirmMessage = `Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`;
         } else {
-            confirmMessage = `Are you sure you want to delete the event "${eventName}"? This action cannot be undone.`;
+            confirmMessage = `Are you sure you want to cancel the event "${eventName}"? This action cannot be undone.`;
         }
 
         const confirmed = await showAppConfirm(confirmMessage);
         if (!confirmed) {
-            console.log("Event deletion cancelled by user.");
+            console.log("Event deletion canceled by user.");
             return; // Exit if user cancels
         }
     }
@@ -1735,31 +1735,33 @@ async function _createAnnouncementPopup(initialData = {}) {
         if (!modal) {
             modal = document.createElement('div');
             modal.id = 'announcement-popup-modal';
-            // ADD THIS CLASS NAME TO APPLY YOUR CSS STYLES
-            modal.className = 'announcement-card editing-announcement-card'; // Add the class here
+            modal.className = 'announcement-card editing-announcement-card';
             modal.style.cssText = `
-                /* Keep only essential positioning styles inline for dynamic modals */
                 position: fixed;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                z-index: 1001; /* Ensure it's above the overlay */
-                font-weight: normal;
-                /* All other aesthetic styles will now come from the CSS class 'editing-announcement-card' */
+                z-index: 1001;
+                font-size: 20px; /* <--- NEW: Set a base font size for the modal */
+                display: flex; /* Apply flexbox properties from your CSS */
+                flex-direction: column;
+                gap: 10px;
+                max-height: 80vh; /* Allow scrolling if content is too long */
+                overflow-y: auto; /* Enable vertical scrolling */
             `;
             document.body.appendChild(modal);
         }
 
         // Populate modal content
         modal.innerHTML = `
-            <h2>Create Announcement</h2>
+            <h3>Create Announcement</h3>
             <div>
-                <label for="announcement-popup-title">Title:</label>
-                <input type="text" id="announcement-popup-title" value="${initialData.title || ''}" required>
+                <label for="announcement-popup-title" style="margin-bottom: 5px;">Title:</label>
+                <input type="text" id="announcement-popup-title" value="${initialData.title || ''}" required style="width: calc(100% - 16px);">
             </div>
             <div>
-                <label for="announcement-popup-content">Content:</label>
-                <textarea id="announcement-popup-content" rows="10" required>${initialData.content || ''}</textarea>
+                <label for="announcement-popup-content" style="margin-bottom: 5px;">Content:</label>
+                <textarea id="announcement-popup-content" rows="5" required style="width: calc(100% - 16px);">${initialData.content || ''}</textarea>
             </div>
             <div class="announcement-card-actions">
                 <button id="announcement-popup-save-btn" class="fancy-button">SAVE</button>
@@ -1796,11 +1798,11 @@ async function _createAnnouncementPopup(initialData = {}) {
         });
 
         document.getElementById('announcement-popup-cancel-btn').addEventListener('click', () => {
-            console.log("Announcement creation cancelled by user.");
+            console.log("Announcement creation canceled by user.");
             overlay.style.display = 'none';
             modal.style.display = 'none';
             document.body.classList.remove('no-scroll');
-            resolve(false); // User cancelled
+            resolve(false); // User canceled
         });
     });
 }
