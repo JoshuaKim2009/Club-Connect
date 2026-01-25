@@ -563,8 +563,8 @@ button {
 
 .fancy-button:hover {
   filter: brightness(1.1);
-  transform: translateY(-4px);
-  box-shadow: 0px 8px 0px #000000;
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px #000000;
 }
 
 .fancy-button:active {
@@ -574,8 +574,8 @@ button {
 
 .fancy-black-button:hover {
   filter: brightness(1.1);
-  transform: translateY(-4px);
-  box-shadow: 0px 8px 0px #000000;
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px #000000;
 }
 
 .fancy-black-button:active {
