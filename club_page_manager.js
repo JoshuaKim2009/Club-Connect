@@ -446,7 +446,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
     membersContainer.innerHTML = ""; // Clear any previous content
    
     const title = document.createElement("h3");
-    title.textContent = "MEMBERS"; // Title for the members list
+    title.textContent = `CLUB MEMBERS (${memberNames.length})`; 
     membersContainer.appendChild(title);
 
     memberNames.forEach((name, index) => {

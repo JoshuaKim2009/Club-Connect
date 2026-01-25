@@ -265,7 +265,7 @@ function displayMembersForMemberPage(memberNames, memberUids, memberRoles) {
     membersContainer.innerHTML = ""; // Clear any previous content
    
     const title = document.createElement("h3");
-    title.textContent = "CLUB MEMBERS"; // A more general title for the member list
+    title.textContent = `CLUB MEMBERS (${memberNames.length})`; 
     membersContainer.appendChild(title);
 
     if (memberNames.length === 0) {
@@ -656,7 +656,7 @@ async function getUnreadAnnouncementCount(clubId, userId) {
             if (userJoinedAt && announcementData.createdAt && announcementData.createdAt.toDate() < userJoinedAt.toDate()) {
                 continue; // Skip this announcement as it was made before the user joined
             }
-            
+
             // it's considered "read" by them, so we skip it.
             if (announcementData.createdByUid === userId) {
                 continue; // Skip this announcement for unread count
