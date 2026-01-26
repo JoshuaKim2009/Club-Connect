@@ -876,8 +876,12 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             } else {
                 actionButtonsHtml = `
                     <div class="event-card-actions">
-                        <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT EVENT</button>
-                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">DELETE EVENT</button>
+                        <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
+                            <span class="button-text">EDIT EVENT</span><span class="button-icon"><i class="fa-solid fa-pencil"></i></span>
+                        </button>
+                        <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
+                            <span class="button-text">DELETE EVENT</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
+                        </button>
                         <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
                     </div>
                 `;
@@ -886,8 +890,12 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
             // For one-time events or instances that are overrides of a recurring event
             actionButtonsHtml = `
                 <div class="event-card-actions">
-                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">EDIT EVENT</button>
-                    <button class="delete-btn" data-event-id="${originalEventId}">DELETE EVENT</button>
+                    <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
+                        <span class="button-text">EDIT EVENT</span><span class="button-icon"><i class="fa-solid fa-pencil"></i></span>
+                    </button>
+                    <button class="delete-btn" data-event-id="${originalEventId}">
+                        <span class="button-text">DELETE EVENT</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
+                    </button>
                     ${eventData.parentRecurringEventId ? `
                         <button class="delete-parent-series-btn" data-parent-event-id="${eventData.parentRecurringEventId}">DELETE SERIES</button>
                     ` : ''}
@@ -953,10 +961,11 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         const editBtn = cardDiv.querySelector('.edit-btn');
         if (editBtn) {
             editBtn.addEventListener('click', async (e) => {
-                const eventId = e.target.dataset.eventId;
-                const occDate = e.target.dataset.occurrenceDate; // Will be null for full event edit
+                const clickedButton = e.currentTarget; // Get the button element itself
+                const eventId = clickedButton.dataset.eventId;
+                const occDate = clickedButton.dataset.occurrenceDate;
                 console.log(`Edit button clicked for event ID: ${eventId}, Occurrence Date: ${occDate}`);
-                await editEvent(eventId, occDate); // <--- Call the new editEvent function
+                await editEvent(eventId, occDate);
             });
         }
 
@@ -964,8 +973,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         const deleteEntireBtn = cardDiv.querySelector('.delete-btn') || cardDiv.querySelector('.delete-series-btn');
         if (deleteEntireBtn) {
             deleteEntireBtn.addEventListener('click', (e) => {
-                const eventId = e.target.dataset.eventId;
-                deleteEntireEvent(eventId, eventData.isWeekly); // Call the function to delete the entire document
+                const clickedButton = e.currentTarget; // Get the button element itself
+                const eventId = clickedButton.dataset.eventId;
+                deleteEntireEvent(eventId, eventData.isWeekly);
             });
         }
 
@@ -973,8 +983,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         const cancelInstanceBtn = cardDiv.querySelector('.cancel-instance-btn');
         if (cancelInstanceBtn) {
             cancelInstanceBtn.addEventListener('click', (e) => {
-                const eventId = e.target.dataset.eventId;
-                const occDateString = e.target.dataset.occurrenceDate;
+                const clickedButton = e.currentTarget; // Get the button element itself
+                const eventId = clickedButton.dataset.eventId;
+                const occDateString = clickedButton.dataset.occurrenceDate;
                 cancelSingleOccurrence(eventId, occDateString);
             });
         }
@@ -982,18 +993,20 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         // Uncancel Single Instance (for weekly events)
         const uncancelBtn = cardDiv.querySelector('.uncancel-btn');
         if (uncancelBtn) {
-             uncancelBtn.addEventListener('click', async (e) => {
-                const eventId = e.target.dataset.eventId;
-                const occDateString = e.target.dataset.occurrenceDate;
+            uncancelBtn.addEventListener('click', async (e) => {
+                const clickedButton = e.currentTarget; // Get the button element itself
+                const eventId = clickedButton.dataset.eventId;
+                const occDateString = clickedButton.dataset.occurrenceDate;
                 uncancelSingleOccurrence(eventId, occDateString);
-             });
+            });
         }
     }
 
     const deleteParentSeriesBtn = cardDiv.querySelector('.delete-parent-series-btn');
     if (deleteParentSeriesBtn) {
         deleteParentSeriesBtn.addEventListener('click', (e) => {
-            const parentEventId = e.target.dataset.parentEventId;
+            const clickedButton = e.currentTarget; // Get the button element itself
+            const parentEventId = clickedButton.dataset.parentEventId;
             deleteEntireSeriesAndOverrides(parentEventId);
         });
     }

@@ -1997,3 +1997,53 @@ input[type="checkbox"]:checked {
   position: relative;
   /* ... your existing button styles for #announcementsButton ... */
 }
+
+
+.event-card-actions .button-icon {
+    display: none; 
+    font-size: 1.2em; 
+}
+
+@media (max-width: 600px) {
+
+    .event-card-actions button {
+        padding: 8px 10px; 
+        box-sizing: border-box; 
+        min-width: unset; 
+        height: auto; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+
+    .event-card-actions .edit-btn,
+    .event-card-actions .cancel-instance-btn,
+    .event-card-actions .delete-btn {
+        padding: 8px; 
+        aspect-ratio: 1 / 1; 
+        flex-shrink: 0; 
+
+        min-width: 50px;
+    }
+
+    .event-card-actions .edit-btn .button-text,
+    .event-card-actions .cancel-instance-btn .button-text,
+    .event-card-actions .delete-btn .button-text {
+        display: none;
+    }
+
+    .event-card-actions .edit-btn .button-icon,
+    .event-card-actions .cancel-instance-btn .button-icon,
+    .event-card-actions .delete-btn .button-icon {
+        display: inline-block; 
+        font-size: 1.2em; 
+        line-height: 1; 
+    }
+
+    .event-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+}
