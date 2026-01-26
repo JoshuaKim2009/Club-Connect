@@ -33,6 +33,10 @@ body {
   display: block;
 }
 
+body.no-interaction {
+  pointer-events: none;
+}
+
 #loading-overlay {
   position: fixed; /* Stays in place when scrolling */
   top: 0;
@@ -1633,7 +1637,7 @@ input[type="checkbox"]:checked {
 
   /* These are the key properties for height transition and scrollbar control */
   max-height: 80vh; /* This is the desired *final* max-height */
-  overflow-y: hidden; /* <--- THIS MUST BE HIDDEN BY DEFAULT! */
+  overflow-y: hidden;
   transition: max-height 0.5s ease-out; /* ONLY max-height transitions here */
 
   /* SCROLLBAR STYLES - NOW ALL CONSOLIDATED HERE */

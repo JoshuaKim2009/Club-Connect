@@ -1486,6 +1486,8 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         return;
     }
 
+    document.body.classList.add('no-interaction');
+
     // Create modal elements if they don't exist
     let overlay = document.getElementById('rsvp-details-overlay');
     let modal = document.getElementById('rsvp-details-modal');
@@ -1539,16 +1541,18 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
     modal.innerHTML = `
         <h2>Responses for ${formatDate(occurrenceDateString)}</h2>
-        <div id="rsvp-lists" style="display: none; text-align: left; padding: 0 15px;">
-            <h3>Going (<span id="going-count">0</span>)</h3>
-            <ul id="rsvp-going-list"></ul>
-            <h3>Maybe (<span id="rsvp-maybe-count">0</span>)</h3>
-            <ul id="rsvp-maybe-list"></ul>
-            <h3>Not Going (<span id="not-going-count">0</span>)</h3>
-            <ul id="rsvp-not-going-list"></ul>
-            <h3>No Response (<span id="not-responded-count">0</span>)</h3>
-            <ul id="rsvp-not-responded-list"></ul>
-            <button id="close-rsvp-modal" class="fancy-button">Close</button>
+        <div id="rsvp-lists-container"> 
+            <div id="rsvp-lists" style="display: none; text-align: left; padding: 0 15px;">
+                <h3>Going (<span id="going-count">0</span>)</h3>
+                <ul id="rsvp-going-list"></ul>
+                <h3>Maybe (<span id="rsvp-maybe-count">0</span>)</h3>
+                <ul id="rsvp-maybe-list"></ul>
+                <h3>Not Going (<span id="not-going-count">0</span>)</h3>
+                <ul id="rsvp-not-going-list"></ul>
+                <h3>No Response (<span id="not-responded-count">0</span>)</h3>
+                <ul id="rsvp-not-responded-list"></ul>
+                <button id="close-rsvp-modal" class="fancy-button" disabled>Close</button>
+            </div>
         </div>
     `;
     modal.classList.add('rsvp-loading-collapsed');
@@ -1561,7 +1565,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         document.body.classList.remove('no-scroll');
         modal.classList.add('rsvp-loading-collapsed');
         modal.classList.remove('rsvp-scroll-active');
-        //const loadingIndicator = document.getElementById('rsvp-loading-indicator');
+        document.body.classList.remove('no-interaction');
         if (loadingIndicator) loadingIndicator.style.display = 'block';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
@@ -1621,13 +1625,18 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                 notRespondedCount++;
             }
         });
-        //document.getElementById('rsvp-loading-indicator').style.display = 'none';
         document.getElementById('rsvp-lists').style.display = 'block';
 
         modal.classList.remove('rsvp-loading-collapsed');
         modal.addEventListener('transitionend', function handler(event) {
             if (event.propertyName === 'max-height') {
                 modal.classList.add('rsvp-scroll-active'); // Add class to enable scrollbar
+                const contentDiv = document.getElementById('rsvp-lists');
+                if (contentDiv) {
+                    contentDiv.style.display = 'block'; // Make content visible
+                    document.getElementById('close-rsvp-modal').disabled = false;
+                }
+                document.body.classList.remove('no-interaction');
                 modal.removeEventListener('transitionend', handler); // Remove listener to avoid multiple firings
             }
         });
@@ -1642,7 +1651,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         await showAppAlert("Failed to load RSVP details: " + error.message);
         overlay.style.display = 'none';
         modal.style.display = 'none';
-        //const loadingIndicator = document.getElementById('rsvp-loading-indicator');
+        document.body.classList.remove('no-interaction');
         if (loadingIndicator) loadingIndicator.style.display = 'none';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
