@@ -164,10 +164,6 @@ onAuthStateChanged(auth, async (user) => {
                 rsvpListenerUnsubscribe();
                 rsvpListenerUnsubscribe = null;
             }
-            if (rsvpListenerUnsubscribe) {
-                rsvpListenerUnsubscribe();
-                rsvpListenerUnsubscribe = null;
-            }
         }
     } else {
         // No user is signed in, redirect to the login page
@@ -268,7 +264,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         }
         
 
-        await fetchAndDisplayEvents(); 
+        //await fetchAndDisplayEvents(); 
     } catch (error) {
         console.error("Error canceling single event occurrence:", error);
         await showAppAlert("Failed to cancel event occurrence: " + error.message);
@@ -289,7 +285,7 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
             exceptions: arrayRemove(occurrenceDateString)
         });
         await showAppAlert(`The event on ${occurrenceDateString} has been un-canceled.`);
-        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+        //await fetchAndDisplayEvents();
     } catch (error) {
         console.error("Error un-canceling single event occurrence:", error);
         await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
@@ -511,7 +507,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         // If it was an edit, re-fetch all to show the original display card again
         // If it was a new event, check if eventsContainer is now empty
         if (!isNewEvent) {
-            await fetchAndDisplayEvents(); // Re-render if canceling an edit
+            //await fetchAndDisplayEvents();
         } else if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
             noEventsMessage.style.display = 'block';
         }
@@ -737,7 +733,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
         
         cardDiv.remove(); // Remove the editing card after saving
         isEditingEvent = false;
-        await fetchAndDisplayEvents(); // Re-fetch and display all events
+        //await fetchAndDisplayEvents(); 
 
         if (savedEventId) {
             scrollToEditedEvent(savedEventId, savedOccurrenceDate); // Add this line
@@ -747,122 +743,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
         console.error("Error saving event:", error);
         isEditingEvent = false;
         await showAppAlert("Failed to save event: " + error.message);
-    }
-}
-
-async function fetchAndDisplayEvents() {
-    if (!clubId) {
-        console.warn("fetchAndDisplayEvents called without a clubId.");
-        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
-        if (noEventsMessage) noEventsMessage.style.display = 'block';
-        return;
-    }
-
-    // Clear existing events before fetching new ones
-    if (eventsContainer) {
-        eventsContainer.innerHTML = '';
-    }
-
-    console.log(`Fetching events for club ID: ${clubId}`);
-    const eventsRef = collection(db, "clubs", clubId, "events");
-    // Query events, ordering them by creation time. You might change this to order by an actual event date later.
-    const q = query(eventsRef, orderBy("createdAt", "desc"));
-
-    try {
-        const querySnapshot = await getDocs(q);
-        //const allEventOccurrences = []; // To store all individual event occurrences, including weekly ones
-        let allEventOccurrences = [];
-        querySnapshot.forEach((doc) => {
-            const eventData = doc.data();
-            const eventId = doc.id;
-
-            // Get exceptions if they exist, default to empty array
-            const exceptions = eventData.exceptions || [];
-
-            if (eventData.isWeekly) {
-                // Generate occurrences for weekly events
-                // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
-                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
-                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
-                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
-
-                let currentDate = new Date(startDate); // Start iteration from UTC midnight
-                while (currentDate.getTime() <= endDate.getTime()) { // Compare timestamps for safety
-                    const currentOccDateString = currentDate.toISOString().split('T')[0];
-
-                    if (daysToMatch.includes(currentDate.getUTCDay())) { // <--- Now getUTCDay() is correctly applied to a UTC-initialized date
-                        // ONLY ADD TO DISPLAY IF NOT IN EXCEPTIONS
-                        if (!exceptions.includes(currentOccDateString)) {
-                            allEventOccurrences.push({
-                                eventData: eventData,
-                                occurrenceDate: new Date(currentDate), // Clone date to avoid reference issues
-                                originalEventId: eventId
-                            });
-                        }
-                    }
-                    currentDate.setUTCDate(currentDate.getUTCDate() + 1); // <--- Use setUTCDate to increment UTC day
-                }
-            } else {
-                // For one-time events, add directly
-                // One-time events don't typically have 'exceptions' but this ensures consistency
-                const eventDateString = new Date(eventData.eventDate).toISOString().split('T')[0];
-                if (!exceptions.includes(eventDateString)) { // This check is mostly for robustness, should rarely be true for one-time
-                    // FIX: Changed allPossibleOccurrences.push to allEventOccurrences.push
-                    allEventOccurrences.push({
-                        eventData: eventData,
-                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'), // Force UTC midnight for one-time too
-                        originalEventId: eventId
-                    });
-                }
-            }
-        });
-
-        const now = new Date(); // Get current local time once for efficiency
-
-        allEventOccurrences = allEventOccurrences.filter(occurrence => {
-            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0]; // e.g., "2025-01-01"
-            const eventEndTimeStr = occurrence.eventData.endTime; // e.g., "18:30"
-
-            // Construct event end time in local timezone for comparison
-            // This combines the event's date (YYYY-MM-DD) and its end time (HH:mm)
-            // The `new Date()` constructor will interpret this string in the local timezone.
-            const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
-
-            return eventEndMomentLocal.getTime() > now.getTime(); // Keep only events that end in the future
-        });
-
-        // Sort all occurrences chronologically, first by date, then by time
-        allEventOccurrences.sort((a, b) => {
-            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
-            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
-            return dateTimeA - dateTimeB;
-        });
-
-        if (allEventOccurrences.length === 0) {
-            console.log("No events found for this club.");
-            if (currentUserRole === 'member') {
-                eventsContainer.innerHTML = '<p class="fancy-label">NO EVENTS YET</p>';
-            }
-            
-            if (noEventsMessage) noEventsMessage.style.display = 'block';
-            return;
-        }
-
-        if (noEventsMessage) noEventsMessage.style.display = 'none'; // Hide "no events" message
-
-        // Render all sorted occurrences
-        allEventOccurrences.forEach(occurrence => {
-            const eventDisplayCard = _createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
-            if (eventsContainer) {
-                eventsContainer.appendChild(eventDisplayCard);
-            }
-        });
-        console.log(`Displayed ${allEventOccurrences.length} event occurrences.`);
-
-    } catch (error) {
-        console.error("Error fetching events:", error);
-        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">Error loading events. Please try again later.</p>';
-        if (noEventsMessage) noEventsMessage.style.display = 'block';
     }
 }
 
@@ -1218,7 +1098,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
         await batch.commit();
         await showAppAlert("Event deleted successfully!");
         //await showAppAlert(`Successfully deleted the recurring series and ${deletedCount - 1} associated overrides and all their RSVPs!`);
-        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+        //await fetchAndDisplayEvents();
 
     } catch (error) {
         console.error("Error deleting entire series and overrides:", error);
@@ -1313,7 +1193,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
         if (!skipConfirm) {
             await showAppAlert("Event deleted successfully!");
         }
-        await fetchAndDisplayEvents(); // Re-fetch and display events to update the UI
+        //await fetchAndDisplayEvents(); 
     } catch (error) {
         console.error("Error deleting event:", error);
         await showAppAlert("Failed to delete event: " + error.message);
@@ -1445,6 +1325,7 @@ async function cleanUpEmptyRecurringEvents() {
     const eventsRef = collection(db, "clubs", clubId, "events");
     const batch = writeBatch(db);
     let cleanedUpCount = 0;
+    const rsvpDeletionPromises = [];
 
     try {
         const querySnapshot = await getDocs(eventsRef);
@@ -1459,7 +1340,7 @@ async function cleanUpEmptyRecurringEvents() {
         });
 
         // Second pass: Check for empty recurring events and orphaned overrides
-        querySnapshot.forEach(doc => {
+        for (const doc of querySnapshot.docs) {
             const eventData = doc.data();
             const eventId = doc.id;
 
@@ -1470,6 +1351,18 @@ async function cleanUpEmptyRecurringEvents() {
                     console.log(`Found empty recurring event: ${eventData.eventName} (ID: ${eventId}). Marking for deletion.`);
                     batch.delete(doc.ref);
                     cleanedUpCount++;
+                    const rsvpsQuery = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventId));
+                    rsvpDeletionPromises.push(
+                        getDocs(rsvpsQuery).then(rsvpsSnap => {
+                            rsvpsSnap.forEach(rsvpDoc => {
+                                batch.delete(rsvpDoc.ref); // Mark each associated RSVP for deletion
+                                console.log(`Marked RSVP ${rsvpDoc.id} for deleted event ${eventId} for deletion.`);
+                            });
+                        }).catch(error => {
+                            console.error(`Error fetching RSVPs for cleanup of event ${eventId}:`, error);
+                            // Do not re-throw, allow other cleanups to proceed
+                        })
+                    );
                 }
             } else if (eventData.parentRecurringEventId) {
                 // This is an instance override. Check if its parent recurring event still exists.
@@ -1479,11 +1372,12 @@ async function cleanUpEmptyRecurringEvents() {
                     cleanedUpCount++;
                 }
             }
-        });
+        }
 
-        if (cleanedUpCount > 0) {
+        if (cleanedUpCount > 0 || rsvpDeletionPromises.length > 0) {
+            await Promise.all(rsvpDeletionPromises);
             await batch.commit();
-            console.log(`Cleanup complete. Deleted ${cleanedUpCount} empty events/orphaned overrides.`);
+            console.log(`Cleanup complete. Deleted ${cleanedUpCount} empty events/orphaned overrides and their associated RSVPs.`);
             // No need to fetchAndDisplayEvents here, as it will be called by the main flow.
         } else {
             console.log("No empty events or orphaned overrides found for cleanup.");
@@ -1587,6 +1481,53 @@ async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // A
         // On error, ensure no buttons are selected for this specific occurrence
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
     }
+}
+
+function setupRealtimeUserRsvps() {
+    // Ensure we have a clubId and a logged-in user before setting up the listener
+    if (!clubId || !currentUser) {
+        console.warn("setupRealtimeUserRsvps called without clubId or currentUser. Skipping setup.");
+        // If there was a previous listener, ensure it's unsubscribed
+        if (rsvpListenerUnsubscribe) {
+            rsvpListenerUnsubscribe();
+            rsvpListenerUnsubscribe = null;
+        }
+        return;
+    }
+
+    console.log(`Setting up realtime RSVP updates for user ${currentUser.uid} in club ${clubId}.`);
+
+    // Unsubscribe from any previous listener before creating a new one to prevent duplicates
+    if (rsvpListenerUnsubscribe) {
+        rsvpListenerUnsubscribe();
+        rsvpListenerUnsubscribe = null;
+    }
+
+    const rsvpsRef = collection(db, "clubs", clubId, "occurrenceRsvps");
+    // Query to listen only to RSVPs made by the current user
+    const q = query(rsvpsRef, where("userId", "==", currentUser.uid));
+
+    rsvpListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
+        querySnapshot.docChanges().forEach((change) => {
+            const data = change.doc.data();
+            const originalEventId = data.eventId;
+            const occurrenceDateString = data.occurrenceDate;
+            let newStatus = null; // Default status if RSVP is removed
+
+            if (change.type === "added" || change.type === "modified") {
+                newStatus = data.status;
+                console.log(`RSVP ${newStatus} for event ${originalEventId} on ${occurrenceDateString} (${change.type}).`);
+            } else if (change.type === "removed") {
+                console.log(`RSVP removed for event ${originalEventId} on ${occurrenceDateString}.`);
+            }
+            
+            // Update the UI for the specific event card's RSVP buttons
+            updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
+        });
+    }, (error) => {
+        console.error("Error fetching realtime user RSVPs:", error);
+        // Optionally, you could show a user-facing alert here
+    });
 }
 
 async function getAllClubMembers(clubID) {
@@ -1995,51 +1936,4 @@ async function _saveAnnouncementFromPopup(title, content) {
         await showAppAlert("Failed to save announcement: " + error.message);
         return false;
     }
-}
-
-function setupRealtimeUserRsvps() {
-    // Ensure we have a clubId and a logged-in user before setting up the listener
-    if (!clubId || !currentUser) {
-        console.warn("setupRealtimeUserRsvps called without clubId or currentUser. Skipping setup.");
-        // If there was a previous listener, ensure it's unsubscribed
-        if (rsvpListenerUnsubscribe) {
-            rsvpListenerUnsubscribe();
-            rsvpListenerUnsubscribe = null;
-        }
-        return;
-    }
-
-    console.log(`Setting up realtime RSVP updates for user ${currentUser.uid} in club ${clubId}.`);
-
-    // Unsubscribe from any previous listener before creating a new one to prevent duplicates
-    if (rsvpListenerUnsubscribe) {
-        rsvpListenerUnsubscribe();
-        rsvpListenerUnsubscribe = null;
-    }
-
-    const rsvpsRef = collection(db, "clubs", clubId, "occurrenceRsvps");
-    // Query to listen only to RSVPs made by the current user
-    const q = query(rsvpsRef, where("userId", "==", currentUser.uid));
-
-    rsvpListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
-        querySnapshot.docChanges().forEach((change) => {
-            const data = change.doc.data();
-            const originalEventId = data.eventId;
-            const occurrenceDateString = data.occurrenceDate;
-            let newStatus = null; // Default status if RSVP is removed
-
-            if (change.type === "added" || change.type === "modified") {
-                newStatus = data.status;
-                console.log(`RSVP ${newStatus} for event ${originalEventId} on ${occurrenceDateString} (${change.type}).`);
-            } else if (change.type === "removed") {
-                console.log(`RSVP removed for event ${originalEventId} on ${occurrenceDateString}.`);
-            }
-            
-            // Update the UI for the specific event card's RSVP buttons
-            updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
-        });
-    }, (error) => {
-        console.error("Error fetching realtime user RSVPs:", error);
-        // Optionally, you could show a user-facing alert here
-    });
 }
