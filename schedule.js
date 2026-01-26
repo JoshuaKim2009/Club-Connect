@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
 
@@ -24,6 +24,8 @@ let currentUser = null;     // Will store the authenticated Firebase user object
 let clubId = null;          // Will store the club ID from the URL (string)
 let currentUserRole = null; // Will store the user's role for THIS club ('manager', 'admin', 'member', 'guest')
 let isEditingEvent = false;
+let eventListenerUnsubscribe = null;
+let rsvpListenerUnsubscribe = null;
 
 // Get references to key DOM elements you'll likely use
 const clubScheduleTitle = document.getElementById('clubScheduleTitle');
@@ -120,7 +122,9 @@ onAuthStateChanged(auth, async (user) => {
 
                     await cleanUpEmptyRecurringEvents();
 
-                    await fetchAndDisplayEvents(); 
+                    //await fetchAndDisplayEvents(); 
+                    setupRealtimeUpdates();
+                    setupRealtimeUserRsvps()
                     
                     if (addEventButton) {
                         if (currentUserRole === 'manager' || currentUserRole === 'admin') {
@@ -152,6 +156,18 @@ onAuthStateChanged(auth, async (user) => {
             if (clubScheduleTitle) clubScheduleTitle.textContent = "Error: No Club ID Provided";
             if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
             if (addEventButton) addEventButton.style.display = 'none'; // Hide button if no clubId
+            if (eventListenerUnsubscribe) {
+                eventListenerUnsubscribe();
+                eventListenerUnsubscribe = null;
+            }
+            if (rsvpListenerUnsubscribe) {
+                rsvpListenerUnsubscribe();
+                rsvpListenerUnsubscribe = null;
+            }
+            if (rsvpListenerUnsubscribe) {
+                rsvpListenerUnsubscribe();
+                rsvpListenerUnsubscribe = null;
+            }
         }
     } else {
         // No user is signed in, redirect to the login page
@@ -159,6 +175,10 @@ onAuthStateChanged(auth, async (user) => {
         if (clubScheduleTitle) clubScheduleTitle.textContent = "Not Authenticated";
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
         if (addEventButton) addEventButton.style.display = 'none'; // Hide button if not authenticated
+        if (eventListenerUnsubscribe) {
+            eventListenerUnsubscribe();
+            eventListenerUnsubscribe = null;
+        }
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 2000); // Redirect after a short delay
@@ -845,6 +865,113 @@ async function fetchAndDisplayEvents() {
         if (noEventsMessage) noEventsMessage.style.display = 'block';
     }
 }
+
+// --- Realtime Updates Function ---
+function setupRealtimeUpdates() {
+    if (!clubId) {
+        console.warn("setupRealtimeUpdates called without a clubId.");
+        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
+        return;
+    }
+
+    console.log(`Setting up realtime event updates for club ID: ${clubId}`);
+    const eventsRef = collection(db, "clubs", clubId, "events");
+    // Query events, ordering them by creation time for initial display logic.
+    // The filtering for "upcoming" events will happen in client-side logic below.
+    const q = query(eventsRef, orderBy("createdAt", "desc"));
+
+    // Unsubscribe from any previous listener before creating a new one
+    if (eventListenerUnsubscribe) {
+        eventListenerUnsubscribe();
+        eventListenerUnsubscribe = null;
+    }
+
+    eventListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
+        // Clear existing events before re-rendering
+        if (eventsContainer) {
+            eventsContainer.innerHTML = '';
+        }
+
+        let allEventOccurrences = [];
+        querySnapshot.forEach((doc) => {
+            const eventData = doc.data();
+            const eventId = doc.id;
+
+            const exceptions = eventData.exceptions || [];
+
+            if (eventData.isWeekly) {
+                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+                let currentDate = new Date(startDate);
+                while (currentDate.getTime() <= endDate.getTime()) {
+                    const currentOccDateString = currentDate.toISOString().split('T')[0];
+
+                    if (daysToMatch.includes(currentDate.getUTCDay())) {
+                        if (!exceptions.includes(currentOccDateString)) {
+                            allEventOccurrences.push({
+                                eventData: eventData,
+                                occurrenceDate: new Date(currentDate),
+                                originalEventId: eventId
+                            });
+                        }
+                    }
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                }
+            } else {
+                const eventDateString = new Date(eventData.eventDate).toISOString().split('T')[0];
+                if (!exceptions.includes(eventDateString)) {
+                    allEventOccurrences.push({
+                        eventData: eventData,
+                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'),
+                        originalEventId: eventId
+                    });
+                }
+            }
+        });
+
+        const now = new Date();
+
+        allEventOccurrences = allEventOccurrences.filter(occurrence => {
+            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0];
+            const eventEndTimeStr = occurrence.eventData.endTime;
+            const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
+            return eventEndMomentLocal.getTime() > now.getTime();
+        });
+
+        allEventOccurrences.sort((a, b) => {
+            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
+            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
+            return dateTimeA - dateTimeB;
+        });
+
+        if (allEventOccurrences.length === 0) {
+            console.log("No upcoming events found for this club.");
+            if (currentUserRole === 'member') {
+                eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+            }
+            if (noEventsMessage) noEventsMessage.style.display = 'block';
+            return;
+        }
+
+        if (noEventsMessage) noEventsMessage.style.display = 'none';
+
+        allEventOccurrences.forEach(occurrence => {
+            const eventDisplayCard = _createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
+            if (eventsContainer) {
+                eventsContainer.appendChild(eventDisplayCard);
+            }
+        });
+        console.log(`Displayed ${allEventOccurrences.length} event occurrences from realtime update.`);
+    }, (error) => {
+        console.error("Error fetching realtime events:", error);
+        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">Error loading events. Please try again later.</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
+    });
+}
+
 
 function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
@@ -1868,4 +1995,51 @@ async function _saveAnnouncementFromPopup(title, content) {
         await showAppAlert("Failed to save announcement: " + error.message);
         return false;
     }
+}
+
+function setupRealtimeUserRsvps() {
+    // Ensure we have a clubId and a logged-in user before setting up the listener
+    if (!clubId || !currentUser) {
+        console.warn("setupRealtimeUserRsvps called without clubId or currentUser. Skipping setup.");
+        // If there was a previous listener, ensure it's unsubscribed
+        if (rsvpListenerUnsubscribe) {
+            rsvpListenerUnsubscribe();
+            rsvpListenerUnsubscribe = null;
+        }
+        return;
+    }
+
+    console.log(`Setting up realtime RSVP updates for user ${currentUser.uid} in club ${clubId}.`);
+
+    // Unsubscribe from any previous listener before creating a new one to prevent duplicates
+    if (rsvpListenerUnsubscribe) {
+        rsvpListenerUnsubscribe();
+        rsvpListenerUnsubscribe = null;
+    }
+
+    const rsvpsRef = collection(db, "clubs", clubId, "occurrenceRsvps");
+    // Query to listen only to RSVPs made by the current user
+    const q = query(rsvpsRef, where("userId", "==", currentUser.uid));
+
+    rsvpListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
+        querySnapshot.docChanges().forEach((change) => {
+            const data = change.doc.data();
+            const originalEventId = data.eventId;
+            const occurrenceDateString = data.occurrenceDate;
+            let newStatus = null; // Default status if RSVP is removed
+
+            if (change.type === "added" || change.type === "modified") {
+                newStatus = data.status;
+                console.log(`RSVP ${newStatus} for event ${originalEventId} on ${occurrenceDateString} (${change.type}).`);
+            } else if (change.type === "removed") {
+                console.log(`RSVP removed for event ${originalEventId} on ${occurrenceDateString}.`);
+            }
+            
+            // Update the UI for the specific event card's RSVP buttons
+            updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
+        });
+    }, (error) => {
+        console.error("Error fetching realtime user RSVPs:", error);
+        // Optionally, you could show a user-facing alert here
+    });
 }
