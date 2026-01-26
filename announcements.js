@@ -1,9 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
+import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
-// Your web app's Firebase configuration (copied from your club_page_manager.js)
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -14,22 +13,19 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Global variables to store authentication and club information
-let currentUser = null;     // Will store the authenticated Firebase user object (Firebase User object)
-let clubId = null;          // Will store the club ID from the URL (string)
-let currentUserRole = null; // Will store the user's role for THIS club ('manager', 'admin', 'member', 'guest')
-let isEditingAnnouncement = false; // Flag to prevent multiple editing cards
+let currentUser = null; 
+let clubId = null;
+let currentUserRole = null; 
+let isEditingAnnouncement = false; 
 
-// Get references to key DOM elements for the announcements page
 const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
-const announcementsContainer = document.getElementById('announcementsContainer'); // This will hold announcement cards
-const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); // Message for when no announcements are found
-const addAnnouncementButton = document.getElementById('add-announcement-button'); // Button to add new announcements
+const announcementsContainer = document.getElementById('announcementsContainer'); 
+const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); 
+const addAnnouncementButton = document.getElementById('add-announcement-button'); 
 
 
 function getUrlParameter(name) {
@@ -55,7 +51,7 @@ window.goToClubPage = function() {
     console.log("goToClubPage: returnToPage = ", returnToPage);
 
     if (currentClubId) {
-        let redirectUrl = 'your_clubs.html'; // Default fallback
+        let redirectUrl = 'your_clubs.html'; 
 
         if (returnToPage === 'manager') {
             redirectUrl = `club_page_manager.html?id=${currentClubId}`;
@@ -137,7 +133,7 @@ function _createEditingCardElement(initialData = {}, isNewAnnouncement = true, a
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card editing-announcement-card';
-    cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`; // Use actual ID or temporary for new
+    cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`; 
     cardDiv.dataset.isNewAnnouncement = isNewAnnouncement;
 
     cardDiv.innerHTML = `
@@ -166,7 +162,7 @@ function _createEditingCardElement(initialData = {}, isNewAnnouncement = true, a
         cardDiv.remove();
         isEditingAnnouncement = false;
         if (!isNewAnnouncement) {
-            await fetchAndDisplayAnnouncements(); // Re-render if canceling an edit
+            await fetchAndDisplayAnnouncements(); 
         } else if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
             noAnnouncementsMessage.style.display = 'block';
         }
@@ -186,7 +182,7 @@ async function addNewAnnouncementEditingCard() {
         return;
     }
 
-    const newCardElement = _createEditingCardElement({}, true); // true indicates it's a new announcement
+    const newCardElement = _createEditingCardElement({}, true); 
 
     if (announcementsContainer) {
         if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';

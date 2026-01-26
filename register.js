@@ -1,14 +1,12 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+
+
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -19,13 +17,12 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
 
 const auth = getAuth(app);
-const db = getFirestore(app); // Initialize Firestore
+const db = getFirestore(app); 
 
 
 
@@ -38,19 +35,17 @@ submit.addEventListener("click", async function(event){
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const confirmPassword = document.getElementById("confirmPassword").value;
-  // Get the display name from an input field (make sure you have an input with id="name" in your HTML)
   const displayName = document.getElementById("name").value;
   if (password !== confirmPassword) {
     await showAppAlert("Passwords do not match. Please try again.");
-    return; // Stop the function if passwords don't match
+    return; 
   }
 
   createUserWithEmailAndPassword(auth, email, password)
-    .then(async (userCredential) => { // <--- **IMPORTANT: Added 'async' here**
+    .then(async (userCredential) => {
       const user = userCredential.user;
 
       
-      // Check if a user object exists and if a displayName was provided
       if (user && displayName) {
         try {
           await updateProfile(user, {
@@ -70,17 +65,13 @@ submit.addEventListener("click", async function(event){
           
           await showAppAlert("User registered and profile created!");
 
-        } catch (error) { // Changed 'updateError' to 'error' for broader catching
+        } catch (error) { 
           await showAppAlert("Error during user profile setup (Auth profile or Firestore): " + error.message);
-          // IMPORTANT: If you want the page to NOT redirect on *any* setup error, add 'return;' here.
-          // For now, let's let it try to redirect but you can uncomment 'return;' if you prefer it stops.
-          // return;
         }
       } else if (user) {
           await showAppAlert("User registered, but no display name was provided. Data not saved to Firestore.");
       }
 
-      // ... (rest of your code, including window.location.href redirect)
       window.location.href = "index.html";
     })
     .catch(async (error) => {
@@ -88,20 +79,20 @@ submit.addEventListener("click", async function(event){
       let userFriendlyMessage = "An unexpected error occurred. Please try again.";
 
       switch (errorCode) {
-        case 'auth/email-already-in-use': //
+        case 'auth/email-already-in-use': 
           userFriendlyMessage = "This email is already registered. Please sign in or use a different email.";
           break;
-        case 'auth/invalid-email': //
+        case 'auth/invalid-email': 
           userFriendlyMessage = "The email address is not valid.";
           break;
-        case 'auth/weak-password': //
+        case 'auth/weak-password': 
           userFriendlyMessage = "The password is too weak. Please choose a stronger password.";
           break;
-        case 'auth/operation-not-allowed': //
+        case 'auth/operation-not-allowed': 
           userFriendlyMessage = "Email/password sign-up is not enabled. Please contact support.";
           break;
         default:
-          userFriendlyMessage = `Error: ${error.message}`; // Fallback for other errors
+          userFriendlyMessage = `Error: ${error.message}`; // Fallback
           break;
       }
       await showAppAlert(userFriendlyMessage);

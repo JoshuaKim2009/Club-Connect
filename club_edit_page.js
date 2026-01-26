@@ -23,7 +23,7 @@ const auth = getAuth(app);
 let currentUser = null;
 let currentUserEmail = null;
 let currentClubId = null;
-// REMOVED: let currentUserRoles = []; // This is no longer needed for club-specific admin status
+//let currentUserRoles = []; 
 
 function getClubIdFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -47,7 +47,6 @@ clubActivityInput.disabled = true;
 clubDescriptionInput.disabled = true;
 
 
-// MODIFIED: Removed 'userRoles' parameter as it's not applicable here
 async function loadClubData(clubId, managerUid) {
   if (!clubId) {
     await showAppAlert("No club ID provided for editing.");
@@ -63,19 +62,17 @@ async function loadClubData(clubId, managerUid) {
         const clubData = clubDoc.data();
         
         const isManager = clubData.managerUid === managerUid;
-        let isAdminOfThisClub = false; // Flag to check if current user is an admin for THIS club
+        let isAdminOfThisClub = false;
 
-        // NEW AUTHORIZATION LOGIC:
-        // If the user is not the direct manager, we check if they are an admin for *this specific club*
-        if (!isManager && managerUid) { // Ensure managerUid (currentUser.uid) is available
+        
+        if (!isManager && managerUid) {
             const memberRef = doc(db, "clubs", clubId, "members", managerUid);
-            const memberDoc = await getDoc(memberRef); // Fetch the member document for the current user
+            const memberDoc = await getDoc(memberRef);
             if (memberDoc.exists() && memberDoc.data().role === 'admin') {
                 isAdminOfThisClub = true;
             }
         }
 
-        // User is authorized if they are the manager OR an admin of *this specific club*
         if (!isManager && !isAdminOfThisClub) {
             await showAppAlert("You are not authorized to edit this club.");
             console.warn("Unauthorized attempt to edit club:", clubId, "by user:", managerUid);
@@ -108,7 +105,6 @@ async function loadClubData(clubId, managerUid) {
   }
 }
 
-// REMOVED: async function fetchUserRoles(uid) {...} // This function is no longer relevant for club-specific roles
 
 
 onAuthStateChanged(auth, async (user) => {
@@ -117,10 +113,8 @@ onAuthStateChanged(auth, async (user) => {
     currentUserEmail = user.email;
     console.log("User is logged in. UID:", currentUser.uid, "Email:", currentUserEmail);
 
-    // REMOVED: await fetchUserRoles(currentUser.uid); // Not needed now
     
     if (currentClubId) {
-      // MODIFIED CALL: 'currentUserRoles' parameter removed
       await loadClubData(currentClubId, currentUser.uid);
     } else {
         await showAppAlert("No club ID specified for editing.");
@@ -130,7 +124,6 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     currentUserEmail = null;
-    // REMOVED: currentUserRoles = []; // Not needed now
     console.warn("No user is logged in. Redirecting to login.");
     await showAppAlert("You must be logged in to edit a club.");
     window.location.href = "login.html";
@@ -142,7 +135,6 @@ submitButton.addEventListener("click", async function(event){
     event.preventDefault();
 
     submitButton.disabled = true;
-    // submitButton.textContent = "Updating Club...";
 
     if (!currentUser || !currentUser.uid) {
       await showAppAlert("You must be logged in to update a club.");
@@ -240,7 +232,6 @@ async function deleteClub(clubId) {
         const managerUid = clubData.managerUid;
         const joinCode = clubData.joinCode;
 
-        // --- Authorization Check: Only the manager can delete the club ---
         if (managerUid !== currentUser.uid) {
             await showAppAlert("You are not authorized to delete this club. Only the club manager can perform this action.");
             console.warn(`User ${currentUser.uid} attempted to delete club ${clubId} but is not the manager.`);
@@ -254,34 +245,29 @@ async function deleteClub(clubId) {
         }
 
 
-        // IMPORTANT: First, get all member UIDs *before* deleting the members subcollection documents.
         console.log(`Fetching members for club ${clubId} to update their user profiles...`);
         const membersCollectionRef = collection(db, "clubs", clubId, "members");
         const memberDocsSnap = await getDocs(membersCollectionRef);
         const memberUIDsToUpdate = [];
         memberDocsSnap.forEach((memberDoc) => {
-            memberUIDsToUpdate.push(memberDoc.id); // memberDoc.id is the memberUid
+            memberUIDsToUpdate.push(memberDoc.id);
         });
         console.log(`Found ${memberUIDsToUpdate.length} members to update their user profiles.`);
 
-        // Update each member's user document to remove the club from their `member_clubs` array
         if (memberUIDsToUpdate.length > 0) {
             console.log(`Removing club ID ${clubId} from all members' 'member_clubs' lists...`);
             const updateMemberPromises = memberUIDsToUpdate.map(async (memberUid) => {
-                // Skip updating the manager's member_clubs, as their managed_clubs is handled separately
-                // and they might be the same array, leading to redundancy or issues if both exist.
                 if (memberUid === managerUid) {
                     console.log(`Skipping member_clubs update for manager UID ${memberUid}.`);
-                    return Promise.resolve(); // Resolve immediately for manager
+                    return Promise.resolve(); 
                 }
                 const memberUserDocRef = doc(db, "users", memberUid);
                 try {
                     await updateDoc(memberUserDocRef, {
-                        member_clubs: arrayRemove(clubId) // Assuming you have a 'member_clubs' array for members
+                        member_clubs: arrayRemove(clubId) 
                     });
                     console.log(`Club ID ${clubId} removed from member ${memberUid}'s 'member_clubs' list.`);
                 } catch (memberUpdateError) {
-                    // Log the error but don't stop the entire deletion process
                     console.error(`Error removing club ID from member ${memberUid}'s profile:`, memberUpdateError);
                 }
             });
@@ -290,17 +276,14 @@ async function deleteClub(clubId) {
         }
 
 
-        // 1. Delete all documents in the 'members' subcollection
         console.log(`Deleting members subcollection for club ${clubId}...`);
-        // We already have memberDocsSnap from above, so we can reuse it
         const deleteMemberSubcollectionPromises = [];
         memberDocsSnap.forEach((memberDoc) => {
             deleteMemberSubcollectionPromises.push(deleteDoc(memberDoc.ref));
         });
-        await Promise.all(deleteMemberSubcollectionPromises); // Wait for all member documents to be deleted
+        await Promise.all(deleteMemberSubcollectionPromises);
         console.log(`All members subcollection documents for club ${clubId} deleted.`);
 
-        // 1b. Delete all documents in the 'events' subcollection
         console.log(`Deleting events subcollection for club ${clubId}...`);
         const eventsCollectionRef = collection(db, "clubs", clubId, "events");
         const eventDocsSnap = await getDocs(eventsCollectionRef);
@@ -308,10 +291,9 @@ async function deleteClub(clubId) {
         eventDocsSnap.forEach((eventDoc) => {
             deleteEventSubcollectionPromises.push(deleteDoc(eventDoc.ref));
         });
-        await Promise.all(deleteEventSubcollectionPromises); // Wait for all event documents to be deleted
+        await Promise.all(deleteEventSubcollectionPromises);
         console.log(`All events subcollection documents for club ${clubId} deleted.`);
 
-        // 1c. Delete all documents in the 'occurrenceRsvps' subcollection
         console.log(`Deleting occurrenceRsvps subcollection for club ${clubId}...`);
         const rsvpsCollectionRef = collection(db, "clubs", clubId, "occurrenceRsvps");
         const rsvpDocsSnap = await getDocs(rsvpsCollectionRef);
@@ -319,20 +301,18 @@ async function deleteClub(clubId) {
         rsvpDocsSnap.forEach((rsvpDoc) => {
             deleteRsvpSubcollectionPromises.push(deleteDoc(rsvpDoc.ref));
         });
-        await Promise.all(deleteRsvpSubcollectionPromises); // Wait for all RSVP documents to be deleted
+        await Promise.all(deleteRsvpSubcollectionPromises);
         console.log(`All occurrenceRsvps subcollection documents for club ${clubId} deleted.`);
 
-        // 1d. Delete all documents in the 'announcements' subcollection and their 'readBy' subcollections
         console.log(`Deleting announcements subcollection and nested 'readBy' subcollections for club ${clubId}...`);
         const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
         const announcementDocsSnap = await getDocs(announcementsCollectionRef);
 
-        const deletePromises = []; // Collect all deletion promises
+        const deletePromises = [];
 
         for (const announcementDoc of announcementDocsSnap.docs) {
             const announcementId = announcementDoc.id;
 
-            // Delete all documents in the 'readBy' subcollection for this announcement
             const readByCollectionRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
             const readByDocsSnap = await getDocs(readByCollectionRef);
             readByDocsSnap.forEach((readByDoc) => {
@@ -340,21 +320,18 @@ async function deleteClub(clubId) {
                 console.log(`  Marked readBy doc ${readByDoc.id} for announcement ${announcementId} for deletion.`);
             });
 
-            // Delete the announcement document itself
             deletePromises.push(deleteDoc(announcementDoc.ref));
             console.log(`  Marked announcement doc ${announcementId} for deletion.`);
         }
 
-        await Promise.all(deletePromises); // Wait for all collected deletion promises to resolve
+        await Promise.all(deletePromises);
         console.log(`All announcements and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
 
 
-        // 2. Delete the main club document
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);
         console.log(`Club document ${clubId} deleted.`);
 
-        // 3. Delete the associated join code document
         if (joinCode) {
             console.log(`Deleting join code ${joinCode}...`);
             const joinCodeRef = doc(db, "join_codes", joinCode);
@@ -362,7 +339,6 @@ async function deleteClub(clubId) {
             console.log(`Join code ${joinCode} deleted.`);
         }
 
-        // 4. Remove the club ID from the manager's 'managed_clubs' list
         console.log(`Removing club ID ${clubId} from manager ${currentUser.uid}'s managed_clubs list...`);
         const userDocRef = doc(db, "users", currentUser.uid);
         await updateDoc(userDocRef, {
@@ -371,8 +347,7 @@ async function deleteClub(clubId) {
         console.log(`Club ID ${clubId} removed from manager's managed_clubs list.`);
 
         await showAppAlert(`Club "${clubData.clubName}" has been successfully deleted.`);
-        // Optional: Redirect user to a different page, e.g., their clubs list
-        window.location.href = "your_clubs.html"; // <-- You might want to change this redirect destination
+        window.location.href = "your_clubs.html";
 
     } catch (error) {
         console.error("Error deleting club:", error);

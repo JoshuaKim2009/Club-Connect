@@ -4,7 +4,6 @@ import { getFirestore, collection, query, where, getDocs, updateDoc, arrayUnion,
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
 
-// Your Firebase configuration (this should be the same as in your other Firebase scripts)
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -15,24 +14,20 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 
-let currentUserUid = null; // Declare a variable to store the UID globally
+let currentUserUid = null; 
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-    // User is signed in.
-    currentUserUid = user.uid; // <-- HERE IS THE USER UID
-    console.log("Current User UID:", currentUserUid);
-    // You can now use currentUserUid for Firestore queries, etc.
+        currentUserUid = user.uid; 
+        console.log("Current User UID:", currentUserUid);
     } else {
-    // No user is signed in.
-    currentUserUid = null;
-    console.log("No user is signed in.");
+        currentUserUid = null;
+        console.log("No user is signed in.");
     }
 });
 
@@ -42,12 +37,12 @@ const joinCodeInput = document.getElementById("join-code-input");
 const submitButton = document.getElementById("submit-join-club-button"); 
 
 if (submitButton) {
-    submitButton.addEventListener("click", async (event) => { // <-- ADD 'async' here
+    submitButton.addEventListener("click", async (event) => {
         event.preventDefault();
 
         if (!currentUserUid) {
             await showAppAlert("You must be logged in to join a club.", "Authentication Required");
-            return; // Stop execution if not logged in
+            return;
         }
         
         const enteredClubName = clubNameInput.value.trim();
@@ -58,12 +53,12 @@ if (submitButton) {
             console.log("Entered Club Name:", enteredClubName);
             console.log("Entered Join Code:", enteredJoinCode);
 
-            // The 'await' keyword is crucial here because checkIfClubExists is an async function
             const clubUID = await checkIfClubExists(enteredClubName, enteredJoinCode);
             console.log("Result from checkIfClubExists (clubUID):", clubUID);
 
             if (!clubUID){
                 await showAppAlert("This club does not exist", "Club not found");
+                return;
             }
 
             
@@ -81,10 +76,9 @@ if (submitButton) {
             const clubData = clubSnap.data();
             const clubManagerUid = clubData.managerUid; 
 
-            // 1. Check if the current user is the manager
             if (clubManagerUid === currentUserUid) {
                 await showAppAlert("You are already the manager of this club. You cannot join your own club.", "Already a Member");
-                return; // Stop execution
+                return; 
             }
 
             const pendingMembers = clubData.pendingMemberUIDs || [];
@@ -129,17 +123,17 @@ async function addPendingMemberRequest(clubId) {
     }
 
     try {
-        const clubDocRef = doc(db, "clubs", clubId); // Get a reference to the specific club document
+        const clubDocRef = doc(db, "clubs", clubId);
 
         await updateDoc(clubDocRef, {
-            pendingMemberUIDs: arrayUnion(currentUserUid) // Add the current user's UID to the list
+            pendingMemberUIDs: arrayUnion(currentUserUid)
         });
         console.log(`User ${currentUserUid} added to pendingMemberUIDs for club ${clubId}.`);
         await showAppAlert("Join request sent to be reviewed!");
     } catch (error) {
         await showAppAlert("Join request failed!");
         console.error(`Error adding user ${currentUserUid} to pendingMemberUIDs for club ${clubId}:`, error);
-        throw error; // Re-throw the error so the caller can handle it
+        throw error;
         
     }
 }

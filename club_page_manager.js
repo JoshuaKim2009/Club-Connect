@@ -7,7 +7,6 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
 
-// Your web app's Firebase configuration (replicated from your_clubs.js for self-containment)
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -18,14 +17,12 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Initialize auth here too!
+const auth = getAuth(app); 
 
-let currentUser = null; // To store the authenticated user
+let currentUser = null; 
 
-// Function to get a query parameter from the URL
 function getUrlParameter(name) {
     name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
     var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -33,7 +30,6 @@ function getUrlParameter(name) {
     return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 }
 
-// Get the clubId from the URL
 const clubId = getUrlParameter('id');
 
 const clubPageTitle = document.getElementById('clubPageTitle');
@@ -446,7 +442,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
             if (myUid === managerUid){
                 const actionButtonsDivManager = document.createElement("div");
-                actionButtonsDivManager.className = "member-actions"; // For grouping buttons
+                actionButtonsDivManager.className = "member-actions";
                 const removeBtnManager = document.createElement("button");
                 removeBtnManager.textContent = "REMOVE";
                 removeBtnManager.className = "manager-remove-member-btn";
@@ -809,15 +805,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Map Date.getUTCDay() (0 for Sunday, 1 for Monday, etc.) to day names
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// Helper to format a time string from "HH:mm" to "h:mm AM/PM"
 function formatTime(timeString) {
     if (!timeString) return 'N/A';
     try {
         const [hours, minutes] = timeString.split(':').map(Number);
-        const date = new Date(); // Use a dummy date to leverage Date object for formatting
+        const date = new Date();
         date.setHours(hours, minutes);
         return date.toLocaleTimeString(undefined, {
             hour: 'numeric',
@@ -826,11 +820,10 @@ function formatTime(timeString) {
         });
     } catch (e) {
         console.error("Error formatting time:", e);
-        return timeString; // Return original if invalid time string
+        return timeString; 
     }
 }
 
-// Helper to format a date string for display (ensuring UTC consistency)
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
@@ -889,8 +882,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
         return;
     }
 
-    // closestEventDisplay.innerHTML = createLoadingEventCardHtml(); // THIS LINE IS NOW REMOVED
-    // The loading card is now in the HTML by default
+
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
 
@@ -1030,7 +1022,6 @@ onSnapshot(docRef, async (docSnap) => {
     
     if (docSnap.exists() && currentUser) {
         console.log("Main doc changed, full UI sync...");
-        // This updates the join code and internal arrays
         await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
     }
 });
@@ -1065,7 +1056,6 @@ function updateUnreadBadge(count) {
     }
 }
 
-// Function to get the count of unread announcements for the current user
 async function getUnreadAnnouncementCount(clubId, userId) {
     if (!clubId || !userId) {
         console.warn("Cannot get unread count: clubId or userId missing.");
