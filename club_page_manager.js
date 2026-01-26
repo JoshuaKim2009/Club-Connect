@@ -263,7 +263,6 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 
 
-
 async function copyToClipboard(originalCode, buttonElement) {
     try {
         await navigator.clipboard.writeText(originalCode);

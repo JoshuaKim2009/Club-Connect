@@ -5,7 +5,6 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -16,17 +15,16 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let clubNames = []; // Stores names of managed clubs
-let clubIds = [];   // Stores IDs of managed clubs
-let currentUser = null; // Stores the current Firebase Auth user object
-let memberClubNames = []; // Stores names of clubs the user is a MEMBER OF
-let memberClubIds = [];   // Stores IDs of clubs the user is a MEMBER OF
-let userDocRef = null; // Reference to the current user's document in Firestore
+let clubNames = []; 
+let clubIds = [];
+let currentUser = null;
+let memberClubNames = [];
+let memberClubIds = [];
+let userDocRef = null;
 let unsubscribeUserDoc = null;
 
 
@@ -61,7 +59,7 @@ async function loadManagedClubs() {
             container.appendChild(btn);
             if(memberClubs.length !== 0){
               Array.from(container.children).forEach(child => {
-                if (child.classList.contains("club-btn")) { // Ensure it targets the class of your buttons
+                if (child.classList.contains("club-btn")) { 
                     container.removeChild(child);
                 }
               });
@@ -74,7 +72,6 @@ async function loadManagedClubs() {
         const clubPromises = managedClubs.map(clubId => getDoc(doc(db, "clubs", clubId)));
         const clubSnapshots = await Promise.all(clubPromises); 
 
-        // Process the fetched club data
         clubSnapshots.forEach(clubSnap => {
             if (clubSnap.exists()) {
             const clubData = clubSnap.data();
@@ -138,8 +135,8 @@ async function loadMemberClubs() {
             clubSnapshots.forEach(clubSnap => {
                 if (clubSnap.exists()) {
                     const clubData = clubSnap.data();
-                    memberClubNames.push(clubData.clubName); // Populating memberClubNames
-                    memberClubIds.push(clubSnap.id);     // Populating memberClubIds
+                    memberClubNames.push(clubData.clubName); 
+                    memberClubIds.push(clubSnap.id);
                 } else {
                     console.warn(`Member club document with ID ${clubSnap.id} not found.`);
                 }
@@ -149,7 +146,7 @@ async function loadMemberClubs() {
             console.log("Member Club IDs:", memberClubIds);
         }
         
-        displayMemberClubs(memberClubNames, memberClubIds); // Calls the correct display function
+        displayMemberClubs(memberClubNames, memberClubIds);
 
     } else {
       console.warn("User document not found for current user.");
@@ -162,15 +159,12 @@ async function loadMemberClubs() {
 }
 
 
-// Listen for authentication state changes and then load clubs
 onAuthStateChanged(auth, (user) => {
   currentUser = user; 
   if (user) {
       console.log("Auth state changed: User is logged in.", user.uid);
       
-      // NEW: Set the global userDocRef based on the authenticated user
       userDocRef = doc(db, "users", currentUser.uid);
-      // NEW: Call the function to set up real-time updates
       setupRealtimeClubUpdates();
 
   } else {
@@ -184,10 +178,9 @@ onAuthStateChanged(auth, (user) => {
       document.getElementById("memberClubContainer").innerHTML = "";
       document.getElementById('member-clubs-loading-text').textContent = "NO CLUBS YET";
 
-      // NEW: Unsubscribe from the user document listener when logging out
       if (unsubscribeUserDoc) {
           unsubscribeUserDoc();
-          unsubscribeUserDoc = null; // Clear the reference
+          unsubscribeUserDoc = null;
       }
   }
 });
@@ -215,24 +208,22 @@ function displayList(listNames, listIds) {
     containerText.textContent = ""; 
 
 
-    // Create and append buttons
     for(let i = 0; i < listNames.length; i++){
         const name = listNames[i];
         const uid = listIds[i]; 
 
         const btn = document.createElement("button");
-        //btn.textContent = name + " | Manager ";
 
-        btn.textContent = name; // Only the club name initially
-        // Create a span for the role
+        btn.textContent = name; 
+
         const roleSpan = document.createElement("span");
         roleSpan.textContent = " Manager";
-        roleSpan.classList.add("club-role-text"); // Add a class for styling
+        roleSpan.classList.add("club-role-text"); 
         btn.appendChild(roleSpan);
 
 
         btn.dataset.clubId = uid;
-        btn.className = "club-btn fancy-button"; // Ensure 'club-btn' class is always added
+        btn.className = "club-btn fancy-button"; 
 
         btn.addEventListener("click", () => {
             window.location.href = `club_page_manager.html?id=${btn.dataset.clubId}`;
@@ -256,7 +247,7 @@ async function displayMemberClubs(listNames, listIds) {
     }
 
     Array.from(container.children).forEach(child => {
-        if (child.classList.contains("club-btn")) { // Ensure it targets the class of your buttons
+        if (child.classList.contains("club-btn")) { 
             container.removeChild(child);
         }
     });
@@ -266,7 +257,7 @@ async function displayMemberClubs(listNames, listIds) {
 
     const rolePromises = listIds.map(clubId => getMemberRoleForClub(clubId, currentUser.uid));
 
-    const roles = await Promise.all(rolePromises); // 'roles' will be an array of strings (e.g., ['member', 'admin'])
+    const roles = await Promise.all(rolePromises); 
 
     for(let i = 0; i < listNames.length; i++){
         const name = listNames[i];
@@ -280,14 +271,13 @@ async function displayMemberClubs(listNames, listIds) {
 
         const btn = document.createElement("button");
         //btn.textContent = `${name} | ${currentRole.toUpperCase()}`; 
-        btn.textContent = name; // Only the club name initially
+        btn.textContent = name; 
 
-        // Create a span for the role
         const roleSpan = document.createElement("span");
-        roleSpan.textContent = ` ${capitalizeFirstLetter(currentRole)}`; // Role in parentheses
-        roleSpan.classList.add("club-role-text"); // Add a class for styling
+        roleSpan.textContent = ` ${capitalizeFirstLetter(currentRole)}`;
+        roleSpan.classList.add("club-role-text");
 
-        btn.appendChild(roleSpan); // Append the role span to the button
+        btn.appendChild(roleSpan); 
 
 
         btn.dataset.clubId = clubId;
@@ -351,16 +341,12 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 
 function setupRealtimeClubUpdates() {
-    // Unsubscribe from any previous listener to avoid duplicates.
     if (unsubscribeUserDoc) {
         unsubscribeUserDoc();
     }
 
-    // Set up the real-time listener for the user's document
     unsubscribeUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
         console.log("User document updated in real-time. Refreshing club lists.");
-        // Your existing loadManagedClubs and loadMemberClubs functions will now be re-called
-        // with the latest data implicitly due to the { source: 'server' } fetches they perform.
         loadManagedClubs();
         loadMemberClubs();
     }, (error) => {
