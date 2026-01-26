@@ -1532,8 +1532,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             text-align: center;
             font-size: 20px; /* Adjusted slightly smaller for content */
             color: black;
-            max-height: 80vh; /* Limit height for scrollable content */
-            overflow-y: auto; /* Enable vertical scrolling */
+            
         `;
         document.body.appendChild(modal);
     }
@@ -1555,13 +1554,16 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             <button id="close-rsvp-modal" class="fancy-button">Close</button>
         </div>
     `;
-
+    modal.classList.add('rsvp-loading-collapsed');
+    modal.classList.remove('rsvp-scroll-active');
     document.body.classList.add('no-scroll');
 
     document.getElementById('close-rsvp-modal').addEventListener('click', () => {
         overlay.style.display = 'none';
         modal.style.display = 'none';
         document.body.classList.remove('no-scroll');
+        modal.classList.add('rsvp-loading-collapsed');
+        modal.classList.remove('rsvp-scroll-active');
         const loadingIndicator = document.getElementById('rsvp-loading-indicator');
         if (loadingIndicator) loadingIndicator.style.display = 'block';
         const contentDiv = document.getElementById('rsvp-lists');
@@ -1625,6 +1627,14 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         document.getElementById('rsvp-loading-indicator').style.display = 'none';
         document.getElementById('rsvp-lists').style.display = 'block';
 
+        modal.classList.remove('rsvp-loading-collapsed');
+        modal.addEventListener('transitionend', function handler(event) {
+            if (event.propertyName === 'max-height') {
+                modal.classList.add('rsvp-scroll-active'); // Add class to enable scrollbar
+                modal.removeEventListener('transitionend', handler); // Remove listener to avoid multiple firings
+            }
+        });
+
         document.getElementById('going-count').textContent = goingCount;
         document.getElementById('not-going-count').textContent = notGoingCount;
         document.getElementById('rsvp-maybe-count').textContent = maybeCount;
@@ -1639,6 +1649,8 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         if (loadingIndicator) loadingIndicator.style.display = 'none';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
+        modal.classList.add('rsvp-loading-collapsed');
+        modal.classList.remove('rsvp-scroll-active');
     }
 }
 

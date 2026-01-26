@@ -1607,7 +1607,7 @@ input[type="checkbox"]:checked {
   align-items: center;
 }
 
-#rsvp-details-modal {
+#rsvp-details-modal { /* THIS SHOULD BE YOUR ONLY #rsvp-details-modal BLOCK */
   margin-top: 20px;
   font-weight: normal;
   padding: 20px;
@@ -1629,8 +1629,29 @@ input[type="checkbox"]:checked {
   text-align: center;
   font-size: 20px;
   color: black;
-  max-height: 80vh;
-  overflow-y: auto;
+
+  /* These are the key properties for height transition and scrollbar control */
+  max-height: 80vh; /* This is the desired *final* max-height */
+  overflow-y: hidden; /* <--- THIS MUST BE HIDDEN BY DEFAULT! */
+  transition: max-height 0.5s ease-out; /* ONLY max-height transitions here */
+
+  /* SCROLLBAR STYLES - NOW ALL CONSOLIDATED HERE */
+  padding-right: 14px; /* Space reserved for scrollbar if it appears */
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+  background-clip: padding-box;
+  scrollbar-width: thin;
+  scrollbar-color: #747474 transparent;
+}
+
+
+.rsvp-scroll-active {
+  overflow-y: auto !important; /* Enable scrolling when the modal is fully expanded */
+}
+
+.rsvp-loading-collapsed {
+  max-height: 150px !important; /* Smaller height for "LOADING..." */
+  overflow-y: hidden !important; /* Hide scrollbar during loading */
 }
 
 #rsvp-details-modal h2 {
@@ -1654,6 +1675,11 @@ input[type="checkbox"]:checked {
   margin-bottom: 5px;
   color: #333;
   padding-bottom: 5px;
+}
+
+#rsvp-loading-indicator {
+  text-align: center;
+  margin-bottom: 40px;
 }
 
 #rsvp-details-modal ul {
@@ -1716,13 +1742,6 @@ input[type="checkbox"]:checked {
   margin-bottom: 15px;
 }
 
-#rsvp-details-modal {
-  overflow-y: auto;
-  padding-right: 14px;
-  box-sizing: border-box;
-  scrollbar-gutter: stable;
-  background-clip: padding-box;
-}
 
 #rsvp-details-modal::-webkit-scrollbar {
   width: 10px;
@@ -1750,10 +1769,6 @@ input[type="checkbox"]:checked {
   background: linear-gradient(#5f5f5f, #646464);
 }
 
-#rsvp-details-modal {
-  scrollbar-width: thin;
-  scrollbar-color: #747474 transparent;
-}
 
 
 
