@@ -870,7 +870,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                 actionButtonsHtml = `
                     <div class="event-card-actions">
                         <button class="uncancel-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">UN-CANCEL EVENT</button>
-                        <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
+                        <button class="delete-series-btn" data-event-id="${originalEventId}">
+                            <span class="button-text">DELETE SERIES</span><span class="button-icon"><i class="fa-regular fa-calendar"></i></span>
+                        </button>
                     </div>
                 `;
             } else {
@@ -882,7 +884,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                         <button class="cancel-instance-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
                             <span class="button-text">DELETE EVENT</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
                         </button>
-                        <button class="delete-series-btn" data-event-id="${originalEventId}">DELETE SERIES</button>
+                        <button class="delete-series-btn" data-event-id="${originalEventId}">
+                            <span class="button-text">DELETE SERIES</span><span class="button-icon"><i class="fa-regular fa-calendar"></i></span>
+                        </button>
                     </div>
                 `;
             }
@@ -897,7 +901,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                         <span class="button-text">DELETE EVENT</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
                     </button>
                     ${eventData.parentRecurringEventId ? `
-                        <button class="delete-parent-series-btn" data-parent-event-id="${eventData.parentRecurringEventId}">DELETE SERIES</button>
+                        <button class="delete-parent-series-btn" data-parent-event-id="${eventData.parentRecurringEventId}">
+                            <span class="button-text">DELETE SERIES</span><span class="button-icon"><i class="fa-regular fa-calendar"></i></span>
+                        </button>
                     ` : ''}
                 </div>
             `;

@@ -1998,10 +1998,28 @@ input[type="checkbox"]:checked {
   /* ... your existing button styles for #announcementsButton ... */
 }
 
+.event-card-actions .button-text {
+    display: inline-block; 
+    vertical-align: middle;
+}
 
 .event-card-actions .button-icon {
     display: none; 
     font-size: 1.2em; 
+    vertical-align: middle;
+}
+
+.event-card-actions .edit-btn .button-icon,
+.event-card-actions .cancel-instance-btn .button-icon,
+.event-card-actions .delete-btn .button-icon {
+    display: inline-block; 
+    margin-left: 8px; 
+}
+
+.event-card-actions .delete-series-btn .button-icon,
+.event-card-actions .delete-parent-series-btn .button-icon {
+    display: inline-block; 
+    margin-left: 8px; 
 }
 
 @media (max-width: 600px) {
@@ -2038,6 +2056,7 @@ input[type="checkbox"]:checked {
         display: inline-block; 
         font-size: 1.2em; 
         line-height: 1; 
+        margin-left: 0px;
     }
 
     .event-card-actions {
@@ -2045,5 +2064,16 @@ input[type="checkbox"]:checked {
         flex-wrap: wrap;
         justify-content: center;
         gap: 5px;
+    }
+
+    .event-card-actions .delete-series-btn .button-icon,
+    .event-card-actions .delete-parent-series-btn .button-icon {
+        display: none;
+    }
+
+    .event-card-actions .delete-series-btn .button-text,
+    .event-card-actions .delete-parent-series-btn .button-text {
+        display: inline-block;
+        margin: 0; 
     }
 }
