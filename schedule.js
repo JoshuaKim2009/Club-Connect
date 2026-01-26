@@ -3,7 +3,6 @@ import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs,
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; // Assuming dialog.js is present and correct
 
-// Your web app's Firebase configuration (copied from your club_page_manager.js)
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -14,31 +13,25 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Global variables to store authentication and club information
-let currentUser = null;     // Will store the authenticated Firebase user object (Firebase User object)
-let clubId = null;          // Will store the club ID from the URL (string)
-let currentUserRole = null; // Will store the user's role for THIS club ('manager', 'admin', 'member', 'guest')
+let currentUser = null;
+let clubId = null;
+let role = null;
 let isEditingEvent = false;
 let eventListenerUnsubscribe = null;
 let rsvpListenerUnsubscribe = null;
 
-// Get references to key DOM elements you'll likely use
 const clubScheduleTitle = document.getElementById('clubScheduleTitle');
-const eventsContainer = document.getElementById('eventsContainer'); // This will eventually hold event cards
-const noEventsMessage = document.getElementById('noEventsMessage'); // Message for when no events are found
-const addEventButton = document.getElementById('add-event-button'); // Button to add new events
+const eventsContainer = document.getElementById('eventsContainer');
+const noEventsMessage = document.getElementById('noEventsMessage');
+const addEventButton = document.getElementById('add-event-button');
 
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// --- Helper Functions ---
 
-// Function to get a query parameter from the URL
-// IMPORTANT: This assumes club_page_manager.js navigates to schedule.html with "?clubId=..."
 function getUrlParameter(name) {
     name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
     var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -48,77 +41,68 @@ function getUrlParameter(name) {
 
 // Function to get the current user's role for the specific club
 async function getMemberRoleForClub(clubID, memberUid) {
-  if (!clubID || !memberUid) return null; // No role if club or user is missing
+  if (!clubID || !memberUid) return null;
   try {
     const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
     const memberRoleSnap = await getDoc(memberRoleRef);
     if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
       return memberRoleSnap.data().role;
     } else {
-      // Fallback: Check if user is the manager directly in the club document (legacy or direct manager)
       const clubRef = doc(db, "clubs", clubID);
       const clubSnap = await getDoc(clubRef);
       if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
           return 'manager';
       }
-      return 'member'; // Default to 'member' if no specific role document and not the direct manager
+      return 'member';
     }
   } catch (error) {
     console.error(`Error fetching role for user ${memberUid} in club ${clubID}:`, error);
-    return null; // Return null on error
+    return null;
   }
 }
 
-// Function to go back to the club manager page
+
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
-    const returnToPage = getUrlParameter('returnTo'); // <--- NEW: Get the returnTo parameter from the URL
+    const returnToPage = getUrlParameter('returnTo');
 
     console.log("goToClubPage: clubId = ", currentClubId);
-    console.log("goToClubPage: returnToPage = ", returnToPage); // <--- Add this log to debug
+    console.log("goToClubPage: returnToPage = ", returnToPage);
 
     if (currentClubId) {
-        let redirectUrl = 'your_clubs.html'; // Default fallback if something goes wrong
+        let redirectUrl = 'your_clubs.html';
 
         if (returnToPage === 'manager') {
             redirectUrl = `club_page_manager.html?id=${currentClubId}`;
         } else if (returnToPage === 'member') {
             redirectUrl = `club_page_member.html?id=${currentClubId}`;
         } else {
-            // If returnTo is missing or an unexpected value, fall back to the manager page.
-            // This is a safe default, assuming manager has more permissions.
             console.warn("Invalid or missing 'returnTo' parameter, defaulting to manager page.");
             redirectUrl = `club_page_manager.html?id=${currentClubId}`;
         }
         window.location.href = redirectUrl;
     } else {
-        // If no clubId is found in the URL, go to the general clubs list
         window.location.href = 'your_clubs.html';
     }
 }
 
-// --- Authentication State Listener ---
-// This runs whenever the user's authentication state changes (on page load and sign in/out)
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; // Update the global currentUser variable
-    clubId = getUrlParameter('clubId'); // Get the clubId from the current page's URL
+    currentUser = user; 
+    clubId = getUrlParameter('clubId');
 
     if (user) {
         // User is signed in
         if (clubId) {
-            // Club ID is present in the URL, try to fetch club details to set the title
             const clubRef = doc(db, "clubs", clubId);
             try {
                 const clubSnap = await getDoc(clubRef);
                 if (clubSnap.exists()) {
-                    // Set the H1 title using the club's name from Firestore
-                    if (clubScheduleTitle) { // Check if the element exists
+                    if (clubScheduleTitle) {
                         clubScheduleTitle.textContent = `${clubSnap.data().clubName} Schedule`;
                     }
 
-                    // Fetch current user's role for this club
-                    currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
-                    console.log(`User ${currentUser.uid} role for club ${clubId}: ${currentUserRole}`);
+                    role = await getMemberRoleForClub(clubId, currentUser.uid);
+                    console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
 
                     await cleanUpEmptyRecurringEvents();
 
@@ -127,35 +111,30 @@ onAuthStateChanged(auth, async (user) => {
                     setupRealtimeUserRsvps()
                     
                     if (addEventButton) {
-                        if (currentUserRole === 'manager' || currentUserRole === 'admin') {
-                            addEventButton.style.display = 'block'; // Show button
-                            // Attach the event listener for adding a new event
-                            // Use remove/add to prevent multiple listeners if auth state changes multiple times
+                        if (role === 'manager' || role === 'admin') {
+                            addEventButton.style.display = 'block'; 
                             addEventButton.removeEventListener('click', addNewEventEditingCard);
                             addEventButton.addEventListener('click', addNewEventEditingCard);
                         } else {
-                            addEventButton.style.display = 'none'; // Hide button if not manager/admin
+                            addEventButton.style.display = 'none'; 
                         }
                     }
 
                 } else {
-                    // Club document not found in Firestore
                     if (clubScheduleTitle) clubScheduleTitle.textContent = "Club Schedule (Club Not Found)";
                     if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
-                    if (addEventButton) addEventButton.style.display = 'none'; // Hide button if club not found
+                    if (addEventButton) addEventButton.style.display = 'none';
                 }
             } catch (error) {
-                // Error fetching club details or role
                 console.error("Error fetching club details or user role:", error);
                 if (clubScheduleTitle) clubScheduleTitle.textContent = "Error Loading Schedule";
                 if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
-                if (addEventButton) addEventButton.style.display = 'none'; // Hide button on error
+                if (addEventButton) addEventButton.style.display = 'none'; 
             }
         } else {
-            // No clubId found in the URL
             if (clubScheduleTitle) clubScheduleTitle.textContent = "Error: No Club ID Provided";
             if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
-            if (addEventButton) addEventButton.style.display = 'none'; // Hide button if no clubId
+            if (addEventButton) addEventButton.style.display = 'none'; 
             if (eventListenerUnsubscribe) {
                 eventListenerUnsubscribe();
                 eventListenerUnsubscribe = null;
@@ -166,18 +145,17 @@ onAuthStateChanged(auth, async (user) => {
             }
         }
     } else {
-        // No user is signed in, redirect to the login page
         console.log("No user authenticated on schedule page. Redirecting to login.");
         if (clubScheduleTitle) clubScheduleTitle.textContent = "Not Authenticated";
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
-        if (addEventButton) addEventButton.style.display = 'none'; // Hide button if not authenticated
+        if (addEventButton) addEventButton.style.display = 'none'; 
         if (eventListenerUnsubscribe) {
             eventListenerUnsubscribe();
             eventListenerUnsubscribe = null;
         }
         setTimeout(() => {
             window.location.href = 'login.html';
-        }, 2000); // Redirect after a short delay
+        }, 2000); 
     }
 });
 
@@ -200,37 +178,30 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         const eventData = eventSnap.data();
         const existingExceptions = eventData.exceptions || [];
 
-        // Temporarily add the current occurrence to check if it's the last one
         const hypotheticalExceptions = [...existingExceptions, occurrenceDateString];
 
-        // --- Calculate active occurrences with hypothetical exceptions ---
         let activeOccurrencesCount = 0;
         if (eventData.isWeekly) {
-            // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
-            const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
-            const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
+            const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+            const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
             const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
 
-            let currentDate = new Date(startDate); // Start iteration from UTC midnight
-            while (currentDate.getTime() <= endDate.getTime()) { // Compare timestamps for safety
+            let currentDate = new Date(startDate);
+            while (currentDate.getTime() <= endDate.getTime()) {
                 const currentOccDateString = currentDate.toISOString().split('T')[0];
-                // Count this occurrence only if it's a valid day of the week AND it's NOT in the hypothetical exceptions list
                 if (daysToMatch.includes(currentDate.getUTCDay()) && !hypotheticalExceptions.includes(currentOccDateString)) {
                     activeOccurrencesCount++;
                 }
-                currentDate.setUTCDate(currentDate.getUTCDate() + 1); // <--- Use setUTCDate to increment UTC day
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
             }
         } else {
-            // If this function is called for a one-time event, it means we are trying to delete it.
-            // If it's a one-time event, and we're canceling it, it *is* the last instance.
-            activeOccurrencesCount = 0; // Force delete logic for one-time events
+            activeOccurrencesCount = 0;
         }
 
-        let finalAlertMessage = ''; // Message to show after all operations
+        let finalAlertMessage = '';
 
         if (activeOccurrencesCount === 0) {
-            // It IS the last active instance. Auto-delete the entire event.
-            await deleteEntireEvent(eventId, eventData.isWeekly, true); // `true` skips additional confirmation in deleteEntireEvent
+            await deleteEntireEvent(eventId, eventData.isWeekly, true);
             finalAlertMessage = "This was the last active instance. The event has been automatically deleted.";
 
             const makeAnnouncementConfirm = await showAppConfirm(`The event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
@@ -245,7 +216,6 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             }
 
         } else {
-            // Not the last instance, just add this specific occurrence to exceptions
             await updateDoc(eventDocRef, {
                 exceptions: arrayUnion(occurrenceDateString)
             });
@@ -271,6 +241,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
     }
 }
 
+//Don't need to use this anymore, but keeping in case I need it later for some reason
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
     if (!confirmed) {
@@ -280,12 +251,10 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
 
     try {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-        // Remove the date string from the 'exceptions' array
         await updateDoc(eventDocRef, {
             exceptions: arrayRemove(occurrenceDateString)
         });
         await showAppAlert(`The event on ${occurrenceDateString} has been un-canceled.`);
-        //await fetchAndDisplayEvents();
     } catch (error) {
         console.error("Error un-canceling single event occurrence:", error);
         await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
@@ -295,18 +264,16 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
 function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
     isEditingEvent = true;
     const cardDiv = document.createElement('div');
-    cardDiv.className = 'event-card editing-event-card'; // Add both classes
+    cardDiv.className = 'event-card editing-event-card';
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    // If editing an existing event, its ID is known
-    // If it's a new event, use a temporary DOM ID
     const currentEditId = eventIdToUpdate || `new-${Date.now()}`;
-    cardDiv.dataset.editId = currentEditId; // Store actual event ID or temporary ID
+    cardDiv.dataset.editId = currentEditId;
     cardDiv.dataset.isNewEvent = isNewEvent;
     if (isEditingInstance) {
         cardDiv.dataset.isEditingInstance = 'true';
-        cardDiv.dataset.originalEventIdForInstance = originalEventIdForInstance; // <--- CHANGED THIS LINE (using the new parameter)
-        cardDiv.dataset.originalOccurrenceDate = originalOccurrenceDate; // The specific instance date
+        cardDiv.dataset.originalEventIdForInstance = originalEventIdForInstance;
+        cardDiv.dataset.originalOccurrenceDate = originalOccurrenceDate;
     }
 
     const eventNameInputFieldHtml = `
@@ -316,19 +283,7 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         </div>
     `;
 
-    // isWeekly checkbox should be disabled if editing an instance
-    // const isWeeklyDisabled = isEditingInstance ? 'disabled' : '';
-    // const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
-    // const weeklyEventCheckboxHtml = `
-    //     <div class="weekly-event-checkbox">
-    //         <label>
-    //             <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isWeeklyDisabled}>
-    //             Weekly Event
-    //         </label>
-    //     </div>
-    // `;
     const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
-    // Only show the "Weekly Event" checkbox if it's a new event
     const weeklyEventCheckboxHtml = `
         <div class="weekly-event-checkbox" style="display: ${isNewEvent ? 'block' : 'none'};">
             <label>
@@ -352,7 +307,6 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
         </div>
     `;
 
-    // eventDate input field should be enabled/disabled based on isWeekly and isEditingInstance
     const eventDateInputDisabled = initialData.isWeekly && !isEditingInstance ? 'disabled' : '';
     const eventDateInputFieldHtml = `
         <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
@@ -442,14 +396,9 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
 
     if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup && weeklyStartDateGroup && weeklyEndDateGroup && weeklyStartDateInput && weeklyEndDateInput) {
         const toggleRecurringFields = () => {
-            if (isEditingInstance) return; // Logic only applies if not editing an instance
+            if (isEditingInstance) return;
 
-            // let isChecked;
-            // if (isWeeklyCheckbox) {
-            //     isChecked = isWeeklyCheckbox.checked;
-            // } else {
-            //     isChecked = initialData.isWeekly;
-            // }
+            
             const isChecked = isWeeklyCheckbox ? isWeeklyCheckbox.checked : initialData.isWeekly;
 
             dateInputGroup.style.display = isChecked ? 'none' : 'block';
@@ -486,24 +435,23 @@ function _createEditingCardElement(initialData = {}, isNewEvent = true, eventIdT
             }
         };
 
-        if (!isEditingInstance) { // Only attach listener if not editing an instance
+        if (!isEditingInstance) { 
             isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
         }
 
-        // Call once on creation to set initial state based on initialData
         toggleRecurringFields();
     }
 
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         console.log('SAVE button clicked for editing card:', currentEditId);
-        await saveEvent(cardDiv, eventIdToUpdate); // Pass eventIdToUpdate
+        await saveEvent(cardDiv, eventIdToUpdate); 
         isEditingEvent = false;
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         console.log('CANCEL button clicked for editing card:', currentEditId);
         // Remove the editing card
         cardDiv.remove();
-        isEditingEvent = false; // <--- ADD THIS LINE
+        isEditingEvent = false; 
         // If it was an edit, re-fetch all to show the original display card again
         // If it was a new event, check if eventsContainer is now empty
         if (!isNewEvent) {
@@ -522,20 +470,16 @@ async function addNewEventEditingCard() {
         await showAppAlert("You must be logged in and viewing a club to add events.");
         return;
     }
-    if (isEditingEvent) { // NEW check
+    if (isEditingEvent) { 
         await showAppAlert("Please finish editing the current event before adding a new one.");
         return;
     }
 
-    // Create the new editing card element
     const newCardElement = _createEditingCardElement({}, true); // true indicates it's a new event
 
-    // Insert the new card into the DOM
     if (eventsContainer) {
-        // Ensure noEventsMessage is hidden if an editing card is present
         if (noEventsMessage) noEventsMessage.style.display = 'none';
 
-        // Prepend the new card to the eventsContainer, placing it at the very beginning
         eventsContainer.prepend(newCardElement);
     }
 }
@@ -554,7 +498,7 @@ function formatTime(timeString) {
         });
     } catch (e) {
         console.error("Error formatting time:", e);
-        return timeString; // Return original if invalid time string
+        return timeString; 
     }
 }
 
@@ -562,28 +506,19 @@ function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
     try {
-        // NEW/MODIFIED CODE: Explicitly parse the date string as UTC midnight for consistency
         return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
     } catch (e) {
-        return dateString; // Return original if invalid date string
+        return dateString;
     }
-}
-
-// Helper to format days of week for display (assuming you have this, if not, add it)
-function formatDaysOfWeek(daysArray) {
-    if (!daysArray || daysArray.length === 0) return 'N/A';
-    const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; // Define order
-    return daysArray.sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b)).join(', ');
 }
 
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
     const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
     const isEditingInstance = cardDiv.dataset.isEditingInstance === 'true';
-    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; // ID of the parent recurring event
-    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate; // The specific date of the instance being overridden
+    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; 
+    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate; 
 
-    // --- Collect Data from Input Fields ---
     const eventName = cardDiv.querySelector(`#edit-name-${tempDomId}`).value.trim();
     const isWeekly = isEditingInstance ? false : cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`).checked;
 
@@ -611,7 +546,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
     let savedOccurrenceDate = null;
 
 
-    // --- Basic Validation ---
     if (!eventName) { await showAppAlert("Event Name is required!"); return; }
     if (!isWeekly && !eventDate) { await showAppAlert("Please provide an Event Date for one-time events."); return; }
     if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Weekly events require both a start and end date for recurrence."); return; }
@@ -625,7 +559,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
         return; 
     }
 
-    if (isWeekly && !isEditingInstance) { // Only apply this check for new or updated weekly series (not single instance overrides)
+    if (isWeekly && !isEditingInstance) { 
         const futureOccurrences = calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime);
         if (futureOccurrences === 0) {
             await showAppAlert("This weekly event configuration results in no events. Please adjust the dates or days of the week.");
@@ -633,7 +567,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
         }
     }
 
-    // --- Prepare Event Data Object ---
     const eventDataToSave = {
         eventName,
         isWeekly,
@@ -645,7 +578,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
         ...(isWeekly ? { weeklyStartDate, weeklyEndDate, daysOfWeek } : { eventDate }),
     };
 
-    // Add/Update creator info and timestamp
     eventDataToSave.createdAt = serverTimestamp(); // Always set on creation or override
     eventDataToSave.createdByUid = currentUser.uid;
     eventDataToSave.createdByName = currentUser.displayName || "Anonymous";
@@ -654,10 +586,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
         const eventsRef = collection(db, "clubs", clubId, "events");
 
         if (isEditingInstance) {
-            // Case 1: Editing a specific instance of a weekly event
-            // This creates a new one-time event that overrides the weekly instance.
-
-            // 1. Add the original occurrence date to the exceptions of the parent weekly event.
             if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
                 const parentEventDocRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
                 await updateDoc(parentEventDocRef, {
@@ -666,17 +594,15 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 console.log(`Original instance ${originalOccurrenceDateForInstance} added to exceptions for event ${originalEventIdForInstance}`);
             }
 
-            // 2. Add the new one-time event (the override)
             const overrideEventData = {
                 ...eventDataToSave,
-                parentRecurringEventId: originalEventIdForInstance // Link to the original recurring series
+                parentRecurringEventId: originalEventIdForInstance 
             };
-            const newOverrideEventRef = await addDoc(eventsRef, overrideEventData); // Get ref to the new document
-            savedEventId = newOverrideEventRef.id; // Capture the ID of the newly created override event
+            const newOverrideEventRef = await addDoc(eventsRef, overrideEventData); 
+            savedEventId = newOverrideEventRef.id; 
             savedOccurrenceDate = eventDataToSave.eventDate;
-            const newOverrideEventId = newOverrideEventRef.id; // Get the ID of the newly created override event
+            const newOverrideEventId = newOverrideEventRef.id; 
 
-            // 3. Transfer RSVPs from the original occurrence to the new override event
             if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
                 const rsvpsToTransferQuery = query(
                     collection(db, "clubs", clubId, "occurrenceRsvps"),
@@ -688,14 +614,12 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 if (!rsvpsToTransferSnap.empty) {
                     const rsvpBatch = writeBatch(db);
                     rsvpsToTransferSnap.forEach((rsvpDoc) => {
-                        // Create a new RSVP doc ID for the new override event
                         const newRsvpDocId = `${newOverrideEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
                         const newRsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", newRsvpDocId);
 
-                        // Copy existing RSVP data, updating eventId to the new override event's ID
                         const newRsvpData = { ...rsvpDoc.data(), eventId: newOverrideEventId };
-                        rsvpBatch.set(newRsvpDocRef, newRsvpData); // Create the new RSVP document
-                        rsvpBatch.delete(rsvpDoc.ref); // Delete the old RSVP document
+                        rsvpBatch.set(newRsvpDocRef, newRsvpData); 
+                        rsvpBatch.delete(rsvpDoc.ref);
                     });
                     await rsvpBatch.commit();
                     console.log(`Transferred ${rsvpsToTransferSnap.size} RSVPs to new override event ${newOverrideEventId}.`);
@@ -704,19 +628,16 @@ async function saveEvent(cardDiv, existingEventId = null) {
             await showAppAlert("Event updated successfully!");
 
         } else if (existingEventId) {
-            // Case 2: Updating an existing full event (one-time or weekly series)
             const eventDocRef = doc(eventsRef, existingEventId);
             const existingDocSnap = await getDoc(eventDocRef);
             if (existingDocSnap.exists()) {
                 const existingData = existingDocSnap.data();
-                // Preserve existing exceptions and any RSVPs if they were on the event document (which they shouldn't be now)
                 const updatedData = {
                     ...eventDataToSave,
                     exceptions: existingData.exceptions || [],
-                    // Any other fields you want to preserve during update
                 };
                 await updateDoc(eventDocRef, updatedData);
-                savedEventId = existingEventId; // Capture the ID of the updated event
+                savedEventId = existingEventId;
                 savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate; 
                 await showAppAlert("Event updated successfully!");
             } else {
@@ -724,19 +645,18 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 await showAppAlert("Failed to update event: Original event not found.");
             }
         } else {
-            // Case 3: Adding a brand new event
             const newDocRef = await addDoc(eventsRef, eventDataToSave);
             savedEventId = newDocRef.id; // Capture the ID of the newly added event
             savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate;
             await showAppAlert("New event added successfully!");
         }
         
-        cardDiv.remove(); // Remove the editing card after saving
+        cardDiv.remove();
         isEditingEvent = false;
         //await fetchAndDisplayEvents(); 
 
         if (savedEventId) {
-            scrollToEditedEvent(savedEventId, savedOccurrenceDate); // Add this line
+            scrollToEditedEvent(savedEventId, savedOccurrenceDate); 
         }
 
     } catch (error) {
@@ -746,7 +666,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
     }
 }
 
-// --- Realtime Updates Function ---
 function setupRealtimeUpdates() {
     if (!clubId) {
         console.warn("setupRealtimeUpdates called without a clubId.");
@@ -757,18 +676,14 @@ function setupRealtimeUpdates() {
 
     console.log(`Setting up realtime event updates for club ID: ${clubId}`);
     const eventsRef = collection(db, "clubs", clubId, "events");
-    // Query events, ordering them by creation time for initial display logic.
-    // The filtering for "upcoming" events will happen in client-side logic below.
     const q = query(eventsRef, orderBy("createdAt", "desc"));
 
-    // Unsubscribe from any previous listener before creating a new one
     if (eventListenerUnsubscribe) {
         eventListenerUnsubscribe();
         eventListenerUnsubscribe = null;
     }
 
     eventListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
-        // Clear existing events before re-rendering
         if (eventsContainer) {
             eventsContainer.innerHTML = '';
         }
@@ -829,7 +744,7 @@ function setupRealtimeUpdates() {
 
         if (allEventOccurrences.length === 0) {
             console.log("No upcoming events found for this club.");
-            if (currentUserRole === 'member') {
+            if (role === 'member') {
                 eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
             }
             if (noEventsMessage) noEventsMessage.style.display = 'block';
@@ -852,7 +767,6 @@ function setupRealtimeUpdates() {
     });
 }
 
-
 function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card display-event-card';
@@ -864,10 +778,9 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
         year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
     });
 
-    // Check if this specific occurrence date is in the 'exceptions' array
     const isExcepted = eventData.exceptions && eventData.exceptions.includes(occurrenceDateString);
 
-    const canEditDelete = (currentUserRole === 'manager' || currentUserRole === 'admin');
+    const canEditDelete = (role === 'manager' || role === 'admin');
     let actionButtonsHtml = '';
 
     if (canEditDelete) {
@@ -898,7 +811,7 @@ function _createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalE
                 `;
             }
         } else {
-            // For one-time events or instances that are overrides of a recurring event
+            // For one time events or events that are overrides of a recurring event
             actionButtonsHtml = `
                 <div class="event-card-actions">
                     <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
@@ -1054,13 +967,11 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     let deletedCount = 0;
 
     try {
-        // 1. Delete the main recurring event document
         const mainEventRef = doc(db, "clubs", clubId, "events", parentEventIdToDelete);
         batch.delete(mainEventRef);
         deletedCount++;
         console.log(`Marked main recurring event ${parentEventIdToDelete} for deletion.`);
 
-        // 2. Find and delete all override events linked to this parent series
         const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", parentEventIdToDelete));
         const overridesSnap = await getDocs(overridesQuery);
         overridesSnap.forEach((overrideDoc) => {
@@ -1069,11 +980,6 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
             console.log(`Marked override event ${overrideDoc.id} for deletion.`);
         });
 
-        // 3. Find and delete all RSVPs associated with the main series
-        // (If RSVPs were stored with originalEventId as the parent series ID)
-        // NOTE: Our current RSVP system uses `originalEventId` + `occurrenceDateString` + `userId` as the document ID for `occurrenceRsvps`.
-        // So, we need to query based on the `eventId` field within `occurrenceRsvps`.
-
         const rsvpsQueryForMainSeries = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
         const rsvpsSnapForMainSeries = await getDocs(rsvpsQueryForMainSeries);
         rsvpsSnapForMainSeries.forEach((rsvpDoc) => {
@@ -1081,11 +987,8 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
             console.log(`Marked RSVP ${rsvpDoc.id} for main series for deletion.`);
         });
 
-        // 4. Find and delete all RSVPs associated with each override event
-        // This requires getting the IDs of all override events first
         const overrideEventIds = overridesSnap.docs.map(doc => doc.id);
         if (overrideEventIds.length > 0) {
-            // Firestore 'in' query limited to 10. If more, you'd need multiple queries or a different approach.
             const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
             const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
             rsvpsSnapForOverrides.forEach((rsvpDoc) => {
@@ -1106,13 +1009,13 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     }
 }
 
-async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) { // <--- ADDED skipConfirm PARAMETER
+async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) {
     const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
     const eventSnap = await getDoc(eventDocRef);
     const eventData = eventSnap.exists() ? eventSnap.data() : null;
     const eventName = eventData ? eventData.eventName : "Untitled Event";
 
-    if (!skipConfirm) { // Only show confirm if skipConfirm is false
+    if (!skipConfirm) { 
         let confirmMessage;
         if (isWeeklyEvent) {
             confirmMessage = `Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`;
@@ -1123,20 +1026,18 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
         const confirmed = await showAppConfirm(confirmMessage);
         if (!confirmed) {
             console.log("Event deletion canceled by user.");
-            return; // Exit if user cancels
+            return; 
         }
     }
 
-    // The rest of the try/catch block remains the same, executing the deletion
     try {
         const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
-        const eventSnap = await getDoc(eventDocRef); // Fetch to check if it's weekly
+        const eventSnap = await getDoc(eventDocRef); 
         const eventData = eventSnap.exists() ? eventSnap.data() : null;
 
-        const batch = writeBatch(db); // Use a batch for multiple deletes
-        batch.delete(eventDocRef); // Mark the main event document for deletion
+        const batch = writeBatch(db); 
+        batch.delete(eventDocRef);
 
-        // --- Delete RSVPs for the event itself ---
         const rsvpsQueryForEvent = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
         const rsvpsSnapForEvent = await getDocs(rsvpsQueryForEvent);
         rsvpsSnapForEvent.forEach((rsvpDoc) => {
@@ -1144,18 +1045,16 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             console.log(`Marked RSVP ${rsvpDoc.id} for event ${eventIdToDelete} for deletion.`);
         });
 
-        // --- If deleting a recurring series, also delete its instance overrides and their RSVPs ---
         if (eventData && eventData.isWeekly) {
             console.log(`Deleting all instance overrides for recurring event series: ${eventIdToDelete}`);
             const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", eventIdToDelete));
             const overridesSnap = await getDocs(overridesQuery);
-            const overrideEventIds = overridesSnap.docs.map(doc => doc.id); // Collect override IDs
+            const overrideEventIds = overridesSnap.docs.map(doc => doc.id); 
 
             overridesSnap.forEach((overrideDoc) => {
                 batch.delete(overrideDoc.ref);
             });
 
-            // Also delete RSVPs for these overrides
             if (overrideEventIds.length > 0) {
                 const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
                 const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
@@ -1167,13 +1066,13 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             console.log(`Deleted ${overridesSnap.size} instance overrides for event series ${eventIdToDelete}.`);
         }
 
-        if (!skipConfirm && eventData && !isWeeklyEvent) { // This condition now triggers for ANY explicit deletion
+        if (!skipConfirm && eventData && !isWeeklyEvent) { 
             let announcementPromptMessage = "";
             let defaultTitle = "";
             let defaultContent = "";
 
                 
-            const eventDateString = eventData.eventDate; // Get the date of the one-time event
+            const eventDateString = eventData.eventDate; 
             const formattedDate = new Date(eventDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
                 year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
             });
@@ -1188,7 +1087,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             }
         }
 
-        await batch.commit(); // Commit all deletions in a single batch
+        await batch.commit();
 
         if (!skipConfirm) {
             await showAppAlert("Event deleted successfully!");
@@ -1222,14 +1121,11 @@ async function editEvent(eventId, occurrenceDateString = null) {
 
         const eventData = eventSnap.data();
 
-        // Find the display card in the DOM that corresponds to this edit action
-        // This is the card that will be replaced by the editing card.
-        // For weekly events, find the specific occurrence card if editing instance.
-        // For one-time, or edit series, any card with this originalEventId will do.
+        
         let targetDisplayCard;
-        if (eventData.isWeekly && occurrenceDateString) { // Editing a specific instance of a weekly event
+        if (eventData.isWeekly && occurrenceDateString) { 
              targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
-        } else { // Editing an entire one-time event or entire weekly series
+        } else { 
              targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
         }
 
@@ -1239,32 +1135,26 @@ async function editEvent(eventId, occurrenceDateString = null) {
             return;
         }
 
-        // --- Handle 'Edit Entire Series' for weekly events ---
-        if (eventData.isWeekly && !occurrenceDateString) { // This means "Edit entire event/series" was clicked for a weekly event
-            // Create an editing card with the event's original data
-            const editingCard = _createEditingCardElement(eventData, false, eventId); // false for not new, pass eventId
-            targetDisplayCard.replaceWith(editingCard); // Replace display card with editing card
-            // We need to fetch and re-render all events after saving or canceling,
-            // so we don't handle partial DOM updates for weekly series edits.
-            return; // Exit after replacing, fetchAndDisplayEvents will re-render later
+        if (eventData.isWeekly && !occurrenceDateString) {
+            const editingCard = _createEditingCardElement(eventData, false, eventId); 
+            targetDisplayCard.replaceWith(editingCard); 
+            
+            
+            return; 
         }
 
-        // --- Handle 'Edit' for one-time events, and 'Edit Instance' for weekly events ---
-        // For one-time events, `eventData` is already the specific event.
-        // For editing an instance of a weekly event, we need to create a *new* one-time event based on the instance's data.
+        
         let dataForEditingCard = {};
         let isEditingInstance = false;
-        let tempOriginalEventId = eventId; // Store original event ID for saving
+        let tempOriginalEventId = eventId; 
 
         if (eventData.isWeekly && occurrenceDateString) {
             isEditingInstance = true;
-            // For editing an instance, create a new one-time event document in Firestore.
-            // This new event will represent the *override* for this specific instance.
-            // The original weekly event will then have this occurrence date added to its exceptions.
+            
             dataForEditingCard = {
                 eventName: eventData.eventName,
-                isWeekly: false, // This will be a one-time override
-                eventDate: occurrenceDateString, // The specific date of this instance
+                isWeekly: false, 
+                eventDate: occurrenceDateString, 
                 startTime: eventData.startTime,
                 endTime: eventData.endTime,
                 address: eventData.address,
@@ -1272,16 +1162,12 @@ async function editEvent(eventId, occurrenceDateString = null) {
                 notes: eventData.notes,
                 createdByUid: eventData.createdByUid,
                 createdByName: eventData.createdByName
-                // We don't copy createdAt for overrides, as it will be newly created
+                
             };
-            // Note: The original eventId is still passed to save as `tempOriginalEventId`
-            // and the `occurrenceDateString` is passed to mark as exception.
         } else {
-            // This is for a one-time event being edited
             dataForEditingCard = eventData;
         }
 
-        // Create the editing card using the appropriate data
         const editingCard = _createEditingCardElement(dataForEditingCard, false, tempOriginalEventId, isEditingInstance, eventId, occurrenceDateString);
         targetDisplayCard.replaceWith(editingCard);
 
@@ -1293,8 +1179,6 @@ async function editEvent(eventId, occurrenceDateString = null) {
 
 function calculateActiveOccurrences(eventData, exceptions) {
     if (!eventData.isWeekly) {
-        // One-time events are either active (if no exceptions) or not.
-        // This function is primarily for calculating remaining instances of recurring events.
         return (exceptions && exceptions.includes(eventData.eventDate)) ? 0 : 1;
     }
 
@@ -1329,9 +1213,9 @@ async function cleanUpEmptyRecurringEvents() {
 
     try {
         const querySnapshot = await getDocs(eventsRef);
-        const recurringEventIds = new Set(); // Store IDs of actual recurring events
+        const recurringEventIds = new Set(); 
 
-        // First pass: Identify all active recurring event IDs
+        
         querySnapshot.forEach(doc => {
             const eventData = doc.data();
             if (eventData.isWeekly) {
@@ -1339,13 +1223,13 @@ async function cleanUpEmptyRecurringEvents() {
             }
         });
 
-        // Second pass: Check for empty recurring events and orphaned overrides
+        
         for (const doc of querySnapshot.docs) {
             const eventData = doc.data();
             const eventId = doc.id;
 
             if (eventData.isWeekly) {
-                // Check if this recurring event has zero active instances remaining
+                
                 const activeOccurrences = calculateActiveOccurrences(eventData, eventData.exceptions);
                 if (activeOccurrences === 0) {
                     console.log(`Found empty recurring event: ${eventData.eventName} (ID: ${eventId}). Marking for deletion.`);
@@ -1355,17 +1239,17 @@ async function cleanUpEmptyRecurringEvents() {
                     rsvpDeletionPromises.push(
                         getDocs(rsvpsQuery).then(rsvpsSnap => {
                             rsvpsSnap.forEach(rsvpDoc => {
-                                batch.delete(rsvpDoc.ref); // Mark each associated RSVP for deletion
+                                batch.delete(rsvpDoc.ref); 
                                 console.log(`Marked RSVP ${rsvpDoc.id} for deleted event ${eventId} for deletion.`);
                             });
                         }).catch(error => {
                             console.error(`Error fetching RSVPs for cleanup of event ${eventId}:`, error);
-                            // Do not re-throw, allow other cleanups to proceed
+                            
                         })
                     );
                 }
             } else if (eventData.parentRecurringEventId) {
-                // This is an instance override. Check if its parent recurring event still exists.
+                
                 if (!recurringEventIds.has(eventData.parentRecurringEventId)) {
                     console.log(`Found orphaned instance override: ${eventData.eventName} (ID: ${eventId}) with parent ${eventData.parentRecurringEventId}. Marking for deletion.`);
                     batch.delete(doc.ref);
@@ -1378,7 +1262,7 @@ async function cleanUpEmptyRecurringEvents() {
             await Promise.all(rsvpDeletionPromises);
             await batch.commit();
             console.log(`Cleanup complete. Deleted ${cleanedUpCount} empty events/orphaned overrides and their associated RSVPs.`);
-            // No need to fetchAndDisplayEvents here, as it will be called by the main flow.
+            
         } else {
             console.log("No empty events or orphaned overrides found for cleanup.");
         }
@@ -1388,7 +1272,7 @@ async function cleanUpEmptyRecurringEvents() {
     }
 }
 
-async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { // Added occurrenceDateString
+async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to RSVP.");
         return;
@@ -1396,15 +1280,15 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { /
 
     try {
         const userUid = currentUser.uid;
-        // Create a unique document ID for this specific user's RSVP for this specific occurrence
+        
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
         const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
 
-        // Fetch the existing RSVP for this occurrence, if any
+        
         const rsvpSnap = await getDoc(rsvpDocRef);
         let currentRsvpStatus = rsvpSnap.exists() ? rsvpSnap.data().status : null;
 
-        let newRsvpStatus = null; // What the UI should show after the operation
+        let newRsvpStatus = null; 
         const rsvpDataToSave = {
             eventId: originalEventId,
             occurrenceDate: occurrenceDateString,
@@ -1415,21 +1299,19 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { /
         };
 
         if (currentRsvpStatus === status) {
-            // User clicked on the status they are already selected for -> REMOVE RSVP
+            
             await deleteDoc(rsvpDocRef);
             console.log(`User ${userUid} removed RSVP for event ${originalEventId} on ${occurrenceDateString}.`);
             //await showAppAlert(`Your RSVP has been removed for the event on ${formatDate(occurrenceDateString)}.`);
-            newRsvpStatus = null; // No status selected
+            newRsvpStatus = null;
         } else {
-            // User clicked a different status or was not RSVP'd -> SET/CHANGE RSVP
             rsvpDataToSave.status = status;
-            await setDoc(rsvpDocRef, rsvpDataToSave); // Use setDoc to create or overwrite the RSVP document
+            await setDoc(rsvpDocRef, rsvpDataToSave); 
             console.log(`User ${userUid} RSVP'd ${status} for event ${originalEventId} on ${occurrenceDateString}.`);
             //await showAppAlert(`Your RSVP (${status}) has been saved for the event on ${formatDate(occurrenceDateString)}.`);
-            newRsvpStatus = status; // This status is now selected
+            newRsvpStatus = status;
         }
 
-        // Update the UI for only the specific event occurrence card
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, newRsvpStatus);
 
     } catch (error) {
@@ -1438,8 +1320,8 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) { /
     }
 }
 
-function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) { // Added occurrenceDateString
-    // Find the specific event occurrence card in the DOM
+function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) { 
+    
     const card = document.querySelector(`.event-card[data-original-event-id="${originalEventId}"][data-occurrence-date="${occurrenceDateString}"]`);
     if (!card) {
         console.warn(`Could not find card for event ${originalEventId} on ${occurrenceDateString} to update RSVP UI.`);
@@ -1456,7 +1338,7 @@ function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatu
     });
 }
 
-async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // Added occurrenceDateString
+async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { 
     if (!currentUser || !clubId) {
         return;
     }
@@ -1467,27 +1349,24 @@ async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { // A
         const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
         const rsvpSnap = await getDoc(rsvpDocRef);
 
-        let currentRsvpStatus = null; // Default to no status selected
+        let currentRsvpStatus = null;
 
         if (rsvpSnap.exists()) {
             currentRsvpStatus = rsvpSnap.data().status;
         }
         
-        // Update the UI for only the specific event occurrence card
+
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentRsvpStatus);
         
     } catch (error) {
         console.error("Error fetching user RSVP status for occurrence:", error);
-        // On error, ensure no buttons are selected for this specific occurrence
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
     }
 }
 
 function setupRealtimeUserRsvps() {
-    // Ensure we have a clubId and a logged-in user before setting up the listener
     if (!clubId || !currentUser) {
         console.warn("setupRealtimeUserRsvps called without clubId or currentUser. Skipping setup.");
-        // If there was a previous listener, ensure it's unsubscribed
         if (rsvpListenerUnsubscribe) {
             rsvpListenerUnsubscribe();
             rsvpListenerUnsubscribe = null;
@@ -1497,14 +1376,12 @@ function setupRealtimeUserRsvps() {
 
     console.log(`Setting up realtime RSVP updates for user ${currentUser.uid} in club ${clubId}.`);
 
-    // Unsubscribe from any previous listener before creating a new one to prevent duplicates
     if (rsvpListenerUnsubscribe) {
         rsvpListenerUnsubscribe();
         rsvpListenerUnsubscribe = null;
     }
 
     const rsvpsRef = collection(db, "clubs", clubId, "occurrenceRsvps");
-    // Query to listen only to RSVPs made by the current user
     const q = query(rsvpsRef, where("userId", "==", currentUser.uid));
 
     rsvpListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -1512,7 +1389,7 @@ function setupRealtimeUserRsvps() {
             const data = change.doc.data();
             const originalEventId = data.eventId;
             const occurrenceDateString = data.occurrenceDate;
-            let newStatus = null; // Default status if RSVP is removed
+            let newStatus = null; 
 
             if (change.type === "added" || change.type === "modified") {
                 newStatus = data.status;
@@ -1521,19 +1398,16 @@ function setupRealtimeUserRsvps() {
                 console.log(`RSVP removed for event ${originalEventId} on ${occurrenceDateString}.`);
             }
             
-            // Update the UI for the specific event card's RSVP buttons
             updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
         });
     }, (error) => {
         console.error("Error fetching realtime user RSVPs:", error);
-        // Optionally, you could show a user-facing alert here
     });
 }
 
 async function getAllClubMembers(clubID) {
     const members = [];
     try {
-        // Fetch manager info first from the club document
         const clubDocRef = doc(db, "clubs", clubID);
         const clubDocSnap = await getDoc(clubDocRef);
         let managerUid = null;
@@ -1541,19 +1415,16 @@ async function getAllClubMembers(clubID) {
             const clubData = clubDocSnap.data();
             managerUid = clubData.managerUid;
             if (managerUid) {
-                // Assuming manager's name can be fetched from 'users' collection
                 const managerUserDoc = await getDoc(doc(db, "users", managerUid));
                 const managerName = managerUserDoc.exists() ? managerUserDoc.data().displayName || managerUserDoc.data().name : "Unknown Manager";
                 members.push({ uid: managerUid, name: managerName, role: 'manager' });
             }
         }
 
-        // Fetch other members from the 'members' subcollection
         const membersCollectionRef = collection(db, "clubs", clubID, "members");
         const membersSnapshot = await getDocs(membersCollectionRef);
         for (const memberDoc of membersSnapshot.docs) {
             const memberData = memberDoc.data();
-            // Ensure we don't duplicate the manager if they also have a member document
             if (memberDoc.id !== managerUid) {
                 const memberUserDoc = await getDoc(doc(db, "users", memberDoc.id));
                 const memberName = memberUserDoc.exists() ? memberUserDoc.data().displayName || memberUserDoc.data().name : "Unknown User";
@@ -1566,7 +1437,6 @@ async function getAllClubMembers(clubID) {
     return members;
 }
 
-// Function to display the RSVP details popup
 async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     if (!clubId) {
         await showAppAlert("Error: Club ID not found.");
@@ -1575,7 +1445,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
     document.body.classList.add('no-interaction');
 
-    // Create modal elements if they don't exist
     let overlay = document.getElementById('rsvp-details-overlay');
     let modal = document.getElementById('rsvp-details-modal');
 
@@ -1653,7 +1522,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         modal.classList.add('rsvp-loading-collapsed');
         modal.classList.remove('rsvp-scroll-active');
         document.body.classList.remove('no-interaction');
-        if (loadingIndicator) loadingIndicator.style.display = 'block';
+        //if (loadingIndicator) loadingIndicator.style.display = 'block';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
     });
@@ -1662,7 +1531,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     modal.style.display = 'flex';
 
     try {
-        // Fetch all RSVPs for this occurrence
+        // Code to get all the RSVPs for this thing
         const rsvpsQuery = query(
             collection(db, "clubs", clubId, "occurrenceRsvps"),
             where("eventId", "==", eventId),
@@ -1675,7 +1544,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             rsvpsMap[data.userId] = { status: data.status, userName: data.userName };
         });
 
-        // Fetch all club members
         const allMembers = await getAllClubMembers(clubId);
 
         const goingList = document.getElementById('rsvp-going-list');
@@ -1708,7 +1576,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                     maybeCount++;
                 }
             } else {
-                notRespondedList.innerHTML += `<li>${member.name}</li>`; // Use member.name if no RSVP
+                notRespondedList.innerHTML += `<li>${member.name}</li>`; 
                 notRespondedCount++;
             }
         });
@@ -1717,14 +1585,14 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         modal.classList.remove('rsvp-loading-collapsed');
         modal.addEventListener('transitionend', function handler(event) {
             if (event.propertyName === 'max-height') {
-                modal.classList.add('rsvp-scroll-active'); // Add class to enable scrollbar
+                modal.classList.add('rsvp-scroll-active'); 
                 const contentDiv = document.getElementById('rsvp-lists');
                 if (contentDiv) {
-                    contentDiv.style.display = 'block'; // Make content visible
+                    contentDiv.style.display = 'block'; 
                     document.getElementById('close-rsvp-modal').disabled = false;
                 }
                 document.body.classList.remove('no-interaction');
-                modal.removeEventListener('transitionend', handler); // Remove listener to avoid multiple firings
+                modal.removeEventListener('transitionend', handler); 
             }
         });
 
@@ -1739,7 +1607,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         overlay.style.display = 'none';
         modal.style.display = 'none';
         document.body.classList.remove('no-interaction');
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        //if (loadingIndicator) loadingIndicator.style.display = 'none';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
         modal.classList.add('rsvp-loading-collapsed');
@@ -1750,10 +1618,8 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 function scrollToEditedEvent(eventId, occurrenceDateString = null) {
     let selector;
     if (occurrenceDateString) {
-        // For a specific instance (e.g., an override or a one-time event)
         selector = `.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`;
     } else {
-        // For a general event or series, find the first displayed card for that event ID
         selector = `.event-card[data-original-event-id="${eventId}"]`;
     }
 
@@ -1762,7 +1628,7 @@ function scrollToEditedEvent(eventId, occurrenceDateString = null) {
     if (targetElement) {
         const topPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo({
-            top: topPosition - 10, // 10px margin
+            top: topPosition - 10, 
             behavior: 'smooth'
         });
         console.log(`Scrolled to event card with ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
@@ -1773,32 +1639,28 @@ function scrollToEditedEvent(eventId, occurrenceDateString = null) {
 
 function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, exceptions = [], startTime = '00:00', endTime = '23:59') {
     let futureCount = 0;
-    const now = new Date(); // Current time for "future" comparison
+    const now = new Date(); 
     
-    // Create Date objects in a timezone-safe way to ensure iteration starts/ends correctly in UTC context
-    const startIterDate = new Date(weeklyStartDate + 'T00:00:00Z'); // Force UTC midnight
-    const endIterDate = new Date(weeklyEndDate + 'T00:00:00Z');     // Force UTC midnight
+    const startIterDate = new Date(weeklyStartDate + 'T00:00:00Z');
+    const endIterDate = new Date(weeklyEndDate + 'T00:00:00Z');
     const daysToMatch = daysOfWeek.map(day => dayNamesMap.indexOf(day));
 
-    let currentDate = new Date(startIterDate); // Start iteration from UTC midnight
-    while (currentDate.getTime() <= endIterDate.getTime()) { // Compare timestamps for safety
+    let currentDate = new Date(startIterDate);
+    while (currentDate.getTime() <= endIterDate.getTime()) {
         const currentOccDateString = currentDate.toISOString().split('T')[0];
         
         if (daysToMatch.includes(currentDate.getUTCDay())) {
-            // Check if this specific occurrence date is an exception
             if (!exceptions.includes(currentOccDateString)) {
-                // Construct event end time in local timezone for comparison
-                // This combines the event's date (YYYY-MM-DD) and its end time (HH:mm)
-                // The `new Date()` constructor will interpret this string in the local timezone.
+                
                 const eventEndMomentLocal = new Date(`${currentOccDateString}T${endTime}`);
 
-                // Only count if the event ends in the future
+                
                 if (eventEndMomentLocal.getTime() > now.getTime()) {
                     futureCount++;
                 }
             }
         }
-        currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Increment by one day (UTC)
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1); 
     }
     return futureCount;
 }
@@ -1808,7 +1670,6 @@ async function _createAnnouncementPopup(initialData = {}) {
         let overlay = document.getElementById('announcement-popup-overlay');
         let modal = document.getElementById('announcement-popup-modal');
 
-        // Create overlay if it doesn't exist
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'announcement-popup-overlay';
@@ -1827,7 +1688,6 @@ async function _createAnnouncementPopup(initialData = {}) {
             document.body.appendChild(overlay);
         }
 
-        // Create modal if it doesn't exist
         if (!modal) {
             modal = document.createElement('div');
             modal.id = 'announcement-popup-modal';
@@ -1848,7 +1708,6 @@ async function _createAnnouncementPopup(initialData = {}) {
             document.body.appendChild(modal);
         }
 
-        // Populate modal content
         modal.innerHTML = `
             <h3>Create Announcement</h3>
             <div>
@@ -1865,30 +1724,26 @@ async function _createAnnouncementPopup(initialData = {}) {
             </div>
         `;
 
-        // Prevent body scrolling
         document.body.classList.add('no-scroll');
         overlay.style.display = 'flex';
         modal.style.display = 'flex';
 
-        // Event listeners for Save and Cancel buttons
         document.getElementById('announcement-popup-save-btn').addEventListener('click', async () => {
             const title = document.getElementById('announcement-popup-title').value.trim();
             const content = document.getElementById('announcement-popup-content').value.trim();
 
             if (!title || !content || title.length === 0 || content.length === 0) {
                 await showAppAlert("Title and Content are required for the announcement.");
-                return; // Keep modal open for user to correct
+                return; 
             }
 
-            // Attempt to save the announcement
             const saveSuccessful = await _saveAnnouncementFromPopup(title, content);
             if (saveSuccessful) {
                 overlay.style.display = 'none';
                 modal.style.display = 'none';
                 document.body.classList.remove('no-scroll');
-                resolve(true); // Announcment saved
+                resolve(true); 
             } else {
-                // Error already handled by _saveAnnouncementFromPopup, but resolve as false to indicate failure.
                 resolve(false);
             }
         });
@@ -1898,7 +1753,7 @@ async function _createAnnouncementPopup(initialData = {}) {
             overlay.style.display = 'none';
             modal.style.display = 'none';
             document.body.classList.remove('no-scroll');
-            resolve(false); // User canceled
+            resolve(false); 
         });
     });
 }
@@ -1923,7 +1778,6 @@ async function _saveAnnouncementFromPopup(title, content) {
         const newDocRef = await addDoc(announcementsRef, announcementDataToSave);
         const newAnnouncementId = newDocRef.id;
 
-        // Mark the creator as having read their own announcement
         await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
             userId: currentUser.uid,
             userName: currentUser.displayName || "Anonymous",
