@@ -31,40 +31,22 @@ const announcementsContainer = document.getElementById('announcementsContainer')
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); // Message for when no announcements are found
 const addAnnouncementButton = document.getElementById('add-announcement-button'); // Button to add new announcements
 
-// --- Helper Functions ---
 
-// Function to get a query parameter from the URL
 function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    var results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name) || '';
 }
 
-// Function to get the current user's role for the specific club
-async function getMemberRoleForClub(clubID, memberUid) {
-  if (!clubID || !memberUid) return null; // No role if club or user is missing
-  try {
-    const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
-    if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-      return memberRoleSnap.data().role;
-    } else {
-      // Fallback: Check if user is the manager directly in the club document
-      const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
-      if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
-          return 'manager';
-      }
-      return 'member'; // Default to 'member' if no specific role document and not the direct manager
-    }
-  } catch (error) {
-    console.error(`Error fetching role for user ${memberUid} in club ${clubID}:`, error);
-    return null; // Return null on error
-  }
+async function getMemberRoleForClub(clubId, uid) {
+    if (!clubId || !uid) return null;
+    
+    const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", uid));
+    if (memberDoc.exists()) return memberDoc.data().role || 'member';
+    
+    const clubDoc = await getDoc(doc(db, "clubs", clubId));
+    return clubDoc.data()?.managerUid === uid ? 'manager' : 'member';
 }
 
-// Function to go back to the club manager/member page
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo');
@@ -89,21 +71,17 @@ window.goToClubPage = function() {
     }
 }
 
-// --- Authentication State Listener ---
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; // Update the global currentUser variable
-    clubId = getUrlParameter('clubId'); // Get the clubId from the current page's URL
+    currentUser = user; 
+    clubId = getUrlParameter('clubId');
 
     if (user) {
-        // User is signed in
         if (clubId) {
-            // Club ID is present in the URL, try to fetch club details to set the title
             const clubRef = doc(db, "clubs", clubId);
             try {
                 const clubSnap = await getDoc(clubRef);
                 if (clubSnap.exists()) {
 
-                    // Fetch current user's role for this club
                     currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
                     console.log(`User ${currentUser.uid} role for club ${clubId}: ${currentUserRole}`);
 
@@ -111,48 +89,42 @@ onAuthStateChanged(auth, async (user) => {
                     
                     if (addAnnouncementButton) {
                         if (currentUserRole === 'manager' || currentUserRole === 'admin') {
-                            addAnnouncementButton.style.display = 'block'; // Show button
-                            // Attach the event listener for adding a new announcement
-                            addAnnouncementButton.removeEventListener('click', addNewAnnouncementEditingCard); // Prevent duplicates
+                            addAnnouncementButton.style.display = 'block'; 
+                            addAnnouncementButton.removeEventListener('click', addNewAnnouncementEditingCard); 
                             addAnnouncementButton.addEventListener('click', addNewAnnouncementEditingCard);
                         } else {
-                            addAnnouncementButton.style.display = 'none'; // Hide button if not manager/admin
+                            addAnnouncementButton.style.display = 'none'; 
                         }
                     }
 
                 } else {
-                    // Club document not found in Firestore
                     if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Club Announcements (Club Not Found)";
                     if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
                 }
             } catch (error) {
-                // Error fetching club details or role
                 console.error("Error fetching club details or user role:", error);
                 if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error Loading Announcements";
                 if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
                 if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
             }
         } else {
-            // No clubId found in the URL
             if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error: No Club ID Provided";
             if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its announcements.</p>`;
             if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         }
     } else {
-        // No user is signed in, redirect to the login page
         console.log("No user authenticated on announcements page. Redirecting to login.");
         if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Not Authenticated";
         if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club announcements. Redirecting...</p>`;
         if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         setTimeout(() => {
             window.location.href = 'login.html';
-        }, 2000); // Redirect after a short delay
+        }, 2000); 
     }
 });
 
 
-// Helper to format date for display
 function formatTimestamp(timestamp) {
     if (!timestamp || !timestamp.toDate) return 'N/A';
     const date = timestamp.toDate();
@@ -160,13 +132,7 @@ function formatTimestamp(timestamp) {
     return date.toLocaleDateString(undefined, options);
 }
 
-/**
- * Creates an editing card element for adding or modifying announcements.
- * @param {object} initialData - The initial data to populate the form (e.g., existing announcement).
- * @param {boolean} isNewAnnouncement - True if creating a new announcement, false if editing an existing one.
- * @param {string|null} announcementIdToUpdate - The ID of the announcement being updated, or null for new.
- * @returns {HTMLElement} The created editing card DOM element.
- */
+
 function _createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
@@ -209,9 +175,7 @@ function _createEditingCardElement(initialData = {}, isNewAnnouncement = true, a
     return cardDiv;
 }
 
-/**
- * Adds a new, empty editing card to the top of the announcements list.
- */
+
 async function addNewAnnouncementEditingCard() {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to add announcements.");
@@ -230,51 +194,40 @@ async function addNewAnnouncementEditingCard() {
     }
 }
 
-/**
- * Saves a new or updated announcement to Firestore.
- * @param {HTMLElement} cardDiv - The editing announcement card element.
- * @param {string|null} existingAnnouncementId - The ID of an existing announcement if updating.
- */
+
 async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     const tempDomId = cardDiv.dataset.editId;
     const isNewAnnouncement = cardDiv.dataset.isNewAnnouncement === 'true';
 
-    // --- Collect Data from Input Fields ---
     const title = cardDiv.querySelector(`#edit-title-${tempDomId}`).value.trim();
     const content = cardDiv.querySelector(`#edit-content-${tempDomId}`).value.trim();
 
-    // --- Basic Validation ---
     if (!title) { await showAppAlert("Announcement Title is required!"); return; }
     if (!content) { await showAppAlert("Announcement Content is required!"); return; }
-    // As per Firestore rules, title and content size must be > 0
     if (title.length === 0) { await showAppAlert("Announcement Title cannot be empty!"); return; }
     if (content.length === 0) { await showAppAlert("Announcement Content cannot be empty!"); return; }
 
-    // --- Prepare Announcement Data Object ---
     const announcementDataToSave = {
         title,
         content,
         createdByUid: currentUser.uid,
         createdByName: currentUser.displayName || "Anonymous",
-        clubId: clubId // Ensure clubId is correctly set based on the path
+        clubId: clubId 
     };
 
     try {
         const announcementsRef = collection(db, "clubs", clubId, "announcements");
 
         if (existingAnnouncementId) {
-            // Updating an existing announcement
             const announcementDocRef = doc(announcementsRef, existingAnnouncementId);
-            await updateDoc(announcementDocRef, announcementDataToSave); // Do not update createdAt
+            await updateDoc(announcementDocRef, announcementDataToSave); 
             await showAppAlert("Announcement updated successfully!");
         } else {
-            // Adding a brand new announcement
-            announcementDataToSave.createdAt = serverTimestamp(); // Only set on creation
-            const newDocRef = await addDoc(announcementsRef, announcementDataToSave); // Capture the new document reference
-            const newAnnouncementId = newDocRef.id; // Get the ID of the newly created announcement
+            announcementDataToSave.createdAt = serverTimestamp(); 
+            const newDocRef = await addDoc(announcementsRef, announcementDataToSave); 
+            const newAnnouncementId = newDocRef.id; 
 
-            // NEW: Mark the creator as having read their own announcement
-            // This ensures the readBy subcollection is initialized and the creator isn't counted as 'unread' for their own post
+            
             await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
                 userId: currentUser.uid,
                 userName: currentUser.displayName || "Anonymous",
@@ -285,9 +238,9 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             await showAppAlert("New announcement added successfully!");
         }
         
-        cardDiv.remove(); // Remove the editing card after saving
+        cardDiv.remove(); 
         isEditingAnnouncement = false;
-        await fetchAndDisplayAnnouncements(); // Re-fetch and display all announcements to update UI
+        await fetchAndDisplayAnnouncements(); 
 
     } catch (error) {
         console.error("Error saving announcement:", error);
@@ -296,9 +249,7 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     }
 }
 
-/**
- * Fetches and displays all announcements for the current club.
- */
+
 async function fetchAndDisplayAnnouncements() {
     if (!clubId) {
         console.warn("fetchAndDisplayAnnouncements called without a clubId.");
@@ -307,14 +258,13 @@ async function fetchAndDisplayAnnouncements() {
         return;
     }
 
-    // Clear existing announcements before fetching new ones
+
     if (announcementsContainer) {
         announcementsContainer.innerHTML = '';
     }
 
     console.log(`Fetching announcements for club ID: ${clubId}`);
     const announcementsRef = collection(db, "clubs", clubId, "announcements");
-    // Order announcements by creation time, newest first
     const q = query(announcementsRef, orderBy("createdAt", "desc"));
 
     try {
@@ -326,15 +276,14 @@ async function fetchAndDisplayAnnouncements() {
                 if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
                 if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
             } else {
-                // If manager/admin and no announcements, don't show a "no announcements" message.
-                // The add button is already visible for them to create one.
+                
                 if (announcementsContainer) announcementsContainer.innerHTML = '';
                 if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
             }
             return;
         }
 
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none'; // Hide "no announcements" message
+        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none'; 
 
         querySnapshot.forEach((doc) => {
             const announcementData = doc.data();
@@ -353,12 +302,7 @@ async function fetchAndDisplayAnnouncements() {
     }
 }
 
-/**
- * Creates a display card element for a single announcement.
- * @param {object} announcementData - The data of the announcement.
- * @param {string} announcementId - The ID of the announcement document.
- * @returns {HTMLElement} The created announcement display card DOM element.
- */
+
 function _createAnnouncementDisplayCard(announcementData, announcementId) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card display-announcement-card';
@@ -383,7 +327,6 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
         ${actionButtonsHtml}
     `;
 
-    // Attach event listeners for edit/delete buttons
     if (canEditDelete) {
         const editBtn = cardDiv.querySelector('.edit-btn');
         if (editBtn) {
@@ -401,10 +344,7 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
     return cardDiv;
 }
 
-/**
- * Initiates the editing process for an existing announcement.
- * @param {string} announcementId - The ID of the announcement to edit.
- */
+
 async function editAnnouncement(announcementId) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to edit announcements.");
@@ -426,7 +366,6 @@ async function editAnnouncement(announcementId) {
 
         const announcementData = announcementSnap.data();
 
-        // Find the display card in the DOM that corresponds to this edit action
         const targetDisplayCard = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
         if (!targetDisplayCard) {
             console.error("Could not find the target display card in the DOM for editing.");
@@ -434,9 +373,8 @@ async function editAnnouncement(announcementId) {
             return;
         }
 
-        // Create the editing card, populated with existing data
-        const editingCard = _createEditingCardElement(announcementData, false, announcementId); // false for not new
-        targetDisplayCard.replaceWith(editingCard); // Replace display card with editing card
+        const editingCard = _createEditingCardElement(announcementData, false, announcementId);
+        targetDisplayCard.replaceWith(editingCard);
 
     } catch (error) {
         console.error("Error initiating announcement edit:", error);
@@ -444,11 +382,7 @@ async function editAnnouncement(announcementId) {
     }
 }
 
-/**
- * Deletes an announcement from Firestore.
- * @param {string} announcementId - The ID of the announcement to delete.
- * @param {string} announcementTitle - The title of the announcement for confirmation message.
- */
+
 async function deleteAnnouncement(announcementId, announcementTitle) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to delete announcements.");
@@ -465,7 +399,7 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         const announcementDocRef = doc(db, "clubs", clubId, "announcements", announcementId);
         await deleteDoc(announcementDocRef);
         await showAppAlert("Announcement deleted successfully!");
-        await fetchAndDisplayAnnouncements(); // Re-fetch and display announcements to update the UI
+        await fetchAndDisplayAnnouncements(); 
     } catch (error) {
         console.error("Error deleting announcement:", error);
         await showAppAlert("Failed to delete announcement: " + error.message);
@@ -473,7 +407,6 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
 }
 
 
-// Function to mark an announcement as read by the current user
 async function markAnnouncementAsRead(announcementId) {
     if (!currentUser || !clubId) {
         console.warn("Cannot mark announcement as read: user not logged in or clubId missing.");
@@ -481,22 +414,19 @@ async function markAnnouncementAsRead(announcementId) {
     }
 
     const userUid = currentUser.uid;
-    const userName = currentUser.displayName || "Anonymous User"; // Fallback if displayName is not set
+    const userName = currentUser.displayName || "Anonymous User";
     
     try {
-        // Reference to the 'readBy' subcollection under the specific announcement
         const readByRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
-        // Document reference for this specific user's read status
         const userReadDocRef = doc(readByRef, userUid); 
 
         const userReadSnap = await getDoc(userReadDocRef);
 
         if (!userReadSnap.exists()) {
-            // If the user hasn't read it yet, record their read
             await setDoc(userReadDocRef, {
                 userId: userUid,
                 userName: userName,
-                readAt: serverTimestamp() // Record the time it was read
+                readAt: serverTimestamp() 
             });
             console.log(`User ${userName} (${userUid}) marked announcement ${announcementId} as read.`);
         } else {

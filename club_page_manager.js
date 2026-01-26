@@ -57,11 +57,10 @@ const cancelRoleChangeButton = document.getElementById('cancel-role-change');
 const pendingRequestsContainer = document.getElementById('pendingRequestsContainer');
 
 let currentMemberRoleInPopup = null;
-let selectedMemberUid = null; // To store the UID of the member whose role is being managed
+let selectedMemberUid = null; 
 
-// --- NEW AUTHENTICATION LOGIC ---
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; // Update the global currentUser
+    currentUser = user; 
     if (user) {
         console.log("User is authenticated on club manager page:", user.uid);
         if (clubId) {
@@ -70,11 +69,9 @@ onAuthStateChanged(auth, async (user) => {
             myUid = user.uid;
             await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true);
 
-            // Initial load of unread count when the page loads
             const unreadCount = await getUnreadAnnouncementCount(clubId, currentUser.uid);
             updateUnreadBadge(unreadCount);
 
-            // Setup real-time listeners for changes in announcements that might affect the unread count
             setupAnnouncementListeners(clubId, currentUser.uid);
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
@@ -84,13 +81,11 @@ onAuthStateChanged(auth, async (user) => {
         console.log("No user authenticated on club manager page. Redirecting to login.");
         clubPageTitle.textContent = "Not Authenticated";
         clubDetailsDiv.innerHTML = "<p>You must be logged in to view club details. Redirecting...</p>";
-        // Redirect to login page after a short delay
         setTimeout(() => {
-            window.location.href = 'login.html'; // Assuming you have a login.html
+            window.location.href = 'login.html';
         }, 2000);
     }
 });
-// --- END NEW AUTHENTICATION LOGIC ---
 
 function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -111,14 +106,13 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
         if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
             console.log(`User ${currentUserId} is a ${currentUserRole} for club ${id}. Redirecting to member page.`);
             window.location.href = `club_page_member.html?id=${id}`;
-            return; // Important: Exit the function after redirecting
+            return; 
         }
 
         if (clubSnap.exists()) {
             const clubData = clubSnap.data();
             console.log("Fetched club data:", clubData);
 
-            // IMPORTANT: Add a check here to ensure the logged-in user is the manager
             if (clubData.managerUid === currentUserId || currentUserRole === 'manager' || currentUserRole === 'admin') {
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
 
@@ -136,7 +130,6 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 managerName = actualManagerName;
                 managerUid = actualManagerUid;
 
-                // Display other club details
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
                         <p>Manager | ${actualManagerName}</p>
@@ -146,9 +139,9 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 `;
 
                 const copyButton = document.getElementById('copyJoinCodeButton');
-                if (copyButton && clubData.joinCode) { // Ensure button exists and there's a code to copy
+                if (copyButton && clubData.joinCode) {
                     copyButton.addEventListener('click', () => {
-                        copyToClipboard(clubData.joinCode, copyButton); // Pass the button element itself
+                        copyToClipboard(clubData.joinCode, copyButton);
                     });
                 }
             } else {
@@ -157,9 +150,9 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 console.warn(`User ${currentUserId} attempted to view club ${id} but is not the manager (${clubData.managerUid}).`);
             }
 
-            const pendingMemberUids = clubData.pendingMemberUIDs || []; // Get the array of UIDs, default to empty if not present
+            const pendingMemberUids = clubData.pendingMemberUIDs || [];
             const memberNames = [];
-            const memberIds = []; // To store UIDs for the display function
+            const memberIds = [];
 
             for (const memberUid of pendingMemberUids) {
                 const userRef = doc(db, "users", memberUid);
@@ -167,7 +160,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
-                    memberNames.push(userData.name || `User (${memberUid})`); // Use the user's 'name' field
+                    memberNames.push(userData.name || `User (${memberUid})`);
                     memberIds.push(memberUid);
                 } else {
                     console.warn(`User document not found for pending member UID: ${memberUid}`);
@@ -178,20 +171,18 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
             
 
-            const approvedMemberUids = clubData.memberUIDs || []; // Get the array of APPROVED UIDs
+            const approvedMemberUids = clubData.memberUIDs || []; 
             const approvedMemberNames = [];
             const approvedMemberIds = [];
-            // >>>>>>>>>>> THIS LINE DECLARES IT <<<<<<<<<<<<<
-            const approvedMemberRoles = []; // <--- This line is essential for 'approvedMemberRoles' to be defined!
+            const approvedMemberRoles = [];
 
             for (const memberUid of approvedMemberUids) {
                 const userRef = doc(db, "users", memberUid);
                 const userSnap = await getDoc(userRef, { source: 'server' });
 
-                // Fetch member role from subcollection
                 const memberRoleRef = doc(db, "clubs", id, "members", memberUid);
                 const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
-                let memberRole = 'member'; // Default role if not found
+                let memberRole = 'member'; 
 
                 if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
                     memberRole = memberRoleSnap.data().role;
@@ -210,11 +201,9 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 }
             }
 
-            //Sorting for Pending Members
             const sortedPending = sortMembersAlphabetically(memberNames, memberIds);
             displayPendingMembers(sortedPending.names, sortedPending.uids);
 
-            //Sorting for Approved Members
             const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
             displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
             
@@ -279,15 +268,13 @@ async function copyToClipboard(originalCode, buttonElement) {
     try {
         await navigator.clipboard.writeText(originalCode);
 
-        // Store original button text and then change it
         const originalButtonText = buttonElement.textContent;
         buttonElement.textContent = ' Copied! ';
-        buttonElement.disabled = true; // Disable the button to prevent re-clicks
+        buttonElement.disabled = true; 
 
-        // Revert text and re-enable button after a short delay
         setTimeout(() => {
-            buttonElement.textContent = originalButtonText; // Restore original text
-            buttonElement.disabled = false; // Re-enable the button
+            buttonElement.textContent = originalButtonText; 
+            buttonElement.disabled = false;
         }, 850); 
 
     } catch (err) {
@@ -305,20 +292,20 @@ function displayPendingMembers(memberNames, memberUids) {
     const container = document.getElementById("pendingRequestsContainer");
     
     if (container) {
-        container.innerHTML = ""; // Clear any previous content
+        container.innerHTML = "";
         
-        // --- Move title creation here, BEFORE the empty check ---
+
         const title = document.createElement("h3");
         title.textContent = "MEMBERSHIP REQUESTS";
         container.appendChild(title);
-        // --- End of moved title creation ---
+
 
         if (memberNames.length === 0) {
-            const noRequests = document.createElement("p"); // Create a new paragraph element
-            noRequests.className = 'fancy-label'; // Apply your desired class
-            noRequests.textContent = "No pending member requests for this club."; // Set the text content
-            container.appendChild(noRequests); // Append it to the container
-            return; // Exit the function after displaying the message
+            const noRequests = document.createElement("p"); 
+            noRequests.className = 'fancy-label';
+            noRequests.textContent = "No pending member requests for this club."; 
+            container.appendChild(noRequests);
+            return;
         }
         
         memberNames.forEach((name, index) => {
@@ -384,7 +371,6 @@ async function approveMember(clubID, memberID) {
     }
 
     try {
-        // 1. Update the club document: add member to memberUIDs, remove from pendingMemberUIDs
         const clubRef = doc(db, "clubs", clubID);
         await updateDoc(clubRef, {
             memberUIDs: arrayUnion(memberID),
@@ -392,13 +378,12 @@ async function approveMember(clubID, memberID) {
         });
         console.log(`Successfully moved user ${memberID} from pending to members for club ${clubID}.`);
 
-        // 2. Update the user document: add clubID to member_clubs
         const userRef = doc(db, "users", memberID);
         await updateDoc(userRef, {
             member_clubs: arrayUnion(clubID)
         });
 
-        await createMemberRoleDocument(clubID, memberID); // This will assign the default 'member' role
+        await createMemberRoleDocument(clubID, memberID);
 
         console.log(`Successfully added club ${clubID} to user ${memberID}'s member_clubs.`);
 
@@ -419,7 +404,6 @@ async function denyMember(clubID, memberID) {
 
     try {
         const clubRef = doc(db, "clubs", clubID);
-        // Only remove the member from the pendingMemberUIDs array
         await updateDoc(clubRef, {
             pendingMemberUIDs: arrayRemove(memberID)
         });
@@ -438,12 +422,12 @@ async function denyMember(clubID, memberID) {
 
 
 function displayMembers(memberNames, memberUids, memberRoles) {
-    if (!membersContainer) { // Use the globally declared membersContainer
+    if (!membersContainer) {
         console.error("HTML element with id 'membersContainer' not found. Please add it to your HTML.");
         return;
     }
 
-    membersContainer.innerHTML = ""; // Clear any previous content
+    membersContainer.innerHTML = "";
    
     const title = document.createElement("h3");
     title.textContent = `CLUB MEMBERS (${memberNames.length})`; 
@@ -451,7 +435,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
     memberNames.forEach((name, index) => {
         const memberUid = memberUids[index];
-        const memberRole = memberRoles[index]; // Get the role for the current member
+        const memberRole = memberRoles[index];
 
         if (managerUid === memberUid){
             const memberCardDivManager = document.createElement("div");
@@ -481,7 +465,6 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             memberCardDiv.className = "member-card";
 
             const nameDisplayDiv = document.createElement("div");
-            // Changed: Removed parentheses, added span for role styling
             nameDisplayDiv.innerHTML = `${name} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
             nameDisplayDiv.className = "member-name-display";
             memberCardDiv.appendChild(nameDisplayDiv);
@@ -492,10 +475,10 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             if(myUid === managerUid){
                 const optionsBtn = document.createElement("button");
                 optionsBtn.textContent = "OPTIONS";
-                optionsBtn.className = "options-member-btn"; // Apply the new gray button style
+                optionsBtn.className = "options-member-btn";
                 optionsBtn.dataset.memberUid = memberUid;
                 optionsBtn.dataset.memberName = name;
-                optionsBtn.dataset.memberRole = memberRole; // Pass the current role
+                optionsBtn.dataset.memberRole = memberRole;
                 optionsBtn.addEventListener("click", () => {
                     openRoleManagementPopup(memberUid, name, memberRole);
                 });
@@ -506,14 +489,13 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
                 const removeBtn = document.createElement("button");
                 removeBtn.textContent = "REMOVE";
-                removeBtn.className = "remove-member-btn"; // Apply the new red button style
+                removeBtn.className = "remove-member-btn";
                 removeBtn.dataset.memberUid = memberUid;
                 removeBtn.dataset.memberName = name;
                 removeBtn.addEventListener("click", async () => {
                     console.log(`Attempting to remove member: ${name} (UID: ${memberUid}) from club ${clubId}`);
                     if (await showAppConfirm(`Are you sure you want to remove ${name} from this club?`)) {
                         await removeMember(clubId, memberUid);
-                        // Re-fetch club details to update both pending and approved member lists
                         if (currentUser && clubId) {
                             //await fetchClubDetails(clubId, myUid, myName, false); 
                         }
@@ -540,14 +522,12 @@ async function removeMember(clubID, memberID) {
     }
 
     try {
-        // 1. Remove memberID from the club's memberUIDs array
         const clubRef = doc(db, "clubs", clubID);
         await updateDoc(clubRef, {
             memberUIDs: arrayRemove(memberID)
         });
         console.log(`Successfully removed user ${memberID} from club ${clubID}'s memberUIDs.`);
 
-        // 2. Remove clubID from the user's member_clubs array
         const userRef = doc(db, "users", memberID);
         await updateDoc(userRef, {
             member_clubs: arrayRemove(clubID)
@@ -856,11 +836,10 @@ function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
     try {
-        // Ensure the date is parsed in UTC for consistent formatting
         return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
     } catch (e) {
         console.error("Error formatting date:", e);
-        return dateString; // Return original if invalid date string
+        return dateString; 
     }
 }
 
@@ -879,9 +858,8 @@ function createLoadingEventCardHtml() {
 }
 
 function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
-    // This function now returns a div element, not just innerHTML
     const cardDiv = document.createElement('div');
-    cardDiv.className = 'event-card animate-in'; // Start with animate-in class
+    cardDiv.className = 'event-card animate-in'; 
     cardDiv.innerHTML = `
         <p class="fancy-black-label">${message}</p>
     `;
@@ -896,10 +874,8 @@ function sortMembersAlphabetically(names, uids, roles = null) {
         role: roles ? roles[index] : undefined
     }));
 
-    // Sort the combined array by name
     combinedMembers.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Separate them back into sorted arrays
     const sortedNames = combinedMembers.map(member => member.name);
     const sortedUids = combinedMembers.map(member => member.uid);
     const sortedRoles = roles ? combinedMembers.map(member => member.role) : null;
@@ -947,7 +923,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
                     }
                     currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                 }
-            } else { // One-time event
+            } else {
                 const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
                 if (!exceptions.includes(eventDateString)) {
                     allPossibleOccurrences.push({
@@ -987,8 +963,8 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
             console.log("There is an event scheduled:", nextEvent.eventData.eventName, "on", nextEvent.occurrenceDate.toISOString().split('T')[0], "at", nextEvent.eventData.startTime);
 
             finalCardElement = document.createElement('div');
-            finalCardElement.className = 'event-card'; // Start with just the base class
-            if (animateCard) { // <--- ADD THIS BLOCK
+            finalCardElement.className = 'event-card'; 
+            if (animateCard) { 
                 finalCardElement.classList.add('animate-in');
             }
 
@@ -1009,19 +985,19 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
         } else {
             console.log("No events found at all.");
            finalCardElement = createNoEventsCardHtml();
-            if (!animateCard) { // <--- ADD THIS BLOCK: If no animation, remove the animate-in class
+            if (!animateCard) {
                 finalCardElement.classList.remove('animate-in');
             }
             closestEventDisplay.appendChild(finalCardElement);
         }
 
-        if (animateCard) { // <--- ADD THIS conditional check
+        if (animateCard) { 
             setTimeout(() => {
                 if (finalCardElement) {
                   finalCardElement.classList.add('is-visible');
                 }
             }, 10);
-        } else { // <--- ADD THIS ELSE BLOCK: If no animation, make it immediately visible
+        } else { 
             if (finalCardElement) {
                 finalCardElement.classList.add('is-visible');
             }
@@ -1050,9 +1026,8 @@ const membersRef = collection(db, "clubs", clubId, "members");
 let isInitialSnapshot = true;
 
 
-// 1. Listen for Main Club Doc (Handles Join/Leave)
 onSnapshot(docRef, async (docSnap) => {
-    if (isInitialSnapshot) return; // Skip first run
+    if (isInitialSnapshot) return; 
     
     if (docSnap.exists() && currentUser) {
         console.log("Main doc changed, full UI sync...");
@@ -1062,7 +1037,6 @@ onSnapshot(docRef, async (docSnap) => {
 });
 
 
-// 2. Listen for Members Subcollection (Handles ROLE changes)
 onSnapshot(membersRef, async (snapshot) => {
     if (isInitialSnapshot) {
         isInitialSnapshot = false; 
@@ -1072,25 +1046,22 @@ onSnapshot(membersRef, async (snapshot) => {
 
     console.log("Role update detected! Updating the Member List UI...");
     
-    // Instead of just calling fetchClubDetails, we force a refresh of the member list
     if (currentUser && clubId) {
-        // We call fetchClubDetails with 'true' for skipEvents 
-        // to ensure the event card doesn't shimmer.
+        
         await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
     }
 });
 
 
 
-// Function to update the unread announcements badge in the UI
 function updateUnreadBadge(count) {
     const badgeElement = document.getElementById('unreadAnnouncementsBadge');
     if (badgeElement) {
         if (count > 0) {
             badgeElement.textContent = count;
-            badgeElement.style.display = 'flex'; // Show the badge (using flex for centering)
+            badgeElement.style.display = 'flex'; 
         } else {
-            badgeElement.style.display = 'none'; // Hide the badge
+            badgeElement.style.display = 'none'; 
         }
     }
 }
@@ -1109,34 +1080,31 @@ async function getUnreadAnnouncementCount(clubId, userId) {
         let userJoinedAt = null;
 
         if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
-            userJoinedAt = memberDocSnap.data().joinedAt; // This will be a Firestore Timestamp
+            userJoinedAt = memberDocSnap.data().joinedAt; 
         } else {
             console.warn(`User ${userId} does not have a joinedAt timestamp for club ${clubId}. Counting all announcements.`);
-            // If joinedAt is not found, assume they can see all announcements (or handle as an error)
-            // For now, if no joinedAt, we won't filter by it.
+            
         }
 
         const announcementsRef = collection(db, "clubs", clubId, "announcements");
-        const announcementsSnapshot = await getDocs(announcementsRef); // Get all announcements
+        const announcementsSnapshot = await getDocs(announcementsRef); 
 
         for (const annDoc of announcementsSnapshot.docs) {
             const announcementData = annDoc.data();
             const announcementId = annDoc.id;
 
             if (userJoinedAt && announcementData.createdAt && announcementData.createdAt.toDate() < userJoinedAt.toDate()) {
-                continue; // Skip this announcement as it was made before the user joined
+                continue; 
             }
 
-            // it's considered "read" by them, so we skip it.
             if (announcementData.createdByUid === userId) {
-                continue; // Skip this announcement for unread count
+                continue; 
             }
 
-            // Check if a document exists in the 'readBy' subcollection for this user and announcement
             const readByRef = doc(db, "clubs", clubId, "announcements", announcementId, "readBy", userId);
             const readBySnap = await getDoc(readByRef);
 
-            if (!readBySnap.exists()) { // If the 'readBy' document for this user doesn't exist
+            if (!readBySnap.exists()) { 
                 unreadCount++;
             }
         }
@@ -1149,7 +1117,6 @@ async function getUnreadAnnouncementCount(clubId, userId) {
 }
 
 
-// NEW: Function to set up real-time listeners for unread announcements
 function setupAnnouncementListeners(clubId, userId) {
     if (!clubId || !userId) {
         console.warn("Cannot setup announcement listeners: clubId or userId missing.");
@@ -1158,9 +1125,7 @@ function setupAnnouncementListeners(clubId, userId) {
 
     const announcementsRef = collection(db, "clubs", clubId, "announcements");
 
-    // This listener will react to new announcements being added, or existing ones being deleted/modified.
-    // If an announcement is added or removed, the total count of announcements will change,
-    // and thus the unread count calculation will be re-triggered.
+    
     onSnapshot(announcementsRef, async (announcementsSnapshot) => {
         console.log("Announcements collection activity detected, re-calculating unread count.");
         const unreadCount = await getUnreadAnnouncementCount(clubId, userId);
@@ -1169,8 +1134,5 @@ function setupAnnouncementListeners(clubId, userId) {
         console.error("Error listening to announcements collection:", error);
     });
 
-    // Note: If a user reads an announcement on a separate `announcements.html` page,
-    // and then navigates back to `club_page_manager.html`, the `onAuthStateChanged`
-    // block will re-execute, recalculating the count. This provides sufficient real-time
-    // updates for most user flows.
+    
 }
