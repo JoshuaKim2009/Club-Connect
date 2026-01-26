@@ -33,34 +33,20 @@ const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Fr
 
 
 function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    var results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name) || '';
 }
 
-// Function to get the current user's role for the specific club
-async function getMemberRoleForClub(clubID, memberUid) {
-  if (!clubID || !memberUid) return null;
-  try {
-    const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
-    if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-      return memberRoleSnap.data().role;
-    } else {
-      const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
-      if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
-          return 'manager';
-      }
-      return 'member';
-    }
-  } catch (error) {
-    console.error(`Error fetching role for user ${memberUid} in club ${clubID}:`, error);
-    return null;
-  }
+// Function to get the user's role in specific club
+async function getMemberRoleForClub(clubId, uid) {
+    if (!clubId || !uid) return null;
+    
+    const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", uid));
+    if (memberDoc.exists()) return memberDoc.data().role || 'member';
+    
+    const clubDoc = await getDoc(doc(db, "clubs", clubId));
+    return clubDoc.data()?.managerUid === uid ? 'manager' : 'member';
 }
-
 
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
@@ -486,30 +472,21 @@ async function addNewEventEditingCard() {
 
 function formatTime(timeString) {
     if (!timeString) return 'N/A';
-    try {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        const date = new Date(); // Use a dummy date to leverage Date object for formatting
-        date.setHours(hours, minutes);
-        // Use toLocaleTimeString to format, specifying 12-hour format and no seconds
-        return date.toLocaleTimeString(undefined, {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-    } catch (e) {
-        console.error("Error formatting time:", e);
-        return timeString; 
-    }
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date(); // Use a dummy date to leverage Date object for formatting
+    date.setHours(hours, minutes);
+    // Use toLocaleTimeString to format, specifying 12-hour format and no seconds
+    return date.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
 }
 
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
-    try {
-        return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
-    } catch (e) {
-        return dateString;
-    }
+    return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
 }
 
 async function saveEvent(cardDiv, existingEventId = null) {
@@ -1110,71 +1087,65 @@ async function editEvent(eventId, occurrenceDateString = null) {
         return;
     }
 
-    try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-        const eventSnap = await getDoc(eventDocRef);
+    const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+    const eventSnap = await getDoc(eventDocRef);
 
-        if (!eventSnap.exists()) {
-            await showAppAlert("Error: Event not found.");
-            return;
-        }
-
-        const eventData = eventSnap.data();
-
-        
-        let targetDisplayCard;
-        if (eventData.isWeekly && occurrenceDateString) { 
-             targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
-        } else { 
-             targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
-        }
-
-        if (!targetDisplayCard) {
-            console.error("Could not find the target display card in the DOM for editing.");
-            await showAppAlert("Could not find the event card to edit. Please refresh.");
-            return;
-        }
-
-        if (eventData.isWeekly && !occurrenceDateString) {
-            const editingCard = _createEditingCardElement(eventData, false, eventId); 
-            targetDisplayCard.replaceWith(editingCard); 
-            
-            
-            return; 
-        }
-
-        
-        let dataForEditingCard = {};
-        let isEditingInstance = false;
-        let tempOriginalEventId = eventId; 
-
-        if (eventData.isWeekly && occurrenceDateString) {
-            isEditingInstance = true;
-            
-            dataForEditingCard = {
-                eventName: eventData.eventName,
-                isWeekly: false, 
-                eventDate: occurrenceDateString, 
-                startTime: eventData.startTime,
-                endTime: eventData.endTime,
-                address: eventData.address,
-                location: eventData.location,
-                notes: eventData.notes,
-                createdByUid: eventData.createdByUid,
-                createdByName: eventData.createdByName
-                
-            };
-        } else {
-            dataForEditingCard = eventData;
-        }
-
-        const editingCard = _createEditingCardElement(dataForEditingCard, false, tempOriginalEventId, isEditingInstance, eventId, occurrenceDateString);
-        targetDisplayCard.replaceWith(editingCard);
-
-    } catch (error) {
-        console.error("Error initiating event edit:", error);
-        await showAppAlert("Failed to start event edit: " + error.message);
+    if (!eventSnap.exists()) {
+        await showAppAlert("Error: Event not found.");
+        return;
     }
+
+    const eventData = eventSnap.data();
+
+    
+    let targetDisplayCard;
+    if (eventData.isWeekly && occurrenceDateString) { 
+            targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
+    } else { 
+            targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
+    }
+
+    if (!targetDisplayCard) {
+        console.error("Could not find the target display card in the DOM for editing.");
+        await showAppAlert("Could not find the event card to edit. Please refresh.");
+        return;
+    }
+
+    if (eventData.isWeekly && !occurrenceDateString) {
+        const editingCard = _createEditingCardElement(eventData, false, eventId); 
+        targetDisplayCard.replaceWith(editingCard); 
+        
+        
+        return; 
+    }
+
+    
+    let dataForEditingCard = {};
+    let isEditingInstance = false;
+    let tempOriginalEventId = eventId; 
+
+    if (eventData.isWeekly && occurrenceDateString) {
+        isEditingInstance = true;
+        
+        dataForEditingCard = {
+            eventName: eventData.eventName,
+            isWeekly: false, 
+            eventDate: occurrenceDateString, 
+            startTime: eventData.startTime,
+            endTime: eventData.endTime,
+            address: eventData.address,
+            location: eventData.location,
+            notes: eventData.notes,
+            createdByUid: eventData.createdByUid,
+            createdByName: eventData.createdByName
+            
+        };
+    } else {
+        dataForEditingCard = eventData;
+    }
+
+    const editingCard = _createEditingCardElement(dataForEditingCard, false, tempOriginalEventId, isEditingInstance, eventId, occurrenceDateString);
+    targetDisplayCard.replaceWith(editingCard);
 }
 
 function calculateActiveOccurrences(eventData, exceptions) {
