@@ -24,10 +24,8 @@ const auth = getAuth(app);
 let currentUser = null; 
 
 function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    var results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name) || '';
 }
 
 const clubId = getUrlParameter('id');
@@ -69,6 +67,11 @@ onAuthStateChanged(auth, async (user) => {
             updateUnreadBadge(unreadCount);
 
             setupAnnouncementListeners(clubId, currentUser.uid);
+
+            const unreadMessagesCount = await getUnreadMessageCount(clubId, currentUser.uid);
+            updateUnreadMessagesBadge(unreadMessagesCount);
+
+            setupMessageListeners(clubId, currentUser.uid);
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -1127,4 +1130,84 @@ function setupAnnouncementListeners(clubId, userId) {
     });
 
     
+}
+
+
+
+
+function updateUnreadMessagesBadge(count) {
+    const badgeElement = document.getElementById('unreadMessagesBadge');
+    if (badgeElement) {
+        if (count > 0) {
+            badgeElement.textContent = count;
+            badgeElement.style.display = 'flex'; 
+        } else {
+            badgeElement.style.display = 'none'; 
+        }
+    }
+}
+
+async function getUnreadMessageCount(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot get unread message count: clubId or userId missing.");
+        return 0;
+    }
+
+    let unreadCount = 0;
+    try {
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberDocSnap = await getDoc(memberDocRef);
+        let userJoinedAt = null;
+
+        if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
+            userJoinedAt = memberDocSnap.data().joinedAt; 
+        }
+
+        const messagesRef = collection(db, "clubs", clubId, "messages");
+        const messagesSnapshot = await getDocs(messagesRef); 
+
+        for (const msgDoc of messagesSnapshot.docs) {
+            const messageData = msgDoc.data();
+            const messageId = msgDoc.id;
+
+            // skip messages from before they joined
+            if (userJoinedAt && messageData.createdAt && messageData.createdAt.toDate() < userJoinedAt.toDate()) {
+                continue; 
+            }
+
+            // don't count their own messages
+            if (messageData.createdByUid === userId) {
+                continue; 
+            }
+
+            const readByRef = doc(db, "clubs", clubId, "messages", messageId, "readBy", userId);
+            const readBySnap = await getDoc(readByRef);
+
+            if (!readBySnap.exists()) { 
+                unreadCount++;
+            }
+        }
+    } catch (error) {
+        console.error("Error getting unread message count:", error);
+        return 0;
+    }
+    console.log(`User ${userId} has ${unreadCount} unread messages in club ${clubId}.`);
+    return unreadCount;
+}
+
+function setupMessageListeners(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot setup message listeners: clubId or userId missing.");
+        return;
+    }
+
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+
+    onSnapshot(messagesRef, async (messagesSnapshot) => {
+        console.log("Messages collection changed, recalculating unread count.");
+        const unreadCount = await getUnreadMessageCount(clubId, userId);
+        updateUnreadMessagesBadge(unreadCount);
+    }, (error) => {
+        console.error("Error listening to messages collection:", error);
+    });
 }

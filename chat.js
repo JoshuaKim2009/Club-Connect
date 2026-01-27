@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -24,11 +24,16 @@ let role = null;
 let clubId = null;
 let currentUser = null;
 
+let unsubscribeMessages = null;
+
+
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
 const chatMessages = document.getElementById('chatMessages');
 const sendButton = document.getElementById('sendButton');
 const backButton = document.getElementById("back-button");
+
+
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -100,37 +105,104 @@ if (backButton) {
   });
 }
 
-function sendMessage() {
-    const message = chatInput.value.trim();
-    if (message) {
-        const messageWrapper = document.createElement('div');
-        messageWrapper.className = 'message-wrapper sent';
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message sent';
-        messageDiv.textContent = message;
-        
-        messageWrapper.appendChild(messageDiv);
-        chatMessages.appendChild(messageWrapper);
-        
-        chatInput.value = '';
-        
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 50);
-        
-        console.log("Message sent:", message);
+if (clubId) {
+    unsubscribeMessages = listenToMessages();
+}
+
+async function saveMessage() {
+    const text = chatInput.value.trim();
+    if (!text) {
+        return;
+    }
+    const batch = writeBatch(db);
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    const newMessageRef = doc(messagesRef); 
+    const messageData = {
+        message: text,
+        createdByUid: currentUser.uid,
+        createdByName: currentUser.displayName || "Anonymous",
+        clubId: clubId,
+        createdAt: serverTimestamp() 
+    };
+
+    batch.set(newMessageRef, messageData);
+
+    const readStatusRef = doc(db, "clubs", clubId, "messages", newMessageRef.id, "readBy", currentUser.uid);
+    batch.set(readStatusRef, {
+        userId: currentUser.uid,
+        userName: currentUser.displayName || "Anonymous",
+        readAt: serverTimestamp()
+    });
+
+    try {
+        await batch.commit();
+        chatInput.value = "";
+    } catch (error) {
+        console.error("Failed to send message:", error);
     }
 }
 
+function listenToMessages() {
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "asc"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            const messageData = change.doc.data();
+            const messageId = change.doc.id;
+            
+            if (change.type === "added") {
+                displayMessage(messageId, messageData);
+            }
+            if (change.type === "modified") {
+                updateMessage(messageId, messageData);
+            }
+            if (change.type === "removed") {
+                removeMessage(messageId);
+            }
+        });
+    }, (error) => {
+        console.error("Error:", error);
+    });
+    
+    return unsubscribe;
+}
+
+function displayMessage(messageId, messageData) {
+    if (!messageData) return;
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = 'message-wrapper';
+    if (messageData.createdByUid === currentUser.uid) {
+        messageWrapper.classList.add('sent');
+    }
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    messageDiv.textContent = messageData.message;
+    if (messageData.createdByUid === currentUser.uid) {
+        messageDiv.classList.add('sent');
+    }
+    messageWrapper.appendChild(messageDiv);
+    chatMessages.appendChild(messageWrapper);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    console.log("New message:", messageId, messageData);
+}
+
+function updateMessage(messageId, messageData) {
+    console.log("Updated message:", messageId, messageData);
+}
+
+function removeMessage(messageId) {
+    console.log("Removed message:", messageId);
+}
+
 if (sendButton) {
-    sendButton.addEventListener('click', sendMessage);
+    sendButton.addEventListener('click', saveMessage);
 }
 
 if (chatInput) {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            sendMessage();
+            saveMessage();
         }
     });
 }
