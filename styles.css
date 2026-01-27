@@ -96,7 +96,6 @@ body.no-interaction {
 }
 
 
-/* Add this new rule for the fixed background layer */
 body::before {
   content: "";
   position: fixed; /* This makes it stay in place relative to the viewport */
