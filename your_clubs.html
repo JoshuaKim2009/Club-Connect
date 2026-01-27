@@ -17,10 +17,22 @@
       body {
         padding-bottom: 100px;
       }
+      body {
+        font-family: var(--primary-font-family);
+        padding-top: env(safe-area-inset-top);
+        background: var(--header-bg-start);
+      }
+      #page-title{
+        margin-top: 110px;
+      }
     </style>
   </head>
   <body>
-    <button id="back-button" class="fancy-button" onclick="goToHome()">HOME</button>
+    <!-- <button id="back-button" class="fancy-button" onclick="goToHome()">HOME</button> -->
+    <div class="chat-header">
+      <button id="back-button" class="fancy-button" onclick="goToHome()">HOME</button>
+      <span class="chat-title">MY CLUBS</span>
+    </div>
     <h1 id="page-title" class="pageTitle">MY CLUBS</h1>
 
     
