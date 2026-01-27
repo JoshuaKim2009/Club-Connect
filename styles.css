@@ -52,6 +52,10 @@ body {
   height: 85px;
   border-bottom: 3px solid black;
   color: white;
+  overflow: hidden;
+  position: fixed;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .chat-title {
