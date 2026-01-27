@@ -1303,6 +1303,20 @@ button {
   text-align: center; /* Centers the title text */
   margin-top: 0; /* Remove default top margin on h3 */
   margin-bottom: 8px; /* Adjust spacing below the title */
+  padding-bottom: 8px;
+  border-bottom: 2px dotted black;
+  position: relative;
+}
+
+.event-card h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
 
 /* Optional: To make the rest of the text even more condensed,
@@ -1827,6 +1841,13 @@ input[type="checkbox"]:checked {
   color: black; 
   line-height: 1.4; 
 }
+
+.announcement-card-actions .delete-btn .button-icon,
+.announcement-card-actions .edit-btn .button-icon {
+    display: inline-block; 
+    margin-left: 8px; 
+}
+
 
 .announcement-card h3 {
   font-weight: normal;

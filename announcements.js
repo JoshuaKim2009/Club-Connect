@@ -310,8 +310,12 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
     if (canEditDelete) {
         actionButtonsHtml = `
             <div class="announcement-card-actions">
-                <button class="edit-btn" data-announcement-id="${announcementId}">EDIT</button>
-                <button class="delete-btn" data-announcement-id="${announcementId}">DELETE</button>
+                <button class="edit-btn" data-announcement-id="${announcementId}">
+                    <span class="button-text">EDIT</span><span class="button-icon"><i class="fa-solid fa-pencil"></i></span>
+                </button>
+                <button class="delete-btn" data-announcement-id="${announcementId}">
+                    <span class="button-text">DELETE</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
+                </button>
             </div>
         `;
     }
