@@ -146,13 +146,13 @@ function listenToMessages() {
     const messagesRef = collection(db, "clubs", clubId, "messages");
     const q = query(messagesRef, orderBy("createdAt", "asc"));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+        for (const change of snapshot.docChanges()) {
             const messageData = change.doc.data();
             const messageId = change.doc.id;
             
             if (change.type === "added") {
-                displayMessage(messageId, messageData);
+                await displayMessage(messageId, messageData);
             }
             if (change.type === "modified") {
                 updateMessage(messageId, messageData);
@@ -160,7 +160,7 @@ function listenToMessages() {
             if (change.type === "removed") {
                 removeMessage(messageId);
             }
-        });
+        }
     }, (error) => {
         console.error("Error:", error);
     });
@@ -168,7 +168,7 @@ function listenToMessages() {
     return unsubscribe;
 }
 
-function displayMessage(messageId, messageData) {
+async function displayMessage(messageId, messageData) {
     if (!messageData) return;
     const messageWrapper = document.createElement('div');
     messageWrapper.className = 'message-wrapper';
@@ -185,6 +185,9 @@ function displayMessage(messageId, messageData) {
     chatMessages.appendChild(messageWrapper);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     console.log("New message:", messageId, messageData);
+    if (messageData.createdByUid !== currentUser.uid) {
+        await markAsRead(messageId);
+    }
 }
 
 function updateMessage(messageId, messageData) {
@@ -247,4 +250,28 @@ if (chatInput && inputContainer && chatMessages) {
         
         lastHeight = currentHeight;
     });
+}
+
+
+async function markAsRead(ID) {
+    if (!currentUser || !clubId) {
+        console.warn("User not logged in or clubId missing.");
+        return;
+    }
+
+    const userUid = currentUser.uid;
+    const userName = currentUser.displayName || "Anonymous User";
+    
+    const readByRef = collection(db, "clubs", clubId, "messages", ID, "readBy");
+    const userReadDocRef = doc(readByRef, userUid); 
+
+    const userReadSnap = await getDoc(userReadDocRef);
+
+    if (!userReadSnap.exists()) {
+        await setDoc(userReadDocRef, {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "Anonymous",
+            readAt: serverTimestamp()
+        });
+    }
 }

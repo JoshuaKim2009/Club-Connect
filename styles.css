@@ -2077,6 +2077,7 @@ input[type="checkbox"]:checked {
 }
 
 /* Ensure the announcements button has position: relative for the badge to position correctly */
+#chatButton,
 #announcementsButton {
   position: relative;
   /* ... your existing button styles for #announcementsButton ... */
