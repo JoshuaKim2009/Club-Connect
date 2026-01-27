@@ -95,10 +95,8 @@
         #back-button {
             font-size: 25px;
             padding: 8px 16px;
-            background: linear-gradient(to bottom, #444444, #222222);
             border: 3px solid black;
             border-radius: 8px;
-            color: white;
             cursor: pointer;
             font-family: var(--primary-font-family);
             font-weight: normal;
@@ -106,7 +104,6 @@
         }
 
         #back-button:active {
-            background: linear-gradient(to bottom, #000000, #111111);
             transform: scale(0.95);
         }
 
@@ -143,6 +140,8 @@
             display: flex;
             gap: 10px;
             padding: 10px;
+            padding-left: max(10px, env(safe-area-inset-left));
+            padding-right: max(10px, env(safe-area-inset-right));
             background: var(--input-bg);
             border-top: 3px solid black;
             z-index: 1000;
@@ -216,7 +215,7 @@
   <body>
     <div class="chat-container">
         <div class="chat-header">
-            <button id="back-button">BACK</button>
+            <button id="back-button" class="fancy-button">BACK</button>
             <span class="chat-title">MESSAGES</span>
         </div>
 
