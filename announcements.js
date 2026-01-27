@@ -22,7 +22,7 @@ let clubId = null;
 let currentUserRole = null; 
 let isEditingAnnouncement = false; 
 
-const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
+// const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
 const announcementsContainer = document.getElementById('announcementsContainer'); 
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); 
 const addAnnouncementButton = document.getElementById('add-announcement-button'); 
@@ -94,24 +94,24 @@ onAuthStateChanged(auth, async (user) => {
                     }
 
                 } else {
-                    if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Club Announcements (Club Not Found)";
+                    // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Club Announcements (Club Not Found)";
                     if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
                 }
             } catch (error) {
                 console.error("Error fetching club details or user role:", error);
-                if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error Loading Announcements";
+                // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error Loading Announcements";
                 if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
                 if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
             }
         } else {
-            if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error: No Club ID Provided";
+            // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error: No Club ID Provided";
             if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its announcements.</p>`;
             if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         }
     } else {
         console.log("No user authenticated on announcements page. Redirecting to login.");
-        if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Not Authenticated";
+        // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Not Authenticated";
         if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club announcements. Redirecting...</p>`;
         if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         setTimeout(() => {

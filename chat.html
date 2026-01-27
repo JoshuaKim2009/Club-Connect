@@ -14,14 +14,6 @@
     <link href="styles.css?v=1" rel="stylesheet" />
 
     <style>
-        :root {
-            /* --header-bg-start: #222222;
-            --header-bg-end: #111111; */
-            --header-bg-start: #000000;
-            --header-bg-end: #131330;
-            --input-bg: #000000;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -58,26 +50,6 @@
             margin-bottom: 15px;
         }
 
-        .chat-header {
-            position: fixed;
-            top: env(safe-area-inset-top);
-            left: 0;
-            right: 0;
-            background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
-            color: rgb(0, 0, 0);
-            padding: 15px;
-            font-size: 40px;
-            font-weight: normal;
-            border-bottom: 3px solid black;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 1000;
-            height: 85px;
-            border-bottom: 3px solid black;
-            color: white;
-        }
-
         #back-button {
             /* font-size: 25px;
             padding: 8px 16px;
@@ -93,10 +65,7 @@
             transform: scale(0.95);
         } */
 
-        .chat-title {
-            flex: 1;
-            text-align: left;
-        }
+        
 
         .chat-messages {
             flex: 1;

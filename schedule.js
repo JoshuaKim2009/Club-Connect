@@ -24,7 +24,7 @@ let isEditingEvent = false;
 let eventListenerUnsubscribe = null;
 let rsvpListenerUnsubscribe = null;
 
-const clubScheduleTitle = document.getElementById('clubScheduleTitle');
+// const clubScheduleTitle = document.getElementById('clubScheduleTitle');
 const eventsContainer = document.getElementById('eventsContainer');
 const noEventsMessage = document.getElementById('noEventsMessage');
 const addEventButton = document.getElementById('add-event-button');
@@ -79,9 +79,9 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 const clubSnap = await getDoc(clubRef);
                 if (clubSnap.exists()) {
-                    if (clubScheduleTitle) {
-                        clubScheduleTitle.textContent = `${clubSnap.data().clubName} Schedule`;
-                    }
+                    // if (clubScheduleTitle) {
+                    //     clubScheduleTitle.textContent = `${clubSnap.data().clubName} Schedule`;
+                    // }
 
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
                     console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
@@ -103,18 +103,18 @@ onAuthStateChanged(auth, async (user) => {
                     }
 
                 } else {
-                    if (clubScheduleTitle) clubScheduleTitle.textContent = "Club Schedule (Club Not Found)";
+                    // if (clubScheduleTitle) clubScheduleTitle.textContent = "Club Schedule (Club Not Found)";
                     if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addEventButton) addEventButton.style.display = 'none';
                 }
             } catch (error) {
                 console.error("Error fetching club details or user role:", error);
-                if (clubScheduleTitle) clubScheduleTitle.textContent = "Error Loading Schedule";
+                // if (clubScheduleTitle) clubScheduleTitle.textContent = "Error Loading Schedule";
                 if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
                 if (addEventButton) addEventButton.style.display = 'none'; 
             }
         } else {
-            if (clubScheduleTitle) clubScheduleTitle.textContent = "Error: No Club ID Provided";
+            // if (clubScheduleTitle) clubScheduleTitle.textContent = "Error: No Club ID Provided";
             if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
             if (addEventButton) addEventButton.style.display = 'none'; 
             if (eventListenerUnsubscribe) {
@@ -127,7 +127,7 @@ onAuthStateChanged(auth, async (user) => {
             }
         }
     } else {
-        if (clubScheduleTitle) clubScheduleTitle.textContent = "Not Authenticated";
+        // if (clubScheduleTitle) clubScheduleTitle.textContent = "Not Authenticated";
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
         if (addEventButton) addEventButton.style.display = 'none'; 
         if (eventListenerUnsubscribe) {

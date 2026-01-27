@@ -6,6 +6,14 @@ body {
   position: relative; /* Sometimes needed */
 }
 
+:root {
+    /* --header-bg-start: #222222;
+    --header-bg-end: #111111; */
+    --header-bg-start: #000000;
+    --header-bg-end: #131330;
+    --input-bg: #000000;
+}
+
 #content {
     display: none; /* Initially hidden */
 }
@@ -24,6 +32,32 @@ body {
     transform: translateY(0); /* RESTORED: Move to its final position */
 }
 
+.chat-header {
+  font-family: var(--primary-font-family);
+  box-sizing: border-box;
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
+  color: rgb(0, 0, 0);
+  padding: 15px;
+  font-size: 40px;
+  font-weight: normal;
+  border-bottom: 3px solid black;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 1000;
+  height: 85px;
+  border-bottom: 3px solid black;
+  color: white;
+}
+
+.chat-title {
+  flex: 1;
+  text-align: left;
+}
 
 /* Ensure the .hidden class is robust for other elements too if still used */
 .hidden {
