@@ -23,6 +23,10 @@
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: transparent;
         }
 
         body {
@@ -49,6 +53,7 @@
         }
 
         .chat-header {
+            height: 80px;
             background: linear-gradient(#222222, #111111);
             color: white;
             padding: 15px;
@@ -60,7 +65,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            padding-top: calc(15px + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
         }
 
         #back-button {
@@ -78,6 +83,7 @@
 
         /* Input container */
         .chat-input-container {
+            height: 80px;
             width: 100%;
             max-width: 100%;
             display: flex;
@@ -86,7 +92,7 @@
             background: #f0f0f0;
             border-top: 3px solid black;
             box-sizing: border-box;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .chat-input {
@@ -143,7 +149,7 @@
   <body>
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
-        <span class="chat-title">CHAT</span>
+        <span class="chat-title">MESSAGES</span>
     </div>
 
     <div class="chat-messages">
