@@ -9,9 +9,9 @@ position: relative; /* Sometimes needed */
 :root {
   /* --header-bg-start: #222222;
   --header-bg-end: #111111; */
-  --header-bg-start: #000000;
-  --header-bg-end: #131330;
-  --input-bg: #000000;
+  --header-bg-start: #131330;
+  --header-bg-end: #000000;
+  --input-bg: #131330;
 }
 
 #content {
