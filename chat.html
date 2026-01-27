@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Club Connect | Chat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-
 
     <link href="styles.css?v=1" rel="stylesheet" />
     <style>
@@ -23,10 +22,7 @@
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background: transparent;
+            /* background-color: #131330; */
         }
 
         body {
@@ -39,38 +35,48 @@
             width: 100% !important;
             overflow-x: hidden !important;
             max-width: 100%;
-
         }
 
-        .chat-header,
-        .chat-input-container {
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            left: 0;
-            right: 0;
-            position: relative;
-        }
-
+        /* Header */
         .chat-header {
-            height: 80px;
             background: linear-gradient(#222222, #111111);
             color: white;
             padding: 15px;
             font-size: 40px;
+            font-weight: normal;
             width: 100%;
+            border-bottom: 3px solid black;
             max-width: 100%;
             box-sizing: border-box;
-            border-bottom: 3px solid black;
             display: flex;
             align-items: center;
             gap: 15px;
-            padding-top: env(safe-area-inset-top);
+            /* KEY FIX: Add padding to account for safe area at top */
+            padding-top: calc(15px + env(safe-area-inset-top));
+            /* Extend background to cover safe area */
+            position: relative;
+        }
+
+        /* Extend header background to cover top safe area */
+        .chat-header::before {
+            content: "";
+            position: absolute;
+            top: calc(-1 * env(safe-area-inset-top));
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-top);
+            background: linear-gradient(#222222, #111111);
+            z-index: -1;
         }
 
         #back-button {
             font-size: 25px;
         }
+
+        /* .chat-title {
+            flex: 1;
+            text-align: center;
+        } */
 
         /* Messages area */
         .chat-messages {
@@ -83,7 +89,6 @@
 
         /* Input container */
         .chat-input-container {
-            height: 80px;
             width: 100%;
             max-width: 100%;
             display: flex;
@@ -92,7 +97,21 @@
             background: #f0f0f0;
             border-top: 3px solid black;
             box-sizing: border-box;
-            padding-bottom: env(safe-area-inset-bottom);
+            /* KEY FIX: Add padding to account for safe area at bottom */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            position: relative;
+        }
+
+        /* Extend input container background to cover bottom safe area */
+        .chat-input-container::after {
+            content: "";
+            position: absolute;
+            bottom: calc(-1 * env(safe-area-inset-bottom));
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-bottom);
+            background: #f0f0f0;
+            z-index: -1;
         }
 
         .chat-input {
@@ -106,6 +125,7 @@
             background: linear-gradient(#ffffff, #b3b3b3);
             min-height: 45px;
             min-width: 0;
+            outline: none;
         }
 
         .send-button {
@@ -125,9 +145,11 @@
         .send-button:hover {
             background: linear-gradient(#222222, #353535);
         }
+        
         .send-button:active {
             background: linear-gradient(#000000, #0f0f0f);
         }
+        
         .message {
             font-family: var(--primary-font-family);
             margin-bottom: 15px;
@@ -175,4 +197,3 @@
     <script type="module" src="chat.js"></script>
   </body>
 </html>
-
