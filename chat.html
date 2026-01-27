@@ -60,13 +60,13 @@
 
         .chat-header::before {
             content: "";
-            position: absolute;
-            top: calc(-1 * env(safe-area-inset-top));
+            position: fixed;  /* CHANGED from absolute to fixed */
+            top: 0;
             left: 0;
             right: 0;
             height: env(safe-area-inset-top);
             background: linear-gradient(#222222, #111111);
-            z-index: 1;
+            z-index: 1000;  /* MUCH HIGHER z-index */
         }
 
         #back-button {
@@ -122,13 +122,13 @@
 
         .chat-input-container::after {
             content: "";
-            position: absolute;
-            bottom: calc(-1 * env(safe-area-inset-bottom));
+            position: fixed;  /* CHANGED from absolute to fixed */
+            bottom: 0;
             left: 0;
             right: 0;
             height: env(safe-area-inset-bottom);
             background: #f0f0f0;
-            z-index: 1;
+            z-index: 1000;  /* MUCH HIGHER z-index */
         }
 
         .chat-input {
