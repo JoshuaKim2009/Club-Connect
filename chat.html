@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Club Connect | Chat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,128 +11,144 @@
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-
     <link href="styles.css?v=1" rel="stylesheet" />
+
     <style>
-        .safe-area-top,
-        .safe-area-bottom {
-            position: fixed;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-            pointer-events: none;
+        :root {
+            --header-bg-start: #222222;
+            --header-bg-end: #111111;
+            --input-bg: #f0f0f0;
         }
 
-        .safe-area-top {
-            top: 0;
-            height: env(safe-area-inset-top);
-            background: #222222
-        }
-
-        .safe-area-bottom {
-            bottom: 0;
-            height: env(safe-area-inset-bottom);
-            background: #f0f0f0;
-        }
-
-        body::before {
-            display: none !important;
-        }
-
-        html, body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            /* background-color: #131330; */
-        }
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
         }
 
         body {
-            margin: 0 !important;
+            width: 100%;
+            height: 100%;
             font-family: var(--primary-font-family);
-            height: 100vh !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-            width: 100% !important;
-            overflow-x: hidden !important;
-            max-width: 100%;
+            overflow: hidden;
+            position: fixed;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Header */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-top);
+            background: var(--header-bg-start);
+            z-index: 10000;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-bottom);
+            background: var(--input-bg);
+            z-index: 10000;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            position: relative;
+        }
+
         .chat-header {
-            background: linear-gradient(#222222, #111111);
+            position: fixed;
+            top: env(safe-area-inset-top);
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
             color: white;
             padding: 15px;
             font-size: 40px;
             font-weight: normal;
-            width: 100%;
             border-bottom: 3px solid black;
-            max-width: 100%;
-            box-sizing: border-box;
             display: flex;
             align-items: center;
             gap: 15px;
-            padding-top: calc(15px + env(safe-area-inset-top));
-            position: relative;
+            z-index: 1000;
+            height: 70px;
         }
 
         #back-button {
             font-size: 25px;
+            padding: 8px 16px;
+            background: linear-gradient(to bottom, #444444, #222222);
+            border: 3px solid black;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-family: var(--primary-font-family);
+            font-weight: normal;
+            transition: all 0.2s;
         }
 
-        /* .chat-title {
-            flex: 1;
-            text-align: center;
-        } */
+        #back-button:active {
+            background: linear-gradient(to bottom, #000000, #111111);
+            transform: scale(0.95);
+        }
 
-        
+        .chat-title {
+            flex: 1;
+            text-align: left;
+        }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
-            width: 100%;
-            position: relative;
-            background-image: linear-gradient(
-                to bottom,
-                #131330 0%,
-                transparent 5%,
-                transparent 95%,
-                #131330 100%
-            ),
-            linear-gradient(
-                to left,
-                #131330 0%,
-                transparent 5%,
-                transparent 95%,
-                #131330 100%
-            ),
-            radial-gradient(circle at center, #474799, #131330);
+            padding-top: calc(70px + env(safe-area-inset-top) + 20px);
+            padding-bottom: calc(85px + env(safe-area-inset-bottom) + 20px);
+            background-image: 
+                linear-gradient(to bottom, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
+                linear-gradient(to left, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
+                radial-gradient(circle at center, #474799, #131330);
             background-size: cover;
             background-repeat: no-repeat;
-            background-attachment: scroll; 
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Input container */
+        .chat-messages::-webkit-scrollbar {
+            display: none;
+        }
+
         .chat-input-container {
-            width: 100%;
-            max-width: 100%;
+            position: fixed;
+            bottom: env(safe-area-inset-bottom);
+            left: 0;
+            right: 0;
             display: flex;
             gap: 10px;
             padding: 10px;
-            background: #f0f0f0;
+            background: var(--input-bg);
             border-top: 3px solid black;
-            box-sizing: border-box;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
-            position: relative;
+            z-index: 1000;
+            transition: bottom 0.3s ease;
         }
 
-        
         .chat-input {
             font-family: var(--primary-font-family);
             font-size: 25px;
@@ -139,9 +157,8 @@
             padding: 12px 15px;
             border: 3px solid black;
             border-radius: 10px;
-            background: linear-gradient(#ffffff, #b3b3b3);
+            background: linear-gradient(to bottom, #ffffff, #b3b3b3);
             min-height: 45px;
-            min-width: 0;
             outline: none;
         }
 
@@ -155,16 +172,15 @@
             cursor: pointer;
             font-size: 20px;
             flex-shrink: 0;
-            box-shadow: 0px 0px 0px #000000 !important;
-            transform: translateY(0px) !important;
+            background: linear-gradient(to bottom, #444444, #222222);
+            border: 3px solid black;
+            border-radius: 10px;
+            transition: all 0.2s;
         }
 
-        .send-button:hover {
-            background: linear-gradient(#222222, #353535);
-        }
-        
         .send-button:active {
-            background: linear-gradient(#000000, #0f0f0f);
+            background: linear-gradient(to bottom, #000000, #111111);
+            transform: scale(0.95);
         }
         
         .message {
@@ -176,40 +192,59 @@
             max-width: 70%;
             border: 3px solid black;
             font-size: 25px;
+            word-wrap: break-word;
+            display: inline-block;
         }
 
         .message.sent {
-            font-family: var(--primary-font-family);
             margin-left: auto;
             background: #b9f390;
+            display: block;
+            text-align: right;
+        }
+
+        .message-wrapper {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .message-wrapper.sent {
+            justify-content: flex-end;
         }
     </style>
   </head>
   <body>
-    <div class="safe-area-top"></div>
-    <div class="safe-area-bottom"></div>
-    <div class="chat-header">
-        <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
-        <span class="chat-title">MESSAGES</span>
-    </div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <button id="back-button">BACK</button>
+            <span class="chat-title">MESSAGES</span>
+        </div>
 
-    <div class="chat-messages">
-      <div class="message">
-        Hey! Welcome to Club Connect
-      </div>
-      <div class="message sent">
-        NEW APPROACH???
-      </div>
-    </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message-wrapper">
+                <div class="message">Hey! Welcome to Club Connect</div>
+            </div>
+            <div class="message-wrapper sent">
+                <div class="message sent">COMPLETELY REVAMPED!</div>
+            </div>
+            <div class="message-wrapper">
+                <div class="message">This should work perfectly now with proper safe areas!</div>
+            </div>
+            <div class="message-wrapper sent">
+                <div class="message sent">Testing the keyboard behavior...</div>
+            </div>
+        </div>
 
-    <div class="chat-input-container">
-      <input 
-        type="text" 
-        class="chat-input" 
-        placeholder="Type a message..."
-        autocomplete="off"
-      >
-      <button class="fancy-black-button send-button">➤</button>
+        <div class="chat-input-container" id="inputContainer">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="chatInput"
+                placeholder="Type a message..."
+                autocomplete="off"
+            >
+            <button class="send-button" id="sendButton">➤</button>
+        </div>
     </div>
 
     <script type="module" src="dialog.js"></script> 
