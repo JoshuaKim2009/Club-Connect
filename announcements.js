@@ -304,7 +304,7 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
     cardDiv.className = 'announcement-card display-announcement-card';
     cardDiv.dataset.announcementId = announcementId;
 
-    const canEditDelete = (currentUserRole === 'manager' || currentUserRole === 'admin');
+    const canEditDelete = ((currentUserRole === 'manager' || currentUserRole === 'admin') && announcementData.createdByUid === currentUser.uid);
     let actionButtonsHtml = '';
 
     if (canEditDelete) {
