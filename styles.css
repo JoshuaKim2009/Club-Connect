@@ -194,6 +194,10 @@ button {
   font-weight: normal;
 }
 
+#createClubForm{
+  margin-top: 110px;
+}
+
 #welcomeMessage {
   font-family: var(--primary-font-family);
   font-size: 25px;
@@ -243,6 +247,10 @@ button {
   text-align: center;
   color: white;
   /* white-space: nowrap; */
+}
+
+#clubPageTitle {
+  margin-top: 110px;
 }
 
 .small-title {
@@ -574,7 +582,8 @@ button {
   transition: all 0.05s ease-in-out;
 }
 
-#back-button{
+#back-button,
+#back-button-edit {
   padding: 5px 15px;
 }
 
