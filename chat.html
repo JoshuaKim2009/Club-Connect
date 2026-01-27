@@ -39,32 +39,13 @@
             height: 100%;
             font-family: var(--primary-font-family);
             overflow: hidden;
-            position: fixed;
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: env(safe-area-inset-top);
             background: var(--header-bg-start);
-            z-index: 10000;
         }
 
-        body::after {
-            content: "";
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: env(safe-area-inset-bottom);
-            background: var(--input-bg);
-            z-index: 10000;
-        }
+
+        
 
         .chat-container {
             display: flex;
@@ -142,7 +123,7 @@
             padding: 10px;
             padding-left: max(10px, env(safe-area-inset-left));
             padding-right: max(10px, env(safe-area-inset-right));
-            background: var(--input-bg);
+            background: linear-gradient(to top, var(--header-bg-start), var(--header-bg-end));
             border-top: 3px solid black;
             z-index: 1000;
             transition: bottom 0.3s ease;
@@ -159,6 +140,7 @@
             background: linear-gradient(to bottom, #ffffff, #b3b3b3);
             min-height: 45px;
             outline: none;
+            max-width: calc(100% - 65px);
         }
 
         .send-button {
