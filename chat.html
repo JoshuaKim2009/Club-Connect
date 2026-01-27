@@ -12,6 +12,9 @@
 
     <link href="styles.css?v=1" rel="stylesheet" />
     <style>
+        body::before {
+            display: none !important; /* This removes the blue gradient background from styles.css */
+        }
         * {
             margin: 0;
             padding: 0;
@@ -22,7 +25,7 @@
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
-            /* background-color: #131330; */
+            background-color: #131330;
         }
 
         body {
@@ -51,13 +54,10 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            /* KEY FIX: Add padding to account for safe area at top */
             padding-top: calc(15px + env(safe-area-inset-top));
-            /* Extend background to cover safe area */
             position: relative;
         }
 
-        /* Extend header background to cover top safe area */
         .chat-header::before {
             content: "";
             position: absolute;
@@ -97,12 +97,10 @@
             background: #f0f0f0;
             border-top: 3px solid black;
             box-sizing: border-box;
-            /* KEY FIX: Add padding to account for safe area at bottom */
             padding-bottom: calc(10px + env(safe-area-inset-bottom));
             position: relative;
         }
 
-        /* Extend input container background to cover bottom safe area */
         .chat-input-container::after {
             content: "";
             position: absolute;
