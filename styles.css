@@ -575,6 +575,10 @@ button {
   transition: all 0.05s ease-in-out;
 }
 
+#back-button{
+  padding: 5px 15px;
+}
+
 .fancy-link-button {
   margin: 0 auto;
   display: block;
