@@ -42,7 +42,7 @@ body {
   background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
   color: rgb(0, 0, 0);
   padding: 15px;
-  font-size: 40px;
+  font-size: 35px;
   font-weight: normal;
   border-bottom: 3px solid black;
   display: flex;
