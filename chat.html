@@ -15,8 +15,10 @@
 
     <style>
         :root {
-            --header-bg-start: #222222;
-            --header-bg-end: #111111;
+            /* --header-bg-start: #222222;
+            --header-bg-end: #111111; */
+            --header-bg-start: #f0f0f0;
+            --header-bg-end: #d8d8d8;
             --input-bg: #f0f0f0;
         }
 
@@ -61,7 +63,7 @@
             left: 0;
             right: 0;
             background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
-            color: white;
+            color: rgb(0, 0, 0);
             padding: 15px;
             font-size: 40px;
             font-weight: normal;
@@ -70,15 +72,15 @@
             align-items: center;
             gap: 15px;
             z-index: 1000;
-            height: 70px;
+            height: 80px;
             border-bottom: 3px solid black;
         }
 
         #back-button {
-            font-size: 25px;
+            /* font-size: 25px;
             padding: 8px 16px;
             border: 3px solid black;
-            border-radius: 8px;
+            border-radius: 8px; */
             cursor: pointer;
             font-family: var(--primary-font-family);
             font-weight: normal;
@@ -138,15 +140,13 @@
             padding: 12px 15px;
             border: 3px solid black;
             border-radius: 10px;
-            background: linear-gradient(to bottom, #818181, #b3b3b3);
+            background: linear-gradient(#ffffff, #b3b3b3);
             min-height: 45px;
             outline: none;
             max-width: calc(100% - 65px);
         }
 
-        ::placeholder {
-        color: #4e4e4e;
-        }
+        
 
         .send-button {
             color: white;
@@ -176,7 +176,7 @@
             background: white;
             border-radius: 8px;
             max-width: 70%;
-            border: 3px solid black;
+            border: 3px solid rgb(0, 0, 0);
             font-size: 25px;
             word-wrap: break-word;
             display: inline-block;
@@ -184,7 +184,7 @@
 
         .message.sent {
             margin-left: auto;
-            background: #b9f390;
+            background: #0faa50;
             display: block;
             text-align: right;
         }
@@ -197,9 +197,45 @@
         .message-wrapper.sent {
             justify-content: flex-end;
         }
+
+        .landscape-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 30px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .landscape-warning-text {
+            color: white;
+            font-size: 28px;
+            font-family: var(--primary-font-family);
+            font-weight: normal;
+            line-height: 1.4;
+        }
+
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .landscape-warning {
+                display: flex;
+            }
+        }
     </style>
   </head>
   <body>
+    <div class="landscape-warning">
+        <div class="landscape-warning-text">
+            Please rotate your device to portrait mode
+        </div>
+    </div>
     <div class="chat-container">
         <div class="chat-header">
             <button id="back-button" class="fancy-button">BACK</button>

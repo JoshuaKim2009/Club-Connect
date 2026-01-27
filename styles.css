@@ -1834,6 +1834,20 @@ input[type="checkbox"]:checked {
   text-align: center;
   margin-top: 0;
   margin-bottom: 8px; 
+  padding-bottom: 8px;
+  border-bottom: 2px dotted black;
+  position: relative;
+}
+
+.announcement-card h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
 
 .announcement-card p {
