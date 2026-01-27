@@ -19,6 +19,12 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             margin: 0 !important;
             font-family: var(--primary-font-family);
@@ -28,21 +34,33 @@
             overflow: hidden !important;
             width: 100% !important;
             overflow-x: hidden !important;
+            max-width: 100%;
 
         }
 
-        /* Header */
+        .chat-header,
+        .chat-input-container {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            left: 0;
+            right: 0;
+            position: relative;
+        }
+
         .chat-header {
             background: linear-gradient(#222222, #111111);
             color: white;
-            padding: 15px 20px;
+            padding: 15px;
             font-size: 40px;
-            font-weight: normal;
             width: 100%;
-            border-bottom: 3px solid #000000;
+            max-width: 100%;
+            box-sizing: border-box;
+            border-bottom: 3px solid black;
             display: flex;
             align-items: center;
             gap: 15px;
+            padding-top: calc(15px + env(safe-area-inset-top));
         }
 
         #back-button {
@@ -61,11 +79,14 @@
         /* Input container */
         .chat-input-container {
             width: 100%;
+            max-width: 100%;
             display: flex;
             gap: 10px;
-            padding: 10px 15px;
+            padding: 10px;
             background: #f0f0f0;
-            border-top: 3px solid #000000;
+            border-top: 3px solid black;
+            box-sizing: border-box;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
         }
 
         .chat-input {
@@ -78,7 +99,9 @@
             border-radius: 10px;
             background: linear-gradient(#ffffff, #b3b3b3);
             min-height: 45px;
+            min-width: 0;
         }
+
         .send-button {
             color: white;
             min-width: 45px;
@@ -120,7 +143,7 @@
   <body>
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToHome()">BACK</button>
-        <span class="chat-title">Club Connect</span>
+        <span class="chat-title">CHAT</span>
     </div>
 
     <div class="chat-messages">
