@@ -36,6 +36,8 @@ let userName = "";
 let role = null;
 let clubId = null;
 let currentUser = null;
+const markedReadInSession = new Set();
+let newestDoc = null;
 
 let unsubscribeMessages = null;
 
@@ -43,7 +45,6 @@ const PAGE_SIZE = 20;
 let oldestDoc = null;
 let hasMoreMessages = true;
 let isLoadingOlder = false;
-let newestTimestamp = null;
 let previousSenderId = null;
 let loadedMessageIds = new Set();
 
@@ -140,6 +141,7 @@ if (backButton) {
 }
 
 async function loadInitialMessages() {
+    loadedMessageIds.clear();
     if (!clubId || !currentUser) return;
 
     const messagesRef = collection(db, "clubs", clubId, "messages");
@@ -154,7 +156,7 @@ async function loadInitialMessages() {
         
         if (messageDocs.length > 0) {
             oldestDoc = messageDocs[messageDocs.length - 1];
-            newestTimestamp = messageDocs[0].data().createdAt;
+            newestDoc = messageDocs[0];
             
             if (hasMoreMessages && docs.length > PAGE_SIZE) {
                 const nextMessage = docs[PAGE_SIZE].data();
@@ -258,21 +260,15 @@ async function loadOlderMessages() {
                 
                 if (lastLoadedSenderId === existingFirstSenderId) {
                     const existingSenderName = existingFirstWrapper.querySelector('.sender-name');
-                    if (existingSenderName) {
-                        existingSenderName.remove();
-                    }
+                    if (existingSenderName) existingSenderName.remove();
                 } else if (!existingFirstWrapper.querySelector('.sender-name')) {
                     const senderName = document.createElement('div');
                     senderName.className = 'sender-name';
-                    const firstMessageId = existingFirstWrapper.dataset.messageId;
-                    const firstMessageDoc = await getDoc(doc(db, "clubs", clubId, "messages", firstMessageId));
-                    if (firstMessageDoc.exists()) {
-                        senderName.textContent = firstMessageDoc.data().createdByName || "Anonymous";
-                        existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
-                    }
+                    const lastMsgData = reversedDocs[reversedDocs.length - 1].data();
+                    senderName.textContent = lastMsgData.createdByName || "Anonymous";
+                    existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
                 }
             }
-            
             chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
             
             const newScrollHeight = chatMessages.scrollHeight;
@@ -290,12 +286,9 @@ function startRealtimeListener() {
     
     const messagesRef = collection(db, "clubs", clubId, "messages");
     
-    let q;
-    if (newestTimestamp) {
-        q = query(messagesRef, orderBy("createdAt", "asc"), startAfter(newestTimestamp));
-    } else {
-        q = query(messagesRef, orderBy("createdAt", "asc"));
-    }
+    let q = newestDoc 
+        ? query(messagesRef, orderBy("createdAt", "asc"), startAfter(newestDoc))
+        : query(messagesRef, orderBy("createdAt", "asc"));
     
     unsubscribeMessages = onSnapshot(q, async (snapshot) => {
         for (const change of snapshot.docChanges()) {
@@ -314,7 +307,7 @@ function startRealtimeListener() {
                 previousSenderId = messageData.createdByUid;
                 
                 if (messageData.createdAt) {
-                    newestTimestamp = messageData.createdAt;
+                    newestDoc = change.doc;
                 }
                 
                 if (isNearBottom || messageData.createdByUid === currentUser.uid) {
@@ -443,7 +436,7 @@ if (chatInput) {
 
 if (chatMessages) {
     chatMessages.addEventListener('scroll', () => {
-        if (chatMessages.scrollTop < 500 && hasMoreMessages && !isLoadingOlder) {
+        if (chatMessages.scrollTop < 300 && hasMoreMessages && !isLoadingOlder) {
             loadOlderMessages();
         }
     });
@@ -483,7 +476,7 @@ if (chatInput && inputContainer && chatMessages) {
     });
 }
 
-async function markAsRead(ID) {
+async function __markAsRead(ID) {
     if (!currentUser || !clubId) {
         console.warn("User not logged in or clubId missing.");
         return;
@@ -503,5 +496,28 @@ async function markAsRead(ID) {
             userName: currentUser.displayName || "Anonymous",
             readAt: serverTimestamp()
         });
+    }
+}
+
+async function markAsRead(ID) {
+    // 1. Check local memory first (Instant, 0 cost)
+    if (!currentUser || !clubId || markedReadInSession.has(ID)) return;
+
+    // 2. Mark it locally so we never process this ID again this session
+    markedReadInSession.add(ID);
+
+    const userReadDocRef = doc(db, "clubs", clubId, "messages", ID, "readBy", currentUser.uid);
+
+    try {
+        // 3. Just perform the write. 
+        // setDoc with these arguments acts as "create or overwrite"
+        await setDoc(userReadDocRef, {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "Anonymous",
+            readAt: serverTimestamp()
+        });
+    } catch (e) {
+        // If write fails, remove from set so we can retry later
+        markedReadInSession.delete(ID);
     }
 }
