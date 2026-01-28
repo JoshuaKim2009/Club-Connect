@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -16,6 +16,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+
+enableIndexedDbPersistence(db)
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Persistence failed: Multiple tabs open');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Persistence not available in this browser');
+    }
+  });
+
+
+let messageCount = 0;
 
 let isLoggedIn = false;
 let userEmail = "";
@@ -57,7 +70,15 @@ async function getMemberRoleForClub(clubId, uid) {
     return clubDoc.data()?.managerUid === uid ? 'manager' : 'member';
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    if (chatMessages) {
+        chatMessages.classList.add('loading');
+    }
+});
+
 onAuthStateChanged(auth, async (user) => {
+    console.time('Auth callback');
+    
     if (user) {
         currentUser = user;
         isLoggedIn = true;
@@ -67,21 +88,26 @@ onAuthStateChanged(auth, async (user) => {
         console.log("Logged in:", userEmail);
 
         if (clubId) {
-            role = await getMemberRoleForClub(clubId, currentUser.uid);
-            console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
+            if (chatMessages) {
+                chatMessages.classList.remove('loading');
+            }
             
-            await loadInitialMessages();
+            console.time('Parallel loading');
+            
+            const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
+            const messagesPromise = loadInitialMessages();
+            
+            [role] = await Promise.all([rolePromise, messagesPromise]);
+            
+            console.timeEnd('Parallel loading');
+            
             startRealtimeListener();
         }
     } else {
-        currentUser = null;
-        isLoggedIn = false;
-        userName = "";
-        userEmail = "";
-        role = null;
-
-        console.log("User signed out");
+        window.location.href = 'login.html';
     }
+    
+    console.timeEnd('Auth callback');
 });
 
 window.goToClubPage = function() {
@@ -154,9 +180,10 @@ async function loadInitialMessages() {
     } finally {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     
-        requestAnimationFrame(() => {
-            chatMessages.classList.add('loaded');
-        });
+        chatMessages.classList.add('loaded');
+        // requestAnimationFrame(() => {
+        //     chatMessages.classList.add('loaded');
+        // });
     }
 }
 
@@ -211,9 +238,12 @@ async function loadOlderMessages() {
             const messageElement = createMessageElement(messageId, messageData, showSenderName);
             tempFragment.appendChild(messageElement);
             tempPreviousSenderId = messageData.createdByUid;
+
+            messageCount+=1;
+            console.log(messageCount);
             
             if (messageData.createdByUid !== currentUser.uid) {
-                await markAsRead(messageId);
+                markAsRead(messageId);
             }
         }
         
@@ -243,7 +273,7 @@ async function loadOlderMessages() {
             chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
             
             const newScrollHeight = chatMessages.scrollHeight;
-            chatMessages.scrollTop = newScrollHeight - previousScrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollTop + (newScrollHeight - previousScrollHeight);
         }
     } catch (error) {
         console.error("Error loading older messages:", error);
@@ -336,11 +366,12 @@ async function displayMessage(messageId, messageData, showSenderName) {
     
     const messageElement = createMessageElement(messageId, messageData, showSenderName);
     chatMessages.appendChild(messageElement);
+    messageCount+=1;
     
-    console.log("New message:", messageId, messageData);
+    console.log(messageCount);
     
     if (messageData.createdByUid !== currentUser.uid) {
-        await markAsRead(messageId);
+        markAsRead(messageId);
     }
 }
 
@@ -403,7 +434,7 @@ if (chatInput) {
 
 if (chatMessages) {
     chatMessages.addEventListener('scroll', () => {
-        if (chatMessages.scrollTop === 0 && hasMoreMessages && !isLoadingOlder) {
+        if (chatMessages.scrollTop < 500 && hasMoreMessages && !isLoadingOlder) {
             loadOlderMessages();
         }
     });
