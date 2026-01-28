@@ -167,6 +167,26 @@
             background: radial-gradient(circle at center, #32326d, #070713);
             transform: scale(0.95);
         }
+
+        .add-button {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 38px;
+            flex-shrink: 0;
+            background: radial-gradient(circle at center, #ffffff, #b3b3b3);
+            border: 3px solid black;
+            border-radius: 10px;
+            color: rgb(0, 0, 0);
+        }
+
+        .add-button:active {
+            background: radial-gradient(circle at center, #d4d4d4, #b3b3b3);
+            transform: scale(0.95);
+        }
         
         .message {
             font-family: var(--primary-font-family);
@@ -242,9 +262,13 @@
             color: #dadada;
             margin-bottom: 4px;
             font-weight: normal;
+            margin-left: 5px;
+            margin-right: 0;
         }
 
         .message-wrapper.sent .sender-name {
+            margin-right: 5px;
+            margin-left: 0;
             text-align: right;
         }
 
@@ -311,6 +335,7 @@
         </div>
 
         <div class="chat-input-container" id="inputContainer">
+            <button class="add-button" id="addButton">+</button>
             <input 
                 type="text" 
                 class="chat-input" 

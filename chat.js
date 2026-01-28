@@ -102,6 +102,8 @@ onAuthStateChanged(auth, async (user) => {
             console.timeEnd('Parallel loading');
             
             startRealtimeListener();
+        } else {
+            window.location.href = 'your_clubs.html';
         }
     } else {
         window.location.href = 'login.html';
@@ -406,7 +408,8 @@ async function saveMessage() {
         createdByUid: currentUser.uid,
         createdByName: currentUser.displayName || "Anonymous",
         clubId: clubId,
-        createdAt: serverTimestamp() 
+        createdAt: serverTimestamp(),
+        type: "text"
     };
 
     batch.set(newMessageRef, messageData);
