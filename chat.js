@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+// import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -16,6 +17,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+//const storage = getStorage(app);
+
 
 
 enableIndexedDbPersistence(db)
@@ -38,6 +41,9 @@ let clubId = null;
 let currentUser = null;
 const markedReadInSession = new Set();
 let newestDoc = null;
+const MAX_IMAGES_PER_SEND = 5;
+let pendingImages = [];
+let isDropdownOpen = false;
 
 let unsubscribeMessages = null;
 
@@ -53,6 +59,12 @@ const inputContainer = document.getElementById('inputContainer');
 const chatMessages = document.getElementById('chatMessages');
 const sendButton = document.getElementById('sendButton');
 const backButton = document.getElementById("back-button");
+
+const addButton = document.getElementById('addButton');
+const uploadDropdown = document.getElementById('uploadDropdown');
+const imageUploadOption = document.getElementById('imageUploadOption');
+const imageFileInput = document.getElementById('imageFileInput');
+const pendingImagesContainer = document.getElementById('pendingImagesContainer');
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -346,13 +358,32 @@ function createMessageElement(messageId, messageData, showSenderName) {
         messageWrapper.appendChild(senderName);
     }
 
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
-    messageDiv.textContent = messageData.message;
-    if (messageData.createdByUid === currentUser.uid) {
-        messageDiv.classList.add('sent');
+    if (messageData.type === "image" && messageData.imageUrl) {
+        // Create image message
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'message message-image';
+        if (messageData.createdByUid === currentUser.uid) {
+            imageContainer.classList.add('sent');
+        }
+        
+        const img = document.createElement('img');
+        img.src = messageData.imageUrl;
+        img.alt = "Image";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        img.style.display = "block";
+        
+        imageContainer.appendChild(img);
+        messageWrapper.appendChild(imageContainer);
+    } else {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        messageDiv.textContent = messageData.message;
+        if (messageData.createdByUid === currentUser.uid) {
+            messageDiv.classList.add('sent');
+        }
+        messageWrapper.appendChild(messageDiv);
     }
-    messageWrapper.appendChild(messageDiv);
     
     return messageWrapper;
 }
@@ -422,14 +453,27 @@ async function saveMessage() {
     }
 }
 
+
 if (sendButton) {
-    sendButton.addEventListener('click', saveMessage);
+    sendButton.addEventListener('click', async () => {
+        if (pendingImages.length > 0) {
+            await saveImages();
+        }
+        if (chatInput.value.trim()) {
+            await saveMessage();
+        }
+    });
 }
 
 if (chatInput) {
-    chatInput.addEventListener('keypress', (e) => {
+    chatInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
-            saveMessage();
+            if (pendingImages.length > 0) {
+                await saveImages();
+            }
+            if (chatInput.value.trim()) {
+                await saveMessage();
+            }
         }
     });
 }
@@ -440,6 +484,13 @@ if (chatMessages) {
             loadOlderMessages();
         }
     });
+}
+
+async function saveImages() {
+    // Just clear pending images without uploading
+    clearPendingImages();
+    // Optionally, show a message or do nothing else
+    console.log("Image sending is disabled for now.");
 }
 
 if (chatInput && inputContainer && chatMessages) {
@@ -520,4 +571,96 @@ async function markAsRead(ID) {
         // If write fails, remove from set so we can retry later
         markedReadInSession.delete(ID);
     }
+}
+
+if (addButton) {
+    addButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isDropdownOpen = !isDropdownOpen;
+        uploadDropdown.classList.toggle('show', isDropdownOpen);
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (isDropdownOpen && 
+        !uploadDropdown.contains(e.target) && 
+        !addButton.contains(e.target)) {
+        isDropdownOpen = false;
+        uploadDropdown.classList.remove('show');
+    }
+});
+
+// Image upload option click
+if (imageUploadOption) {
+    imageUploadOption.addEventListener('click', () => {
+        imageFileInput.click();
+        isDropdownOpen = false;
+        uploadDropdown.classList.remove('show');
+    });
+}
+
+// Handle file selection
+if (imageFileInput) {
+    imageFileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        
+        if (pendingImages.length + files.length > MAX_IMAGES_PER_SEND) {
+            showAppAlert(`You can only send up to ${MAX_IMAGES_PER_SEND} images at once`);
+            return;
+        }
+        
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const previewUrl = URL.createObjectURL(file);
+                pendingImages.push({ file, previewUrl });
+                addPendingImagePreview(previewUrl, pendingImages.length - 1);
+            }
+        });
+        
+        // Clear input so same file can be selected again
+        imageFileInput.value = '';
+    });
+}
+
+// Add image preview
+function addPendingImagePreview(previewUrl, index) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pending-image-wrapper';
+    wrapper.dataset.index = index;
+    
+    const img = document.createElement('img');
+    img.src = previewUrl;
+    
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'pending-image-remove';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => removePendingImage(index));
+    
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeBtn);
+    pendingImagesContainer.appendChild(wrapper);
+}
+
+// Remove pending image
+function removePendingImage(index) {
+    const imageData = pendingImages[index];
+    if (imageData) {
+        URL.revokeObjectURL(imageData.previewUrl);
+    }
+    
+    pendingImages.splice(index, 1);
+    
+    // Rebuild the preview UI
+    pendingImagesContainer.innerHTML = '';
+    pendingImages.forEach((img, i) => {
+        addPendingImagePreview(img.previewUrl, i);
+    });
+}
+
+// Clear all pending images
+function clearPendingImages() {
+    pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+    pendingImages = [];
+    pendingImagesContainer.innerHTML = '';
 }

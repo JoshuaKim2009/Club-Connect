@@ -314,6 +314,123 @@
         .chat-messages:not(.loading) .loading-spinner {
             display: none;
         }
+
+        .upload-dropdown {
+            position: fixed;
+            bottom: calc(75px + env(safe-area-inset-bottom));
+            left: max(10px, env(safe-area-inset-left));
+            background: radial-gradient(circle at center, #ffffff, #e0e0e0);
+            border: 3px solid black;
+            border-radius: 10px;
+            padding: 5px;
+            z-index: 999;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-dropdown.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .upload-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-family: var(--primary-font-family);
+            font-size: 22px;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .upload-option:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .upload-option:active {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(0.98);
+        }
+
+        .upload-option i {
+            font-size: 24px;
+        }
+
+        /* Pending Images Container */
+        .pending-images-container {
+            position: fixed;
+            bottom: calc(75px + env(safe-area-inset-bottom));
+            right: max(10px, env(safe-area-inset-right));
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 998;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .pending-image-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border: 3px solid black;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .pending-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pending-image-remove {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 0, 0, 0.9);
+            border: 2px solid black;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .pending-image-remove:active {
+            background: rgba(200, 0, 0, 0.9);
+            transform: scale(0.9);
+        }
+
+        .message-image {
+            padding: 5px;
+            max-width: 250px;
+        }
+
+        .message-image img {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-image img:active {
+            transform: scale(0.98);
+        }
     </style>
   </head>
   <body>
@@ -345,6 +462,18 @@
             >
             <button class="send-button" id="sendButton">➤</button>
         </div>
+        <div class="upload-dropdown" id="uploadDropdown">
+            <div class="upload-option" id="imageUploadOption">
+                <i class="fa-solid fa-image"></i>
+                <span>Upload Image</span>
+            </div>
+        </div>
+
+        <div class="pending-images-container" id="pendingImagesContainer">
+            <!-- Images will be added here dynamically -->
+        </div>
+
+        <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
     </div>
 
     <script type="module" src="dialog.js"></script> 
