@@ -69,6 +69,7 @@
         
 
         .chat-messages {
+            position: relative;
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
@@ -82,7 +83,7 @@
             background-size: cover;
             background-repeat: no-repeat;
             -webkit-overflow-scrolling: touch;
-            opacity: 0;
+            /* opacity: 0; */
             transform: translateY(20px);
             transition: opacity 0.4s ease-out, transform 0.4s ease-out;
         }
@@ -251,6 +252,32 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .chat-messages.loading .loading-spinner {
+            display: block;
+        }
+
+        .chat-messages:not(.loading) .loading-spinner {
+            display: none;
+        }
     </style>
   </head>
   <body>
@@ -267,7 +294,9 @@
             <span class="chat-title">MESSAGES</span>
         </div>
 
-        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="loading-spinner"></div>
+        </div>
 
         <div class="chat-input-container" id="inputContainer">
             <input 
