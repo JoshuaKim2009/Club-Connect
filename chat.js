@@ -260,7 +260,7 @@ async function loadOlderMessages() {
             console.log(messageCount);
             
             if (messageData.createdByUid !== currentUser.uid) {
-                updateMyLastReadTime();
+                markAsRead(messageId);
             }
         }
         
@@ -403,7 +403,7 @@ async function displayMessage(messageId, messageData, showSenderName) {
     console.log(messageCount);
     
     if (messageData.createdByUid !== currentUser.uid) {
-        updateMyLastReadTime();
+        markAsRead(messageId);
     }
 }
 
@@ -641,12 +641,4 @@ function clearPendingImages() {
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
     pendingImagesContainer.innerHTML = '';
-}
-
-async function updateMyLastReadTime() {
-    if (!currentUser || !clubId) return;
-    const memberRef = doc(db, "clubs", clubId, "members", currentUser.uid);
-    await updateDoc(memberRef, {
-        lastReadTimestamp: serverTimestamp()
-    });
 }

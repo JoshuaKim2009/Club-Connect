@@ -1147,19 +1147,52 @@ function updateUnreadMessagesBadge(count) {
     }
 }
 
-async function getUnreadMessageCount(clubId, uid) {
-    // 1. Get the user's last read time
-    const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", uid));
-    const lastRead = memberDoc.data()?.lastReadTimestamp;
+async function getUnreadMessageCount(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot get unread message count: clubId or userId missing.");
+        return 0;
+    }
 
-    if (!lastRead) return 0;
+    let unreadCount = 0;
+    try {
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberDocSnap = await getDoc(memberDocRef);
+        let userJoinedAt = null;
 
-    // 2. Count messages created AFTER that time
-    const messagesRef = collection(db, "clubs", clubId, "messages");
-    const q = query(messagesRef, where("createdAt", ">", lastRead));
-    
-    const snapshot = await getDocs(q);
-    return snapshot.size; // This is 100x cheaper than checking every sub-collection
+        if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
+            userJoinedAt = memberDocSnap.data().joinedAt; 
+        }
+
+        const messagesRef = collection(db, "clubs", clubId, "messages");
+        const messagesSnapshot = await getDocs(messagesRef); 
+
+        for (const msgDoc of messagesSnapshot.docs) {
+            const messageData = msgDoc.data();
+            const messageId = msgDoc.id;
+
+            // skip messages from before they joined
+            if (userJoinedAt && messageData.createdAt && messageData.createdAt.toDate() < userJoinedAt.toDate()) {
+                continue; 
+            }
+
+            // don't count their own messages
+            if (messageData.createdByUid === userId) {
+                continue; 
+            }
+
+            const readByRef = doc(db, "clubs", clubId, "messages", messageId, "readBy", userId);
+            const readBySnap = await getDoc(readByRef);
+
+            if (!readBySnap.exists()) { 
+                unreadCount++;
+            }
+        }
+    } catch (error) {
+        console.error("Error getting unread message count:", error);
+        return 0;
+    }
+    console.log(`User ${userId} has ${unreadCount} unread messages in club ${clubId}.`);
+    return unreadCount;
 }
 
 function setupMessageListeners(clubId, userId) {
