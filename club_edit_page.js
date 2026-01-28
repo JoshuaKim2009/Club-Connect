@@ -327,6 +327,28 @@ async function deleteClub(clubId) {
         await Promise.all(deletePromises);
         console.log(`All announcements and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
 
+        console.log(`Deleting messages subcollection and nested 'readBy' subcollections for club ${clubId}...`);
+        const messagesCollectionRef = collection(db, "clubs", clubId, "messages");
+        const messageDocsSnap = await getDocs(messagesCollectionRef);
+
+        const deleteMessagePromises = [];
+
+        for (const messageDoc of messageDocsSnap.docs) {
+            const messageId = messageDoc.id;
+
+            const readByCollectionRef = collection(db, "clubs", clubId, "messages", messageId, "readBy");
+            const readByDocsSnap = await getDocs(readByCollectionRef);
+            readByDocsSnap.forEach((readByDoc) => {
+                deleteMessagePromises.push(deleteDoc(readByDoc.ref));
+                console.log(`  Marked readBy doc ${readByDoc.id} for message ${messageId} for deletion.`);
+            });
+
+            deleteMessagePromises.push(deleteDoc(messageDoc.ref));
+            console.log(`  Marked message doc ${messageId} for deletion.`);
+        }
+
+        await Promise.all(deleteMessagePromises);
+        console.log(`All messages and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
 
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);

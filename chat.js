@@ -147,11 +147,16 @@ async function loadInitialMessages() {
             previousSenderId = messageData.createdByUid;
         }
         
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 100);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
     } catch (error) {
         console.error("Error loading initial messages:", error);
+    } finally {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+        requestAnimationFrame(() => {
+            chatMessages.classList.add('loaded');
+        });
     }
 }
 
