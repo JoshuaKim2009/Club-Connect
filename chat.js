@@ -236,6 +236,7 @@ async function loadOlderMessages() {
             
             const showSenderName = tempPreviousSenderId !== messageData.createdByUid;
             const messageElement = createMessageElement(messageId, messageData, showSenderName);
+            messageElement.classList.add('show');
             tempFragment.appendChild(messageElement);
             tempPreviousSenderId = messageData.createdByUid;
 
@@ -366,6 +367,11 @@ async function displayMessage(messageId, messageData, showSenderName) {
     
     const messageElement = createMessageElement(messageId, messageData, showSenderName);
     chatMessages.appendChild(messageElement);
+
+    requestAnimationFrame(() => {
+        messageElement.classList.add('show');
+    });
+
     messageCount+=1;
     
     console.log(messageCount);
