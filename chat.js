@@ -490,6 +490,7 @@ async function saveImages() {
     // Just clear pending images without uploading
     clearPendingImages();
     // Optionally, show a message or do nothing else
+    await showAppAlert("Image sending not implemented");
     console.log("Image sending is disabled for now.");
 }
 

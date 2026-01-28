@@ -21,6 +21,8 @@ let currentUser = null;
 let clubId = null;
 let currentUserRole = null; 
 let isEditingAnnouncement = false; 
+const markedAnnouncementsReadInSession = new Set();
+
 
 // const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
 const announcementsContainer = document.getElementById('announcementsContainer'); 
@@ -407,7 +409,7 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
 }
 
 
-async function markAnnouncementAsRead(announcementId) {
+async function __markAnnouncementAsRead(announcementId) {
     if (!currentUser || !clubId) {
         console.warn("Cannot mark announcement as read: user not logged in or clubId missing.");
         return;
@@ -434,5 +436,25 @@ async function markAnnouncementAsRead(announcementId) {
         }
     } catch (error) {
         console.error("Error marking announcement as read:", error);
+    }
+}
+
+async function markAnnouncementAsRead(announcementId) {
+    if (!currentUser || !clubId || markedAnnouncementsReadInSession.has(announcementId)) return;
+
+    markedAnnouncementsReadInSession.add(announcementId);
+
+    const userReadDocRef = doc(db, "clubs", clubId, "announcements", announcementId, "readBy", currentUser.uid);
+
+    try {
+        await setDoc(userReadDocRef, {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "Anonymous",
+            readAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Failed to mark announcement as read:", error);
+        // Remove from cache so it can retry next time
+        markedAnnouncementsReadInSession.delete(announcementId);
     }
 }
