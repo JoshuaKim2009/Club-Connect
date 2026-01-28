@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -26,14 +26,19 @@ let currentUser = null;
 
 let unsubscribeMessages = null;
 
+const PAGE_SIZE = 20;
+let oldestDoc = null;
+let hasMoreMessages = true;
+let isLoadingOlder = false;
+let newestTimestamp = null;
+let previousSenderId = null;
+let loadedMessageIds = new Set();
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
 const chatMessages = document.getElementById('chatMessages');
 const sendButton = document.getElementById('sendButton');
 const backButton = document.getElementById("back-button");
-
-
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -61,12 +66,13 @@ onAuthStateChanged(auth, async (user) => {
 
         console.log("Logged in:", userEmail);
 
-    if (clubId) {
-        role = await getMemberRoleForClub(clubId, currentUser.uid);
-        console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
-    }
-
-
+        if (clubId) {
+            role = await getMemberRoleForClub(clubId, currentUser.uid);
+            console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
+            
+            await loadInitialMessages();
+            startRealtimeListener();
+        }
     } else {
         currentUser = null;
         isLoggedIn = false;
@@ -100,13 +106,249 @@ window.goToClubPage = function() {
 }
 
 if (backButton) {
-  backButton.addEventListener("click", () => {
-    window.goToClubPage();
-  });
+    backButton.addEventListener("click", () => {
+        window.goToClubPage();
+    });
 }
 
-if (clubId) {
-    unsubscribeMessages = listenToMessages();
+async function loadInitialMessages() {
+    if (!clubId || !currentUser) return;
+
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1));
+    
+    try {
+        const snapshot = await getDocs(q);
+        const docs = snapshot.docs;
+        
+        hasMoreMessages = docs.length > PAGE_SIZE;
+        const messageDocs = hasMoreMessages ? docs.slice(0, PAGE_SIZE) : docs;
+        
+        if (messageDocs.length > 0) {
+            oldestDoc = messageDocs[messageDocs.length - 1];
+            newestTimestamp = messageDocs[0].data().createdAt;
+            
+            if (hasMoreMessages && docs.length > PAGE_SIZE) {
+                const nextMessage = docs[PAGE_SIZE].data();
+                previousSenderId = nextMessage.createdByUid;
+            }
+        }
+        
+        const reversedDocs = [...messageDocs].reverse();
+        
+        for (let i = 0; i < reversedDocs.length; i++) {
+            const docSnap = reversedDocs[i];
+            const messageData = docSnap.data();
+            const messageId = docSnap.id;
+            loadedMessageIds.add(messageId);
+            
+            const showSenderName = previousSenderId !== messageData.createdByUid;
+            await displayMessage(messageId, messageData, showSenderName);
+            previousSenderId = messageData.createdByUid;
+        }
+        
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+    } catch (error) {
+        console.error("Error loading initial messages:", error);
+    }
+}
+
+async function loadOlderMessages() {
+    if (!hasMoreMessages || isLoadingOlder || !oldestDoc || !clubId) return;
+    
+    isLoadingOlder = true;
+    const previousScrollHeight = chatMessages.scrollHeight;
+    
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    const q = query(
+        messagesRef, 
+        orderBy("createdAt", "desc"), 
+        startAfter(oldestDoc), 
+        limit(PAGE_SIZE + 1)
+    );
+    
+    try {
+        const snapshot = await getDocs(q);
+        const docs = snapshot.docs;
+        
+        if (docs.length === 0) {
+            hasMoreMessages = false;
+            isLoadingOlder = false;
+            return;
+        }
+        
+        hasMoreMessages = docs.length > PAGE_SIZE;
+        const messageDocs = hasMoreMessages ? docs.slice(0, PAGE_SIZE) : docs;
+        
+        oldestDoc = messageDocs[messageDocs.length - 1];
+        
+        const reversedDocs = [...messageDocs].reverse();
+        const tempFragment = document.createDocumentFragment();
+        
+        let tempPreviousSenderId = null;
+        if (hasMoreMessages && docs.length > PAGE_SIZE) {
+            const nextOlderMessage = docs[PAGE_SIZE].data();
+            tempPreviousSenderId = nextOlderMessage.createdByUid;
+        }
+        
+        for (let i = 0; i < reversedDocs.length; i++) {
+            const docSnap = reversedDocs[i];
+            const messageData = docSnap.data();
+            const messageId = docSnap.id;
+            
+            if (loadedMessageIds.has(messageId)) continue;
+            
+            loadedMessageIds.add(messageId);
+            
+            const showSenderName = tempPreviousSenderId !== messageData.createdByUid;
+            const messageElement = createMessageElement(messageId, messageData, showSenderName);
+            tempFragment.appendChild(messageElement);
+            tempPreviousSenderId = messageData.createdByUid;
+            
+            if (messageData.createdByUid !== currentUser.uid) {
+                await markAsRead(messageId);
+            }
+        }
+        
+        if (tempFragment.children.length > 0) {
+            const existingFirstWrapper = chatMessages.querySelector('.message-wrapper');
+            if (existingFirstWrapper) {
+                const lastLoadedSenderId = tempPreviousSenderId;
+                const existingFirstSenderId = existingFirstWrapper.dataset.senderId;
+                
+                if (lastLoadedSenderId === existingFirstSenderId) {
+                    const existingSenderName = existingFirstWrapper.querySelector('.sender-name');
+                    if (existingSenderName) {
+                        existingSenderName.remove();
+                    }
+                } else if (!existingFirstWrapper.querySelector('.sender-name')) {
+                    const senderName = document.createElement('div');
+                    senderName.className = 'sender-name';
+                    const firstMessageId = existingFirstWrapper.dataset.messageId;
+                    const firstMessageDoc = await getDoc(doc(db, "clubs", clubId, "messages", firstMessageId));
+                    if (firstMessageDoc.exists()) {
+                        senderName.textContent = firstMessageDoc.data().createdByName || "Anonymous";
+                        existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
+                    }
+                }
+            }
+            
+            chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
+            
+            const newScrollHeight = chatMessages.scrollHeight;
+            chatMessages.scrollTop = newScrollHeight - previousScrollHeight;
+        }
+    } catch (error) {
+        console.error("Error loading older messages:", error);
+    } finally {
+        isLoadingOlder = false;
+    }
+}
+
+function startRealtimeListener() {
+    if (!clubId || !currentUser || unsubscribeMessages) return;
+    
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    
+    let q;
+    if (newestTimestamp) {
+        q = query(messagesRef, orderBy("createdAt", "asc"), startAfter(newestTimestamp));
+    } else {
+        q = query(messagesRef, orderBy("createdAt", "asc"));
+    }
+    
+    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+        for (const change of snapshot.docChanges()) {
+            const messageData = change.doc.data();
+            const messageId = change.doc.id;
+            
+            if (change.type === "added") {
+                if (loadedMessageIds.has(messageId)) continue;
+                
+                loadedMessageIds.add(messageId);
+                
+                const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100;
+                
+                const showSenderName = previousSenderId !== messageData.createdByUid;
+                await displayMessage(messageId, messageData, showSenderName);
+                previousSenderId = messageData.createdByUid;
+                
+                if (messageData.createdAt) {
+                    newestTimestamp = messageData.createdAt;
+                }
+                
+                if (isNearBottom || messageData.createdByUid === currentUser.uid) {
+                    setTimeout(() => {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 50);
+                }
+            }
+            if (change.type === "modified") {
+                updateMessage(messageId, messageData);
+            }
+            if (change.type === "removed") {
+                removeMessage(messageId);
+                loadedMessageIds.delete(messageId);
+            }
+        }
+    }, (error) => {
+        console.error("Error:", error);
+    });
+}
+
+function createMessageElement(messageId, messageData, showSenderName) {
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = 'message-wrapper';
+    messageWrapper.dataset.messageId = messageId;
+    messageWrapper.dataset.senderId = messageData.createdByUid;
+    
+    if (messageData.createdByUid === currentUser.uid) {
+        messageWrapper.classList.add('sent');
+    }
+
+    if (showSenderName) {
+        const senderName = document.createElement('div');
+        senderName.className = 'sender-name';
+        senderName.textContent = messageData.createdByName || "Anonymous";
+        messageWrapper.appendChild(senderName);
+    }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    messageDiv.textContent = messageData.message;
+    if (messageData.createdByUid === currentUser.uid) {
+        messageDiv.classList.add('sent');
+    }
+    messageWrapper.appendChild(messageDiv);
+    
+    return messageWrapper;
+}
+
+async function displayMessage(messageId, messageData, showSenderName) {
+    if (!messageData) return;
+    
+    const messageElement = createMessageElement(messageId, messageData, showSenderName);
+    chatMessages.appendChild(messageElement);
+    
+    console.log("New message:", messageId, messageData);
+    
+    if (messageData.createdByUid !== currentUser.uid) {
+        await markAsRead(messageId);
+    }
+}
+
+function updateMessage(messageId, messageData) {
+    console.log("Updated message:", messageId, messageData);
+}
+
+function removeMessage(messageId) {
+    const messageWrapper = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageWrapper) {
+        messageWrapper.remove();
+    }
+    console.log("Removed message:", messageId);
 }
 
 async function saveMessage() {
@@ -142,74 +384,6 @@ async function saveMessage() {
     }
 }
 
-let previousSenderId = null;
-
-function listenToMessages() {
-    const messagesRef = collection(db, "clubs", clubId, "messages");
-    const q = query(messagesRef, orderBy("createdAt", "asc"));
-    
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-        for (const change of snapshot.docChanges()) {
-            const messageData = change.doc.data();
-            const messageId = change.doc.id;
-            
-            if (change.type === "added") {
-                const showSenderName = previousSenderId !== messageData.createdByUid;
-                await displayMessage(messageId, messageData, showSenderName);
-                previousSenderId = messageData.createdByUid;
-            }
-            if (change.type === "modified") {
-                updateMessage(messageId, messageData);
-            }
-            if (change.type === "removed") {
-                removeMessage(messageId);
-            }
-        }
-    }, (error) => {
-        console.error("Error:", error);
-    });
-    
-    return unsubscribe;
-}
-
-async function displayMessage(messageId, messageData, showSenderName) {
-    if (!messageData) return;
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = 'message-wrapper';
-    if (messageData.createdByUid === currentUser.uid) {
-        messageWrapper.classList.add('sent');
-    }
-
-    if (showSenderName) {
-        const senderName = document.createElement('div');
-        senderName.className = 'sender-name';
-        senderName.textContent = messageData.createdByName || "Anonymous";
-        messageWrapper.appendChild(senderName);
-    }
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
-    messageDiv.textContent = messageData.message;
-    if (messageData.createdByUid === currentUser.uid) {
-        messageDiv.classList.add('sent');
-    }
-    messageWrapper.appendChild(messageDiv);
-    chatMessages.appendChild(messageWrapper);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    console.log("New message:", messageId, messageData);
-    if (messageData.createdByUid !== currentUser.uid) {
-        await markAsRead(messageId);
-    }
-}
-
-function updateMessage(messageId, messageData) {
-    console.log("Updated message:", messageId, messageData);
-}
-
-function removeMessage(messageId) {
-    console.log("Removed message:", messageId);
-}
-
 if (sendButton) {
     sendButton.addEventListener('click', saveMessage);
 }
@@ -222,13 +396,13 @@ if (chatInput) {
     });
 }
 
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+if (chatMessages) {
+    chatMessages.addEventListener('scroll', () => {
+        if (chatMessages.scrollTop === 0 && hasMoreMessages && !isLoadingOlder) {
+            loadOlderMessages();
         }
-    }, 100);
-});
+    });
+}
 
 if (chatInput && inputContainer && chatMessages) {
     if (window.visualViewport) {
@@ -263,7 +437,6 @@ if (chatInput && inputContainer && chatMessages) {
         lastHeight = currentHeight;
     });
 }
-
 
 async function markAsRead(ID) {
     if (!currentUser || !clubId) {
