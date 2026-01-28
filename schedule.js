@@ -1273,22 +1273,18 @@ function setupRealtimeUserRsvps() {
 }
 
 async function getAllClubMembers(clubID, useCache = true) {
-    // Step 1: Check if we have a recent cached version
     if (useCache && memberListCache.has(clubID)) {
         const cached = memberListCache.get(clubID);
         const age = Date.now() - cached.timestamp;
         
-        // If cache is less than 5 minutes old, use it!
         if (age < CACHE_DURATION) {
             console.log("Using cached member list");
             return cached.members;
         }
     }
 
-    // Step 2: Cache miss or expired - fetch fresh data
     const members = [];
     try {
-        // Get club document
         const clubDocRef = doc(db, "clubs", clubID);
         const clubDocSnap = await getDoc(clubDocRef);
         let managerUid = null;
@@ -1298,13 +1294,11 @@ async function getAllClubMembers(clubID, useCache = true) {
             managerUid = clubData.managerUid;
             
             if (managerUid) {
-                // Check user cache first for manager
                 let managerName;
                 if (userCache.has(managerUid)) {
                     console.log("Using cached manager data");
                     managerName = userCache.get(managerUid).displayName;
                 } else {
-                    // Not in cache - fetch and store
                     const managerUserDoc = await getDoc(doc(db, "users", managerUid));
                     managerName = managerUserDoc.exists() ? 
                         (managerUserDoc.data().displayName || managerUserDoc.data().name) : 
@@ -1317,11 +1311,9 @@ async function getAllClubMembers(clubID, useCache = true) {
             }
         }
 
-        // Get all members
         const membersCollectionRef = collection(db, "clubs", clubID, "members");
         const membersSnapshot = await getDocs(membersCollectionRef);
         
-        // Step 3: Identify which users we need to fetch
         const uidsToFetch = [];
         for (const memberDoc of membersSnapshot.docs) {
             if (memberDoc.id !== managerUid && !userCache.has(memberDoc.id)) {
@@ -1329,7 +1321,6 @@ async function getAllClubMembers(clubID, useCache = true) {
             }
         }
 
-        // Step 4: Fetch only the uncached users
         console.log(`Fetching ${uidsToFetch.length} uncached user documents`);
         for (const uid of uidsToFetch) {
             const memberUserDoc = await getDoc(doc(db, "users", uid));
@@ -1338,7 +1329,6 @@ async function getAllClubMembers(clubID, useCache = true) {
             }
         }
 
-        // Step 5: Build member list using cached data
         for (const memberDoc of membersSnapshot.docs) {
             const memberData = memberDoc.data();
             if (memberDoc.id !== managerUid) {
@@ -1354,7 +1344,6 @@ async function getAllClubMembers(clubID, useCache = true) {
             }
         }
 
-        // Step 6: Cache the complete member list
         memberListCache.set(clubID, {
             members,
             timestamp: Date.now()

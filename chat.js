@@ -260,7 +260,7 @@ async function loadOlderMessages() {
             console.log(messageCount);
             
             if (messageData.createdByUid !== currentUser.uid) {
-                markAsRead(messageId);
+                updateMyLastReadTime();
             }
         }
         
@@ -403,7 +403,7 @@ async function displayMessage(messageId, messageData, showSenderName) {
     console.log(messageCount);
     
     if (messageData.createdByUid !== currentUser.uid) {
-        markAsRead(messageId);
+        updateMyLastReadTime();
     }
 }
 
@@ -528,29 +528,6 @@ if (chatInput && inputContainer && chatMessages) {
     });
 }
 
-async function __markAsRead(ID) {
-    if (!currentUser || !clubId) {
-        console.warn("User not logged in or clubId missing.");
-        return;
-    }
-
-    const userUid = currentUser.uid;
-    const userName = currentUser.displayName || "Anonymous User";
-    
-    const readByRef = collection(db, "clubs", clubId, "messages", ID, "readBy");
-    const userReadDocRef = doc(readByRef, userUid); 
-
-    const userReadSnap = await getDoc(userReadDocRef);
-
-    if (!userReadSnap.exists()) {
-        await setDoc(userReadDocRef, {
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "Anonymous",
-            readAt: serverTimestamp()
-        });
-    }
-}
-
 async function markAsRead(ID) {
     // 1. Check local memory first (Instant, 0 cost)
     if (!currentUser || !clubId || markedReadInSession.has(ID)) return;
@@ -664,4 +641,12 @@ function clearPendingImages() {
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
     pendingImagesContainer.innerHTML = '';
+}
+
+async function updateMyLastReadTime() {
+    if (!currentUser || !clubId) return;
+    const memberRef = doc(db, "clubs", clubId, "members", currentUser.uid);
+    await updateDoc(memberRef, {
+        lastReadTimestamp: serverTimestamp()
+    });
 }
