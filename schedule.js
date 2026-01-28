@@ -86,7 +86,7 @@ onAuthStateChanged(auth, async (user) => {
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
                     console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
 
-                    await cleanUpEmptyRecurringEvents();
+                    // await cleanUpEmptyRecurringEvents();
 
                     //await fetchAndDisplayEvents(); 
                     setupRealtimeUpdates();
@@ -1138,72 +1138,6 @@ function calculateActiveOccurrences(eventData, exceptions) {
     return activeCount;
 }
 
-
-async function cleanUpEmptyRecurringEvents() {
-    if (!clubId) {
-        console.warn("Cleanup function called without a clubId.");
-        return;
-    }
-
-    const eventsRef = collection(db, "clubs", clubId, "events");
-    const batch = writeBatch(db);
-    let cleanedUpCount = 0;
-    const rsvpDeletionPromises = [];
-
-    try {
-        const querySnapshot = await getDocs(eventsRef);
-        const recurringEventIds = new Set(); 
-
-        
-        querySnapshot.forEach(doc => {
-            const eventData = doc.data();
-            if (eventData.isWeekly) {
-                recurringEventIds.add(doc.id);
-            }
-        });
-
-        
-        for (const doc of querySnapshot.docs) {
-            const eventData = doc.data();
-            const eventId = doc.id;
-
-            if (eventData.isWeekly) {
-                
-                const activeOccurrences = calculateActiveOccurrences(eventData, eventData.exceptions);
-                if (activeOccurrences === 0) {
-                    batch.delete(doc.ref);
-                    cleanedUpCount++;
-                    const rsvpsQuery = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventId));
-                    rsvpDeletionPromises.push(
-                        getDocs(rsvpsQuery).then(rsvpsSnap => {
-                            rsvpsSnap.forEach(rsvpDoc => {
-                                batch.delete(rsvpDoc.ref); 
-                            });
-                        }).catch(error => {
-                            console.error(`Error fetching RSVPs for cleanup of event ${eventId}:`, error);
-                            
-                        })
-                    );
-                }
-            } else if (eventData.parentRecurringEventId) {
-                
-                if (!recurringEventIds.has(eventData.parentRecurringEventId)) {
-                    batch.delete(doc.ref);
-                    cleanedUpCount++;
-                }
-            }
-        }
-
-        if (cleanedUpCount > 0 || rsvpDeletionPromises.length > 0) {
-            await Promise.all(rsvpDeletionPromises);
-            await batch.commit();
-            
-        }
-
-    } catch (error) {
-        console.error("Error during empty event cleanup:", error);
-    }
-}
 
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     if (!currentUser || !clubId) {
