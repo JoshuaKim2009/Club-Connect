@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, limit, startAfter, getDocs }  from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -25,8 +25,7 @@ let clubId = null;
 let currentUser = null;
 
 let unsubscribeMessages = null;
-let allMessages = [];
-let isInitialLoad = true;
+
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
@@ -150,14 +149,14 @@ function listenToMessages() {
     const q = query(messagesRef, orderBy("createdAt", "asc"));
     
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-        let newMessages = [];
-        
         for (const change of snapshot.docChanges()) {
             const messageData = change.doc.data();
             const messageId = change.doc.id;
             
             if (change.type === "added") {
-                newMessages.push({ id: messageId, data: messageData });
+                const showSenderName = previousSenderId !== messageData.createdByUid;
+                await displayMessage(messageId, messageData, showSenderName);
+                previousSenderId = messageData.createdByUid;
             }
             if (change.type === "modified") {
                 updateMessage(messageId, messageData);
@@ -166,11 +165,6 @@ function listenToMessages() {
                 removeMessage(messageId);
             }
         }
-        
-        if (newMessages.length > 0) {
-            allMessages.push(...newMessages);
-            await renderMessages(newMessages);
-        }
     }, (error) => {
         console.error("Error:", error);
     });
@@ -178,73 +172,12 @@ function listenToMessages() {
     return unsubscribe;
 }
 
-async function renderMessages(messagesToRender) {
-    if (isInitialLoad) {
-        const loadingCover = document.getElementById('messages-loading-cover');
-        if (loadingCover) {
-            loadingCover.style.display = 'flex';
-        }
-        
-        for (const msg of messagesToRender) {
-            const { id, data } = msg;
-            if (!data) continue;
-            
-            const msgIndex = allMessages.indexOf(msg);
-            let showName = false;
-            if (msgIndex === 0) {
-                showName = true;
-            } else {
-                const prevMsg = allMessages[msgIndex - 1];
-                if (prevMsg && prevMsg.data.createdByUid !== data.createdByUid) {
-                    showName = true;
-                }
-            }
-            
-            await displayMessage(id, data, showName, true);
-        }
-        
-        if (loadingCover) {
-            loadingCover.style.display = 'none';
-        }
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        isInitialLoad = false;
-    } else {
-        for (const msg of messagesToRender) {
-            const { id, data } = msg;
-            if (!data) continue;
-            
-            const msgIndex = allMessages.indexOf(msg);
-            let showName = false;
-            if (msgIndex === 0) {
-                showName = true;
-            } else {
-                const prevMsg = allMessages[msgIndex - 1];
-                if (prevMsg && prevMsg.data.createdByUid !== data.createdByUid) {
-                    showName = true;
-                }
-            }
-            
-            await displayMessage(id, data, showName, false);
-        }
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-}
-
-async function displayMessage(messageId, messageData, showSenderName, skipAnimation) {
+async function displayMessage(messageId, messageData, showSenderName) {
     if (!messageData) return;
-    
-    const existing = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (existing) return;
-    
     const messageWrapper = document.createElement('div');
     messageWrapper.className = 'message-wrapper';
-    messageWrapper.setAttribute('data-message-id', messageId);
     if (messageData.createdByUid === currentUser.uid) {
         messageWrapper.classList.add('sent');
-    }
-    
-    if (skipAnimation) {
-        messageWrapper.style.animation = 'none';
     }
 
     if (showSenderName) {
@@ -262,7 +195,7 @@ async function displayMessage(messageId, messageData, showSenderName, skipAnimat
     }
     messageWrapper.appendChild(messageDiv);
     chatMessages.appendChild(messageWrapper);
-    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
     console.log("New message:", messageId, messageData);
     if (messageData.createdByUid !== currentUser.uid) {
         await markAsRead(messageId);
