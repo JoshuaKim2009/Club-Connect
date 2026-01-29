@@ -1079,26 +1079,22 @@ async function getUnreadAnnouncementCount(clubId, userId) {
         }
         
         const memberData = memberDocSnap.data();
-        const lastSeenAnnouncements = memberData.lastSeenAnnouncements || memberData.joinedAt || null;
+        // Use lastSeenAnnouncements if it exists, otherwise use joinedAt
+        const cutoffTimestamp = memberData.lastSeenAnnouncements || memberData.joinedAt;
         
-        // If no lastSeenAnnouncements, count all announcements after they joined
-        const announcementsRef = collection(db, "clubs", clubId, "announcements");
-        let q;
-        
-        if (lastSeenAnnouncements) {
-            // Count announcements created after lastSeenAnnouncements, excluding user's own
-            q = query(
-                announcementsRef,
-                where("createdAt", ">", lastSeenAnnouncements),
-                where("createdByUid", "!=", userId)
-            );
-        } else {
-            // If no timestamp, count all announcements excluding user's own
-            q = query(
-                announcementsRef,
-                where("createdByUid", "!=", userId)
-            );
+        // If neither exists, return 0 (safe default - shouldn't happen)
+        if (!cutoffTimestamp) {
+            console.warn(`No timestamp (lastSeenAnnouncements or joinedAt) found for user ${userId} in club ${clubId}. Returning 0.`);
+            return 0;
         }
+        
+        // Count announcements created AFTER the cutoff timestamp, excluding user's own
+        const announcementsRef = collection(db, "clubs", clubId, "announcements");
+        const q = query(
+            announcementsRef,
+            where("createdAt", ">", cutoffTimestamp),
+            where("createdByUid", "!=", userId)
+        );
         
         const countSnapshot = await getCountFromServer(q);
         const unreadCount = countSnapshot.data().count;
@@ -1163,26 +1159,22 @@ async function getUnreadMessageCount(clubId, userId) {
         }
         
         const memberData = memberDocSnap.data();
-        const lastSeenMessages = memberData.lastSeenMessages || memberData.joinedAt || null;
+        // Use lastSeenMessages if it exists, otherwise use joinedAt
+        const cutoffTimestamp = memberData.lastSeenMessages || memberData.joinedAt;
         
-        // If no lastSeenMessages, count all messages after they joined
-        const messagesRef = collection(db, "clubs", clubId, "messages");
-        let q;
-        
-        if (lastSeenMessages) {
-            // Count messages created after lastSeenMessages, excluding user's own messages
-            q = query(
-                messagesRef,
-                where("createdAt", ">", lastSeenMessages),
-                where("createdByUid", "!=", userId)
-            );
-        } else {
-            // If no timestamp, count all messages excluding user's own
-            q = query(
-                messagesRef,
-                where("createdByUid", "!=", userId)
-            );
+        // If neither exists, return 0 (safe default - shouldn't happen)
+        if (!cutoffTimestamp) {
+            console.warn(`No timestamp (lastSeenMessages or joinedAt) found for user ${userId} in club ${clubId}. Returning 0.`);
+            return 0;
         }
+        
+        // Count messages created AFTER the cutoff timestamp, excluding user's own messages
+        const messagesRef = collection(db, "clubs", clubId, "messages");
+        const q = query(
+            messagesRef,
+            where("createdAt", ">", cutoffTimestamp),
+            where("createdByUid", "!=", userId)
+        );
         
         const countSnapshot = await getCountFromServer(q);
         const unreadCount = countSnapshot.data().count;
