@@ -44,6 +44,8 @@ let newestDoc = null;
 const MAX_IMAGES_PER_SEND = 5;
 let pendingImages = [];
 let isDropdownOpen = false;
+let updateLastSeenTimeout = null;
+
 
 let unsubscribeMessages = null;
 
@@ -115,7 +117,7 @@ onAuthStateChanged(auth, async (user) => {
             console.timeEnd('Parallel loading');
             
             // Update lastSeenMessages when entering chat page
-            await updateLastSeenMessages();
+            // await updateLastSeenMessages();
             
             startRealtimeListener();
         } else {
@@ -389,6 +391,7 @@ function createMessageElement(messageId, messageData, showSenderName) {
     return messageWrapper;
 }
 
+
 async function displayMessage(messageId, messageData, showSenderName) {
     if (!messageData) return;
     
@@ -403,8 +406,12 @@ async function displayMessage(messageId, messageData, showSenderName) {
     
     console.log(messageCount);
     
-    // Update lastSeenMessages when displaying any message
-    await updateLastSeenMessages();
+    if (updateLastSeenTimeout) {
+        clearTimeout(updateLastSeenTimeout);
+    }
+    updateLastSeenTimeout = setTimeout(() => {
+        updateLastSeenMessages();
+    }, 500);
 }
 
 function updateMessage(messageId, messageData) {
@@ -441,8 +448,7 @@ async function saveMessage() {
     try {
         await batch.commit();
         
-        // Update lastSeenMessages after sending
-        await updateLastSeenMessages();
+        //await updateLastSeenMessages();
         chatInput.value = "";
     } catch (error) {
         console.error("Failed to send message:", error);
@@ -525,6 +531,7 @@ if (chatInput && inputContainer && chatMessages) {
 }
 
 async function updateLastSeenMessages() {
+    console.log("called update Last seen");
     if (!currentUser || !clubId) return;
 
     const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
