@@ -622,6 +622,14 @@ if (imageUploadOption) {
     });
 }
 
+if (pollOption) {
+    pollOption.addEventListener('click', () => {
+        isDropdownOpen = false;
+        uploadDropdown.classList.remove('show');
+        createPollEditCard();
+    });
+}
+
 if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
@@ -642,6 +650,11 @@ if (imageFileInput) {
         imageFileInput.value = '';
     });
 }
+
+function createPollEditCard(){
+    showAppAlert("adding soon");
+}
+
 
 function addPendingImagePreview(previewUrl, index) {
     const wrapper = document.createElement('div');
