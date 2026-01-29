@@ -55,8 +55,6 @@ let hasMoreMessages = true;
 let isLoadingOlder = false;
 let previousSenderId = null;
 let loadedMessageIds = new Set();
-const QUICK_REACTION_EMOJIS = ['👍', '👎', '❤️', '😭', '💀', '🔥'];
-let activeReactionPicker = null;
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
@@ -67,6 +65,7 @@ const backButton = document.getElementById("back-button");
 const addButton = document.getElementById('addButton');
 const uploadDropdown = document.getElementById('uploadDropdown');
 const imageUploadOption = document.getElementById('imageUploadOption');
+const pollOption = document.getElementById('pollOption');
 const imageFileInput = document.getElementById('imageFileInput');
 const pendingImagesContainer = document.getElementById('pendingImagesContainer');
 
@@ -117,7 +116,6 @@ onAuthStateChanged(auth, async (user) => {
             // await updateLastSeenMessages();
             
             startRealtimeListener();
-            startReactionListener();
         } else {
             window.location.href = 'your_clubs.html';
         }
@@ -342,25 +340,6 @@ function startRealtimeListener() {
     });
 }
 
-function startReactionListener() {
-    if (!clubId || !currentUser) return;
-    
-    const messagesRef = collection(db, "clubs", clubId, "messages");
-    
-    const q = query(messagesRef, orderBy("createdAt", "desc"));
-    
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            const messageId = change.doc.id;
-            const messageData = change.doc.data();
-            
-            if (change.type === "modified" && loadedMessageIds.has(messageId)) {
-                updateMessage(messageId, messageData);
-            }
-        });
-    }, { includeMetadataChanges: false });
-}
-
 function createMessageElement(messageId, messageData, showSenderName) {
     const messageWrapper = document.createElement('div');
     messageWrapper.className = 'message-wrapper';
@@ -402,33 +381,9 @@ function createMessageElement(messageId, messageData, showSenderName) {
             messageDiv.classList.add('sent');
         }
         
-        let pressTimer;
         
-        messageDiv.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(() => {
-                showReactionPicker(messageId, messageData, messageDiv);
-            }, 500);
-        });
-        
-        messageDiv.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-        });
-        
-        messageDiv.addEventListener('touchmove', () => {
-            clearTimeout(pressTimer);
-        });
-        
-        messageDiv.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            showReactionPicker(messageId, messageData, messageDiv);
-        });
         
         messageWrapper.appendChild(messageDiv);
-    }
-    
-    if (messageData.reactions && Object.keys(messageData.reactions).length > 0) {
-        const reactionsDiv = createReactionsDisplay(messageId, messageData.reactions);
-        messageWrapper.appendChild(reactionsDiv);
     }
     
     return messageWrapper;
@@ -460,16 +415,6 @@ async function displayMessage(messageId, messageData, showSenderName) {
 function updateMessage(messageId, messageData) {
     const messageWrapper = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
     if (!messageWrapper) return;
-    
-    const oldReactions = messageWrapper.querySelector('.reactions-container');
-    if (oldReactions) oldReactions.remove();
-    
-    if (messageData.reactions && Object.keys(messageData.reactions).length > 0) {
-        const reactionsDiv = createReactionsDisplay(messageId, messageData.reactions);
-        messageWrapper.appendChild(reactionsDiv);
-    }
-    
-    console.log("Updated message:", messageId, messageData);
 }
 
 function removeMessage(messageId) {
@@ -692,228 +637,4 @@ function clearPendingImages() {
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
     pendingImagesContainer.innerHTML = '';
-}
-
-
-
-
-
-
-function showReactionPicker(messageId, messageData, targetElement) {
-    if (activeReactionPicker) {
-        activeReactionPicker.remove();
-        activeReactionPicker = null;
-    }
-    
-    const picker = document.createElement('div');
-    picker.className = 'reaction-picker';
-    
-    QUICK_REACTION_EMOJIS.forEach(emoji => {
-        const btn = document.createElement('button');
-        btn.className = 'reaction-btn';
-        btn.textContent = emoji;
-        btn.addEventListener('click', async () => {
-            await addReaction(messageId, emoji);
-            picker.remove();
-            activeReactionPicker = null;
-        });
-        picker.appendChild(btn);
-    });
-    
-    const moreBtn = document.createElement('button');
-    moreBtn.className = 'reaction-btn more-btn';
-    moreBtn.textContent = '+';
-    moreBtn.addEventListener('click', () => {
-        showFullEmojiPicker(messageId, targetElement);
-        picker.remove();
-        activeReactionPicker = null;
-    });
-    picker.appendChild(moreBtn);
-    
-    const rect = targetElement.getBoundingClientRect();
-    const pickerWidth = 280;
-    
-    picker.style.position = 'fixed';
-    
-    let top = rect.top - 50;
-    
-    const isSentMessage = targetElement.classList.contains('sent');
-    let left;
-    
-    if (isSentMessage) {
-        left = rect.right - pickerWidth - 22;
-    } else {
-        left = rect.left;
-    }
-    
-    if (top < 10) {
-        top = rect.bottom + 10;
-    }
-    
-    if (left + pickerWidth > window.innerWidth - 10) {
-        left = window.innerWidth - pickerWidth - 10;
-    }
-    
-    if (left < 10) {
-        left = 10;
-    }
-    
-    picker.style.top = `${top}px`;
-    picker.style.left = `${left}px`;
-    
-    document.body.appendChild(picker);
-    activeReactionPicker = picker;
-    
-    setTimeout(() => {
-        document.addEventListener('click', function closePickerHandler(e) {
-            if (!picker.contains(e.target)) {
-                picker.remove();
-                activeReactionPicker = null;
-                document.removeEventListener('click', closePickerHandler);
-            }
-        });
-    }, 100);
-}
-
-function showFullEmojiPicker(messageId, targetElement) {
-    if (activeReactionPicker) {
-        activeReactionPicker.remove();
-        activeReactionPicker = null;
-    }
-    
-    const pickerContainer = document.createElement('div');
-    pickerContainer.className = 'emoji-picker-container';
-    
-    const emojiPicker = document.createElement('emoji-picker');
-    
-    emojiPicker.addEventListener('emoji-click', async (event) => {
-        const selectedEmoji = event.detail.unicode;
-        await addReaction(messageId, selectedEmoji);
-        pickerContainer.remove();
-        activeReactionPicker = null;
-    });
-    
-    pickerContainer.appendChild(emojiPicker);
-    
-    const rect = targetElement.getBoundingClientRect();
-    pickerContainer.style.position = 'fixed';
-    
-    const pickerHeight = 400;
-    const pickerWidth = 350;
-    
-    let top = rect.top - pickerHeight - 10;
-    
-    if (top < 10) {
-        top = rect.bottom + 10;
-        
-        if (top + pickerHeight > window.innerHeight - 10) {
-            top = Math.max(10, (window.innerHeight - pickerHeight) / 2);
-        }
-    }
-    
-    const isSentMessage = targetElement.classList.contains('sent');
-    let left;
-    
-    if (isSentMessage) {
-        left = rect.right - pickerWidth;
-    } else {
-        left = rect.left;
-    }
-    
-    if (left + pickerWidth > window.innerWidth - 10) {
-        left = window.innerWidth - pickerWidth - 10;
-    }
-    
-    if (left < 10) {
-        left = 10;
-    }
-    
-    pickerContainer.style.top = `${top}px`;
-    pickerContainer.style.left = `${left}px`;
-    
-    document.body.appendChild(pickerContainer);
-    activeReactionPicker = pickerContainer;
-    
-    setTimeout(() => {
-        document.addEventListener('click', function closePickerHandler(e) {
-            if (!pickerContainer.contains(e.target) && !targetElement.contains(e.target)) {
-                pickerContainer.remove();
-                activeReactionPicker = null;
-                document.removeEventListener('click', closePickerHandler);
-            }
-        }, {once: true});
-    }, 100);
-}
-
-async function addReaction(messageId, emoji) {
-    if (!currentUser || !clubId) return;
-    
-    try {
-        const messageRef = doc(db, "clubs", clubId, "messages", messageId);
-        const messageSnap = await getDoc(messageRef);
-        
-        if (!messageSnap.exists()) return;
-        
-        const messageData = messageSnap.data();
-        const reactions = messageData.reactions || {};
-        
-        if (reactions[emoji] && reactions[emoji].users && reactions[emoji].users.includes(currentUser.uid)) {
-            reactions[emoji].users = reactions[emoji].users.filter(uid => uid !== currentUser.uid);
-            
-            if (reactions[emoji].users.length === 0) {
-                delete reactions[emoji];
-            }
-        } else {
-            if (!reactions[emoji]) {
-                const maxOrder = Object.values(reactions).reduce((max, reaction) => {
-                    return Math.max(max, reaction.order || 0);
-                }, 0);
-                
-                reactions[emoji] = {
-                    users: [currentUser.uid],
-                    order: maxOrder + 1
-                };
-            } else {
-                reactions[emoji].users.push(currentUser.uid);
-            }
-        }
-        
-        await updateDoc(messageRef, { reactions });
-    } catch (error) {
-        console.error("Error adding reaction:", error);
-    }
-}
-
-function createReactionsDisplay(messageId, reactions) {
-    const reactionsContainer = document.createElement('div');
-    reactionsContainer.className = 'reactions-container';
-    
-    const sortedReactions = Object.entries(reactions).sort((a, b) => {
-        const orderA = a[1].order || 0;
-        const orderB = b[1].order || 0;
-        return orderA - orderB;
-    });
-    
-    sortedReactions.forEach(([emoji, reactionData]) => {
-        const uids = reactionData.users || [];
-        
-        if (uids.length === 0) return;
-        
-        const reactionBubble = document.createElement('button');
-        reactionBubble.className = 'reaction-bubble';
-        
-        if (uids.includes(currentUser.uid)) {
-            reactionBubble.classList.add('user-reacted');
-        }
-        
-        reactionBubble.innerHTML = `${emoji} ${uids.length}`;
-        
-        reactionBubble.addEventListener('click', async () => {
-            await addReaction(messageId, emoji);
-        });
-        
-        reactionsContainer.appendChild(reactionBubble);
-    });
-    
-    return reactionsContainer;
 }
