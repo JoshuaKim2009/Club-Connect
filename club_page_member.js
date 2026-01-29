@@ -33,10 +33,9 @@ const clubId = getUrlParameter('id');
 
 const clubPageTitle = document.getElementById('clubPageTitle');
 const clubDetailsDiv = document.getElementById('clubDetails');
-const membersContainer = document.getElementById('membersContainer'); 
 
-var managerName = "";
-var managerUid = "";
+
+
 var myName = "";
 var myUid = "";
 var myCurrentRoleInClub = "";
@@ -116,15 +115,12 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                     }
                 }
 
-                managerName = actualManagerName; 
-                managerUid = actualManagerUid;   
-
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
 
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
                         <p>Manager | ${actualManagerName}</p>
-                        <p>Your Role | ${capitalizeFirstLetter(myCurrentRoleInClub)}</p> <!-- Display user's role -->
+                        <p>Your Role | ${capitalizeFirstLetter(myCurrentRoleInClub)}</p>
                         <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
@@ -136,39 +132,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                     });
                 }
 
-                
-                const approvedMemberUids = clubData.memberUIDs || [];
-                const approvedMemberNames = [];
-                const approvedMemberIds = [];
-                const approvedMemberRoles = [];
-
-                
-                const memberRolePromises = approvedMemberUids.map(memberUid => getMemberRoleForClub(id, memberUid));
-                const memberRoles = await Promise.all(memberRolePromises);
-
-                for (let i = 0; i < approvedMemberUids.length; i++) {
-                    const memberUid = approvedMemberUids[i];
-                    const userRef = doc(db, "users", memberUid);
-                    const userSnap = await getDoc(userRef, { source: 'server' });
-
-                    if (userSnap.exists()) {
-                        const userData = userSnap.data();
-                        approvedMemberNames.push(userData.name || `User (${memberUid})`);
-                        approvedMemberIds.push(memberUid);
-                        approvedMemberRoles.push(memberRoles[i] || 'member');
-                    } else {
-                        console.warn(`User document not found for approved member UID: ${memberUid}`);
-                        approvedMemberNames.push(`Unknown User (${memberUid})`);
-                        approvedMemberIds.push(memberUid);
-                        approvedMemberRoles.push(memberRoles[i] || 'member');
-                    }
-                }
-                
-                
                 await fetchAndDisplayUpcomingEvent(id, animateCardEntry); 
-                const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
-                displayMembersForMemberPage(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
-
 
             } else {
                 clubPageTitle.textContent = "Access Denied";
@@ -243,50 +207,6 @@ async function copyToClipboard(originalCode, buttonElement) {
 }
 
 
-
-function displayMembersForMemberPage(memberNames, memberUids, memberRoles) {
-    if (!membersContainer) {
-        console.error("HTML element with id 'membersContainer' not found. Please add it to your HTML.");
-        return;
-    }
-
-    membersContainer.innerHTML = ""; 
-   
-    const title = document.createElement("h3");
-    title.textContent = `CLUB MEMBERS (${memberNames.length})`; 
-    membersContainer.appendChild(title);
-
-    if (memberNames.length === 0) {
-        const noMembers = document.createElement("p");
-        noMembers.className = 'fancy-label'; 
-        noMembers.textContent = "No members in this club yet.";
-        membersContainer.appendChild(noMembers);
-        return;
-    }
-
-    memberNames.forEach((name, index) => {
-        const memberUid = memberUids[index];
-        const memberRole = memberRoles[index];
-
-        const memberCardDiv = document.createElement("div");
-        memberCardDiv.className = "member-card"; 
-
-        const nameDisplayDiv = document.createElement("div");
-        let displayName = name;
-        displayName = `${name}`;
-
-        nameDisplayDiv.innerHTML = `${displayName} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
-        nameDisplayDiv.className = "member-name-display";
-        memberCardDiv.appendChild(nameDisplayDiv);
-        
-        // NO ACTION BUTTONS FOR REGULAR MEMBERS CUZ THEY CAN"T 
-
-        membersContainer.appendChild(memberCardDiv);
-    });
-}
-
-
-
 function formatTime(timeString) {
     if (!timeString) return 'N/A';
     try {
@@ -359,21 +279,7 @@ function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
     return cardDiv;
 }
 
-function sortMembersAlphabetically(names, uids, roles = null) {
-    const combinedMembers = names.map((name, index) => ({
-        name: name,
-        uid: uids[index],
-        role: roles ? roles[index] : undefined 
-    }));
 
-    combinedMembers.sort((a, b) => a.name.localeCompare(b.name));
-
-    const sortedNames = combinedMembers.map(member => member.name);
-    const sortedUids = combinedMembers.map(member => member.uid);
-    const sortedRoles = roles ? combinedMembers.map(member => member.role) : null;
-
-    return { names: sortedNames, uids: sortedUids, roles: sortedRoles };
-}
 
 async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = true) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
@@ -739,3 +645,10 @@ function setupMessageListeners(clubId, userId) {
         console.error("Error listening to messages collection:", error);
     });
 }
+
+
+const membersButton = document.getElementById("view-members-button");
+
+membersButton.addEventListener('click', async () => {
+    window.location.href = `members.html?clubId=${clubId}`;
+});
