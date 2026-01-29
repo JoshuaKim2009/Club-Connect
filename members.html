@@ -12,17 +12,55 @@
     <link href="styles.css?v=4" rel="stylesheet" />
     
     <style>
-      body {
-        padding-bottom: 100px; 
-      }
-      body {
-          font-family: var(--primary-font-family);
-          padding-top: env(safe-area-inset-top);
-          background: var(--header-bg-start);
-      }
-      #page-title{
-        margin-top: 110px;
-      }
+        body {
+            padding-bottom: 100px; 
+        }
+        body {
+            font-family: var(--primary-font-family);
+            padding-top: env(safe-area-inset-top);
+            background: var(--header-bg-start);
+        }
+        #page-title{
+            margin-top: 110px;
+        }
+        #dynamic-sections-wrapper {
+            position: relative;
+            min-height: 200px;
+        }
+
+        #pendingRequestsContainer, 
+        #membersContainer {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #dynamic-sections-wrapper.loaded #pendingRequestsContainer,
+        #dynamic-sections-wrapper.loaded #membersContainer {
+            opacity: 1;
+        }
+
+        #dynamic-sections-wrapper.loaded #loading-spinner {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
     </style>
     
   </head>
@@ -38,13 +76,14 @@
     
 
     <div id="dynamic-sections-wrapper">
-      <div id="pendingRequestsContainer" class="fancy-black-label">
-        <p class="fancy-label"></p>
-      </div>
+        <div id="loading-spinner" class="loading-spinner"></div>
+        <div id="pendingRequestsContainer" class="fancy-black-label">
+            <p class="fancy-label"></p>
+        </div>
 
-      <div id="membersContainer" class="fancy-black-label">
-        <p class="fancy-label"></p>
-      </div>
+        <div id="membersContainer" class="fancy-black-label">
+            <p class="fancy-label"></p>
+        </div>
     </div>
 
     <div id="popup-overlay" style="display: none;"></div>

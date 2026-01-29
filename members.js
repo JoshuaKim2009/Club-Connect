@@ -29,6 +29,7 @@ const memberNameForRoleDisplay = document.getElementById('member-name-for-role')
 const roleSelect = document.getElementById('role-select');
 const submitRoleChangeButton = document.getElementById('submit-role-change');
 const cancelRoleChangeButton = document.getElementById('cancel-role-change');
+const dynamicWrapper = document.getElementById('dynamic-sections-wrapper');
 
 let currentMemberRoleInPopup = null;
 let selectedMemberUid = null;
@@ -565,6 +566,7 @@ submitRoleChangeButton.addEventListener('click', async () => {
 
 
 async function fetchAndDisplayMembers() {
+    dynamicWrapper.classList.remove('loaded');
     try {
         const clubRef = doc(db, "clubs", clubId);
         const clubSnap = await getDoc(clubRef, { source: 'server' });
@@ -661,9 +663,12 @@ async function fetchAndDisplayMembers() {
         const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
         displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
 
+        dynamicWrapper.classList.add('loaded');
+
     } catch (error) {
         console.error("Error fetching members:", error);
         membersContainer.innerHTML = "<p class='fancy-label'>Error loading members.</p>";
+        dynamicWrapper.classList.add('loaded');
     }
 }
 
