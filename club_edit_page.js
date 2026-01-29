@@ -1,3 +1,4 @@
+//club_edit_page.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
@@ -304,51 +305,31 @@ async function deleteClub(clubId) {
         await Promise.all(deleteRsvpSubcollectionPromises);
         console.log(`All occurrenceRsvps subcollection documents for club ${clubId} deleted.`);
 
-        console.log(`Deleting announcements subcollection and nested 'readBy' subcollections for club ${clubId}...`);
+        console.log(`Deleting announcements subcollection for club ${clubId}...`);
         const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
         const announcementDocsSnap = await getDocs(announcementsCollectionRef);
 
-        const deletePromises = [];
+        const deleteAnnouncementPromises = [];
+        announcementDocsSnap.forEach((announcementDoc) => {
+            deleteAnnouncementPromises.push(deleteDoc(announcementDoc.ref));
+            console.log(`  Marked announcement doc ${announcementDoc.id} for deletion.`);
+        });
 
-        for (const announcementDoc of announcementDocsSnap.docs) {
-            const announcementId = announcementDoc.id;
+        await Promise.all(deleteAnnouncementPromises);
+        console.log(`All announcements for club ${clubId} deleted.`);
 
-            const readByCollectionRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
-            const readByDocsSnap = await getDocs(readByCollectionRef);
-            readByDocsSnap.forEach((readByDoc) => {
-                deletePromises.push(deleteDoc(readByDoc.ref));
-                console.log(`  Marked readBy doc ${readByDoc.id} for announcement ${announcementId} for deletion.`);
-            });
-
-            deletePromises.push(deleteDoc(announcementDoc.ref));
-            console.log(`  Marked announcement doc ${announcementId} for deletion.`);
-        }
-
-        await Promise.all(deletePromises);
-        console.log(`All announcements and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
-
-        console.log(`Deleting messages subcollection and nested 'readBy' subcollections for club ${clubId}...`);
+        console.log(`Deleting messages subcollection for club ${clubId}...`);
         const messagesCollectionRef = collection(db, "clubs", clubId, "messages");
         const messageDocsSnap = await getDocs(messagesCollectionRef);
 
         const deleteMessagePromises = [];
-
-        for (const messageDoc of messageDocsSnap.docs) {
-            const messageId = messageDoc.id;
-
-            const readByCollectionRef = collection(db, "clubs", clubId, "messages", messageId, "readBy");
-            const readByDocsSnap = await getDocs(readByCollectionRef);
-            readByDocsSnap.forEach((readByDoc) => {
-                deleteMessagePromises.push(deleteDoc(readByDoc.ref));
-                console.log(`  Marked readBy doc ${readByDoc.id} for message ${messageId} for deletion.`);
-            });
-
+        messageDocsSnap.forEach((messageDoc) => {
             deleteMessagePromises.push(deleteDoc(messageDoc.ref));
-            console.log(`  Marked message doc ${messageId} for deletion.`);
-        }
+            console.log(`  Marked message doc ${messageDoc.id} for deletion.`);
+        });
 
         await Promise.all(deleteMessagePromises);
-        console.log(`All messages and their nested 'readBy' subcollection documents for club ${clubId} deleted.`);
+        console.log(`All messages for club ${clubId} deleted.`);
 
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);

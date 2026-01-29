@@ -1,5 +1,6 @@
+//club_page_manager.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction, query, orderBy, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, setDoc, deleteDoc, serverTimestamp, runTransaction, query, orderBy, where, getDocs, onSnapshot, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
@@ -1068,47 +1069,46 @@ async function getUnreadAnnouncementCount(clubId, userId) {
         return 0;
     }
 
-    let unreadCount = 0;
     try {
         const memberDocRef = doc(db, "clubs", clubId, "members", userId);
         const memberDocSnap = await getDoc(memberDocRef);
-        let userJoinedAt = null;
-
-        if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
-            userJoinedAt = memberDocSnap.data().joinedAt; 
-        } else {
-            console.warn(`User ${userId} does not have a joinedAt timestamp for club ${clubId}. Counting all announcements.`);
-            
+        
+        if (!memberDocSnap.exists()) {
+            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+            return 0;
         }
-
+        
+        const memberData = memberDocSnap.data();
+        const lastSeenAnnouncements = memberData.lastSeenAnnouncements || memberData.joinedAt || null;
+        
+        // If no lastSeenAnnouncements, count all announcements after they joined
         const announcementsRef = collection(db, "clubs", clubId, "announcements");
-        const announcementsSnapshot = await getDocs(announcementsRef); 
-
-        for (const annDoc of announcementsSnapshot.docs) {
-            const announcementData = annDoc.data();
-            const announcementId = annDoc.id;
-
-            if (userJoinedAt && announcementData.createdAt && announcementData.createdAt.toDate() < userJoinedAt.toDate()) {
-                continue; 
-            }
-
-            if (announcementData.createdByUid === userId) {
-                continue; 
-            }
-
-            const readByRef = doc(db, "clubs", clubId, "announcements", announcementId, "readBy", userId);
-            const readBySnap = await getDoc(readByRef);
-
-            if (!readBySnap.exists()) { 
-                unreadCount++;
-            }
+        let q;
+        
+        if (lastSeenAnnouncements) {
+            // Count announcements created after lastSeenAnnouncements, excluding user's own
+            q = query(
+                announcementsRef,
+                where("createdAt", ">", lastSeenAnnouncements),
+                where("createdByUid", "!=", userId)
+            );
+        } else {
+            // If no timestamp, count all announcements excluding user's own
+            q = query(
+                announcementsRef,
+                where("createdByUid", "!=", userId)
+            );
         }
+        
+        const countSnapshot = await getCountFromServer(q);
+        const unreadCount = countSnapshot.data().count;
+        
+        console.log(`User ${userId} has ${unreadCount} unread announcements in club ${clubId}.`);
+        return unreadCount;
     } catch (error) {
         console.error("Error getting unread announcement count:", error);
         return 0;
     }
-    console.log(`User ${userId} has ${unreadCount} unread announcements in club ${clubId}.`);
-    return unreadCount;
 }
 
 
@@ -1153,46 +1153,46 @@ async function getUnreadMessageCount(clubId, userId) {
         return 0;
     }
 
-    let unreadCount = 0;
     try {
         const memberDocRef = doc(db, "clubs", clubId, "members", userId);
         const memberDocSnap = await getDoc(memberDocRef);
-        let userJoinedAt = null;
-
-        if (memberDocSnap.exists() && memberDocSnap.data().joinedAt) {
-            userJoinedAt = memberDocSnap.data().joinedAt; 
+        
+        if (!memberDocSnap.exists()) {
+            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+            return 0;
         }
-
+        
+        const memberData = memberDocSnap.data();
+        const lastSeenMessages = memberData.lastSeenMessages || memberData.joinedAt || null;
+        
+        // If no lastSeenMessages, count all messages after they joined
         const messagesRef = collection(db, "clubs", clubId, "messages");
-        const messagesSnapshot = await getDocs(messagesRef); 
-
-        for (const msgDoc of messagesSnapshot.docs) {
-            const messageData = msgDoc.data();
-            const messageId = msgDoc.id;
-
-            // skip messages from before they joined
-            if (userJoinedAt && messageData.createdAt && messageData.createdAt.toDate() < userJoinedAt.toDate()) {
-                continue; 
-            }
-
-            // don't count their own messages
-            if (messageData.createdByUid === userId) {
-                continue; 
-            }
-
-            const readByRef = doc(db, "clubs", clubId, "messages", messageId, "readBy", userId);
-            const readBySnap = await getDoc(readByRef);
-
-            if (!readBySnap.exists()) { 
-                unreadCount++;
-            }
+        let q;
+        
+        if (lastSeenMessages) {
+            // Count messages created after lastSeenMessages, excluding user's own messages
+            q = query(
+                messagesRef,
+                where("createdAt", ">", lastSeenMessages),
+                where("createdByUid", "!=", userId)
+            );
+        } else {
+            // If no timestamp, count all messages excluding user's own
+            q = query(
+                messagesRef,
+                where("createdByUid", "!=", userId)
+            );
         }
+        
+        const countSnapshot = await getCountFromServer(q);
+        const unreadCount = countSnapshot.data().count;
+        
+        console.log(`User ${userId} has ${unreadCount} unread messages in club ${clubId}.`);
+        return unreadCount;
     } catch (error) {
         console.error("Error getting unread message count:", error);
         return 0;
     }
-    console.log(`User ${userId} has ${unreadCount} unread messages in club ${clubId}.`);
-    return unreadCount;
 }
 
 function setupMessageListeners(clubId, userId) {

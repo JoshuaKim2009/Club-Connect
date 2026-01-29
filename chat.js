@@ -1,5 +1,6 @@
+//chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
@@ -39,7 +40,6 @@ let userName = "";
 let role = null;
 let clubId = null;
 let currentUser = null;
-const markedReadInSession = new Set();
 let newestDoc = null;
 const MAX_IMAGES_PER_SEND = 5;
 let pendingImages = [];
@@ -113,6 +113,9 @@ onAuthStateChanged(auth, async (user) => {
             [role] = await Promise.all([rolePromise, messagesPromise]);
             
             console.timeEnd('Parallel loading');
+            
+            // Update lastSeenMessages when entering chat page
+            await updateLastSeenMessages();
             
             startRealtimeListener();
         } else {
@@ -259,9 +262,7 @@ async function loadOlderMessages() {
             messageCount+=1;
             console.log(messageCount);
             
-            if (messageData.createdByUid !== currentUser.uid) {
-                markAsRead(messageId);
-            }
+            
         }
         
         if (tempFragment.children.length > 0) {
@@ -402,9 +403,8 @@ async function displayMessage(messageId, messageData, showSenderName) {
     
     console.log(messageCount);
     
-    if (messageData.createdByUid !== currentUser.uid) {
-        markAsRead(messageId);
-    }
+    // Update lastSeenMessages when displaying any message
+    await updateLastSeenMessages();
 }
 
 function updateMessage(messageId, messageData) {
@@ -438,15 +438,11 @@ async function saveMessage() {
 
     batch.set(newMessageRef, messageData);
 
-    const readStatusRef = doc(db, "clubs", clubId, "messages", newMessageRef.id, "readBy", currentUser.uid);
-    batch.set(readStatusRef, {
-        userId: currentUser.uid,
-        userName: currentUser.displayName || "Anonymous",
-        readAt: serverTimestamp()
-    });
-
     try {
         await batch.commit();
+        
+        // Update lastSeenMessages after sending
+        await updateLastSeenMessages();
         chatInput.value = "";
     } catch (error) {
         console.error("Failed to send message:", error);
@@ -528,26 +524,18 @@ if (chatInput && inputContainer && chatMessages) {
     });
 }
 
-async function markAsRead(ID) {
-    // 1. Check local memory first (Instant, 0 cost)
-    if (!currentUser || !clubId || markedReadInSession.has(ID)) return;
+async function updateLastSeenMessages() {
+    if (!currentUser || !clubId) return;
 
-    // 2. Mark it locally so we never process this ID again this session
-    markedReadInSession.add(ID);
-
-    const userReadDocRef = doc(db, "clubs", clubId, "messages", ID, "readBy", currentUser.uid);
+    const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
 
     try {
-        // 3. Just perform the write. 
-        // setDoc with these arguments acts as "create or overwrite"
-        await setDoc(userReadDocRef, {
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "Anonymous",
-            readAt: serverTimestamp()
+        await updateDoc(memberDocRef, {
+            lastSeenMessages: serverTimestamp()
         });
-    } catch (e) {
-        // If write fails, remove from set so we can retry later
-        markedReadInSession.delete(ID);
+        console.log("Updated lastSeenMessages timestamp");
+    } catch (error) {
+        console.error("Failed to update lastSeenMessages:", error);
     }
 }
 

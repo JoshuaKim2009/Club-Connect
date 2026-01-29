@@ -1,5 +1,6 @@
+//announcements.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -21,7 +22,6 @@ let currentUser = null;
 let clubId = null;
 let currentUserRole = null; 
 let isEditingAnnouncement = false; 
-const markedAnnouncementsReadInSession = new Set();
 
 
 // const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
@@ -225,13 +225,9 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             const newDocRef = await addDoc(announcementsRef, announcementDataToSave); 
             const newAnnouncementId = newDocRef.id; 
 
-            
-            await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
-                userId: currentUser.uid,
-                userName: currentUser.displayName || "Anonymous",
-                readAt: serverTimestamp()
-            });
-            console.log(`Creator ${currentUser.displayName} (${currentUser.uid}) marked announcement ${newAnnouncementId} as read upon creation.`);
+            // Update lastSeenAnnouncements after creating
+            await updateLastSeenAnnouncements();
+            console.log(`Creator ${currentUser.displayName} (${currentUser.uid}) updated lastSeenAnnouncements after creating announcement ${newAnnouncementId}.`);
 
             await showAppAlert("New announcement added successfully!");
         }
@@ -341,7 +337,7 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
         }
     }
 
-    markAnnouncementAsRead(announcementId);
+    updateLastSeenAnnouncements();
 
     return cardDiv;
 }
@@ -409,52 +405,17 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
 }
 
 
-async function __markAnnouncementAsRead(announcementId) {
-    if (!currentUser || !clubId) {
-        console.warn("Cannot mark announcement as read: user not logged in or clubId missing.");
-        return;
-    }
+async function updateLastSeenAnnouncements() {
+    if (!currentUser || !clubId) return;
 
-    const userUid = currentUser.uid;
-    const userName = currentUser.displayName || "Anonymous User";
-    
-    try {
-        const readByRef = collection(db, "clubs", clubId, "announcements", announcementId, "readBy");
-        const userReadDocRef = doc(readByRef, userUid); 
-
-        const userReadSnap = await getDoc(userReadDocRef);
-
-        if (!userReadSnap.exists()) {
-            await setDoc(userReadDocRef, {
-                userId: userUid,
-                userName: userName,
-                readAt: serverTimestamp() 
-            });
-            console.log(`User ${userName} (${userUid}) marked announcement ${announcementId} as read.`);
-        } else {
-            console.log(`User ${userName} (${userUid}) has already read announcement ${announcementId}. No update needed.`);
-        }
-    } catch (error) {
-        console.error("Error marking announcement as read:", error);
-    }
-}
-
-async function markAnnouncementAsRead(announcementId) {
-    if (!currentUser || !clubId || markedAnnouncementsReadInSession.has(announcementId)) return;
-
-    markedAnnouncementsReadInSession.add(announcementId);
-
-    const userReadDocRef = doc(db, "clubs", clubId, "announcements", announcementId, "readBy", currentUser.uid);
+    const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
 
     try {
-        await setDoc(userReadDocRef, {
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "Anonymous",
-            readAt: serverTimestamp()
+        await updateDoc(memberDocRef, {
+            lastSeenAnnouncements: serverTimestamp()
         });
+        console.log("Updated lastSeenAnnouncements timestamp");
     } catch (error) {
-        console.error("Failed to mark announcement as read:", error);
-        // Remove from cache so it can retry next time
-        markedAnnouncementsReadInSession.delete(announcementId);
+        console.error("Failed to update lastSeenAnnouncements:", error);
     }
 }
