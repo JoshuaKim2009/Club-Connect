@@ -362,7 +362,6 @@ function createMessageElement(messageId, messageData, showSenderName) {
     }
 
     if (messageData.type === "image" && messageData.imageUrl) {
-        // Create image message
         const imageContainer = document.createElement('div');
         imageContainer.className = 'message message-image';
         if (messageData.createdByUid === currentUser.uid) {
