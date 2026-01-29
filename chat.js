@@ -55,7 +55,7 @@ let hasMoreMessages = true;
 let isLoadingOlder = false;
 let previousSenderId = null;
 let loadedMessageIds = new Set();
-const QUICK_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const QUICK_REACTION_EMOJIS = ['👍', '👎', '❤️', '😭', '💀', '🔥'];
 let activeReactionPicker = null;
 
 const chatInput = document.getElementById('chatInput');
@@ -94,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-    console.time('Auth callback');
     
     if (user) {
         currentUser = user;
@@ -102,23 +101,19 @@ onAuthStateChanged(auth, async (user) => {
         userName = user.displayName || "";
         userEmail = user.email || "";
 
-        console.log("Logged in:", userEmail);
+        console.log(userEmail);
 
         if (clubId) {
             if (chatMessages) {
                 chatMessages.classList.remove('loading');
             }
-            
-            console.time('Parallel loading');
-            
+                        
             const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
             const messagesPromise = loadInitialMessages();
             
             [role] = await Promise.all([rolePromise, messagesPromise]);
             
-            console.timeEnd('Parallel loading');
             
-            // Update lastSeenMessages when entering chat page
             // await updateLastSeenMessages();
             
             startRealtimeListener();
@@ -130,9 +125,9 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = 'login.html';
     }
     
-    console.timeEnd('Auth callback');
 });
 
+//If you are a manager it takes you to manager page but if you are member it takes you back to member
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo');
@@ -200,7 +195,7 @@ async function loadInitialMessages() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
     } catch (error) {
-        console.error("Error loading initial messages:", error);
+        console.error("Error:", error);
     } finally {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     
@@ -293,7 +288,7 @@ async function loadOlderMessages() {
             chatMessages.scrollTop = chatMessages.scrollTop + (newScrollHeight - previousScrollHeight);
         }
     } catch (error) {
-        console.error("Error loading older messages:", error);
+        console.error("Error:", error);
     } finally {
         isLoadingOlder = false;
     }
@@ -359,12 +354,11 @@ function startReactionListener() {
             const messageId = change.doc.id;
             const messageData = change.doc.data();
             
-            // CRITICAL: Only update if message is already loaded in the UI
             if (change.type === "modified" && loadedMessageIds.has(messageId)) {
                 updateMessage(messageId, messageData);
             }
         });
-    }, { includeMetadataChanges: false });  // Don't fire for local changes
+    }, { includeMetadataChanges: false });
 }
 
 function createMessageElement(messageId, messageData, showSenderName) {
@@ -549,11 +543,8 @@ if (chatMessages) {
 }
 
 async function saveImages() {
-    // Just clear pending images without uploading
     clearPendingImages();
-    // Optionally, show a message or do nothing else
     await showAppAlert("Image sending not implemented");
-    console.log("Image sending is disabled for now.");
 }
 
 if (chatInput && inputContainer && chatMessages) {
@@ -600,9 +591,9 @@ async function updateLastSeenMessages() {
         await updateDoc(memberDocRef, {
             lastSeenMessages: serverTimestamp()
         });
-        console.log("Updated lastSeenMessages timestamp");
+        console.log("Updated timestamp");
     } catch (error) {
-        console.error("Failed to update lastSeenMessages:", error);
+        console.error("Failed:", error);
     }
 }
 
@@ -614,7 +605,6 @@ if (addButton) {
     });
 }
 
-// Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
     if (isDropdownOpen && 
         !uploadDropdown.contains(e.target) && 
@@ -624,7 +614,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Image upload option click
 if (imageUploadOption) {
     imageUploadOption.addEventListener('click', () => {
         imageFileInput.click();
@@ -633,7 +622,6 @@ if (imageUploadOption) {
     });
 }
 
-// Handle file selection
 if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
@@ -651,12 +639,10 @@ if (imageFileInput) {
             }
         });
         
-        // Clear input so same file can be selected again
         imageFileInput.value = '';
     });
 }
 
-// Add image preview
 function addPendingImagePreview(previewUrl, index) {
     const wrapper = document.createElement('div');
     wrapper.className = 'pending-image-wrapper';
@@ -675,7 +661,6 @@ function addPendingImagePreview(previewUrl, index) {
     pendingImagesContainer.appendChild(wrapper);
 }
 
-// Remove pending image
 function removePendingImage(index) {
     const imageData = pendingImages[index];
     if (imageData) {
@@ -684,14 +669,12 @@ function removePendingImage(index) {
     
     pendingImages.splice(index, 1);
     
-    // Rebuild the preview UI
     pendingImagesContainer.innerHTML = '';
     pendingImages.forEach((img, i) => {
         addPendingImagePreview(img.previewUrl, i);
     });
 }
 
-// Clear all pending images
 function clearPendingImages() {
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
@@ -892,7 +875,6 @@ function createReactionsDisplay(messageId, reactions) {
     const reactionsContainer = document.createElement('div');
     reactionsContainer.className = 'reactions-container';
     
-    // Sort reactions by their order property (insertion order)
     const sortedReactions = Object.entries(reactions).sort((a, b) => {
         const orderA = a[1].order || 0;
         const orderB = b[1].order || 0;
