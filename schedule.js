@@ -217,7 +217,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             }
         }
         
-
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         //await fetchAndDisplayEvents(); 
     } catch (error) {
         console.error("Error canceling single event occurrence:", error);
@@ -957,7 +957,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
         await showAppAlert("Event deleted successfully!");
         //await showAppAlert(`Successfully deleted the recurring series and ${deletedCount - 1} associated overrides and all their RSVPs!`);
         //await fetchAndDisplayEvents();
-
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
         console.error("Error deleting entire series and overrides:", error);
         await showAppAlert("Failed to delete the series and its overrides: " + error.message);
@@ -1043,6 +1043,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
             await showAppAlert("Event deleted successfully!");
         }
         //await fetchAndDisplayEvents(); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
         console.error("Error deleting event:", error);
         await showAppAlert("Failed to delete event: " + error.message);
