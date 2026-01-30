@@ -225,7 +225,6 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             const newDocRef = await addDoc(announcementsRef, announcementDataToSave); 
             const newAnnouncementId = newDocRef.id; 
 
-            // Update lastSeenAnnouncements after creating
             await updateLastSeenAnnouncements();
             console.log(`Creator ${currentUser.displayName} (${currentUser.uid}) updated lastSeenAnnouncements after creating announcement ${newAnnouncementId}.`);
 

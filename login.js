@@ -4,8 +4,6 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 
 const firebaseConfig = {

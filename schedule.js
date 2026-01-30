@@ -41,7 +41,7 @@ function getUrlParameter(name) {
     return params.get(name) || '';
 }
 
-// Function to get the user's role in specific club
+
 async function getMemberRoleForClub(clubId, uid) {
     if (!clubId || !uid) return null;
     
@@ -88,7 +88,7 @@ onAuthStateChanged(auth, async (user) => {
                     // }
 
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
-                    console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
+                    console.log(role);
 
                     // await cleanUpEmptyRecurringEvents();
 
@@ -225,7 +225,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
     }
 }
 
-//Don't need to use this anymore, but keeping in case I need it later for some reason
+//Don't need to use this anymore since it is too complicated to keep, but keeping in case I need it later for some reason (but it is not actually used for anything)
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
     if (!confirmed) {
@@ -1261,9 +1261,10 @@ function setupRealtimeUserRsvps() {
 
             if (change.type === "added" || change.type === "modified") {
                 newStatus = data.status;
-            } else if (change.type === "removed") {
-                console.log(`RSVP removed`);
             }
+            // } else if (change.type === "removed") {
+            //     console.log(`RSVP removed`);
+            // }
             
             updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
         });
@@ -1278,7 +1279,7 @@ async function getAllClubMembers(clubID, useCache = true) {
         const age = Date.now() - cached.timestamp;
         
         if (age < CACHE_DURATION) {
-            console.log("Using cached member list");
+            console.log("Using cached list");
             return cached.members;
         }
     }
@@ -1371,47 +1372,12 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'rsvp-details-overlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-            z-index: 999; /* Ensure it's above other content */
-            display: flex; /* Use flexbox to center the popup */
-            justify-content: center;
-            align-items: center;
-        `;
+        overlay.className = 'rsvp-details-overlay';
         document.body.appendChild(overlay);
     }
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'rsvp-details-modal';
-        modal.style.cssText = `
-            margin-top: 20px;
-            padding: 10px;
-            border: 3px solid black;
-            background: linear-gradient(#f0f0f0, #e0e0e0);
-            box-shadow: 0px 6px 0px #000000;
-            width: 85%; /* Adjust as needed */
-            max-width: 500px; /* Max width for larger screens */
-            border-radius: 10px;
-            z-index: 1000; /* Ensure it's above the overlay */
-            position: fixed; /* Fixed position relative to viewport */
-            top: 50%; /* Center vertically */
-            left: 50%; /* Center horizontally */
-            transform: translate(-50%, -50%); /* Adjust for exact centering */
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            gap: 15px; /* Space between elements in the popup */
-            font-family: var(--primary-font-family); /* Assuming this var is defined in your CSS */
-            font-weight: normal;
-            text-align: center;
-            font-size: 20px; /* Adjusted slightly smaller for content */
-            color: black;
-            
-        `;
         document.body.appendChild(modal);
     }
 
@@ -1590,38 +1556,14 @@ async function createAnnouncementPopup(initialData = {}) {
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'announcement-popup-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-                z-index: 1000; /* Ensure it's above other content */
-                display: flex; /* Use flexbox to center the popup */
-                justify-content: center;
-                align-items: center;
-            `;
+            overlay.className = 'announcement-popup-overlay';
             document.body.appendChild(overlay);
         }
 
         if (!modal) {
             modal = document.createElement('div');
             modal.id = 'announcement-popup-modal';
-            modal.className = 'announcement-card editing-announcement-card';
-            modal.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 1001;
-                font-size: 20px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                max-height: 80vh;
-                overflow-y: auto;
-            `;
+            modal.className = 'announcement-card editing-announcement-card announcement-popup-modal';
             document.body.appendChild(modal);
         }
 
@@ -1654,7 +1596,7 @@ async function createAnnouncementPopup(initialData = {}) {
                 return; 
             }
 
-            const saveSuccessful = await saveAnnouncementFromPopup(title, content);
+            const saveSuccessful = await saveAnnouncement(title, content);
             if (saveSuccessful) {
                 overlay.style.display = 'none';
                 modal.style.display = 'none';
@@ -1675,7 +1617,7 @@ async function createAnnouncementPopup(initialData = {}) {
 }
 
 
-async function saveAnnouncementFromPopup(title, content) {
+async function saveAnnouncement(title, content) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to create announcements.");
         return false;
@@ -1694,11 +1636,7 @@ async function saveAnnouncementFromPopup(title, content) {
         const newDocRef = await addDoc(announcementsRef, announcementDataToSave);
         const newAnnouncementId = newDocRef.id;
 
-        await setDoc(doc(db, "clubs", clubId, "announcements", newAnnouncementId, "readBy", currentUser.uid), {
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "Anonymous",
-            readAt: serverTimestamp()
-        });
+        await showAppAlert("Announcement saved!");
         return true;
     } catch (error) {
         console.error("Error saving announcement from popup:", error);

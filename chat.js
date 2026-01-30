@@ -65,7 +65,7 @@ const backButton = document.getElementById("back-button");
 const addButton = document.getElementById('addButton');
 const uploadDropdown = document.getElementById('uploadDropdown');
 const imageUploadOption = document.getElementById('imageUploadOption');
-const pollOption = document.getElementById('pollOption');
+// const pollOption = document.getElementById('pollOption');
 const imageFileInput = document.getElementById('imageFileInput');
 const pendingImagesContainer = document.getElementById('pendingImagesContainer');
 
@@ -567,13 +567,13 @@ if (imageUploadOption) {
     });
 }
 
-if (pollOption) {
-    pollOption.addEventListener('click', () => {
-        isDropdownOpen = false;
-        uploadDropdown.classList.remove('show');
-        createPollEditCard();
-    });
-}
+// if (pollOption) {
+//     pollOption.addEventListener('click', () => {
+//         isDropdownOpen = false;
+//         uploadDropdown.classList.remove('show');
+//         createPollEditCard();
+//     });
+// }
 
 if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
@@ -596,9 +596,9 @@ if (imageFileInput) {
     });
 }
 
-function createPollEditCard(){
-    showAppAlert("adding soon");
-}
+// function createPollEditCard(){
+//     showAppAlert("adding soon");
+// }
 
 
 function addPendingImagePreview(previewUrl, index) {
