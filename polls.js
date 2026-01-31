@@ -110,11 +110,11 @@ async function createPollEditingCard() {
 document.querySelector('.checkbox-group').addEventListener('change', (e) => {
     const pollInfoText = document.getElementById('poll-type-info');
     if (e.target.value === "Before"){
-        pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll can always see results.`;
+        pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
     } else if (e.target.value === "After"){
-        pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll can always see results.`;
+        pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
     } else {
-        pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll can always see results.`;
+        pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
     }
     pollTypeChoice = e.target.value;
     console.log(pollTypeChoice);
@@ -408,13 +408,13 @@ function createPollCard(pollData, pollId) {
             if (clickedRadio.dataset.wasChecked === 'true') {
                 clickedRadio.checked = false;
                 clickedRadio.dataset.wasChecked = 'false';
-                handleVote(pollId, optionIndex); 
+                handleVote(pollId, optionIndex, pollData);
             } else {
                 card.querySelectorAll('.poll-radio').forEach(r => {
                     r.dataset.wasChecked = 'false';
                 });
                 clickedRadio.dataset.wasChecked = 'true';
-                handleVote(pollId, optionIndex);
+                handleVote(pollId, optionIndex, pollData);
             }
         });
         
@@ -447,8 +447,83 @@ function createPollCard(pollData, pollId) {
 }
 
 function updatePollCard(existingCard, pollData, pollId) {
-    const newCard = createPollCard(pollData, pollId);
-    existingCard.replaceWith(newCard);
+    const totalVotes = pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+    const userHasVoted = pollData.options.some(opt => opt.votes.includes(currentUser.uid));
+    
+    let canSeeResults = false;
+    if (pollData.visibility === "Before") {
+        canSeeResults = true;
+    } else if (pollData.visibility === "After") {
+        canSeeResults = userHasVoted;
+    } else if (pollData.visibility === "Never") {
+        canSeeResults = false;
+    }
+    
+    if (((role === 'manager' || role === 'admin') && (pollData.createdByUid === currentUser.uid)) || (role === 'manager')) {
+        canSeeResults = true;
+    }
+
+    pollData.options.forEach((option, index) => {
+        const optionElement = existingCard.querySelector(`[data-option-index="${index}"]`);
+        if (!optionElement) return;
+
+        const voteCount = option.votes.length;
+        const percentage = totalVotes > 0 ? ((voteCount / totalVotes) * 100).toFixed(1) : 0;
+        const userVotedForThis = option.votes.includes(currentUser.uid);
+
+        const radio = optionElement.querySelector('.poll-radio');
+        if (radio) {
+            radio.checked = userVotedForThis;
+            radio.dataset.wasChecked = userVotedForThis ? 'true' : 'false';
+        }
+
+        const voteCountElement = optionElement.querySelector('.poll-vote-count');
+        if (canSeeResults) {
+            if (voteCountElement) {
+                voteCountElement.textContent = `(${voteCount})`;
+            } else {
+                const label = optionElement.querySelector('.poll-option-label');
+                const span = document.createElement('span');
+                span.className = 'poll-vote-count';
+                span.textContent = `(${voteCount})`;
+                label.appendChild(span);
+            }
+        } else {
+            if (voteCountElement) {
+                voteCountElement.remove();
+            }
+        }
+
+        const resultsBar = optionElement.querySelector('.poll-results-bar');
+        if (canSeeResults) {
+            if (resultsBar) {
+                const bar = resultsBar.querySelector('.poll-bar');
+                const percentageSpan = resultsBar.querySelector('.poll-percentage');
+                bar.style.width = `${percentage}%`;
+                percentageSpan.textContent = `${percentage}%`;
+            } else {
+                const barHTML = `
+                    <div class="poll-results-bar">
+                        <div class="poll-bar" style="width: ${percentage}%"></div>
+                        <span class="poll-percentage">${percentage}%</span>
+                    </div>
+                `;
+                optionElement.querySelector('.poll-option-header').insertAdjacentHTML('afterend', barHTML);
+            }
+        } else {
+            if (resultsBar) {
+                resultsBar.remove();
+            }
+        }
+    });
+
+    const metaElement = existingCard.querySelector('.poll-meta');
+    if (metaElement) {
+        metaElement.innerHTML = `
+            <span>Total votes: ${totalVotes}</span>
+            <span>Created by ${pollData.createdByName}</span>
+        `;
+    }
 }
 
 window.addEventListener('beforeunload', () => {
@@ -458,7 +533,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 
-async function handleVote(pollId, optionIndex) {
+async function handleVote(pollId, optionIndex, pollData) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to vote.");
         return;
@@ -466,14 +541,7 @@ async function handleVote(pollId, optionIndex) {
 
     try {
         const pollRef = doc(db, "clubs", clubId, "polls", pollId);
-        const pollSnap = await getDoc(pollRef);
-
-        if (!pollSnap.exists()) {
-            await showAppAlert("Poll not found.");
-            return;
-        }
-
-        const pollData = pollSnap.data();
+        
         const userUid = currentUser.uid;
 
         let previousVoteIndex = -1;
@@ -507,6 +575,7 @@ async function handleVote(pollId, optionIndex) {
         await showAppAlert("Failed to save vote: " + error.message);
     }
 }
+
 
 async function deletePoll(pollId) {
     const confirmed = await showAppConfirm("Are you sure you want to delete this poll? This action cannot be undone.");
