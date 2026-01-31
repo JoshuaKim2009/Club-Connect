@@ -360,11 +360,11 @@ function createPollCard(pollData, pollId) {
                 <div class="poll-option-header">
                     <label class="poll-option-label">
                         <input type="radio" 
-                               name="poll-${pollId}" 
-                               class="poll-radio" 
-                               data-poll-id="${pollId}" 
-                               data-option-index="${index}"
-                               ${userVotedForThis ? 'checked' : ''}>
+                                name="poll-${pollId}-${currentUser.uid}"  
+                                class="poll-radio" 
+                                data-poll-id="${pollId}" 
+                                data-option-index="${index}"
+                                ${userVotedForThis ? 'checked' : ''}>
                         <span class="poll-option-text">${option.text}</span>
                         ${canSeeResults ? `<span class="poll-vote-count">(${voteCount})</span>` : ''}
                     </label>
