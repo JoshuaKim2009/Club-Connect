@@ -214,6 +214,7 @@ membersButton.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
     const viewScheduleButton = document.getElementById('viewScheduleButton');
     const announcementsButton = document.getElementById('announcementsButton');
+    const pollsButton = document.getElementById('pollsButton');
     const chatButton = document.getElementById('chatButton');
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
@@ -232,6 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = `chat.html?clubId=${clubId}&returnTo=manager`;
         });
     }
+
+    if (pollsButton) {
+        pollsButton.addEventListener('click', () => {
+            window.location.href = `polls.html?clubId=${clubId}&returnTo=manager`;
+        });
+    }
+
 
 });
 
