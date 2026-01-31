@@ -8,271 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
     <link href="styles.css?v=4" rel="stylesheet" />
+    <link href="polls.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
-    <style>
-        body {
-            font-family: var(--primary-font-family);
-            padding-top: env(safe-area-inset-top);
-            /* padding-bottom: env(safe-area-inset-bottom); */
-            background: var(--header-bg-start);
-        }
-        #poll-creation-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 9999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #poll-creation-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(#f0f0f0, #e0e0e0);
-            border: 3px solid black;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0px 6px 0px #000000;
-            z-index: 10000;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            font-family: var(--primary-font-family);
-            color: black;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        #poll-creation-modal h3 {
-            margin: 0 0 10px 0;
-            font-size: 30px;
-            font-weight: normal;
-            color: black;
-        }
-
-        #poll-creation-modal label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: normal;
-            color: black;
-            font-size: 20px;
-            text-align: left;
-        }
-
-        #poll-creation-modal input[type="text"],
-        #poll-creation-modal textarea {
-            width: 100%;
-            padding: 8px;
-            border: 3px solid black;
-            border-radius: 5px;
-            font-size: 1em;
-            font-family: var(--primary-font-family);
-            background-color: #ffffff;
-        }
-
-        #poll-creation-modal input[type="text"]:focus,
-        #poll-creation-modal textarea:focus {
-            outline: none;
-            border-color: #000000;
-            box-shadow: 0 0 0 1px #000000;
-        }
-
-        .poll-modal-actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .poll-modal-actions .fancy-button {
-            font-size: 24px;
-            padding: 8px 25px;
-        }
-
-        #poll-creation-modal::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        #poll-creation-modal::-webkit-scrollbar-track {
-            background: transparent;
-            border: 4px solid transparent;
-            background-clip: padding-box;
-        }
-
-        #poll-creation-modal::-webkit-scrollbar-thumb {
-            background: linear-gradient(#868686, #747474);
-            border-radius: 5px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
-        }
-
-        #poll-creation-modal::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(#5f5f5f, #646464);
-        }
-
-        .poll-options-selection {
-            margin-top: 15px;
-            margin-bottom: 15px;
-            border: 3px solid #000000;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #ffffff;
-        }
-
-        .poll-options-selection > label {
-            font-weight: normal;
-            margin-bottom: 8px;
-            display: block;
-            color: black;
-            font-family: var(--primary-font-family);
-            font-size: 20px;
-        }
-
-        .poll-options-selection > .gray-label {
-            color: rgb(90, 90, 90) !important;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            font-weight: normal;
-            color: #4b5563;
-            cursor: pointer;
-            font-family: var(--primary-font-family);
-            font-size: 18px;
-            margin-bottom: 0; 
-            line-height: 18px;
-        }
-
-        #poll-creation-modal input[type="radio"] {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            
-            width: 18px;
-            height: 18px;
-            margin-right: 5px;
-            padding: 0;
-            border: 3px solid #000000;
-            border-radius: 3px;
-            background-color: #ffffff;
-            cursor: pointer;
-            flex-shrink: 0; 
-        }
-
-        #poll-creation-modal input[type="radio"]:checked {
-            background-color: #000000;
-        }
-
-        #poll-options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .poll-option-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .poll-option-input {
-            width: 100%;
-            padding: 8px;
-            border: 3px solid black;
-            border-radius: 5px;
-            font-size: 1em;
-            font-family: var(--primary-font-family);
-            background-color: #ffffff;
-            resize: none;
-            overflow: hidden;
-            line-height: 1.4;
-            box-sizing: border-box;
-            min-height: calc(1.4em + 16px);
-        }
-
-        .poll-option-input:focus {
-            outline: none;
-            border-color: #000000;
-            box-shadow: 0 0 0 1px #000000;
-        }
-
-        #subtract-option-btn,
-        #add-option-btn {
-            margin-left: 5px;
-            margin-right: 5px;
-            margin-top: 10px;
-            background: none;
-            border: none;
-            color: #000;
-            font-family: var(--primary-font-family);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 0;
-            text-align: left;
-            font-weight: normal;
-        }
-
-        #subtract-option-btn:hover,
-        #add-option-btn:hover {
-            text-decoration: underline;
-        }
-
-        #subtract-option-btn:disabled,
-        #add-option-btn:disabled {
-            color: #aaa;
-            cursor: default;
-            text-decoration: none;
-        }
-
-        .poll-creation-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .poll-creation-actions > .fancy-button {
-            background: linear-gradient(#ffffff, #b3b3b3);
-            font-family: var(--primary-font-family, sans-serif);
-            font-size: 1.5em;
-            color: black;
-            border: 3px solid black;
-            padding: 4px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0px 4px 0px #000000;
-            transition: all 0.05s ease-in-out;
-        }
-
-        .poll-creation-actions > .fancy-button:hover {
-            box-shadow: 0px 2px 0px #000000;
-            transform: translateY(2px);
-        }
-
-        .poll-creation-actions > .fancy-button:active {
-            box-shadow: 0px 0px 0px #000000;
-            transform: translateY(4px);
-        }
-    </style>
     
   </head>
   <body>
@@ -284,6 +22,9 @@
     </div>
     <h1 id="clubScheduleTitle"></h1>
     <button id="add-poll-button" class="fancy-button" style="display: none;">CREATE A POLL</button>
+
+    <div id="polls-container"></div>
+    <p id="no-polls-message" class="fancy-label" style="display: none;"></p>
 
     <div id="popup-overlay" style="display: none;"></div>
     <div id="poll-creation-modal" style="display: none;">
@@ -306,7 +47,7 @@
                     Never
                 </label>
             </div>
-            <label id="poll-type-info" class = "gray-label" >Users will always see poll percentages.</label>
+            <label id="poll-type-info" class = "gray-label" >Users will always see poll percentages. The creator of the poll can always see results.</label>
         </div>
         <div id="poll-options-container">
             <label style="display:block; font-size:20px; margin-bottom:8px; text-align:left;">Options</label>
@@ -324,6 +65,34 @@
                 <button id="post-poll-button" class="fancy-button">POST</button>
                 <button id="cancel-poll-button" class="fancy-button">Cancel</button>
             </div>
+        </div>
+    </div>
+
+
+
+    <div id="poll-edit-modal" style="display: none;">
+        <h3>EDIT VISIBILITY</h3>
+        <div class="poll-options-selection">
+            <label>Show results to voter:</label>
+            <div class="checkbox-group">
+                <label>
+                    <input type="radio" name="poll-edit-option" value="Before" checked>
+                    Before vote
+                </label>
+                <label>
+                    <input type="radio" name="poll-edit-option" value="After">
+                    After vote
+                </label>
+                <label>
+                    <input type="radio" name="poll-edit-option" value="Never">
+                    Never
+                </label>
+            </div>
+            <label id="poll-edit-type-info" class = "gray-label">Users will always see poll percentages. The creator of the poll can always see results.</label>
+        </div>
+        <div class="poll-creation-actions">
+            <button id="save-poll-edit-button" class="fancy-button">SAVE</button>
+            <button id="cancel-poll-edit-button" class="fancy-button">Cancel</button>
         </div>
     </div>
 
