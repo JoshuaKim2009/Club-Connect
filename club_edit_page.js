@@ -331,6 +331,19 @@ async function deleteClub(clubId) {
         await Promise.all(deleteMessagePromises);
         console.log(`All messages for club ${clubId} deleted.`);
 
+        console.log(`Deleting polls subcollection for club ${clubId}...`);
+        const pollsCollectionRef = collection(db, "clubs", clubId, "polls");
+        const pollDocsSnap = await getDocs(pollsCollectionRef);
+
+        const deletePollPromises = [];
+        pollDocsSnap.forEach((pollDoc) => {
+            deletePollPromises.push(deleteDoc(pollDoc.ref));
+            console.log(`  Marked poll doc ${pollDoc.id} for deletion.`);
+        });
+
+        await Promise.all(deletePollPromises);
+        console.log(`All polls for club ${clubId} deleted.`);
+
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);
         console.log(`Club document ${clubId} deleted.`);
