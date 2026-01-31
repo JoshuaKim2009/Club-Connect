@@ -408,13 +408,13 @@ function createPollCard(pollData, pollId) {
             if (clickedRadio.dataset.wasChecked === 'true') {
                 clickedRadio.checked = false;
                 clickedRadio.dataset.wasChecked = 'false';
-                handleVote(pollId, optionIndex, pollData);
+                handleVote(pollId, optionIndex);
             } else {
                 card.querySelectorAll('.poll-radio').forEach(r => {
                     r.dataset.wasChecked = 'false';
                 });
                 clickedRadio.dataset.wasChecked = 'true';
-                handleVote(pollId, optionIndex, pollData);
+                handleVote(pollId, optionIndex);
             }
         });
         
@@ -533,7 +533,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 
-async function handleVote(pollId, optionIndex, pollData) {
+async function handleVote(pollId, optionIndex) { // Remove pollData parameter
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to vote.");
         return;
@@ -542,6 +542,13 @@ async function handleVote(pollId, optionIndex, pollData) {
     try {
         const pollRef = doc(db, "clubs", clubId, "polls", pollId);
         
+        const pollSnap = await getDoc(pollRef);
+        if (!pollSnap.exists()) {
+            await showAppAlert("Poll not found.");
+            return;
+        }
+        
+        const pollData = pollSnap.data();
         const userUid = currentUser.uid;
 
         let previousVoteIndex = -1;
