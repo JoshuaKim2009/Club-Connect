@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -102,6 +102,7 @@ var pollTypeChoice = "After";
 async function createPollEditingCard() {
     pollOverlay.style.display = 'block';
     pollCreationModal.style.display = 'block';
+    document.body.classList.add('no-scroll');
 }
 
 
@@ -170,3 +171,104 @@ function updateAddButtonState() {
 
 document.querySelectorAll('.poll-option-input').forEach(autoResize);
 updateAddButtonState();
+
+function resetPollEditingCard(){
+    document.getElementById('poll-title-input').value = '';
+
+    const list = document.getElementById('poll-options-list');
+    list.innerHTML = `
+        <div class="poll-option-row">
+            <textarea class="poll-option-input" placeholder="Option 1" rows="1"></textarea>
+        </div>
+        <div class="poll-option-row">
+            <textarea class="poll-option-input" placeholder="Option 2" rows="1"></textarea>
+        </div>
+    `;
+
+    list.querySelectorAll('.poll-option-input').forEach(autoResize);
+
+    updateAddButtonState();
+}
+
+function hidePollEditingCard(){
+    pollCreationModal.style.display = 'none';
+    pollOverlay.style.display = 'none';
+    document.body.classList.remove('no-scroll');
+}
+
+const postButton = document.getElementById('post-poll-button');
+
+postButton.addEventListener('click', async () => {
+    const pollId = await savePoll();
+    
+    if (pollId) {
+        resetPollEditingCard();
+        hidePollEditingCard();
+    }
+});
+
+
+const cancelButton = document.getElementById('cancel-poll-button');
+
+cancelButton.addEventListener('click', async ()  => {
+    resetPollEditingCard();
+    hidePollEditingCard();
+});
+
+async function savePoll() {
+    if (!currentUser || !clubId) {
+        await showAppAlert("You must be logged in to create a poll.");
+        return null;
+    }
+
+    const titleInput = document.getElementById('poll-title-input').value.trim();
+    
+    const optionInputs = document.querySelectorAll('.poll-option-input');
+    const options = [];
+    
+    optionInputs.forEach((input, index) => {
+        const optionText = input.value.trim();
+        if (optionText) {
+            options.push({
+                text: optionText,
+                votes: [] 
+            });
+        }
+    });
+
+    if (!titleInput) {
+        await showAppAlert("Poll title is required!");
+        return null;
+    }
+
+    if (options.length < 2) {
+        await showAppAlert("Please provide at least 2 poll options!");
+        return null;
+    }
+
+    try {
+        const pollsRef = collection(db, "clubs", clubId, "polls");
+        
+        const pollData = {
+            title: titleInput,
+            options: options,
+            visibility: pollTypeChoice, 
+            createdAt: serverTimestamp(),
+            createdByUid: currentUser.uid,
+            createdByName: currentUser.displayName || "Anonymous",
+            clubId: clubId,
+            isActive: true
+        };
+
+        const newPollRef = await addDoc(pollsRef, pollData);
+        const newPollId = newPollRef.id;
+
+        await showAppAlert("Poll created successfully!");
+        return newPollId;
+
+    } catch (error) {
+        console.error("Error creating poll:", error);
+        await showAppAlert("Failed to create poll: " + error.message);
+        return null;
+    }
+}
