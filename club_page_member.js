@@ -730,3 +730,24 @@ function setupPollListeners(clubId, userId) {
         console.error("Error listening to polls collection:", error);
     });
 }
+
+async function fetchMemberData(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("fetchMemberData: clubId or userId missing.");
+        return null;
+    }
+    try {
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberDocSnap = await getDoc(memberDocRef);
+        
+        if (!memberDocSnap.exists()) {
+            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+            return null;
+        }
+        
+        return memberDocSnap.data();
+    } catch (error) {
+        console.error("Error fetching member data:", error);
+        return null;
+    }
+}
