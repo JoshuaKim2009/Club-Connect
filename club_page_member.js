@@ -62,6 +62,11 @@ onAuthStateChanged(auth, async (user) => {
 
             setupMessageListeners(clubId, currentUser.uid);
 
+            const unreadPollsCount = await getUnreadPollCount(clubId, currentUser.uid);
+            updateUnreadPollsBadge(unreadPollsCount);
+
+            setupPollListeners(clubId, currentUser.uid);
+
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -659,3 +664,74 @@ const membersButton = document.getElementById("view-members-button");
 membersButton.addEventListener('click', async () => {
     window.location.href = `members.html?clubId=${clubId}`;
 });
+
+
+function updateUnreadPollsBadge(count) {
+    const badgeElement = document.getElementById('unreadPollsBadge');
+    if (badgeElement) {
+        if (count > 0) {
+            badgeElement.textContent = count;
+            badgeElement.style.display = 'flex';
+        } else {
+            badgeElement.style.display = 'none';
+        }
+    }
+}
+
+async function getUnreadPollCount(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot get unread poll count: clubId or userId missing.");
+        return 0;
+    }
+
+    try {
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberDocSnap = await getDoc(memberDocRef);
+        
+        if (!memberDocSnap.exists()) {
+            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+            return 0;
+        }
+        
+        const memberData = memberDocSnap.data();
+        const cutoffTimestamp = memberData.lastSeenPolls || memberData.joinedAt;
+        
+        if (!cutoffTimestamp) {
+            console.warn(`No timestamp (lastSeenPolls or joinedAt) found for user ${userId} in club ${clubId}. Returning 0.`);
+            return 0;
+        }
+        
+        const pollsRef = collection(db, "clubs", clubId, "polls");
+        const q = query(
+            pollsRef,
+            where("createdAt", ">", cutoffTimestamp),
+            where("createdByUid", "!=", userId)
+        );
+        
+        const countSnapshot = await getCountFromServer(q);
+        const unreadCount = countSnapshot.data().count;
+        
+        console.log(`User ${userId} has ${unreadCount} unread polls in club ${clubId}.`);
+        return unreadCount;
+    } catch (error) {
+        console.error("Error getting unread poll count:", error);
+        return 0;
+    }
+}
+
+function setupPollListeners(clubId, userId) {
+    if (!clubId || !userId) {
+        console.warn("Cannot setup poll listeners: clubId or userId missing.");
+        return;
+    }
+
+    const pollsRef = collection(db, "clubs", clubId, "polls");
+
+    onSnapshot(pollsRef, async (pollsSnapshot) => {
+        console.log("Polls collection activity detected, re-calculating unread count.");
+        const unreadCount = await getUnreadPollCount(clubId, userId);
+        updateUnreadPollsBadge(unreadCount);
+    }, (error) => {
+        console.error("Error listening to polls collection:", error);
+    });
+}

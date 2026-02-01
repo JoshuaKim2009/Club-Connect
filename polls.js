@@ -265,6 +265,8 @@ async function savePoll() {
         const newPollRef = await addDoc(pollsRef, pollData);
         const newPollId = newPollRef.id;
 
+        await updateLastSeenPolls();
+
         hidePollEditingCard()
         await showAppAlert("Poll created successfully!");
         return newPollId;
@@ -301,8 +303,8 @@ function setupRealtimePollsListener() {
 
             if (change.type === "added") {
                 const pollCard = createPollCard(pollData, pollId);
-                pollsContainer.prepend(pollCard);
-            } 
+                pollsContainer.appendChild(pollCard);
+            }
             else if (change.type === "modified") {
                 const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);
                 if (existingCard) {
@@ -323,6 +325,9 @@ function setupRealtimePollsListener() {
         } else if (noPollsMessage) {
             noPollsMessage.style.display = 'none';
         }
+
+        updateLastSeenPolls();
+
     }, (error) => {
         console.error("Error fetching realtime polls:", error);
     });
@@ -640,4 +645,20 @@ async function editPoll(pollId, pollData) {
         pollOverlay.style.display = 'none';
         document.body.classList.remove('no-scroll');
     });
+}
+
+
+async function updateLastSeenPolls() {
+    if (!currentUser || !clubId) return;
+
+    const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
+
+    try {
+        await updateDoc(memberDocRef, {
+            lastSeenPolls: serverTimestamp()
+        });
+        console.log("Updated lastSeenPolls timestamp");
+    } catch (error) {
+        console.error("Failed to update lastSeenPolls:", error);
+    }
 }
