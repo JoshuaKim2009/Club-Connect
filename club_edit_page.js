@@ -503,7 +503,7 @@ function normalizeSchoolName(schoolName) {
     const hasRepeatedChars = /(.)\1{2,}/.test(trimmed);
     const isShort = trimmed.length < 15;
 
-    if (hasNoSpaces && isAllLowercase && isShort) {
+    if (hasNoSpaces || isAllLowercase || isShort) {
         return { 
             valid: false, 
             normalized: '', 
