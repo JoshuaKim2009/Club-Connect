@@ -33,6 +33,20 @@
       input[list]::-webkit-list-button {
         display: none !important;
       }
+      #state-select {
+        position: relative;
+      }
+      datalist {
+        position: absolute;
+        background-color: white;
+        border: 1px solid gray;
+        border-radius: 0 0 5px 5px;
+        border-top: none;
+        font-family: sans-serif;
+        width: 100%;
+        max-height: 10rem;
+        overflow-y: auto;
+      }
     </style>
     
     <title>Club Connect | Edit</title>
@@ -111,10 +125,10 @@
     </datalist>
 
     <label class="fancy-input-label" >Club name</label>
-    <input class="fancy-input" id="club-name-edit" placeholder="Club name" required>
+    <input class="fancy-input" id="club-name-edit" placeholder="Club name" required autocomplete="off">
 
     <label class="fancy-input-label" >Main Activity</label>
-    <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required>
+    <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required autocomplete="off">
 
     <label class="fancy-input-label" >Description</label>
 
