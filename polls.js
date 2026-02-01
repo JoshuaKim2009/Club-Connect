@@ -604,6 +604,15 @@ async function deletePoll(pollId) {
 }
 
 async function editPoll(pollId, pollData) {
+    const pollRef = doc(db, "clubs", clubId, "polls", pollId);
+    const pollSnap = await getDoc(pollRef);
+
+    if (!pollSnap.exists()) {
+        await showAppAlert("Poll not found.");
+        return;
+    }
+
+    pollData = pollSnap.data();
     pollOverlay.style.display = 'block';
     pollEditModal.style.display = 'block';
     document.body.classList.add('no-scroll');
@@ -614,6 +623,29 @@ async function editPoll(pollId, pollData) {
             radio.checked = true;
         }
     });
+
+    const editModalRadios = pollEditModal.querySelectorAll('input[name="poll-edit-option"]');
+    editModalRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const pollInfoText = document.getElementById('poll-edit-type-info');
+            if (e.target.value === "Before"){
+                pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
+            } else if (e.target.value === "After"){
+                pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
+            } else {
+                pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
+            }
+        });
+    });
+
+    const pollInfoText = document.getElementById('poll-edit-type-info');
+    if (pollData.visibility === "Before"){
+        pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
+    } else if (pollData.visibility === "After"){
+        pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
+    } else {
+        pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
+    }
     
     const saveButton = document.getElementById('save-poll-edit-button');
     const cancelButton = document.getElementById('cancel-poll-edit-button');
