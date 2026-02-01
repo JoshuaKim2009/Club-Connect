@@ -270,7 +270,9 @@ function normalizeSchoolName(schoolName) {
     }
     
     for (let word of words) {
-        if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.') {
+        if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.' ||
+            word.toUpperCase() === 'MS' || word.toUpperCase() === 'M.S' || word.toUpperCase() === 'M.S.' ||
+            word.toUpperCase() === 'ES' || word.toUpperCase() === 'E.S' || word.toUpperCase() === 'E.S.') {
             continue;
         }
         
@@ -286,6 +288,14 @@ function normalizeSchoolName(schoolName) {
     let normalized = trimmed;
     if (!/High School$/i.test(normalized)) {
         normalized = normalized.replace(/\bHS\b$/i, 'High School');
+    }
+
+    if (!/Middle School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bMS\b$/i, 'Middle School');
+    }
+
+    if (!/Elementary School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bES\b$/i, 'Elementary School');
     }
     
     normalized = normalized.replace(/\bH\.?S\.?\b$/i, 'High School');
