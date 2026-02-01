@@ -157,14 +157,14 @@ submitButton.addEventListener("click", async function(event){
         return;
     }
 
-    const schoolName = schoolNameInput.value.trim();
+    const rawSchoolName = schoolNameInput.value.trim();
     const clubName = clubNameInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
 
 
-    if (!clubName || !schoolName || !state || !clubActivity || !clubDescription) {
+    if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
         submitButton.disabled = false;
         submitButton.textContent = "UPDATE";
@@ -177,6 +177,39 @@ submitButton.addEventListener("click", async function(event){
         await showAppAlert("Please enter a valid state");
         submitButton.disabled = false;
         return;
+    }
+
+    const schoolNameResult = normalizeSchoolName(rawSchoolName);
+    let schoolName;
+
+    if (!schoolNameResult.valid) {
+        if (schoolNameResult.error === 'suspicious') {
+            const confirmed = await showAppConfirm(`"${rawSchoolName}" doesn't look like a typical school name. Continue anyways?`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                submitButton.textContent = "UPDATE";
+                return;
+            }
+            schoolName = rawSchoolName;
+        } else {
+            const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES to continue anyways or NO to correct it.`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                submitButton.textContent = "UPDATE";
+                return;
+            }
+            schoolName = rawSchoolName; 
+        }
+    } else {
+        if (schoolNameResult.normalized !== rawSchoolName) {
+            const confirmed = await showAppConfirm(`We changed your school name from "${rawSchoolName}" to "${schoolNameResult.normalized}". Is this correct?`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                submitButton.textContent = "UPDATE";
+                return;
+            }
+        }
+        schoolName = schoolNameResult.normalized;
     }
 
     try {
@@ -456,3 +489,66 @@ document.addEventListener('click', function(e) {
     stateDropdownList.classList.remove('show');
   }
 });
+
+
+function normalizeSchoolName(schoolName) {
+    const trimmed = schoolName.trim();
+    
+    if (!trimmed) {
+        return { valid: false, normalized: '', error: 'Please enter a school name.' };
+    }
+
+    const hasNoSpaces = !/\s/.test(trimmed);
+    const isAllLowercase = trimmed === trimmed.toLowerCase();
+    const hasRepeatedChars = /(.)\1{2,}/.test(trimmed); // 3+ same chars in a row
+    const hasWeirdPattern = /[;,.'\/\[\]\\]/.test(trimmed); // suspicious punctuation
+    const hasConsonantCluster = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(trimmed);
+    const isShort = trimmed.length < 15;
+    const hasMixedCaseNoSpaces = hasNoSpaces && /[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed) && trimmed.length < 10;
+    const hasRepeatingPattern = /(.{2,})\1{2,}/.test(trimmed);
+    const words = trimmed.split(/\s+/);
+    const hasRepeatedWords = words.length > 2 && words.some((word, i) => words.indexOf(word) !== i && words.lastIndexOf(word) !== i); // Same word appears 3+ times
+
+    if ((hasNoSpaces || hasRepeatedWords) && (isAllLowercase && isShort || hasRepeatedChars || hasWeirdPattern || hasConsonantCluster || hasMixedCaseNoSpaces || hasRepeatingPattern)) {
+        return { 
+            valid: false, 
+            normalized: '', 
+            error: 'suspicious'
+        };
+    }
+    
+    for (let word of words) {
+        if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.' ||
+            word.toUpperCase() === 'MS' || word.toUpperCase() === 'M.S' || word.toUpperCase() === 'M.S.' ||
+            word.toUpperCase() === 'ES' || word.toUpperCase() === 'E.S' || word.toUpperCase() === 'E.S.') {
+            continue;
+        }
+        
+        if (word.length >= 2 && /[A-Z]/.test(word) && word === word.toUpperCase() && /^[A-Z]+$/.test(word)) {
+            return { 
+                valid: false, 
+                normalized: '', 
+                error: 'Please spell out the full school name without abbreviations.' 
+            };
+        }
+    }
+    
+    let normalized = trimmed;
+    if (!/High School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bHS\b$/i, 'High School');
+    }
+
+    if (!/Middle School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bMS\b$/i, 'Middle School');
+    }
+
+    if (!/Elementary School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bES\b$/i, 'Elementary School');
+    }
+    
+    normalized = normalized.replace(/\bH\.?S\.?\b$/i, 'High School');
+    
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+    
+    return { valid: true, normalized: normalized, error: '' };
+}
