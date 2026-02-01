@@ -20,33 +20,38 @@
       .pageTitle{
         margin-top: 110px;
       }
-      input[list] {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-      }
-      input[list]::-webkit-calendar-picker-indicator {
-        display: none !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-      }
-      input[list]::-webkit-list-button {
-        display: none !important;
-      }
-      #state-select {
+      .state-dropdown-wrapper {
         position: relative;
       }
-      datalist {
+
+      .state-dropdown-list {
         position: absolute;
-        background-color: white;
-        border: 1px solid gray;
-        border-radius: 0 0 5px 5px;
-        border-top: none;
-        font-family: sans-serif;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
         width: 100%;
-        max-height: 10rem;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 200px;
         overflow-y: auto;
+        z-index: 1000;
+        font-family: var(--primary-font-family);
+        box-sizing: border-box;
+        width: 85%;
+        max-width: 380px;
+      }
+
+      .state-dropdown-list.show {
+        display: block;
+      }
+
+      .state-dropdown-list:not(.show) {
+        display: none;
+      }
+
+      .state-dropdown-list:empty {
+        display: none !important;
       }
     </style>
 
@@ -73,59 +78,10 @@
     <input class="fancy-input" id="school-name-select" placeholder="Full name of school (no abbreviations)" required name = "school-name-select" value ="">
 
     <label class="fancy-input-label">State</label>
-    <input class="fancy-input" id="state-select" list="states-list" placeholder="State name" required name="state-select" value="">
-    <datalist id="states-list">
-      <option value="Alabama">
-      <option value="Alaska">
-      <option value="Arizona">
-      <option value="Arkansas">
-      <option value="California">
-      <option value="Colorado">
-      <option value="Connecticut">
-      <option value="Delaware">
-      <option value="Florida">
-      <option value="Georgia">
-      <option value="Hawaii">
-      <option value="Idaho">
-      <option value="Illinois">
-      <option value="Indiana">
-      <option value="Iowa">
-      <option value="Kansas">
-      <option value="Kentucky">
-      <option value="Louisiana">
-      <option value="Maine">
-      <option value="Maryland">
-      <option value="Massachusetts">
-      <option value="Michigan">
-      <option value="Minnesota">
-      <option value="Mississippi">
-      <option value="Missouri">
-      <option value="Montana">
-      <option value="Nebraska">
-      <option value="Nevada">
-      <option value="New Hampshire">
-      <option value="New Jersey">
-      <option value="New Mexico">
-      <option value="New York">
-      <option value="North Carolina">
-      <option value="North Dakota">
-      <option value="Ohio">
-      <option value="Oklahoma">
-      <option value="Oregon">
-      <option value="Pennsylvania">
-      <option value="Rhode Island">
-      <option value="South Carolina">
-      <option value="South Dakota">
-      <option value="Tennessee">
-      <option value="Texas">
-      <option value="Utah">
-      <option value="Vermont">
-      <option value="Virginia">
-      <option value="Washington">
-      <option value="West Virginia">
-      <option value="Wisconsin">
-      <option value="Wyoming">
-    </datalist>
+    <div class="state-dropdown-wrapper">
+      <input class="fancy-input" id="state-select" placeholder="State name" required name="state-select" value="" autocomplete="off">
+      <div class="state-dropdown-list" id="state-dropdown-list"></div>
+    </div>
 
     <label class="fancy-input-label" >Club name</label>
     <input class="fancy-input" id="club-name-select" placeholder="Club name" required name = "club-name-select" autocomplete="off">

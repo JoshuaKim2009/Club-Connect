@@ -387,8 +387,10 @@ async function deleteClub(clubId) {
     }
 }
 
+const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+
 function normalizeState(stateInput) {
-    const validStates = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+    const validStates = states;
     
     const trimmed = stateInput.trim();
     
@@ -397,3 +399,60 @@ function normalizeState(stateInput) {
     
     return matchedState || null;
 }
+
+
+const stateDropdownList = document.getElementById('state-dropdown-list-edit');
+
+stateInput.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  stateDropdownList.innerHTML = '';
+  
+  if (value) {
+    const filtered = states.filter(state => state.toLowerCase().includes(value));
+    filtered.forEach(state => {
+      const div = document.createElement('div');
+      div.className = 'state-option';
+      div.textContent = state;
+      div.onclick = () => {
+        stateInput.value = state;
+        stateDropdownList.classList.remove('show');
+      };
+      stateDropdownList.appendChild(div);
+    });
+    stateDropdownList.classList.add('show');
+  } else {
+    stateDropdownList.classList.remove('show');
+  }
+});
+
+stateInput.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  stateDropdownList.innerHTML = '';
+  
+  if (value) {
+    const filtered = states.filter(state => state.toLowerCase().includes(value));
+    if (filtered.length > 0) {
+      filtered.forEach(state => {
+        const div = document.createElement('div');
+        div.className = 'state-option';
+        div.textContent = state;
+        div.onclick = () => {
+          stateInput.value = state;
+          stateDropdownList.classList.remove('show');
+        };
+        stateDropdownList.appendChild(div);
+      });
+      stateDropdownList.classList.add('show');
+    } else {
+      stateDropdownList.classList.remove('show');
+    }
+  } else {
+    stateDropdownList.classList.remove('show');
+  }
+});
+
+document.addEventListener('click', function(e) {
+  if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
+    stateDropdownList.classList.remove('show');
+  }
+});
