@@ -237,7 +237,18 @@ function normalizeSchoolName(schoolName) {
         return { valid: false, normalized: '', error: 'Please enter a school name.' };
     }
 
-    if (trimmed.length < 8 && trimmed === trimmed.toLowerCase() && !/\s/.test(trimmed)) {
+    const hasNoSpaces = !/\s/.test(trimmed);
+    const isAllLowercase = trimmed === trimmed.toLowerCase();
+    const hasRepeatedChars = /(.)\1{2,}/.test(trimmed); // 3+ same chars in a row
+    const hasWeirdPattern = /[;,.'\/\[\]\\]/.test(trimmed); // suspicious punctuation
+    const hasConsonantCluster = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(trimmed);
+    const isShort = trimmed.length < 15;
+    const hasMixedCaseNoSpaces = hasNoSpaces && /[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed) && trimmed.length < 10;
+    const hasRepeatingPattern = /(.{2,})\1{2,}/.test(trimmed);
+    const words = trimmed.split(/\s+/);
+    const hasRepeatedWords = words.length > 2 && words.some((word, i) => words.indexOf(word) !== i && words.lastIndexOf(word) !== i); // Same word appears 3+ times
+
+    if ((hasNoSpaces || hasRepeatedWords) && (isAllLowercase && isShort || hasRepeatedChars || hasWeirdPattern || hasConsonantCluster || hasMixedCaseNoSpaces || hasRepeatingPattern)) {
         return { 
             valid: false, 
             normalized: '', 
@@ -245,7 +256,6 @@ function normalizeSchoolName(schoolName) {
         };
     }
     
-    const words = trimmed.split(/\s+/);
     for (let word of words) {
         if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.') {
             continue;
