@@ -303,6 +303,7 @@ button {
   width: 300px;
 }
 
+#state-edit,
 #school-name-edit,
 #club-name-edit,
 #main-activity-edit,
@@ -314,6 +315,14 @@ button {
 }
 
 #club-name-select {
+  margin: 0 auto;
+  display: block;
+  width: 85%;
+  max-width: 380px;
+}
+
+
+#state-select{
   margin: 0 auto;
   display: block;
   width: 85%;

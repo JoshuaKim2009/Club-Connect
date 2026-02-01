@@ -48,6 +48,8 @@ const schoolNameInput = document.getElementById("school-name-select");
 const clubNameInput = document.getElementById("club-name-select");
 const clubDescriptionInput = document.getElementById("description-input");
 const clubActivityInput = document.getElementById("main-activity-select");
+const stateInput = document.getElementById("state-select");
+
 
 
 submitButton.disabled = true;
@@ -66,6 +68,22 @@ submitButton.addEventListener("click", async function(event){
     const clubName = clubNameInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
+    const state = stateInput.value.trim();
+
+
+    if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
+        await showAppAlert("Please fill in all club details.");
+        submitButton.disabled = false;
+        return; 
+    }
+
+    const normalizedState = normalizeState(state);
+
+    if (!normalizedState) {
+        await showAppAlert("Please enter a valid state");
+        submitButton.disabled = false;
+        return;
+    }
 
     const schoolNameResult = normalizeSchoolName(rawSchoolName);
     let schoolName;
@@ -97,13 +115,6 @@ submitButton.addEventListener("click", async function(event){
         schoolName = schoolNameResult.normalized;
     }
 
-
-    if (!clubName || !schoolName || !clubDescription) {
-        await showAppAlert("Please fill in all club details.");
-        submitButton.disabled = false;
-        return; 
-    }
-
     try {
         console.log("Attempting to save club data to Firestore...");
         const joinCode = await getUniqueJoinCode();
@@ -118,6 +129,7 @@ submitButton.addEventListener("click", async function(event){
 
         await setDoc(newClubRef, {
             schoolName: schoolName,
+            state: normalizedState,
             clubName: clubName,
             description: clubDescription,
             clubActivity: clubActivity,
@@ -151,6 +163,7 @@ submitButton.addEventListener("click", async function(event){
         clubNameInput.value = '';
         clubDescriptionInput.value = '';
         clubActivityInput.value = '';
+        stateInput.value = '';
 
     } catch (error) {
         console.error("Error creating club or updating user profile:", error);
@@ -280,4 +293,15 @@ function normalizeSchoolName(schoolName) {
     normalized = normalized.replace(/\s+/g, ' ').trim();
     
     return { valid: true, normalized: normalized, error: '' };
+}
+
+function normalizeState(stateInput) {
+    const validStates = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+    
+    const trimmed = stateInput.trim();
+    
+    // Find matching state (case-insensitive)
+    const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
+    
+    return matchedState || null;
 }

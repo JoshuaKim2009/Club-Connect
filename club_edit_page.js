@@ -40,6 +40,8 @@ const clubActivityInput = document.getElementById("main-activity-edit");
 const clubDescriptionInput = document.getElementById("description-edit");
 const deleteButton = document.getElementById("delete-club-button");
 const backButton = document.getElementById("back-button-edit");
+const stateInput = document.getElementById("state-edit");
+
 
 submitButton.disabled = true;
 schoolNameInput.disabled = true;
@@ -85,12 +87,15 @@ async function loadClubData(clubId, managerUid) {
         clubNameInput.value = clubData.clubName || '';
         clubActivityInput.value = clubData.clubActivity || '';
         clubDescriptionInput.value = clubData.description || '';
+        stateInput.value = clubData.state || '';
 
         schoolNameInput.disabled = false;
         clubNameInput.disabled = false;
         clubActivityInput.disabled = false;
         clubDescriptionInput.disabled = false;
         submitButton.disabled = false;
+        stateInput.disabled = false;
+
 
         
 
@@ -156,11 +161,21 @@ submitButton.addEventListener("click", async function(event){
     const clubName = clubNameInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
+    const state = stateInput.value.trim();
 
-    if (!clubName || !schoolName || !clubActivity || !clubDescription) {
+
+    if (!clubName || !schoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
         submitButton.disabled = false;
         submitButton.textContent = "UPDATE";
+        return;
+    }
+
+    const normalizedState = normalizeState(state);
+    
+    if (!normalizedState) {
+        await showAppAlert("Please enter a valid state");
+        submitButton.disabled = false;
         return;
     }
 
@@ -170,6 +185,7 @@ submitButton.addEventListener("click", async function(event){
 
         await updateDoc(clubRef, {
             schoolName: schoolName,
+            state: normalizedState,
             clubName: clubName,
             description: clubDescription,
             clubActivity: clubActivity,
@@ -369,4 +385,15 @@ async function deleteClub(clubId) {
         console.error("Error deleting club:", error);
         await showAppAlert("Failed to delete club: " + error.message);
     }
+}
+
+function normalizeState(stateInput) {
+    const validStates = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+    
+    const trimmed = stateInput.trim();
+    
+    // Find matching state (case-insensitive)
+    const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
+    
+    return matchedState || null;
 }

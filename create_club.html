@@ -20,6 +20,20 @@
       .pageTitle{
         margin-top: 110px;
       }
+      input[list] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+      }
+      input[list]::-webkit-calendar-picker-indicator {
+        display: none !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      input[list]::-webkit-list-button {
+        display: none !important;
+      }
     </style>
 
     
@@ -43,6 +57,61 @@
 
     <label class="fancy-input-label" >School name</label>
     <input class="fancy-input" id="school-name-select" placeholder="Full name of school (no abbreviations)" required name = "school-name-select" value ="">
+
+    <label class="fancy-input-label">State</label>
+    <input class="fancy-input" id="state-select" list="states-list" placeholder="State name" required name="state-select" value="">
+    <datalist id="states-list">
+      <option value="Alabama">
+      <option value="Alaska">
+      <option value="Arizona">
+      <option value="Arkansas">
+      <option value="California">
+      <option value="Colorado">
+      <option value="Connecticut">
+      <option value="Delaware">
+      <option value="Florida">
+      <option value="Georgia">
+      <option value="Hawaii">
+      <option value="Idaho">
+      <option value="Illinois">
+      <option value="Indiana">
+      <option value="Iowa">
+      <option value="Kansas">
+      <option value="Kentucky">
+      <option value="Louisiana">
+      <option value="Maine">
+      <option value="Maryland">
+      <option value="Massachusetts">
+      <option value="Michigan">
+      <option value="Minnesota">
+      <option value="Mississippi">
+      <option value="Missouri">
+      <option value="Montana">
+      <option value="Nebraska">
+      <option value="Nevada">
+      <option value="New Hampshire">
+      <option value="New Jersey">
+      <option value="New Mexico">
+      <option value="New York">
+      <option value="North Carolina">
+      <option value="North Dakota">
+      <option value="Ohio">
+      <option value="Oklahoma">
+      <option value="Oregon">
+      <option value="Pennsylvania">
+      <option value="Rhode Island">
+      <option value="South Carolina">
+      <option value="South Dakota">
+      <option value="Tennessee">
+      <option value="Texas">
+      <option value="Utah">
+      <option value="Vermont">
+      <option value="Virginia">
+      <option value="Washington">
+      <option value="West Virginia">
+      <option value="Wisconsin">
+      <option value="Wyoming">
+    </datalist>
 
     <label class="fancy-input-label" >Club name</label>
     <input class="fancy-input" id="club-name-select" placeholder="Club name" required name = "club-name-select">
