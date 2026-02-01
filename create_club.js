@@ -62,13 +62,45 @@ submitButton.addEventListener("click", async function(event){
       return; 
     }
 
-    const schoolName = schoolNameInput.value.trim();
+    const rawSchoolName = schoolNameInput.value.trim();
     const clubName = clubNameInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
 
+    const schoolNameResult = normalizeSchoolName(rawSchoolName);
+    let schoolName;
+
+    if (!schoolNameResult.valid) {
+        if (schoolNameResult.error === 'suspicious') {
+            const confirmed = await showAppConfirm(`"${rawSchoolName}" doesn't look like a typical school name. Continue anyways?`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                return;
+            }
+            schoolName = rawSchoolName;
+        } else {
+            const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES if to continue anyways or NO to correct it.`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                return;
+            }
+            schoolName = rawSchoolName; 
+        }
+    } else {
+        if (schoolNameResult.normalized !== rawSchoolName) {
+            const confirmed = await showAppConfirm(`We changed your school name from "${rawSchoolName}" to "${schoolNameResult.normalized}". Is this correct?`);
+            if (!confirmed) {
+                submitButton.disabled = false;
+                return;
+            }
+        }
+        schoolName = schoolNameResult.normalized;
+    }
+
+
     if (!clubName || !schoolName || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
+        submitButton.disabled = false;
         return; 
     }
 
@@ -151,11 +183,7 @@ function generateRandomCode(length, characters) {
     return result;
 }
 
-/**
- * Generates and reserves a unique 6-digit join code using a Firestore transaction.
- * This function will retry until a unique code is successfully written to the 'join_codes' collection.
- * @returns {Promise<string>} A promise that resolves with the unique join code.
- */
+
 async function getUniqueJoinCode() {
     while (true) { // Keep trying until a unique code is found and reserved
         const potentialCode = generateRandomCode(JOIN_CODE_LENGTH, JOIN_CODE_CHARS);
@@ -198,4 +226,48 @@ async function createManagerMemberEntry(clubId, managerUid) {
         joinedAt: serverTimestamp() // Use serverTimestamp for a reliable timestamp
     });
     console.log(`Manager ${managerUid} added to members subcollection with role 'manager' for club ${clubId}.`);
+}
+
+
+
+function normalizeSchoolName(schoolName) {
+    const trimmed = schoolName.trim();
+    
+    if (!trimmed) {
+        return { valid: false, normalized: '', error: 'Please enter a school name.' };
+    }
+
+    if (trimmed.length < 8 && trimmed === trimmed.toLowerCase() && !/\s/.test(trimmed)) {
+        return { 
+            valid: false, 
+            normalized: '', 
+            error: 'suspicious'
+        };
+    }
+    
+    const words = trimmed.split(/\s+/);
+    for (let word of words) {
+        if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.') {
+            continue;
+        }
+        
+        if (word.length >= 2 && /[A-Z]/.test(word) && word === word.toUpperCase() && /^[A-Z]+$/.test(word)) {
+            return { 
+                valid: false, 
+                normalized: '', 
+                error: 'Please spell out the full school name without abbreviations.' 
+            };
+        }
+    }
+    
+    let normalized = trimmed;
+    if (!/High School$/i.test(normalized)) {
+        normalized = normalized.replace(/\bHS\b$/i, 'High School');
+    }
+    
+    normalized = normalized.replace(/\bH\.?S\.?\b$/i, 'High School');
+    
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+    
+    return { valid: true, normalized: normalized, error: '' };
 }
