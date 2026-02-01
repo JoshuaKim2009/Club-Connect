@@ -50,22 +50,23 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
         if (clubId) {
             clubPageTitle.textContent = ""; 
+            const memberData = await fetchMemberData(clubId, currentUser.uid);
             
-            const unreadCount = await getUnreadAnnouncementCount(clubId, myUid);
+            const unreadCount = await getUnreadAnnouncementCount(clubId, myUid, memberData);
             updateUnreadBadge(unreadCount);
             setupAnnouncementListeners(clubId, myUid);
 
             setupClubMemberPageListeners(clubId, myUid, myName);
 
-            const unreadMessagesCount = await getUnreadMessageCount(clubId, currentUser.uid);
+            const unreadMessagesCount = await getUnreadMessageCount(clubId, myUid, memberData);
             updateUnreadMessagesBadge(unreadMessagesCount);
 
-            setupMessageListeners(clubId, currentUser.uid);
+            setupMessageListeners(clubId, myUid);
 
-            const unreadPollsCount = await getUnreadPollCount(clubId, currentUser.uid);
+            const unreadPollsCount = await getUnreadPollCount(clubId, myUid, memberData);
             updateUnreadPollsBadge(unreadPollsCount);
 
-            setupPollListeners(clubId, currentUser.uid);
+            setupPollListeners(clubId, myUid);
 
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
@@ -517,22 +518,20 @@ function updateUnreadBadge(count) {
     }
 }
 
-async function getUnreadAnnouncementCount(clubId, userId) {
+async function getUnreadAnnouncementCount(clubId, userId, memberData = null) {
     if (!clubId || !userId) {
         console.warn("Cannot get unread count: clubId or userId missing.");
         return 0;
     }
 
     try {
-        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
-        const memberDocSnap = await getDoc(memberDocRef);
-        
-        if (!memberDocSnap.exists()) {
-            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+        if (!memberData) {
+            memberData = await fetchMemberData(clubId, userId);
+        }
+
+        if (!memberData) {
             return 0;
         }
-        
-        const memberData = memberDocSnap.data();
         // Use lastSeenAnnouncements if it exists, otherwise use joinedAt
         const cutoffTimestamp = memberData.lastSeenAnnouncements || memberData.joinedAt;
         
@@ -597,22 +596,20 @@ function updateUnreadMessagesBadge(count) {
     }
 }
 
-async function getUnreadMessageCount(clubId, userId) {
+async function getUnreadMessageCount(clubId, userId, memberData = null) {
     if (!clubId || !userId) {
         console.warn("Cannot get unread message count: clubId or userId missing.");
         return 0;
     }
 
     try {
-        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
-        const memberDocSnap = await getDoc(memberDocRef);
-        
-        if (!memberDocSnap.exists()) {
-            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+        if (!memberData) {
+            memberData = await fetchMemberData(clubId, userId);
+        }
+
+        if (!memberData) {
             return 0;
         }
-        
-        const memberData = memberDocSnap.data();
         // Use lastSeenMessages if it exists, otherwise use joinedAt
         const cutoffTimestamp = memberData.lastSeenMessages || memberData.joinedAt;
         
@@ -678,22 +675,20 @@ function updateUnreadPollsBadge(count) {
     }
 }
 
-async function getUnreadPollCount(clubId, userId) {
+async function getUnreadPollCount(clubId, userId, memberData = null) {
     if (!clubId || !userId) {
         console.warn("Cannot get unread poll count: clubId or userId missing.");
         return 0;
     }
 
     try {
-        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
-        const memberDocSnap = await getDoc(memberDocRef);
-        
-        if (!memberDocSnap.exists()) {
-            console.warn(`Member document not found for user ${userId} in club ${clubId}`);
+        if (!memberData) {
+            memberData = await fetchMemberData(clubId, userId);
+        }
+
+        if (!memberData) {
             return 0;
         }
-        
-        const memberData = memberDocSnap.data();
         const cutoffTimestamp = memberData.lastSeenPolls || memberData.joinedAt;
         
         if (!cutoffTimestamp) {
