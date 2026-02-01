@@ -297,42 +297,67 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
     const eventsRef = collection(db, "clubs", currentClubId, "events");
 
     try {
-        const querySnapshot = await getDocs(eventsRef);
+        const todayString = new Date().toISOString().split('T')[0];
+        
+        // Query one-time events happening today or later
+        const oneTimeQuery = query(
+            eventsRef,
+            where("isWeekly", "==", false),
+            where("eventDate", ">=", todayString)
+        );
+        
+        // Query weekly events that haven't ended yet
+        const weeklyQuery = query(
+            eventsRef,
+            where("isWeekly", "==", true),
+            where("weeklyEndDate", ">=", todayString)
+        );
+        
+        const [oneTimeSnapshot, weeklySnapshot] = await Promise.all([
+            getDocs(oneTimeQuery),
+            getDocs(weeklyQuery)
+        ]);
         let allPossibleOccurrences = [];
 
 
-        querySnapshot.forEach(doc => {
+        oneTimeSnapshot.forEach(doc => {
             const eventData = doc.data();
             const eventId = doc.id;
             const exceptions = eventData.exceptions || [];
 
-            if (eventData.isWeekly) {
-                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
-                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
-                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+            // Process one-time events
+            const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
+            if (!exceptions.includes(eventDateString)) {
+                allPossibleOccurrences.push({
+                    eventData: eventData,
+                    occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'),
+                    originalEventId: eventId
+                });
+            }
+        });
 
-                let currentDate = new Date(startDate);
-                while (currentDate.getTime() <= endDate.getTime()) {
-                    const currentOccDateString = currentDate.toISOString().split('T')[0];
+        weeklySnapshot.forEach(doc => {
+            const eventData = doc.data();
+            const eventId = doc.id;
+            const exceptions = eventData.exceptions || [];
 
-                    if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(currentOccDateString)) {
-                        allPossibleOccurrences.push({
-                            eventData: eventData,
-                            occurrenceDate: new Date(currentDate),
-                            originalEventId: eventId
-                        });
-                    }
-                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-                }
-            } else { 
-                const eventDateString = new Date(eventData.eventDate + 'T00:00:00Z').toISOString().split('T')[0];
-                if (!exceptions.includes(eventDateString)) {
+            // Process weekly events
+            const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+            const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+            const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+
+            let currentDate = new Date(startDate);
+            while (currentDate.getTime() <= endDate.getTime()) {
+                const currentOccDateString = currentDate.toISOString().split('T')[0];
+
+                if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(currentOccDateString)) {
                     allPossibleOccurrences.push({
                         eventData: eventData,
-                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'),
+                        occurrenceDate: new Date(currentDate),
                         originalEventId: eventId
                     });
                 }
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
             }
         });
 
