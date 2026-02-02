@@ -55,6 +55,7 @@ let hasMoreMessages = true;
 let isLoadingOlder = false;
 let previousSenderId = null;
 let loadedMessageIds = new Set();
+let selectedMessageForOptions = null;
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
@@ -357,6 +358,8 @@ function createMessageElement(messageId, messageData, showSenderName) {
         messageWrapper.appendChild(senderName);
     }
 
+    let messageContent;
+
     if (messageData.type === "image" && messageData.imageUrl) {
         const imageContainer = document.createElement('div');
         imageContainer.className = 'message message-image';
@@ -373,6 +376,7 @@ function createMessageElement(messageId, messageData, showSenderName) {
         
         imageContainer.appendChild(img);
         messageWrapper.appendChild(imageContainer);
+        messageContent = imageContainer;
     } else {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
@@ -384,8 +388,45 @@ function createMessageElement(messageId, messageData, showSenderName) {
         
         
         messageWrapper.appendChild(messageDiv);
+        messageContent = messageDiv; 
     }
-    
+    let pressTimer;
+
+    messageContent.addEventListener('mousedown', (e) => {
+        if (e.button === 0) {
+            pressTimer = setTimeout(() => {
+                showMessageOptions(messageId, messageData, messageWrapper);
+            }, 500);
+        }
+    });
+
+    messageContent.addEventListener('mouseup', () => {
+        clearTimeout(pressTimer);
+    });
+
+    messageContent.addEventListener('mouseleave', () => {
+        clearTimeout(pressTimer);
+    });
+
+    messageContent.addEventListener('touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+            navigator.vibrate && navigator.vibrate(50);
+            showMessageOptions(messageId, messageData, messageWrapper);
+        }, 500);
+    });
+
+    messageContent.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+    });
+
+    messageContent.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+    });
+
+    messageContent.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showMessageOptions(messageId, messageData, messageWrapper);
+    });
     return messageWrapper;
 }
 
@@ -638,3 +679,50 @@ function clearPendingImages() {
     pendingImages = [];
     pendingImagesContainer.innerHTML = '';
 }
+
+
+
+function showMessageOptions(messageId, messageData, messageElement) {
+    selectedMessageForOptions = {
+        id: messageId,
+        data: messageData,
+        element: messageElement
+    };
+    
+    // Set sender name
+    document.getElementById('modalSenderName').textContent = messageData.createdByName || "Anonymous";
+    
+    // Clone the message for preview
+    const modalMessageContainer = document.getElementById('modalMessageContainer');
+    modalMessageContainer.innerHTML = '';
+    
+    // Create a clone of the message content only (not the wrapper)
+    const messageContent = messageElement.querySelector('.message');
+    if (messageContent) {
+        const messageClone = messageContent.cloneNode(true);
+        modalMessageContainer.appendChild(messageClone);
+    }
+    
+    // Show modal
+    document.getElementById('messageOptionsOverlay').classList.add('show');
+}
+
+function hideMessageOptions() {
+    document.getElementById('messageOptionsOverlay').classList.remove('show');
+    selectedMessageForOptions = null;
+}
+
+// Close modal when clicking overlay (outside modal)
+document.getElementById('messageOptionsOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'messageOptionsOverlay') {
+        hideMessageOptions();
+    }
+});
+
+// Reply button handler - for now just close and show alert
+document.getElementById('replyOptionButton')?.addEventListener('click', () => {
+    if (selectedMessageForOptions) {
+        hideMessageOptions();
+        showAppAlert('Reply feature coming soon!');
+    }
+});
