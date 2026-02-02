@@ -180,36 +180,25 @@ submitButton.addEventListener("click", async function(event){
     }
 
     const schoolNameResult = normalizeSchoolName(rawSchoolName);
-    let schoolName;
+    let schoolName = rawSchoolName;
 
     if (!schoolNameResult.valid) {
-        if (schoolNameResult.error === 'suspicious') {
-            const confirmed = await showAppConfirm(`"${rawSchoolName}" doesn't look like a typical school name. Continue anyways?`);
-            if (!confirmed) {
-                submitButton.disabled = false;
-                submitButton.textContent = "UPDATE";
-                return;
-            }
-            schoolName = rawSchoolName;
-        } else {
-            const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES to continue anyways or NO to correct it.`);
-            if (!confirmed) {
-                submitButton.disabled = false;
-                submitButton.textContent = "UPDATE";
-                return;
-            }
-            schoolName = rawSchoolName; 
+        const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES to continue or NO to correct it.`);
+        if (!confirmed) {
+            submitButton.disabled = false;
+            submitButton.textContent = "UPDATE";
+            return;
         }
+        schoolName = rawSchoolName; 
     } else {
         if (schoolNameResult.normalized !== rawSchoolName) {
-            const confirmed = await showAppConfirm(`We changed your school name from "${rawSchoolName}" to "${schoolNameResult.normalized}". Is this correct?`);
+            const confirmed = await showAppConfirm(`We recommend changing "${rawSchoolName}" to "${schoolNameResult.normalized}". Would you like to use the recommended version?`);
             if (!confirmed) {
-                submitButton.disabled = false;
-                submitButton.textContent = "UPDATE";
-                return;
+                schoolName = rawSchoolName;
+            } else {
+                schoolName = schoolNameResult.normalized;
             }
         }
-        schoolName = schoolNameResult.normalized;
     }
 
     try {
@@ -498,37 +487,11 @@ function normalizeSchoolName(schoolName) {
         return { valid: false, normalized: '', error: 'Please enter a school name.' };
     }
 
-    const hasNoSpaces = !trimmed.includes(' ');
-    const isAllLowercase = trimmed === trimmed.toLowerCase();
-    const hasRepeatedChars = /(.)\1{2,}/.test(trimmed);
-    const isShort = trimmed.length < 15;
-
-    if (hasNoSpaces || isAllLowercase || isShort) {
-        return { 
-            valid: false, 
-            normalized: '', 
-            error: 'suspicious'
-        };
-    }
-
-    if (hasRepeatedChars) {
-        return { 
-            valid: false, 
-            normalized: '', 
-            error: 'suspicious'
-        };
-    }
-
     const words = trimmed.split(' ');
     
-    for (let word of words) {
-        if (word.toUpperCase() === 'HS' || word.toUpperCase() === 'H.S' || word.toUpperCase() === 'H.S.' ||
-            word.toUpperCase() === 'MS' || word.toUpperCase() === 'M.S' || word.toUpperCase() === 'M.S.' ||
-            word.toUpperCase() === 'ES' || word.toUpperCase() === 'E.S' || word.toUpperCase() === 'E.S.') {
-            continue;
-        }
-        
-        if (word.length >= 2 && /[A-Z]/.test(word) && word === word.toUpperCase() && /^[A-Z]+$/.test(word)) {
+    if (words.length === 1) {
+        const word = words[0];
+        if (word.length >= 2 && word.length <= 5 && /^[a-zA-Z]+$/.test(word)) {
             return { 
                 valid: false, 
                 normalized: '', 
