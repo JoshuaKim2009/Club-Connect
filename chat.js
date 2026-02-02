@@ -56,6 +56,7 @@ let isLoadingOlder = false;
 let previousSenderId = null;
 let loadedMessageIds = new Set();
 let selectedMessageForOptions = null;
+let replyingToMessage = null;
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
@@ -498,6 +499,12 @@ async function saveMessage() {
 
 if (sendButton) {
     sendButton.addEventListener('click', async () => {
+        if (replyingToMessage) {
+            await showAppAlert('Reply sending not implemented yet!');
+            cancelReply();
+            return;
+        }
+        
         if (pendingImages.length > 0) {
             await saveImages();
         }
@@ -510,6 +517,12 @@ if (sendButton) {
 if (chatInput) {
     chatInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
+            if (replyingToMessage) {
+                await showAppAlert('Reply sending not implemented yet!');
+                cancelReply();
+                return;
+            }
+            
             if (pendingImages.length > 0) {
                 await saveImages();
             }
@@ -712,17 +725,46 @@ function hideMessageOptions() {
     selectedMessageForOptions = null;
 }
 
-// Close modal when clicking overlay (outside modal)
+function startReply(messageId, messageData) {
+    replyingToMessage = {
+        id: messageId,
+        text: messageData.type === "image" ? "Image" : messageData.message,
+        senderName: messageData.createdByName || "Anonymous"
+    };
+    
+    document.getElementById('replyToName').textContent = replyingToMessage.senderName;
+    document.getElementById('replyToMessage').textContent = replyingToMessage.text;
+    
+    document.getElementById('replyPreviewBar').classList.add('show');
+    
+    chatMessages.classList.add('blur-background');
+    
+    chatMessages.style.paddingBottom = `calc(165px + env(safe-area-inset-bottom) + 20px)`;
+    
+    chatInput.focus();
+}
+
+function cancelReply() {
+    replyingToMessage = null;
+    
+    document.getElementById('replyPreviewBar').classList.remove('show');
+    
+    chatMessages.classList.remove('blur-background');
+    
+    chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;
+}
+
+document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);
+
 document.getElementById('messageOptionsOverlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'messageOptionsOverlay') {
         hideMessageOptions();
     }
 });
 
-// Reply button handler - for now just close and show alert
 document.getElementById('replyOptionButton')?.addEventListener('click', () => {
     if (selectedMessageForOptions) {
+        startReply(selectedMessageForOptions.id, selectedMessageForOptions.data);
         hideMessageOptions();
-        showAppAlert('Reply feature coming soon!');
     }
 });
