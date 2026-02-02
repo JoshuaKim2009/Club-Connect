@@ -5,6 +5,12 @@ body {
     background: var(--header-bg-start);
     padding-bottom: 25px;
 }
+
+#no-polls-message {
+  text-align: center;
+  width: 100%;
+}
+
 #poll-creation-overlay {
     position: fixed;
     top: 0;

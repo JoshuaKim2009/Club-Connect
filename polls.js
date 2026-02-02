@@ -320,8 +320,15 @@ function setupRealtimePollsListener() {
         });
 
         const noPollsMessage = document.getElementById('no-polls-message');
-        if (pollsContainer.children.length === 0 && noPollsMessage) {
-            noPollsMessage.style.display = 'block';
+        if (pollsContainer.children.length === 0) {
+            if (role === 'member') {
+                if (noPollsMessage) {
+                    noPollsMessage.textContent = 'NO POLLS YET';
+                    noPollsMessage.style.display = 'block';
+                }
+            } else {
+                if (noPollsMessage) noPollsMessage.style.display = 'none';
+            }
         } else if (noPollsMessage) {
             noPollsMessage.style.display = 'none';
         }
