@@ -1,9 +1,6 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-// IMPORTANT: Ensure getAuth and onAuthStateChanged are imported for authentication
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-// IMPORTANT: Ensure collection, addDoc, updateDoc, and arrayUnion are imported for Firestore
 import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, arrayUnion, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
@@ -33,7 +30,8 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUser = user;
     currentUserEmail = user.email;
-    console.log("User is logged in. UID:", currentUser.uid, "Email:", currentUserEmail);
+    console.log(currentUser.uid);
+    console.log(currentUserEmail);
     document.getElementById("submit-club-button").disabled = false;
   } else {
     currentUser = null;
@@ -109,13 +107,12 @@ submitButton.addEventListener("click", async function(event){
     }
 
     try {
-        console.log("Attempting to save club data to Firestore...");
         const joinCode = await getUniqueJoinCode();
         if (!joinCode) {
             await showAppAlert("Failed to generate a unique join code. Please try again.");
             return;
         }
-        console.log(`Generated and reserved unique join code: ${joinCode}`);
+        console.log(`join code: ${joinCode}`);
 
         const newClubRef = doc(collection(db, "clubs"));
         const newClubId = newClubRef.id;
@@ -191,31 +188,25 @@ function generateRandomCode(length, characters) {
 
 
 async function getUniqueJoinCode() {
-    while (true) { // Keep trying until a unique code is found and reserved
+    while (true) { 
         const potentialCode = generateRandomCode(JOIN_CODE_LENGTH, JOIN_CODE_CHARS);
-        const joinCodeRef = doc(db, "join_codes", potentialCode); // Reference to a document named after the code
+        const joinCodeRef = doc(db, "join_codes", potentialCode); 
 
         try {
             await runTransaction(db, async (transaction) => {
                 const joinCodeDoc = await transaction.get(joinCodeRef);
                 if (joinCodeDoc.exists()) {
-                    // Code already exists, throw to retry the transaction/loop
                     throw new Error("Code exists, retry transaction");
                 }
-                // If it doesn't exist, reserve it within this transaction
                 transaction.set(joinCodeRef, { reserved: true, createdAt: new Date(), generatedBy: currentUser.uid });
             });
-            // If the transaction completes without throwing, the code is unique and reserved
             console.log(`Successfully reserved unique join code: ${potentialCode}`);
-            return potentialCode; // Return the unique code
+            return potentialCode; 
         } catch (e) {
             if (e.message === "Code exists, retry transaction") {
                 console.log(`Join code ${potentialCode} already exists, retrying generation.`);
-                // Continue the loop to generate another code
             } else {
                 console.error("Error during join code reservation transaction:", e);
-                // For other errors, we might want to throw or handle differently,
-                // but for this retry-until-success scenario, we just let it loop.
             }
         }
     }
@@ -225,11 +216,11 @@ async function getUniqueJoinCode() {
 
 
 async function createManagerMemberEntry(clubId, managerUid) {
-    const db = getFirestore(); // Get the Firestore instance (already initialized globally)
+    const db = getFirestore(); 
     const managerMemberRef = doc(db, "clubs", clubId, "members", managerUid);
     await setDoc(managerMemberRef, {
-        role: "manager", // The manager is assigned the 'manager' role
-        joinedAt: serverTimestamp() // Use serverTimestamp for a reliable timestamp
+        role: "manager",
+        joinedAt: serverTimestamp() 
     });
     console.log(`Manager ${managerUid} added to members subcollection with role 'manager' for club ${clubId}.`);
 }
