@@ -749,3 +749,11 @@ body {
     filter: blur(8px);
     transition: filter 0.3s ease;
 }
+
+
+.message-timestamp {
+    color: #999;
+    font-size: 18px;
+    font-weight: normal;
+    margin-left: 8px;
+}

@@ -127,7 +127,7 @@ onAuthStateChanged(auth, async (user) => {
     
 });
 
-//If you are a manager it takes you to manager page but if you are member it takes you back to member
+
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo');
@@ -355,7 +355,25 @@ function createMessageElement(messageId, messageData, showSenderName) {
     if (showSenderName) {
         const senderName = document.createElement('div');
         senderName.className = 'sender-name';
-        senderName.textContent = messageData.createdByName || "Anonymous";
+        
+        const nameText = document.createElement('span');
+        nameText.textContent = messageData.createdByName || "Anonymous";
+        senderName.appendChild(nameText);
+        
+        if (messageData.createdAt) {
+            const timestamp = document.createElement('span');
+            timestamp.className = 'message-timestamp';
+            
+            const date = messageData.createdAt.toDate();
+            const hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            
+            timestamp.textContent = `${displayHours}:${minutes} ${ampm}`;
+            senderName.appendChild(timestamp);
+        }
+        
         messageWrapper.appendChild(senderName);
     }
 
@@ -746,21 +764,17 @@ function showMessageOptions(messageId, messageData, messageElement) {
         element: messageElement
     };
     
-    // Set sender name
     document.getElementById('modalSenderName').textContent = messageData.createdByName || "Anonymous";
     
-    // Clone the message for preview
     const modalMessageContainer = document.getElementById('modalMessageContainer');
     modalMessageContainer.innerHTML = '';
     
-    // Create a clone of the message content only (not the wrapper)
     const messageContent = messageElement.querySelector('.message');
     if (messageContent) {
         const messageClone = messageContent.cloneNode(true);
         modalMessageContainer.appendChild(messageClone);
     }
     
-    // Show modal
     document.getElementById('messageOptionsOverlay').classList.add('show');
 }
 
