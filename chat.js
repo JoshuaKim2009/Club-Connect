@@ -359,6 +359,47 @@ function createMessageElement(messageId, messageData, showSenderName) {
         messageWrapper.appendChild(senderName);
     }
 
+    if (messageData.replyTo) {
+        const replyPreview = document.createElement('div');
+        replyPreview.className = 'reply-preview-container';
+        if (messageData.createdByUid === currentUser.uid) {
+            replyPreview.classList.add('sent');
+        }
+        
+        const replyBubbleContainer = document.createElement('div');
+        replyBubbleContainer.className = 'reply-bubble-container';
+
+        const replyName = document.createElement('div');
+        replyName.className = 'reply-name';
+        replyName.textContent = messageData.replyTo.senderName;
+
+        const replyBubble = document.createElement('div');
+        replyBubble.className = 'reply-bubble';
+        replyBubble.dataset.replyToMessageId = messageData.replyTo.messageId;
+
+        const replyText = document.createElement('div');
+        replyText.className = 'reply-text';
+        const maxLength = 50;
+        let displayText = messageData.replyTo.text;
+        if (displayText.length > maxLength) {
+            displayText = displayText.substring(0, maxLength) + '...';
+        }
+        replyText.textContent = displayText;
+
+        replyBubble.appendChild(replyText);
+        replyBubbleContainer.appendChild(replyName);
+        replyBubbleContainer.appendChild(replyBubble);
+        replyPreview.appendChild(replyBubbleContainer);
+
+        
+        replyBubbleContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showThreadView(messageId, messageData);
+        });
+        
+        messageWrapper.appendChild(replyPreview);
+    }
+
     let messageContent;
 
     if (messageData.type === "image" && messageData.imageUrl) {
@@ -484,6 +525,16 @@ async function saveMessage() {
         type: "text"
     };
 
+    if (replyingToMessage) {
+        messageData.replyTo = {
+            messageId: replyingToMessage.id,
+            text: replyingToMessage.text,
+            senderName: replyingToMessage.senderName,
+            type: replyingToMessage.type || "text",
+            imageUrl: replyingToMessage.imageUrl || null
+        };
+    }
+
     batch.set(newMessageRef, messageData);
 
     try {
@@ -491,6 +542,9 @@ async function saveMessage() {
         
         //await updateLastSeenMessages();
         chatInput.value = "";
+        if (replyingToMessage) {
+            cancelReply();
+        }
     } catch (error) {
         console.error("Failed to send message:", error);
     }
@@ -499,11 +553,6 @@ async function saveMessage() {
 
 if (sendButton) {
     sendButton.addEventListener('click', async () => {
-        if (replyingToMessage) {
-            await showAppAlert('Reply sending not implemented yet!');
-            cancelReply();
-            return;
-        }
         
         if (pendingImages.length > 0) {
             await saveImages();
@@ -517,11 +566,6 @@ if (sendButton) {
 if (chatInput) {
     chatInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
-            if (replyingToMessage) {
-                await showAppAlert('Reply sending not implemented yet!');
-                cancelReply();
-                return;
-            }
             
             if (pendingImages.length > 0) {
                 await saveImages();
@@ -729,7 +773,9 @@ function startReply(messageId, messageData) {
     replyingToMessage = {
         id: messageId,
         text: messageData.type === "image" ? "Image" : messageData.message,
-        senderName: messageData.createdByName || "Anonymous"
+        senderName: messageData.createdByName || "Anonymous",
+        type: messageData.type || "text",
+        imageUrl: messageData.imageUrl || null
     };
     
     document.getElementById('replyToName').textContent = replyingToMessage.senderName;
@@ -768,3 +814,73 @@ document.getElementById('replyOptionButton')?.addEventListener('click', () => {
         hideMessageOptions();
     }
 });
+
+
+
+function showThreadView(replyMessageId, replyMessageData) {
+    const threadOverlay = document.createElement('div');
+    threadOverlay.className = 'thread-view-overlay';
+    threadOverlay.id = 'threadViewOverlay';
+    
+    const threadContainer = document.createElement('div');
+    threadContainer.className = 'thread-view-container';
+    
+    const originalMsgWrapper = document.createElement('div');
+    originalMsgWrapper.className = 'thread-message-wrapper';
+    if (replyMessageData.replyTo.type === 'image') {
+        originalMsgWrapper.innerHTML = `
+            <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
+            <div class="thread-message message-image">
+                <img src="${replyMessageData.replyTo.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
+            </div>
+        `;
+    } else {
+        originalMsgWrapper.innerHTML = `
+            <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
+            <div class="thread-message">${replyMessageData.replyTo.text}</div>
+        `;
+    }
+    
+    const replyMsgWrapper = document.createElement('div');
+    replyMsgWrapper.className = 'thread-message-wrapper';
+    if (replyMessageData.type === 'image') {
+        replyMsgWrapper.innerHTML = `
+            <div class="thread-sender-name">${replyMessageData.createdByName}</div>
+            <div class="thread-message message-image">
+                <img src="${replyMessageData.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
+            </div>
+        `;
+    } else {
+        replyMsgWrapper.innerHTML = `
+            <div class="thread-sender-name">${replyMessageData.createdByName}</div>
+            <div class="thread-message">${replyMessageData.message}</div>
+        `;
+    }
+    
+    threadContainer.appendChild(originalMsgWrapper);
+    threadContainer.appendChild(replyMsgWrapper);
+    threadOverlay.appendChild(threadContainer);
+    
+    document.body.appendChild(threadOverlay);
+    
+    chatMessages.classList.add('thread-blur');
+    
+    requestAnimationFrame(() => {
+        threadOverlay.classList.add('show');
+    });
+    
+    threadOverlay.addEventListener('click', (e) => {
+        hideThreadView();
+    });
+}
+
+function hideThreadView() {
+    const threadOverlay = document.getElementById('threadViewOverlay');
+    if (threadOverlay) {
+        threadOverlay.classList.remove('show');
+        chatMessages.classList.remove('thread-blur');
+        setTimeout(() => {
+            threadOverlay.remove();
+        }, 300);
+    }
+}
