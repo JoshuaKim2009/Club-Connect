@@ -79,7 +79,8 @@ body {
 
 .chat-input-container {
     position: fixed;
-    bottom: env(safe-area-inset-bottom);
+    /* bottom: env(safe-area-inset-bottom); */
+    bottom: 0;
     left: 0;
     right: 0;
 
@@ -89,6 +90,7 @@ body {
     padding: 10px;
     padding-inline: calc(10px + env(safe-area-inset-left))
                     calc(10px + env(safe-area-inset-right));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
 
     background: linear-gradient(to top, var(--header-bg-start), var(--header-bg-end));
     border-top: 3px solid black;
@@ -649,7 +651,7 @@ body {
 
 .reply-bubble {
     background: rgba(200, 200, 200, 0.6);
-    border: 2px solid #888;
+    border: 2px solid #494949;
     border-radius: 10px;
     padding: 5px 10px;
     max-width: 200px;
