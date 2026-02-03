@@ -631,12 +631,22 @@ if (chatInput && inputContainer && chatMessages) {
                 inputContainer.style.bottom = `${keyboardHeight}px`;
                 chatMessages.style.paddingBottom = `${keyboardHeight + 85}px`;
                 
+                const replyBar = document.getElementById('replyPreviewBar');
+                if (replyingToMessage && replyBar) {
+                    replyBar.style.bottom = `${keyboardHeight + 85}px`;
+                }
+
                 setTimeout(() => {
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }, 100);
             } else {
                 inputContainer.style.bottom = `env(safe-area-inset-bottom)`;
                 chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;
+
+                const replyBar = document.getElementById('replyPreviewBar');
+                if (replyBar) {
+                    replyBar.style.bottom = `calc(85px + env(safe-area-inset-bottom))`;
+                }
             }
         });
     }
@@ -813,7 +823,8 @@ function startReply(messageId, messageData) {
     
     document.getElementById('replyPreviewBar').classList.add('show');
     
-    chatMessages.style.overflowY = 'hidden';
+    chatMessages.classList.add('scroll-locked');
+
     chatMessages.classList.add('blur-background');
     
     chatMessages.style.paddingBottom = `calc(165px + env(safe-area-inset-bottom) + 20px)`;
@@ -826,7 +837,7 @@ function cancelReply() {
     
     document.getElementById('replyPreviewBar').classList.remove('show');
     
-    chatMessages.style.overflowY = 'auto';
+    chatMessages.classList.remove('scroll-locked');
     chatMessages.classList.remove('blur-background');
     
     chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;

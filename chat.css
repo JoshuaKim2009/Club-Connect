@@ -763,3 +763,9 @@ body {
     font-weight: normal;
     margin-left: 8px;
 }
+
+.chat-messages.scroll-locked {
+    overflow: hidden !important;
+    touch-action: none;
+    -webkit-overflow-scrolling: auto;
+}
