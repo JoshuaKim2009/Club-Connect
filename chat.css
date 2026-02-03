@@ -57,7 +57,7 @@ body {
     overflow-x: hidden;
     padding: 20px;
     padding-top: calc(70px + env(safe-area-inset-top) + 20px);
-    padding-bottom: calc(85px + env(safe-area-inset-bottom) + 20px);
+    /* padding-bottom: calc(85px + env(safe-area-inset-bottom) + 20px); */
     padding-left: max(20px, env(safe-area-inset-left));
     padding-right: max(20px, env(safe-area-inset-right));
     /* background-image: 
@@ -79,7 +79,7 @@ body {
 
 .chat-input-container {
     position: fixed;
-    bottom: env(safe-area-inset-bottom);
+    /* bottom: env(safe-area-inset-bottom); */
     /* bottom: 0; */
     left: 0;
     right: 0;
@@ -289,7 +289,7 @@ body {
 
 .upload-dropdown {
     position: fixed;
-    bottom: calc(75px + env(safe-area-inset-bottom));
+    /* bottom: calc(75px + env(safe-area-inset-bottom)); */
     left: max(10px, env(safe-area-inset-left));
     background: radial-gradient(circle at center, #ffffff, #e0e0e0);
     border: 3px solid black;
@@ -335,7 +335,7 @@ body {
 /* Pending Images Container */
 .pending-images-container {
     position: fixed;
-    bottom: calc(75px + env(safe-area-inset-bottom));
+    /* bottom: calc(75px + env(safe-area-inset-bottom)); */
     right: max(10px, env(safe-area-inset-right));
     display: flex;
     flex-direction: column;
@@ -530,7 +530,7 @@ body {
 
 .reply-preview-bar {
     position: fixed;
-    bottom: calc(85px + env(safe-area-inset-bottom));
+    /* bottom: calc(85px + env(safe-area-inset-bottom)); */
     left: max(20px, env(safe-area-inset-left));
     right: max(20px, env(safe-area-inset-right));
     z-index: 999;
@@ -768,4 +768,9 @@ body {
     overflow: hidden !important;
     touch-action: none;
     -webkit-overflow-scrolling: auto;
+}
+
+body.scroll-locked {
+    touch-action: none;
+    overflow: hidden;
 }
