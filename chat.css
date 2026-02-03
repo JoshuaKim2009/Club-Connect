@@ -80,7 +80,7 @@ body {
 .chat-input-container {
     position: fixed;
     /* bottom: env(safe-area-inset-bottom); */
-    /* bottom: 0; */
+    bottom: 0;
     left: 0;
     right: 0;
 
@@ -100,6 +100,7 @@ body {
     overflow: hidden;
     z-index: 1000;
     transition: bottom 0.3s ease;
+    box-shadow: 0 30px 0 var(--header-bg-start);
 }
 
 .chat-input {
@@ -651,7 +652,7 @@ body {
 
 .reply-bubble {
     background: rgba(200, 200, 200, 0.6);
-    border: 2px solid #000000;
+    border: 2px solid rgba(0, 0, 0, 0.6);
     border-radius: 10px;
     padding: 5px 10px;
     max-width: 200px;

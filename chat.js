@@ -93,7 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.classList.add('loading');
     }
     measureSafeAreaBottom();
-    measureLayout();
+    requestAnimationFrame(() => {
+        measureLayout();
+    });
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -959,7 +961,8 @@ function measureLayout() {
     const replyH = (replyingToMessage && replyBar) ? replyBar.getBoundingClientRect().height : 0;
     const gap = 20;
 
-    chatMessages.style.paddingBottom = (inputH + replyH + gap) + 'px';
+
+    chatMessages.style.paddingBottom = (inputH + replyH + cachedSafeAreaBottom + gap) + 'px';
     inputContainer.style.bottom = cachedSafeAreaBottom + 'px';
     if (replyBar) replyBar.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
     uploadDropdown.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
