@@ -601,6 +601,18 @@ if (chatMessages) {
             loadOlderMessages();
         }
     });
+    chatMessages.addEventListener('wheel', (e) => {
+        if (replyingToMessage) e.preventDefault();
+    }, { passive: false });
+
+    chatMessages.addEventListener('touchstart', (e) => {
+        if (replyingToMessage) e.preventDefault();
+    }, { passive: false });
+
+    chatMessages.addEventListener('touchmove', (e) => {
+        if (replyingToMessage) e.preventDefault();
+    }, { passive: false });
+
 }
 
 async function saveImages() {
