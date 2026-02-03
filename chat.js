@@ -643,8 +643,10 @@ if (chatInput && inputContainer && chatMessages) {
 
             if (keyboardHeight > 0) {
                 inputContainer.style.bottom = (keyboardHeight + cachedSafeAreaBottom) + 'px';
+                inputContainer.style.paddingBottom = '0px';
             } else {
                 inputContainer.style.bottom = cachedSafeAreaBottom + 'px';
+                inputContainer.style.paddingBottom = cachedSafeAreaBottom + 'px';
             }
             measureLayout();
 
@@ -961,9 +963,10 @@ function measureLayout() {
     const replyH = (replyingToMessage && replyBar) ? replyBar.getBoundingClientRect().height : 0;
     const gap = 20;
 
-
-    chatMessages.style.paddingBottom = (inputH + replyH + cachedSafeAreaBottom + gap) + 'px';
+    chatMessages.style.paddingBottom = (inputH + replyH + gap) + 'px';
     inputContainer.style.bottom = cachedSafeAreaBottom + 'px';
+    // inputContainer.style.paddingBottom = cachedSafeAreaBottom + 'px';
+
     if (replyBar) replyBar.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
     uploadDropdown.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
     pendingImagesContainer.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
