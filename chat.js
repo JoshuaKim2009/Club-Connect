@@ -34,6 +34,9 @@ enableIndexedDbPersistence(db)
 
 let messageCount = 0;
 
+let cachedSafeAreaBottom = 0;
+let cachedKeyboardHeight = 0;
+
 let isLoggedIn = false;
 let userEmail = "";
 let userName = "";
@@ -639,27 +642,10 @@ if (chatInput && inputContainer && chatMessages) {
         window.visualViewport.addEventListener('resize', () => {
             const viewportHeight = window.visualViewport.height;
             const windowHeight = window.innerHeight;
-            const keyboardHeight = windowHeight - viewportHeight;
-
-            if (keyboardHeight > 0) {
-                inputContainer.style.bottom = (keyboardHeight + cachedSafeAreaBottom) + 'px';
-                inputContainer.style.paddingBottom = '0px';
-            } else {
-                inputContainer.style.bottom = cachedSafeAreaBottom + 'px';
-                inputContainer.style.paddingBottom = cachedSafeAreaBottom + 'px';
-            }
+            cachedKeyboardHeight = Math.max(0, windowHeight - viewportHeight);
             measureLayout();
-
-            if (keyboardHeight > 0) {
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    });
-                });
-            }
         });
     }
-
 
     let lastHeight = window.innerHeight;
     window.addEventListener('resize', () => {
@@ -947,7 +933,6 @@ function hideThreadView() {
 }
 
 
-let cachedSafeAreaBottom = 0;
 
 function measureSafeAreaBottom() {
     const el = document.createElement('div');
@@ -958,16 +943,28 @@ function measureSafeAreaBottom() {
 }
 
 function measureLayout() {
+    // Position input container: sits above safe area, moves up by keyboard height
+    const bottomPos = cachedKeyboardHeight + cachedSafeAreaBottom;
+    inputContainer.style.bottom = bottomPos + 'px';
+
+    // Now measure its rendered height AFTER positioning it
     const inputH = inputContainer.getBoundingClientRect().height;
+    
     const replyBar = document.getElementById('replyPreviewBar');
     const replyH = (replyingToMessage && replyBar) ? replyBar.getBoundingClientRect().height : 0;
+    
+    if (replyBar) replyBar.style.bottom = (inputH + bottomPos) + 'px';
+    uploadDropdown.style.bottom = (inputH + bottomPos) + 'px';
+    pendingImagesContainer.style.bottom = (inputH + bottomPos) + 'px';
+
+    // Chat padding = everything below it: input height + safe area + keyboard + gap
     const gap = 20;
+    chatMessages.style.paddingBottom = (inputH + cachedSafeAreaBottom + cachedKeyboardHeight + gap) + 'px';
 
-    chatMessages.style.paddingBottom = (inputH + replyH + gap) + 'px';
-    inputContainer.style.bottom = cachedSafeAreaBottom + 'px';
-    // inputContainer.style.paddingBottom = cachedSafeAreaBottom + 'px';
-
-    if (replyBar) replyBar.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
-    uploadDropdown.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
-    pendingImagesContainer.style.bottom = (inputH + cachedSafeAreaBottom) + 'px';
+    // Scroll to bottom when keyboard appears
+    if (cachedKeyboardHeight > 0) {
+        requestAnimationFrame(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    }
 }
