@@ -67,7 +67,7 @@ body {
     background-size: cover;
     background-repeat: no-repeat;
     -webkit-overflow-scrolling: touch;
-    /* opacity: 0; */
+    opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out, filter 0.3s ease;
 }
