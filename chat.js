@@ -34,8 +34,6 @@ enableIndexedDbPersistence(db)
 
 let messageCount = 0;
 
-let cachedSafeAreaBottom = 0;
-let cachedKeyboardHeight = 0;
 
 let isLoggedIn = false;
 let userEmail = "";
@@ -95,10 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatMessages) {
         chatMessages.classList.add('loading');
     }
-    measureSafeAreaBottom();
-    requestAnimationFrame(() => {
-        measureLayout();
-    });
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -199,25 +193,19 @@ async function loadInitialMessages() {
             previousSenderId = messageData.createdByUid;
         }
         
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-        });
+        scrollToBottom();
+
 
     } catch (error) {
         console.error("Error:", error);
     } finally {
+        
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                scrollToBottom();
+                chatMessages.classList.add('loaded');
             });
         });
-    
-        chatMessages.classList.add('loaded');
-        // requestAnimationFrame(() => {
-        //     chatMessages.classList.add('loaded');
-        // });
     }
 }
 
@@ -339,11 +327,7 @@ function startRealtimeListener() {
                 }
                 
                 if (isNearBottom || messageData.createdByUid === currentUser.uid) {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        });
-                    });
+                    scrollToBottom();
                 }
             }
             if (change.type === "modified") {
@@ -637,32 +621,6 @@ async function saveImages() {
     await showAppAlert("Image sending not implemented");
 }
 
-if (chatInput && inputContainer && chatMessages) {
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            const viewportHeight = window.visualViewport.height;
-            const windowHeight = window.innerHeight;
-            cachedKeyboardHeight = Math.max(0, windowHeight - viewportHeight);
-            measureLayout();
-        });
-    }
-
-    let lastHeight = window.innerHeight;
-    window.addEventListener('resize', () => {
-        measureSafeAreaBottom();
-        measureLayout();
-
-        const currentHeight = window.innerHeight;
-        const diff = lastHeight - currentHeight;
-        
-        if (diff > 150) { 
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        lastHeight = currentHeight;
-    });
-}
-
 async function updateLastSeenMessages() {
     console.log("called update Last seen");
     if (!currentUser || !clubId) return;
@@ -823,7 +781,6 @@ function startReply(messageId, messageData) {
     document.getElementById('replyPreviewBar').classList.add('show');
 
     document.body.classList.add('scroll-locked');
-    requestAnimationFrame(() => measureLayout());
     
     chatMessages.classList.add('scroll-locked');
 
@@ -844,7 +801,6 @@ function cancelReply() {
     
     // chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;
     document.body.classList.remove('scroll-locked');
-    measureLayout();
 }
 
 document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);
@@ -934,37 +890,10 @@ function hideThreadView() {
 
 
 
-function measureSafeAreaBottom() {
-    const el = document.createElement('div');
-    el.style.cssText = 'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom);pointer-events:none;visibility:hidden;';
-    document.body.appendChild(el);
-    cachedSafeAreaBottom = el.getBoundingClientRect().height;
-    document.body.removeChild(el);
-}
 
-function measureLayout() {
-    // Position input container: sits above safe area, moves up by keyboard height
-    const bottomPos = cachedKeyboardHeight + cachedSafeAreaBottom;
-    inputContainer.style.bottom = bottomPos + 'px';
 
-    // Now measure its rendered height AFTER positioning it
-    const inputH = inputContainer.getBoundingClientRect().height;
-    
-    const replyBar = document.getElementById('replyPreviewBar');
-    const replyH = (replyingToMessage && replyBar) ? replyBar.getBoundingClientRect().height : 0;
-    
-    if (replyBar) replyBar.style.bottom = (inputH + bottomPos) + 'px';
-    uploadDropdown.style.bottom = (inputH + bottomPos) + 'px';
-    pendingImagesContainer.style.bottom = (inputH + bottomPos) + 'px';
-
-    // Chat padding = everything below it: input height + safe area + keyboard + gap
-    const gap = 20;
-    chatMessages.style.paddingBottom = (inputH + cachedSafeAreaBottom + cachedKeyboardHeight + gap) + 'px';
-
-    // Scroll to bottom when keyboard appears
-    if (cachedKeyboardHeight > 0) {
-        requestAnimationFrame(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-    }
+function scrollToBottom() {
+    setTimeout(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 100);
 }
