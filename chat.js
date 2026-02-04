@@ -198,7 +198,9 @@ async function loadInitialMessages() {
             console.log(messageCount);
         }
 
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        requestAnimationFrame(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
 
 
     } catch (error) {
@@ -897,7 +899,7 @@ function hideThreadView() {
 
 
 function scrollToBottom() {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }, 100);
+    });
 }
