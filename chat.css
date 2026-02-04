@@ -100,20 +100,11 @@ body {
     overflow: visible;
     z-index: 1000;
     /* box-shadow: 0 max(env(safe-area-inset-bottom), 35px) 0 var(--header-bg-start); */
-    /* box-shadow: 0 30px 0 var(--header-bg-start); */
+    box-shadow: 0 35px 0 0 var(--header-bg-start);
     /* padding-bottom: env(safe-area-inset-bottom); */
 }
 
-.chat-input-container::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;  /* Positions it RIGHT BELOW the container */
-    height: 35px;
-    background: var(--header-bg-start);
-    pointer-events: none;
-}
+
 
 .chat-input {
     font-family: var(--primary-font-family);
