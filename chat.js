@@ -181,7 +181,7 @@ async function loadInitialMessages() {
         }
         
         const reversedDocs = [...messageDocs].reverse();
-        
+
         for (let i = 0; i < reversedDocs.length; i++) {
             const docSnap = reversedDocs[i];
             const messageData = docSnap.data();
@@ -189,22 +189,26 @@ async function loadInitialMessages() {
             loadedMessageIds.add(messageId);
             
             const showSenderName = previousSenderId !== messageData.createdByUid;
-            await displayMessage(messageId, messageData, showSenderName);
+            
+            const messageElement = createMessageElement(messageId, messageData, showSenderName);
+            chatMessages.appendChild(messageElement);
+            
             previousSenderId = messageData.createdByUid;
+            messageCount++;
+            console.log(messageCount);
         }
-        
-        scrollToBottom();
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
 
     } catch (error) {
         console.error("Error:", error);
     } finally {
-        
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                scrollToBottom();
-                chatMessages.classList.add('loaded');
-            });
+            const allMessages = chatMessages.querySelectorAll('.message-wrapper');
+            allMessages.forEach(msg => msg.classList.add('show'));
+            
+            chatMessages.classList.add('loaded');
         });
     }
 }
