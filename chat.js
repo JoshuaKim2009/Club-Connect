@@ -203,7 +203,7 @@ async function loadInitialMessages() {
         }
 
         requestAnimationFrame(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
         });
 
 
@@ -904,9 +904,10 @@ function hideThreadView() {
 
 function scrollToBottom() {
     requestAnimationFrame(() => {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
     });
 }
+
 
 function updateChatPadding() {
     const inputContainerHeight = inputContainer.offsetHeight;
