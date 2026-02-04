@@ -104,6 +104,18 @@ body {
     /* padding-bottom: env(safe-area-inset-bottom); */
 }
 
+.input-gap-cover {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: var(--header-bg-start);
+    z-index: 999;
+    pointer-events: none;
+    transform: translateY(calc(100% - 5px));
+}
+
 
 
 .chat-input {
