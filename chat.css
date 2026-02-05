@@ -56,24 +56,19 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
-    /* padding-top: calc(70px + env(safe-area-inset-top) + 20px); */
-    padding-top: calc(90px + env(safe-area-inset-top));
-    /* padding-bottom: calc(85px + env(safe-area-inset-bottom) + 20px); */
+    padding-top: calc(100px + env(safe-area-inset-top));
     padding-left: max(20px, env(safe-area-inset-left));
     padding-right: max(20px, env(safe-area-inset-right));
-    /* background-image: 
-        linear-gradient(to bottom, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
-        linear-gradient(to left, #131330 0%, transparent 5%, transparent 95%, #131330 100%),
-        radial-gradient(circle at center, #474799, #131330); */
     background-size: cover;
     background-repeat: no-repeat;
     -webkit-overflow-scrolling: touch;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out, filter 0.3s ease;
-    /* padding-bottom: 95px; */
-    padding-bottom: calc(75px + env(safe-area-inset-bottom));
+    /* padding-bottom: calc(85px + env(safe-area-inset-bottom)); */
+    padding-bottom: 20px;
     will-change: opacity, transform;
+    margin-bottom: calc(65px + env(safe-area-inset-bottom));
 }
 
 .chat-messages::-webkit-scrollbar {

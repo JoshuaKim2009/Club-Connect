@@ -110,9 +110,7 @@ onAuthStateChanged(auth, async (user) => {
                 chatMessages.classList.remove('loading');
             }
 
-            requestAnimationFrame(() => {
-                updateChatPadding();
-            });
+            
                         
             const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
             const messagesPromise = loadInitialMessages();
@@ -907,13 +905,3 @@ function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
     });
 }
-
-
-function updateChatPadding() {
-    const inputContainerHeight = inputContainer.offsetHeight;
-    chatMessages.style.paddingBottom = `${inputContainerHeight + 20}px`;
-}
-
-window.addEventListener('resize', () => {
-    updateChatPadding();
-});
