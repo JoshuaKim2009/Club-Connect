@@ -903,3 +903,27 @@ function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 }
+
+
+
+function adjustChatMessagesHeight() {
+    const chatMessages = document.getElementById('chatMessages');
+    const inputContainer = document.getElementById('inputContainer');
+    
+    if (!chatMessages || !inputContainer) return;
+    
+    const inputHeight = inputContainer.offsetHeight;
+    const windowHeight = window.innerHeight;
+    
+    // Set the exact height: full window minus input container height
+    chatMessages.style.height = `${windowHeight - inputHeight}px`;
+}
+
+// Call on load
+window.addEventListener('load', adjustChatMessagesHeight);
+
+// Call on resize
+window.addEventListener('resize', adjustChatMessagesHeight);
+
+// Call when virtual keyboard appears/disappears on mobile
+window.visualViewport?.addEventListener('resize', adjustChatMessagesHeight);
