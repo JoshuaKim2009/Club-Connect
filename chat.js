@@ -201,9 +201,8 @@ async function loadInitialMessages() {
         }
 
         requestAnimationFrame(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
-
 
     } catch (error) {
         console.error("Error:", error);
@@ -899,9 +898,8 @@ function hideThreadView() {
 
 
 
-
 function scrollToBottom() {
     requestAnimationFrame(() => {
-        chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 }
