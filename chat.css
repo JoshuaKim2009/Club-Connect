@@ -65,10 +65,9 @@ body {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out, filter 0.3s ease;
-    /* padding-bottom: calc(85px + env(safe-area-inset-bottom)); */
-    padding-bottom: 20px;
+    /* padding-bottom: 5px; */
     will-change: opacity, transform;
-    margin-bottom: calc(65px + env(safe-area-inset-bottom));
+    margin-bottom: 75px;
 }
 
 .chat-messages::-webkit-scrollbar {
