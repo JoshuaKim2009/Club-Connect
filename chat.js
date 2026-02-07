@@ -925,8 +925,19 @@ function adjustChatMessagesHeight() {
     
     if (!chatMessages || !inputContainer) return;
     
-    const inputHeight = inputContainer.offsetHeight;
     const visualHeight = window.visualViewport?.height || window.innerHeight;
+    const windowHeight = window.innerHeight;
+    const inputHeight = inputContainer.offsetHeight;
+    
+    // Reposition input container above keyboard
+    if (visualHeight < windowHeight) {
+        inputContainer.style.bottom = `${windowHeight - visualHeight}px`;
+        // Reduce padding when keyboard is open so content fits
+        chatMessages.style.paddingTop = '20px';
+    } else {
+        inputContainer.style.bottom = '0';
+        chatMessages.style.paddingTop = ''; // Reset to CSS value
+    }
     
     chatMessages.style.height = `${visualHeight - inputHeight}px`;
 }
