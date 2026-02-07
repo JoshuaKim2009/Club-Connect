@@ -745,6 +745,10 @@ body {
     max-width: 70%;
 }
 
+.thread-message-wrapper.sent {
+    align-self: flex-end;
+}
+
 .thread-sender-name {
     font-size: 22px;
     color: #dadada;
@@ -792,4 +796,18 @@ body {
 body.scroll-locked {
     touch-action: none;
     overflow: hidden;
+}
+
+.thread-message-wrapper.sent {
+    align-items: flex-end;
+}
+
+.thread-message.sent {
+    border-radius: 15px 15px 0 15px;
+}
+
+.thread-message-wrapper.sent .thread-sender-name {
+    margin-right: 5px;
+    margin-left: 0;
+    text-align: right;
 }

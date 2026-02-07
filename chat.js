@@ -557,7 +557,8 @@ async function saveMessage() {
             text: replyingToMessage.text,
             senderName: replyingToMessage.senderName,
             type: replyingToMessage.type || "text",
-            imageUrl: replyingToMessage.imageUrl || null
+            imageUrl: replyingToMessage.imageUrl || null,
+            createdByUid: replyingToMessage.createdByUid
         };
     }
 
@@ -779,7 +780,8 @@ function startReply(messageId, messageData) {
         text: messageData.type === "image" ? "Image" : messageData.message,
         senderName: messageData.createdByName || "Anonymous",
         type: messageData.type || "text",
-        imageUrl: messageData.imageUrl || null
+        imageUrl: messageData.imageUrl || null,
+        createdByUid: messageData.createdByUid
     };
     
     document.getElementById('replyToName').textContent = replyingToMessage.senderName;
@@ -837,33 +839,39 @@ function showThreadView(replyMessageId, replyMessageData) {
     
     const originalMsgWrapper = document.createElement('div');
     originalMsgWrapper.className = 'thread-message-wrapper';
+    if (replyMessageData.replyTo.createdByUid === currentUser.uid) {
+        originalMsgWrapper.classList.add('sent');
+    }
     if (replyMessageData.replyTo.type === 'image') {
         originalMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
-            <div class="thread-message message-image">
+            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''} message-image">
                 <img src="${replyMessageData.replyTo.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
             </div>
         `;
     } else {
         originalMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
-            <div class="thread-message">${replyMessageData.replyTo.text}</div>
+            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''}">${replyMessageData.replyTo.text}</div>
         `;
     }
     
     const replyMsgWrapper = document.createElement('div');
     replyMsgWrapper.className = 'thread-message-wrapper';
+    if (replyMessageData.createdByUid === currentUser.uid) {
+        replyMsgWrapper.classList.add('sent');
+    }
     if (replyMessageData.type === 'image') {
         replyMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.createdByName}</div>
-            <div class="thread-message message-image">
+            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''} message-image">
                 <img src="${replyMessageData.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
             </div>
         `;
     } else {
         replyMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.createdByName}</div>
-            <div class="thread-message">${replyMessageData.message}</div>
+            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''}">${replyMessageData.message}</div>
         `;
     }
     
