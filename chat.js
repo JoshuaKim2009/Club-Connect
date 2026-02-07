@@ -906,19 +906,6 @@ function scrollToBottom() {
 
 
 
-function adjustChatMessagesHeight() {
-    const chatMessages = document.getElementById('chatMessages');
-    const inputContainer = document.getElementById('inputContainer');
-    
-    if (!chatMessages || !inputContainer) return;
-    
-    const inputHeight = inputContainer.offsetHeight;
-    const windowHeight = window.innerHeight;
-    
-    // Set the exact height: full window minus input container height
-    chatMessages.style.height = `${windowHeight - inputHeight}px`;
-}
-
 // function adjustChatMessagesHeight() {
 //     const chatMessages = document.getElementById('chatMessages');
 //     const inputContainer = document.getElementById('inputContainer');
@@ -926,12 +913,27 @@ function adjustChatMessagesHeight() {
 //     if (!chatMessages || !inputContainer) return;
     
 //     const inputHeight = inputContainer.offsetHeight;
+//     const windowHeight = window.innerHeight;
     
-//     // Use visualViewport.height when keyboard is open, innerHeight otherwise
-//     const windowHeight = window.visualViewport?.height || window.innerHeight;
-    
+//     // Set the exact height: full window minus input container height
 //     chatMessages.style.height = `${windowHeight - inputHeight}px`;
 // }
+
+function adjustChatMessagesHeight() {
+    const chatMessages = document.getElementById('chatMessages');
+    const inputContainer = document.getElementById('inputContainer');
+    
+    if (!chatMessages || !inputContainer) return;
+    
+    const inputHeight = inputContainer.offsetHeight;
+    
+    // Use visualViewport when available (handles keyboard), fallback to window
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    
+    chatMessages.style.height = `${viewportHeight - inputHeight}px`;
+}
+
+
 
 // Call on load
 window.addEventListener('load', adjustChatMessagesHeight);
