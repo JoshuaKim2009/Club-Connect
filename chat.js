@@ -925,18 +925,17 @@ function adjustChatMessagesHeight() {
     
     if (!chatMessages || !inputContainer) return;
     
-    // Save distance from BOTTOM before resize
-    const scrollFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop;
+    // Use visualViewport height if available (accounts for mobile keyboard)
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     
     const inputHeight = inputContainer.offsetHeight;
-    const windowHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     
-    chatMessages.style.height = `${windowHeight - inputHeight}px`;
+    // Set the height based on visible viewport
+    chatMessages.style.height = `${viewportHeight - inputHeight}px`;
     
-    // Restore same distance from bottom after resize
-    requestAnimationFrame(() => {
-        chatMessages.scrollTop = chatMessages.scrollHeight - scrollFromBottom;
-    });
+    // Ensure overflow is visible
+    chatMessages.style.overflowY = 'auto';
+    chatMessages.style.overflowX = 'hidden';
 }
 
 // Call on load
