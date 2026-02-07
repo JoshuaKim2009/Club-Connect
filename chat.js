@@ -926,24 +926,18 @@ function adjustChatMessagesHeight() {
     if (!chatMessages || !inputContainer) return;
     
     const inputHeight = inputContainer.offsetHeight;
-    const windowHeight = window.innerHeight;
     const visualHeight = window.visualViewport?.height || window.innerHeight;
-    
-    // TEMPORARY - to see what values you're getting
-    if (windowHeight !== visualHeight) {
-        alert(`window: ${windowHeight}, visual: ${visualHeight}, input: ${inputHeight}`);
-    }
     
     chatMessages.style.height = `${visualHeight - inputHeight}px`;
 }
 
-
-
-// Call on load
+// Keep existing listeners
 window.addEventListener('load', adjustChatMessagesHeight);
-
-// Call on resize
 window.addEventListener('resize', adjustChatMessagesHeight);
-
-// Call when virtual keyboard appears/disappears on mobile
 window.visualViewport?.addEventListener('resize', adjustChatMessagesHeight);
+
+chatInput?.addEventListener('focus', () => {
+    setTimeout(adjustChatMessagesHeight, 300); // Delay for keyboard animation
+});
+
+chatInput?.addEventListener('blur', adjustChatMessagesHeight);
