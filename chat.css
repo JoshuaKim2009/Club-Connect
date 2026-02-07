@@ -811,3 +811,15 @@ body.scroll-locked {
     margin-left: 0;
     text-align: right;
 }
+
+
+
+
+
+.reply-icon {
+    font-size: 18px;
+    color: rgba(150, 150, 150, 0.6);
+    margin: 2px 0;
+    cursor: default;
+    pointer-events: none;
+}

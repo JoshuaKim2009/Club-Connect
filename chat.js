@@ -424,6 +424,8 @@ function createMessageElement(messageId, messageData, showSenderName) {
         });
         
         messageWrapper.appendChild(replyPreview);
+
+        addReplyLineConnector(messageWrapper, replyPreview);
     }
 
     let messageContent;
@@ -957,4 +959,45 @@ if (inputContainer) {
         e.preventDefault();
         e.stopPropagation();
     }, { passive: false });
+}
+
+
+
+
+
+function addReplyLineConnector(wrapper, preview) {
+    requestAnimationFrame(() => {
+        const bubble = preview.querySelector('.reply-bubble');
+        const msg = wrapper.querySelector('.message');
+        
+        if (!bubble || !msg) return;
+        
+        const bw = bubble.offsetWidth;
+        const mw = msg.offsetWidth;
+        const sent = wrapper.classList.contains('sent');
+        
+        const L = document.createElement('i');
+        L.className = 'fa-solid fa-l reply-icon';
+        
+        const longer = bw > mw;
+        
+        if (sent) {
+            L.style.transform = longer ? 'translateY(-50%)' : 'scaleY(-1) translateY(50%)';
+        } else {
+            L.style.transform = longer ? 'scaleX(-1) translateY(-50%)' : 'scale(-1, -1) translateY(50%)';
+        }
+        
+        L.style.position = 'absolute';
+        L.style.top = '50%';
+        
+        if (longer) {
+            L.style[sent ? 'left' : 'right'] = '-25px';
+            msg.style.position = 'relative';
+            msg.appendChild(L);
+        } else {
+            L.style[sent ? 'left' : 'right'] = '-25px';
+            bubble.style.position = 'relative';
+            bubble.appendChild(L);
+        }
+    });
 }
