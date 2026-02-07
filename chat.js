@@ -925,17 +925,15 @@ function adjustChatMessagesHeight() {
     
     if (!chatMessages || !inputContainer) return;
     
-    // Use visualViewport height if available (accounts for mobile keyboard)
-    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    // Use visualViewport when available (handles keyboard properly)
+    const viewportHeight = window.visualViewport 
+        ? window.visualViewport.height 
+        : window.innerHeight;
     
     const inputHeight = inputContainer.offsetHeight;
     
-    // Set the height based on visible viewport
+    // Set height based on VISIBLE viewport (accounts for keyboard)
     chatMessages.style.height = `${viewportHeight - inputHeight}px`;
-    
-    // Ensure overflow is visible
-    chatMessages.style.overflowY = 'auto';
-    chatMessages.style.overflowX = 'hidden';
 }
 
 // Call on load

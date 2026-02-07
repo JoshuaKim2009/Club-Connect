@@ -66,7 +66,9 @@ body {
     transition: opacity 0.4s ease-out, transform 0.4s ease-out, filter 0.3s ease;
     padding-bottom: 20px;
     will-change: opacity, transform;
-    flex-shrink: 0;
+    /* flex-shrink: 0; */
+    flex-shrink: 1;  /* Allow it to shrink */
+    min-height: 0;
 }
 
 .chat-messages::-webkit-scrollbar {
