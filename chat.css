@@ -95,7 +95,7 @@ body {
     overflow: visible;
     z-index: 1000;
     /* box-shadow: 0 max(env(safe-area-inset-bottom), 35px) 0 var(--header-bg-start); */
-    /* box-shadow: 0 35px 0 0 var(--header-bg-start); */
+    box-shadow: 0 35px 0 0 var(--header-bg-start);
     /* padding-bottom: env(safe-area-inset-bottom); */
 }
 

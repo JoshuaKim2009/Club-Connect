@@ -926,10 +926,10 @@ function adjustChatMessagesHeight() {
     if (!chatMessages || !inputContainer) return;
     
     const inputHeight = inputContainer.offsetHeight;
-    
     const viewportHeight = window.visualViewport?.height || window.innerHeight;
     
-    chatMessages.style.height = `${viewportHeight - inputHeight}px`;
+    chatMessages.style.height = 'auto';
+    chatMessages.style.maxHeight = `${viewportHeight - inputHeight}px`;
 }
 
 
