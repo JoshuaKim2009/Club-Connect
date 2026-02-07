@@ -925,30 +925,11 @@ function adjustChatMessagesHeight() {
     
     if (!chatMessages || !inputContainer) return;
     
-    const visualHeight = window.visualViewport?.height || window.innerHeight;
-    const windowHeight = window.innerHeight;
     const inputHeight = inputContainer.offsetHeight;
+    const windowHeight = window.innerHeight;
     
-    // Reposition input container above keyboard
-    if (visualHeight < windowHeight) {
-        inputContainer.style.bottom = `${windowHeight - visualHeight}px`;
-        // Reduce padding when keyboard is open so content fits
-        chatMessages.style.paddingTop = '20px';
-    } else {
-        inputContainer.style.bottom = '0';
-        chatMessages.style.paddingTop = ''; // Reset to CSS value
-    }
-    
-    chatMessages.style.height = `${visualHeight - inputHeight}px`;
+    chatMessages.style.height = `${windowHeight - inputHeight}px`;
 }
 
-// Keep existing listeners
 window.addEventListener('load', adjustChatMessagesHeight);
 window.addEventListener('resize', adjustChatMessagesHeight);
-window.visualViewport?.addEventListener('resize', adjustChatMessagesHeight);
-
-chatInput?.addEventListener('focus', () => {
-    setTimeout(adjustChatMessagesHeight, 300); // Delay for keyboard animation
-});
-
-chatInput?.addEventListener('blur', adjustChatMessagesHeight);
