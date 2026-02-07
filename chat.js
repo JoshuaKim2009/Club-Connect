@@ -927,7 +927,6 @@ function adjustChatMessagesHeight() {
     
     const inputHeight = inputContainer.offsetHeight;
     
-    // Use visualViewport when available (handles keyboard), fallback to window
     const viewportHeight = window.visualViewport?.height || window.innerHeight;
     
     chatMessages.style.height = `${viewportHeight - inputHeight}px`;
