@@ -933,3 +933,20 @@ function adjustChatMessagesHeight() {
 
 window.addEventListener('load', adjustChatMessagesHeight);
 window.addEventListener('resize', adjustChatMessagesHeight);
+
+
+if (inputContainer) {
+    inputContainer.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+    }, { passive: true });
+    
+    inputContainer.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    inputContainer.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+}
