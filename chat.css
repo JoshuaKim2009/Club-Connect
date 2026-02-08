@@ -818,8 +818,24 @@ body.scroll-locked {
 
 .reply-icon {
     font-size: 18px;
-    color: rgba(150, 150, 150, 0.6);
+    color: rgba(200, 200, 200, 0.6);
     margin: 2px 0;
     cursor: default;
     pointer-events: none;
+}
+
+
+
+
+.message.pressing {
+    animation: shrink-hold 0.5s ease-out forwards;
+}
+
+@keyframes shrink-hold {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(0.95);
+    }
 }

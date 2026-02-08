@@ -464,38 +464,41 @@ function createMessageElement(messageId, messageData, showSenderName) {
 
     messageContent.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
+            messageContent.classList.add('pressing');
             pressTimer = setTimeout(() => {
+                messageContent.classList.remove('pressing');
                 showMessageOptions(messageId, messageData, messageWrapper);
             }, 500);
         }
     });
 
     messageContent.addEventListener('mouseup', () => {
+        messageContent.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('mouseleave', () => {
+        messageContent.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('touchstart', (e) => {
+        messageContent.classList.add('pressing');
         pressTimer = setTimeout(() => {
+            messageContent.classList.remove('pressing');
             navigator.vibrate && navigator.vibrate(50);
             showMessageOptions(messageId, messageData, messageWrapper);
         }, 500);
     });
 
     messageContent.addEventListener('touchend', () => {
+        messageContent.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('touchmove', () => {
+        messageContent.classList.remove('pressing');
         clearTimeout(pressTimer);
-    });
-
-    messageContent.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        showMessageOptions(messageId, messageData, messageWrapper);
     });
     return messageWrapper;
 }
