@@ -839,3 +839,18 @@ body.scroll-locked {
         transform: scale(0.95);
     }
 }
+
+
+.message-link {
+    color: #0066cc;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.message-link:hover {
+    color: #0052a3;
+}
+
+.message-link:active {
+    color: #003d7a;
+}

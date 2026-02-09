@@ -450,12 +450,10 @@ function createMessageElement(messageId, messageData, showSenderName) {
     } else {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
-        messageDiv.textContent = messageData.message;
+        messageDiv.innerHTML = linkifyText(messageData.message);
         if (messageData.createdByUid === currentUser.uid) {
             messageDiv.classList.add('sent');
         }
-        
-        
         
         messageWrapper.appendChild(messageDiv);
         messageContent = messageDiv; 
@@ -857,7 +855,7 @@ function showThreadView(replyMessageId, replyMessageData) {
     } else {
         originalMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
-            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''}">${replyMessageData.replyTo.text}</div>
+            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''}">${linkifyText(replyMessageData.replyTo.text)}</div>
         `;
     }
     
@@ -876,7 +874,7 @@ function showThreadView(replyMessageId, replyMessageData) {
     } else {
         replyMsgWrapper.innerHTML = `
             <div class="thread-sender-name">${replyMessageData.createdByName}</div>
-            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''}">${replyMessageData.message}</div>
+            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''}">${linkifyText(replyMessageData.message)}</div>
         `;
     }
     
@@ -1002,5 +1000,18 @@ function addReplyLineConnector(wrapper, preview) {
             bubble.style.position = 'relative';
             bubble.appendChild(L);
         }
+    });
+}
+
+
+
+
+function linkifyText(text) {
+    const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
+    
+    return text.replace(urlPattern, (url) => {
+        let href = url.startsWith('http') ? url : 'https://' + url;
+        
+        return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
 }
