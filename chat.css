@@ -854,3 +854,30 @@ body.scroll-locked {
 .message-link:active {
     color: #003d7a;
 }
+
+
+
+
+
+
+.date-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    color: rgba(200, 200, 200, 0.6);
+    font-size: 18px;
+    font-family: var(--primary-font-family);
+}
+
+.date-separator::before,
+.date-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 2px solid rgba(200, 200, 200, 0.6);
+    margin: 0 15px;
+}
+
+.date-separator-text {
+    white-space: nowrap;
+}

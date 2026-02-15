@@ -183,12 +183,26 @@ async function loadInitialMessages() {
         }
         
         const reversedDocs = [...messageDocs].reverse();
+        let previousDateKey = null;
+        if (hasMoreMessages && docs.length > PAGE_SIZE) {
+            previousDateKey = getMessageDateKey(docs[PAGE_SIZE].data().createdAt);
+        }
 
         for (let i = 0; i < reversedDocs.length; i++) {
             const docSnap = reversedDocs[i];
             const messageData = docSnap.data();
             const messageId = docSnap.id;
             loadedMessageIds.add(messageId);
+            
+            const currentDateKey = getMessageDateKey(messageData.createdAt);
+            if (currentDateKey && currentDateKey !== previousDateKey) {
+                const dateSeparator = document.createElement('div');
+                dateSeparator.className = 'date-separator';
+                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                chatMessages.appendChild(dateSeparator);
+                previousDateKey = currentDateKey;
+                previousSenderId = null; // Reset so sender name shows after date separator
+            }
             
             const showSenderName = previousSenderId !== messageData.createdByUid;
             
@@ -247,13 +261,15 @@ async function loadOlderMessages() {
         
         const reversedDocs = [...messageDocs].reverse();
         const tempFragment = document.createDocumentFragment();
-        
+
         let tempPreviousSenderId = null;
+        let tempPreviousDateKey = null;
         if (hasMoreMessages && docs.length > PAGE_SIZE) {
             const nextOlderMessage = docs[PAGE_SIZE].data();
             tempPreviousSenderId = nextOlderMessage.createdByUid;
+            tempPreviousDateKey = getMessageDateKey(nextOlderMessage.createdAt);
         }
-        
+
         for (let i = 0; i < reversedDocs.length; i++) {
             const docSnap = reversedDocs[i];
             const messageData = docSnap.data();
@@ -263,6 +279,17 @@ async function loadOlderMessages() {
             
             loadedMessageIds.add(messageId);
             
+            // Check if we need a date separator
+            const currentDateKey = getMessageDateKey(messageData.createdAt);
+            if (currentDateKey && currentDateKey !== tempPreviousDateKey) {
+                const dateSeparator = document.createElement('div');
+                dateSeparator.className = 'date-separator show';
+                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                tempFragment.appendChild(dateSeparator);
+                tempPreviousDateKey = currentDateKey;
+                tempPreviousSenderId = null; // Reset so sender name shows after date separator
+            }
+            
             const showSenderName = tempPreviousSenderId !== messageData.createdByUid;
             const messageElement = createMessageElement(messageId, messageData, showSenderName);
             messageElement.classList.add('show');
@@ -271,26 +298,31 @@ async function loadOlderMessages() {
 
             messageCount+=1;
             console.log(messageCount);
-            
-            
         }
         
         if (tempFragment.children.length > 0) {
             const existingFirstWrapper = chatMessages.querySelector('.message-wrapper');
             if (existingFirstWrapper) {
-                const lastLoadedSenderId = tempPreviousSenderId;
-                const existingFirstSenderId = existingFirstWrapper.dataset.senderId;
+                const lastLoadedDateKey = tempPreviousDateKey;
+                const existingFirstDateKey = existingFirstWrapper.dataset.dateKey;
                 
-                if (lastLoadedSenderId === existingFirstSenderId) {
-                    const existingSenderName = existingFirstWrapper.querySelector('.sender-name');
-                    if (existingSenderName) existingSenderName.remove();
-                } else if (!existingFirstWrapper.querySelector('.sender-name')) {
-                    const senderName = document.createElement('div');
-                    senderName.className = 'sender-name';
-                    const lastMsgData = reversedDocs[reversedDocs.length - 1].data();
-                    senderName.textContent = lastMsgData.createdByName || "Anonymous";
-                    existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
+                // Only apply sender grouping logic if dates match
+                if (lastLoadedDateKey === existingFirstDateKey) {
+                    const lastLoadedSenderId = tempPreviousSenderId;
+                    const existingFirstSenderId = existingFirstWrapper.dataset.senderId;
+                    
+                    if (lastLoadedSenderId === existingFirstSenderId) {
+                        const existingSenderName = existingFirstWrapper.querySelector('.sender-name');
+                        if (existingSenderName) existingSenderName.remove();
+                    } else if (!existingFirstWrapper.querySelector('.sender-name')) {
+                        const senderName = document.createElement('div');
+                        senderName.className = 'sender-name';
+                        const lastMsgData = reversedDocs[reversedDocs.length - 1].data();
+                        senderName.textContent = lastMsgData.createdByName || "Anonymous";
+                        existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
+                    }
                 }
+                // If dates differ, keep sender names as-is (date separator will be between them)
             }
             chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
             
@@ -325,6 +357,21 @@ function startRealtimeListener() {
                 
                 const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100;
                 
+                // Check if we need a date separator for new messages
+                const lastMessage = chatMessages.querySelector('.message-wrapper:last-of-type');
+                if (lastMessage && messageData.createdAt) {
+                    const lastMessageDate = lastMessage.dataset.dateKey;
+                    const currentDateKey = getMessageDateKey(messageData.createdAt);
+                    
+                    if (currentDateKey && currentDateKey !== lastMessageDate) {
+                        const dateSeparator = document.createElement('div');
+                        dateSeparator.className = 'date-separator show';
+                        dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                        chatMessages.appendChild(dateSeparator);
+                        previousSenderId = null; // Reset so sender name shows after date separator
+                    }
+                }
+                
                 const showSenderName = previousSenderId !== messageData.createdByUid;
                 await displayMessage(messageId, messageData, showSenderName);
                 previousSenderId = messageData.createdByUid;
@@ -355,6 +402,9 @@ function createMessageElement(messageId, messageData, showSenderName) {
     messageWrapper.className = 'message-wrapper';
     messageWrapper.dataset.messageId = messageId;
     messageWrapper.dataset.senderId = messageData.createdByUid;
+    if (messageData.createdAt) {
+        messageWrapper.dataset.dateKey = getMessageDateKey(messageData.createdAt);
+    }
     
     if (messageData.createdByUid === currentUser.uid) {
         messageWrapper.classList.add('sent');
@@ -1014,4 +1064,31 @@ function linkifyText(text) {
         
         return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
+}
+
+function formatDateSeparator(date) {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Reset times to compare just dates
+    today.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+    const messageDate = new Date(date);
+    messageDate.setHours(0, 0, 0, 0);
+    
+    if (messageDate.getTime() === today.getTime()) {
+        return 'Today';
+    } else if (messageDate.getTime() === yesterday.getTime()) {
+        return 'Yesterday';
+    } else {
+        const options = { month: 'long', day: 'numeric', year: 'numeric' };
+        return messageDate.toLocaleDateString('en-US', options);
+    }
+}
+
+function getMessageDateKey(timestamp) {
+    if (!timestamp) return null;
+    const date = timestamp.toDate();
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
