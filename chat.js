@@ -1,6 +1,6 @@
 //chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
@@ -33,7 +33,6 @@ enableIndexedDbPersistence(db)
 
 
 let messageCount = 0;
-
 
 let isLoggedIn = false;
 let userEmail = "";
@@ -227,6 +226,7 @@ async function loadInitialMessages() {
             
             chatMessages.classList.add('loaded');
         });
+        await updateLastSeenMessages();
     }
 }
 
@@ -279,7 +279,7 @@ async function loadOlderMessages() {
             
             loadedMessageIds.add(messageId);
             
-            // Check if we need a date separator
+            // Check if there needs a date separator
             const currentDateKey = getMessageDateKey(messageData.createdAt);
             if (currentDateKey && currentDateKey !== tempPreviousDateKey) {
                 const dateSeparator = document.createElement('div');
@@ -287,7 +287,7 @@ async function loadOlderMessages() {
                 dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
                 tempFragment.appendChild(dateSeparator);
                 tempPreviousDateKey = currentDateKey;
-                tempPreviousSenderId = null; // Reset so sender name shows after date separator
+                tempPreviousSenderId = null;
             }
             
             const showSenderName = tempPreviousSenderId !== messageData.createdByUid;
@@ -306,7 +306,6 @@ async function loadOlderMessages() {
                 const lastLoadedDateKey = tempPreviousDateKey;
                 const existingFirstDateKey = existingFirstWrapper.dataset.dateKey;
                 
-                // Only apply sender grouping logic if dates match
                 if (lastLoadedDateKey === existingFirstDateKey) {
                     const lastLoadedSenderId = tempPreviousSenderId;
                     const existingFirstSenderId = existingFirstWrapper.dataset.senderId;
@@ -322,7 +321,6 @@ async function loadOlderMessages() {
                         existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
                     }
                 }
-                // If dates differ, keep sender names as-is (date separator will be between them)
             }
             chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
             
@@ -341,60 +339,54 @@ function startRealtimeListener() {
     
     const messagesRef = collection(db, "clubs", clubId, "messages");
     
-    let q = newestDoc 
+    // listener 1: new messages only (original behavior, cheap)
+    let newMessagesQuery = newestDoc 
         ? query(messagesRef, orderBy("createdAt", "asc"), startAfter(newestDoc))
         : query(messagesRef, orderBy("createdAt", "asc"));
     
-    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+    unsubscribeMessages = onSnapshot(newMessagesQuery, async (snapshot) => {
         for (const change of snapshot.docChanges()) {
             const messageData = change.doc.data();
             const messageId = change.doc.id;
             
             if (change.type === "added") {
                 if (loadedMessageIds.has(messageId)) continue;
-                
                 loadedMessageIds.add(messageId);
                 
                 const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100;
-                
-                // Check if we need a date separator for new messages
                 const lastMessage = chatMessages.querySelector('.message-wrapper:last-of-type');
                 if (lastMessage && messageData.createdAt) {
                     const lastMessageDate = lastMessage.dataset.dateKey;
                     const currentDateKey = getMessageDateKey(messageData.createdAt);
-                    
                     if (currentDateKey && currentDateKey !== lastMessageDate) {
                         const dateSeparator = document.createElement('div');
                         dateSeparator.className = 'date-separator show';
                         dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
                         chatMessages.appendChild(dateSeparator);
-                        previousSenderId = null; // Reset so sender name shows after date separator
+                        previousSenderId = null;
                     }
                 }
-                
                 const showSenderName = previousSenderId !== messageData.createdByUid;
                 await displayMessage(messageId, messageData, showSenderName);
                 previousSenderId = messageData.createdByUid;
-                
-                if (messageData.createdAt) {
-                    newestDoc = change.doc;
-                }
-                
-                if (isNearBottom || messageData.createdByUid === currentUser.uid) {
-                    scrollToBottom();
-                }
-            }
-            if (change.type === "modified") {
-                updateMessage(messageId, messageData);
-            }
-            if (change.type === "removed") {
-                removeMessage(messageId);
-                loadedMessageIds.delete(messageId);
+                if (messageData.createdAt) newestDoc = change.doc;
+                if (isNearBottom || messageData.createdByUid === currentUser.uid) scrollToBottom();
             }
         }
-    }, (error) => {
-        console.error("Error:", error);
-    });
+    }, (error) => { console.error("Error:", error); });
+
+    // listener 2: watches loaded messages for edits/deletes only
+    if (oldestDoc && newestDoc) {
+        onSnapshot(
+            query(messagesRef, orderBy("createdAt", "asc"), startAfter(oldestDoc), limit(PAGE_SIZE)),
+            (snapshot) => {
+                for (const change of snapshot.docChanges()) {
+                    if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
+                    if (change.type === "removed") { removeMessage(change.doc.id); loadedMessageIds.delete(change.doc.id); }
+                }
+            }
+        );
+    }
 }
 
 function createMessageElement(messageId, messageData, showSenderName) {
@@ -461,6 +453,10 @@ function createMessageElement(messageId, messageData, showSenderName) {
             displayText = displayText.substring(0, maxLength) + '...';
         }
         replyText.textContent = displayText;
+        if (messageData.replyTo.text === "This message was deleted") {
+            replyText.style.fontStyle = 'italic';
+            replyText.style.opacity = '0.6';
+        }
 
         replyBubble.appendChild(replyText);
         replyBubbleContainer.appendChild(replyName);
@@ -470,7 +466,10 @@ function createMessageElement(messageId, messageData, showSenderName) {
         
         replyBubbleContainer.addEventListener('click', (e) => {
             e.stopPropagation();
-            showThreadView(messageId, messageData);
+            const currentWrapper = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+            const currentReplyText = currentWrapper?.querySelector('.reply-text')?.textContent;
+            const updatedData = { ...messageData, replyTo: { ...messageData.replyTo, text: currentReplyText || messageData.replyTo.text }};
+            showThreadView(messageId, updatedData);
         });
         
         messageWrapper.appendChild(replyPreview);
@@ -501,6 +500,9 @@ function createMessageElement(messageId, messageData, showSenderName) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
         messageDiv.innerHTML = linkifyText(messageData.message);
+        if (messageData.deleted) {
+            messageDiv.classList.add('deleted-message');
+        }
         if (messageData.createdByUid === currentUser.uid) {
             messageDiv.classList.add('sent');
         }
@@ -577,6 +579,23 @@ async function displayMessage(messageId, messageData, showSenderName) {
 function updateMessage(messageId, messageData) {
     const messageWrapper = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
     if (!messageWrapper) return;
+    const bubble = messageWrapper.querySelector('.message');
+    if (bubble) {
+        bubble.innerHTML = linkifyText(messageData.message);
+        if (messageData.deleted) {
+            bubble.classList.add('deleted-message');
+        }
+    }
+    const replyTextEl = messageWrapper.querySelector('.reply-text');
+    if (replyTextEl && messageData.replyTo) {
+        replyTextEl.textContent = messageData.replyTo.text.length > 50 
+            ? messageData.replyTo.text.substring(0, 50) + '...' 
+            : messageData.replyTo.text;
+        if (messageData.replyTo.text === "This message was deleted") {
+            replyTextEl.style.fontStyle = 'italic';
+            replyTextEl.style.opacity = '0.6';
+        }
+    }
 }
 
 function removeMessage(messageId) {
@@ -798,6 +817,7 @@ function clearPendingImages() {
 
 
 function showMessageOptions(messageId, messageData, messageElement) {
+    if (messageData.deleted) return;
     selectedMessageForOptions = {
         id: messageId,
         data: messageData,
@@ -805,6 +825,9 @@ function showMessageOptions(messageId, messageData, messageElement) {
     };
     
     document.getElementById('modalSenderName').textContent = messageData.createdByName || "Anonymous";
+    const deleteBtn = document.getElementById('deleteOptionButton');
+    const isOwner = messageData.createdByUid === currentUser.uid;
+    deleteBtn.style.display = isOwner ? 'flex' : 'none';
     
     const modalMessageContainer = document.getElementById('modalMessageContainer');
     modalMessageContainer.innerHTML = '';
@@ -883,6 +906,7 @@ document.getElementById('replyOptionButton')?.addEventListener('click', () => {
 
 
 function showThreadView(replyMessageId, replyMessageData) {
+    if (!replyMessageData.replyTo) return;
     const threadOverlay = document.createElement('div');
     threadOverlay.className = 'thread-view-overlay';
     threadOverlay.id = 'threadViewOverlay';
@@ -907,6 +931,14 @@ function showThreadView(replyMessageId, replyMessageData) {
             <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
             <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''}">${linkifyText(replyMessageData.replyTo.text)}</div>
         `;
+    }
+
+    if (replyMessageData.replyTo.text === "This message was deleted") {
+        const threadMsg = originalMsgWrapper.querySelector('.thread-message');
+        if (threadMsg) {
+            threadMsg.style.fontStyle = 'italic';
+            threadMsg.style.opacity = '0.6';
+        }
     }
     
     const replyMsgWrapper = document.createElement('div');
@@ -1092,3 +1124,29 @@ function getMessageDateKey(timestamp) {
     const date = timestamp.toDate();
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
+
+document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
+    if (!selectedMessageForOptions) return;
+    const confirmed = await showAppConfirm("Delete this message?");
+    if (!confirmed) return;
+    try {
+        const msgRef = doc(db, "clubs", clubId, "messages", selectedMessageForOptions.id);
+        const messagesRef = collection(db, "clubs", clubId, "messages");
+        const batch = writeBatch(db);
+        batch.update(msgRef, { deleted: true, message: "This message was deleted", type: "text" });
+
+        const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", selectedMessageForOptions.id));
+        const repliesSnap = await getDocs(repliesQuery);
+        repliesSnap.forEach(replyDoc => {
+            batch.update(replyDoc.ref, { "replyTo.text": "This message was deleted" });
+        });
+
+        await batch.commit();
+        hideMessageOptions();
+    } catch (err) {
+        console.error("Delete failed:", err);
+    }
+});
+
+
+// I am interested in technology, computers, and creative fields. My long term goal is to work in technology and design. I am passionate about technology and computers, like how they can be used as tools for creative expression. Although I am open to many different career paths, I think it would be interesting to build a career developing products and/or websites that can be useful for many people. 

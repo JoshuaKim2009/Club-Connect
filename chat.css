@@ -881,3 +881,8 @@ body.scroll-locked {
 .date-separator-text {
     white-space: nowrap;
 }
+
+.message.deleted-message {
+    font-style: italic;
+    opacity: 0.6;
+}
