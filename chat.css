@@ -874,7 +874,7 @@ body.scroll-locked {
 .date-separator::after {
     content: '';
     flex: 1;
-    border-bottom: 2px solid rgba(200, 200, 200, 0.6);
+    border-bottom: 1px solid rgba(200, 200, 200, 0.6);
     margin: 0 15px;
 }
 
