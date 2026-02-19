@@ -1127,8 +1127,18 @@ function getMessageDateKey(timestamp) {
 
 document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
     if (!selectedMessageForOptions) return;
+    
+    document.getElementById('messageOptionsModal').style.opacity = '0';
+    document.getElementById('messageOptionsModal').style.pointerEvents = 'none';
+    
     const confirmed = await showAppConfirm("Delete this message?");
-    if (!confirmed) return;
+    
+    if (!confirmed) {
+        document.getElementById('messageOptionsModal').style.opacity = '1';
+        document.getElementById('messageOptionsModal').style.pointerEvents = 'all';
+        return;
+    }
+    
     try {
         const msgRef = doc(db, "clubs", clubId, "messages", selectedMessageForOptions.id);
         const messagesRef = collection(db, "clubs", clubId, "messages");

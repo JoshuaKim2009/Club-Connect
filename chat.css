@@ -484,15 +484,16 @@ body {
     display: flex;
     justify-content: flex-start;
     max-height: 60vh;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .message-options-message-container .message {
     margin-bottom: 0;
     box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.15);
     max-width: 100%;
-    max-height: 60vh;
-    overflow: auto;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .message-options-message-container .message.sent {
