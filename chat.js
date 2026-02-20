@@ -1,6 +1,6 @@
 //chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, getCountFromServer, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
@@ -379,7 +379,7 @@ function startRealtimeListener() {
     // listener 2: watches loaded messages for edits/deletes only
     if (oldestDoc && newestDoc) {
         onSnapshot(
-            query(messagesRef, orderBy("createdAt", "asc"), startAfter(oldestDoc), limit(PAGE_SIZE)),
+            query(messagesRef, orderBy("createdAt", "asc"), startAt(oldestDoc)), // removed limit
             (snapshot) => {
                 for (const change of snapshot.docChanges()) {
                     if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
@@ -515,40 +515,40 @@ function createMessageElement(messageId, messageData, showSenderName) {
 
     messageContent.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
-            messageContent.classList.add('pressing');
+            messageWrapper.classList.add('pressing');
             pressTimer = setTimeout(() => {
-                messageContent.classList.remove('pressing');
+                messageWrapper.classList.remove('pressing');
                 showMessageOptions(messageId, messageData, messageWrapper);
             }, 250);
         }
     });
 
     messageContent.addEventListener('mouseup', () => {
-        messageContent.classList.remove('pressing');
+        messageWrapper.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('mouseleave', () => {
-        messageContent.classList.remove('pressing');
+        messageWrapper.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('touchstart', (e) => {
-        messageContent.classList.add('pressing');
+        messageWrapper.classList.add('pressing');
         pressTimer = setTimeout(() => {
-            messageContent.classList.remove('pressing');
+            messageWrapper.classList.remove('pressing');
             navigator.vibrate && navigator.vibrate(50);
             showMessageOptions(messageId, messageData, messageWrapper);
         }, 250);
     });
 
     messageContent.addEventListener('touchend', () => {
-        messageContent.classList.remove('pressing');
+        messageWrapper.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
     messageContent.addEventListener('touchmove', () => {
-        messageContent.classList.remove('pressing');
+        messageWrapper.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
 
@@ -851,13 +851,15 @@ function showMessageOptions(messageId, messageData, messageElement) {
 
     const currentReactions = messageData.reactions || [];
     QUICK_REACTIONS.forEach(emoji => {
-        const myEntry = currentReactions.find(r => r.emoji === emoji && r.uid === currentUser.uid);
+        const myEntry = !!messageElement.querySelector(`.reaction-chip[data-emoji="${emoji}"].mine`);
         const btn = document.createElement('div');
         btn.className = 'reaction-pick-btn' + (myEntry ? ' mine' : '');
         btn.textContent = emoji;
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            await toggleReaction(messageId, emoji);
+            btn.classList.toggle('mine');
+            const shouldAdd = btn.classList.contains('mine'); // read AFTER toggle
+            await toggleReaction(messageId, emoji, shouldAdd);
             hideMessageOptions();
         });
         reactionsBar.appendChild(btn);
@@ -1200,19 +1202,15 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
 
 
 
-async function toggleReaction(messageId, emoji) {
+async function toggleReaction(messageId, emoji, shouldAdd = null) {
     if (!currentUser || !clubId) return;
     const msgRef = doc(db, "clubs", clubId, "messages", messageId);
     const entry = { emoji, uid: currentUser.uid };
 
-    const currentReactions = selectedMessageForOptions?.id === messageId
-        ? (selectedMessageForOptions.data.reactions || [])
-        : [];
-    
-    const alreadyReacted = currentReactions.some(r => r.emoji === emoji && r.uid === currentUser.uid)
-        || !!chatMessages.querySelector(`[data-message-id="${messageId}"] .reaction-chip[data-emoji="${emoji}"].mine`);
+    const remove = shouldAdd !== null ? !shouldAdd
+        : !!chatMessages.querySelector(`[data-message-id="${messageId}"] .reaction-chip[data-emoji="${emoji}"].mine`);
 
-    if (alreadyReacted) {
+    if (remove) {
         await updateDoc(msgRef, { reactions: arrayRemove(entry) });
     } else {
         await updateDoc(msgRef, { reactions: arrayUnion(entry) });
@@ -1244,6 +1242,8 @@ function renderReactions(messageWrapper, reactions) {
         chip.dataset.emoji = emoji;
         chip.innerHTML = `<span>${emoji}</span><span class="reaction-chip-count">${uids.length}</span>`;
         const msgId = messageWrapper.dataset.messageId;
+        chip.addEventListener('mousedown', (e) => e.stopPropagation());
+        chip.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
         chip.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleReaction(msgId, emoji);

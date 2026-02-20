@@ -838,8 +838,13 @@ body.scroll-locked {
 
 
 
-.message.pressing {
+.message-wrapper.pressing {
     animation: shrink-hold 0.25s ease-out forwards;
+    transform-origin: left center;
+}
+
+.message-wrapper.sent.pressing {
+    transform-origin: right center;
 }
 
 @keyframes shrink-hold {
