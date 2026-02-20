@@ -1,6 +1,6 @@
 //chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, updateDoc, getCountFromServer, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
@@ -20,6 +20,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 //const storage = getStorage(app);
 
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '💀', '😭'];
 
 
 enableIndexedDbPersistence(db)
@@ -218,7 +219,7 @@ async function loadInitialMessages() {
         });
 
     } catch (error) {
-        console.error("Error:", error);
+        console.error(error);
     } finally {
         requestAnimationFrame(() => {
             const allMessages = chatMessages.querySelectorAll('.message-wrapper');
@@ -328,7 +329,7 @@ async function loadOlderMessages() {
             chatMessages.scrollTop = chatMessages.scrollTop + (newScrollHeight - previousScrollHeight);
         }
     } catch (error) {
-        console.error("Error:", error);
+        console.error(error);
     } finally {
         isLoadingOlder = false;
     }
@@ -518,7 +519,7 @@ function createMessageElement(messageId, messageData, showSenderName) {
             pressTimer = setTimeout(() => {
                 messageContent.classList.remove('pressing');
                 showMessageOptions(messageId, messageData, messageWrapper);
-            }, 500);
+            }, 250);
         }
     });
 
@@ -538,7 +539,7 @@ function createMessageElement(messageId, messageData, showSenderName) {
             messageContent.classList.remove('pressing');
             navigator.vibrate && navigator.vibrate(50);
             showMessageOptions(messageId, messageData, messageWrapper);
-        }, 500);
+        }, 250);
     });
 
     messageContent.addEventListener('touchend', () => {
@@ -550,6 +551,9 @@ function createMessageElement(messageId, messageData, showSenderName) {
         messageContent.classList.remove('pressing');
         clearTimeout(pressTimer);
     });
+
+    renderReactions(messageWrapper, messageData.reactions || []);
+
     return messageWrapper;
 }
 
@@ -596,6 +600,7 @@ function updateMessage(messageId, messageData) {
             replyTextEl.style.opacity = '0.6';
         }
     }
+    renderReactions(messageWrapper, messageData.reactions || []);
 }
 
 function removeMessage(messageId) {
@@ -707,14 +712,10 @@ async function updateLastSeenMessages() {
 
     const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
 
-    try {
-        await updateDoc(memberDocRef, {
-            lastSeenMessages: serverTimestamp()
-        });
-        console.log("Updated timestamp");
-    } catch (error) {
-        console.error("Failed:", error);
-    }
+    await updateDoc(memberDocRef, {
+        lastSeenMessages: serverTimestamp()
+    });
+    console.log("Updated timestamp");
 }
 
 if (addButton) {
@@ -835,14 +836,52 @@ function showMessageOptions(messageId, messageData, messageElement) {
     const messageContent = messageElement.querySelector('.message');
     if (messageContent) {
         const messageClone = messageContent.cloneNode(true);
+        messageClone.querySelector('.message-reactions')?.remove();
         modalMessageContainer.appendChild(messageClone);
     }
     
     chatMessages.classList.add('blur-background');
     document.getElementById('messageOptionsOverlay').classList.add('show');
+
+    const existingReactionsBar = document.querySelector('.modal-reactions-row');
+    if (existingReactionsBar) existingReactionsBar.remove();
+
+    const reactionsBar = document.createElement('div');
+    reactionsBar.className = 'modal-reactions-row';
+
+    const currentReactions = messageData.reactions || [];
+    QUICK_REACTIONS.forEach(emoji => {
+        const myEntry = currentReactions.find(r => r.emoji === emoji && r.uid === currentUser.uid);
+        const btn = document.createElement('div');
+        btn.className = 'reaction-pick-btn' + (myEntry ? ' mine' : '');
+        btn.textContent = emoji;
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await toggleReaction(messageId, emoji);
+            hideMessageOptions();
+        });
+        reactionsBar.appendChild(btn);
+    });
+
+    const morBtn = document.createElement('div');
+    morBtn.className = 'reaction-pick-btn';
+    morBtn.textContent = '+';
+    morBtn.style.fontSize = '22px';
+    morBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showEmojiPickerOverlay(messageId);
+    });
+    reactionsBar.appendChild(morBtn);
+
+    const actionsSection = document.querySelector('.message-options-actions');
+    actionsSection.parentNode.insertBefore(reactionsBar, actionsSection);
 }
 
 function hideMessageOptions() {
+    const modal = document.getElementById('messageOptionsModal');
+    modal.style.opacity = '';
+    modal.style.pointerEvents = '';
+
     if (!replyingToMessage) {
         chatMessages.classList.remove('blur-background');
     }
@@ -1139,24 +1178,129 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
         return;
     }
     
-    try {
-        const msgRef = doc(db, "clubs", clubId, "messages", selectedMessageForOptions.id);
-        const messagesRef = collection(db, "clubs", clubId, "messages");
-        const batch = writeBatch(db);
-        batch.update(msgRef, { deleted: true, message: "This message was deleted", type: "text" });
+    const msgRef = doc(db, "clubs", clubId, "messages", selectedMessageForOptions.id);
+    const messagesRef = collection(db, "clubs", clubId, "messages");
+    const batch = writeBatch(db);
+    batch.update(msgRef, { deleted: true, message: "This message was deleted", type: "text", reactions: [] });
 
-        const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", selectedMessageForOptions.id));
-        const repliesSnap = await getDocs(repliesQuery);
-        repliesSnap.forEach(replyDoc => {
-            batch.update(replyDoc.ref, { "replyTo.text": "This message was deleted" });
-        });
+    const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", selectedMessageForOptions.id));
+    const repliesSnap = await getDocs(repliesQuery);
+    repliesSnap.forEach(replyDoc => {
+        batch.update(replyDoc.ref, { "replyTo.text": "This message was deleted" });
+    });
 
-        await batch.commit();
-        hideMessageOptions();
-    } catch (err) {
-        console.error("Delete failed:", err);
-    }
+    await batch.commit();
+    hideMessageOptions();
 });
 
 
+
+
+
+
+
+
+async function toggleReaction(messageId, emoji) {
+    if (!currentUser || !clubId) return;
+    const msgRef = doc(db, "clubs", clubId, "messages", messageId);
+    const entry = { emoji, uid: currentUser.uid };
+
+    const currentReactions = selectedMessageForOptions?.id === messageId
+        ? (selectedMessageForOptions.data.reactions || [])
+        : [];
+    
+    const alreadyReacted = currentReactions.some(r => r.emoji === emoji && r.uid === currentUser.uid)
+        || !!chatMessages.querySelector(`[data-message-id="${messageId}"] .reaction-chip[data-emoji="${emoji}"].mine`);
+
+    if (alreadyReacted) {
+        await updateDoc(msgRef, { reactions: arrayRemove(entry) });
+    } else {
+        await updateDoc(msgRef, { reactions: arrayUnion(entry) });
+    }
+}
+
+function renderReactions(messageWrapper, reactions) {
+    messageWrapper.querySelector('.message-reactions')?.remove();
+    if (!reactions || reactions.length === 0) return;
+
+    const order = [];
+    const groups = {};
+    for (const r of reactions) {
+        if (!groups[r.emoji]) {
+            groups[r.emoji] = [];
+            order.push(r.emoji);
+        }
+        groups[r.emoji].push(r.uid);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'message-reactions';
+
+    for (const emoji of order) {
+        const uids = groups[emoji];
+        const mine = uids.includes(currentUser.uid);
+        const chip = document.createElement('div');
+        chip.className = 'reaction-chip' + (mine ? ' mine' : '');
+        chip.dataset.emoji = emoji;
+        chip.innerHTML = `<span>${emoji}</span><span class="reaction-chip-count">${uids.length}</span>`;
+        const msgId = messageWrapper.dataset.messageId;
+        chip.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleReaction(msgId, emoji);
+        });
+        row.appendChild(chip);
+    }
+
+    const bubble = messageWrapper.querySelector('.message');
+    (bubble || messageWrapper).appendChild(row);
+}
+
+function showEmojiPickerOverlay(messageId) {
+    const modal = document.getElementById('messageOptionsModal');
+    modal.style.opacity = '0';
+    modal.style.pointerEvents = 'none';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'emoji-picker-overlay';
+    overlay.id = 'emojiPickerOverlay';
+
+    const picker = document.createElement('emoji-picker');
+    overlay.appendChild(picker);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        overlay.classList.add('show');
+        requestAnimationFrame(() => {
+            const searchInput = picker.shadowRoot?.querySelector('input[type="search"]');
+            searchInput?.focus();
+        });
+    });
+
+    picker.addEventListener('emoji-click', async (e) => {
+        const emoji = e.detail.unicode;
+        await toggleReaction(messageId, emoji);
+        closeEmojiPickerOverlay(false); 
+        hideMessageOptions();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeEmojiPickerOverlay(true);
+    });
+}
+
+function closeEmojiPickerOverlay(restoreModal) {
+    const overlay = document.getElementById('emojiPickerOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    setTimeout(() => overlay.remove(), 200);
+
+    if (restoreModal) {
+        const modal = document.getElementById('messageOptionsModal');
+        modal.style.opacity = '1';
+        modal.style.pointerEvents = 'all';
+    }
+}
+
+
 // I am interested in technology, computers, and creative fields. My long term goal is to work in technology and design. I am passionate about technology and computers, like how they can be used as tools for creative expression. Although I am open to many different career paths, I think it would be interesting to build a career developing products and/or websites that can be useful for many people. 
+
