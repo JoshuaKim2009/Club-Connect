@@ -863,15 +863,15 @@ function showMessageOptions(messageId, messageData, messageElement) {
         reactionsBar.appendChild(btn);
     });
 
-    const morBtn = document.createElement('div');
-    morBtn.className = 'reaction-pick-btn';
-    morBtn.textContent = '+';
-    morBtn.style.fontSize = '22px';
-    morBtn.addEventListener('click', (e) => {
+    const moreBtn = document.createElement('div');
+    moreBtn.className = 'reaction-pick-btn';
+    moreBtn.textContent = '+';
+    moreBtn.style.fontSize = '22px';
+    moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         showEmojiPickerOverlay(messageId);
     });
-    reactionsBar.appendChild(morBtn);
+    reactionsBar.appendChild(moreBtn);
 
     const actionsSection = document.querySelector('.message-options-actions');
     actionsSection.parentNode.insertBefore(reactionsBar, actionsSection);
