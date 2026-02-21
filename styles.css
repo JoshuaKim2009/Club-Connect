@@ -1,9 +1,8 @@
 body {
-/* Remove background-color, background-image, background-attachment, background-size, background-repeat */
-background-color: #131330; /* Fallback color */
-min-height: 100vh;
-margin: 5px; /* Add margin 0 just in case */
-position: relative; /* Sometimes needed */
+  background-color: #131330;
+  min-height: 100vh;
+  margin: 5px; 
+  position: relative; 
 }
 
 :root {
@@ -15,15 +14,13 @@ position: relative; /* Sometimes needed */
 }
 
 #content {
-  display: none; /* Initially hidden */
+  display: none; 
 }
 
-/* Initial hidden state for ALL direct children of #content */
-/* They start invisible and slightly below their final position */
 #content > * {
   opacity: 0;
   transform: translateY(20px); 
-  transition: opacity 0.4s ease-out, transform 0.4s ease-out; /* RESTORED: Smooth animation for both */
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out; 
 }
 
 #content > *.revealed-child {
@@ -62,7 +59,6 @@ position: relative; /* Sometimes needed */
   text-align: left;
 }
 
-/* Ensure the .hidden class is robust for other elements too if still used */
 .hidden {
   display: none !important;
 }
@@ -75,7 +71,7 @@ body.no-interaction {
 }
 
 #loading-overlay {
-  position: fixed; /* Stays in place when scrolling */
+  position: fixed; 
   top: 0;
   left: 0;
   width: 100%;
@@ -96,13 +92,13 @@ body.no-interaction {
       #131330 100%
     ),
     radial-gradient(circle at center, #474799, #131330);
-  display: flex; /* Use flexbox to center content */
+  display: flex; 
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Ensure it's on top of everything */
-  transition: opacity 0.5s ease-out; /* Smooth transition when fading out */
-  opacity: 1; /* Initially visible */
+  z-index: 9999; 
+  transition: opacity 0.5s ease-out; 
+  opacity: 1; 
 }
 
 #loading-overlay p {
@@ -114,10 +110,10 @@ body.no-interaction {
 
 #loading-overlay.hidden {
   opacity: 0;
-  pointer-events: none; /* Allows clicks on elements behind it when hidden */
+  pointer-events: none; 
 }
 
-/* Basic spinner style (you can use more complex CSS animations or SVG/GIF) */
+
 .loading-spinner {
   border: 8px solid #f3f3f3;
   border-top: 8px solid #3498db;
@@ -135,14 +131,13 @@ body.no-interaction {
 
 body::before {
   content: "";
-  position: fixed; /* This makes it stay in place relative to the viewport */
+  position: fixed; 
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1; /* Puts it behind all content */
+  z-index: -1; 
 
-  /* Your original background styles go here, without background-attachment: fixed */
   background-image: linear-gradient(
       to bottom,
       #131330 0%,
@@ -426,24 +421,21 @@ button {
 }
 
 #copyJoinCodeButton {
-  /* Reset default button styles */
-  background: none; /* Make the background transparent */
-  border: none; /* Remove default border */
-  padding: 0; /* Remove default padding */
-  /*font: inherit;     /* Inherit font-family, font-size, font-weight from parent */
+  background: none; 
+  border: none; 
+  padding: 0; 
+  /*font: inherit;*/
   font-size: 18px;
   font-family: "Google Sans", sans-serif;
-  color: inherit; /* Inherit text color from parent */
-  cursor: pointer; /* Indicate it's clickable */
-  outline: none; /* Remove outline on focus if desired, but be mindful of accessibility */
+  color: inherit;
+  cursor: pointer; 
+  outline: none; 
 
-  /* Add the white outline/border */
-  border: 2px solid white; /* A 2px solid white border */
-  border-radius: 4px; /* Slightly rounded corners for a softer look, optional */
-  padding: 4px 8px; /* Add some padding back to make the border visible around the text */
+  border: 2px solid white; 
+  border-radius: 4px; 
+  padding: 4px 8px; 
 
-  /* Optional: Add a subtle hover effect */
-  transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
+  transition: all 0.2s ease-in-out; 
 }
 
 #copyJoinCodeButton:hover {
@@ -452,8 +444,8 @@ button {
     255,
     255,
     0.1
-  ); /* Slight white background on hover */
-  transform: translateY(-1px); /* Little lift effect */
+  );
+  transform: translateY(-1px); 
 }
 
 #copyJoinCodeButton:active {
@@ -462,7 +454,7 @@ button {
     255,
     255,
     0.2
-  ); /* More visible background on click */
+  ); 
   transform: translateY(0);
 }
 
@@ -724,14 +716,14 @@ button {
 
 #pendingRequestsContainer {
   margin-top: 20px;
-  padding: 10px; /* Increased padding */
-  border: 3px solid black; /* Matches button border */
-  border-radius: 10px; /* Matches button border-radius */
+  padding: 10px; 
+  border: 3px solid black; 
+  border-radius: 10px; 
   background: linear-gradient(
     #f0f0f0,
     #e0e0e0
-  ); /* A slightly darker gradient for the container */
-  box-shadow: 0px 6px 0px #000000; /* Deeper shadow for the container */
+  ); 
+  box-shadow: 0px 6px 0px #000000; 
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -740,31 +732,29 @@ button {
 
 #pendingRequestsContainer h3 {
   text-align: center;
-  color: black; /* Matches button text color */
+  color: black; 
   font-family: var(--primary-font-family);
-  font-size: 40px; /* Adjusted size */
+  font-size: 40px; 
   margin-bottom: 20px;
   font-weight: normal;
 }
 
-/* Style for each individual pending member's "card" or "solid button" unit */
 .pending-member-card {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping if content is too wide */
+  flex-wrap: wrap; 
   justify-content: space-between;
   align-items: center;
 
-  /* Applying the core button style to the card background */
   background: linear-gradient(#ffffff, #b3b3b3);
   font-family: var(--primary-font-family);
   color: black;
   border: 3px solid black;
-  padding: 10px 20px; /* Slightly more padding for the card */
+  padding: 10px 20px; 
   border-radius: 10px;
-  cursor: default; /* Card itself isn't a button, so default cursor */
-  box-shadow: 0px 4px 0px #000000; /* Matches button shadow */
+  cursor: default; 
+  box-shadow: 0px 4px 0px #000000; 
   transition: all 0.05s ease-in-out;
-  margin-bottom: 15px; /* Space between cards */
+  margin-bottom: 15px; 
 }
 
 #pendingRequestsContainer .fancy-label {
@@ -776,43 +766,39 @@ button {
 }
 
 .pending-member-card:hover {
-  /* Slight lift effect on hover for the card */
   transform: translateY(-2px);
   box-shadow: 0px 6px 0px #000000;
 }
 
-/* Style for the member's name display */
 .pending-member-name-display {
-  font-size: 24px; /* Adjusted font size for name inside the card */
+  font-size: 24px; 
   color: black;
-  flex-grow: 1; /* Allow the name to take up available space */
-  margin-right: 15px; /* Space between name and buttons */
-  white-space: nowrap; /* Prevent name from wrapping */
+  flex-grow: 1; 
+  margin-right: 15px; 
+  white-space: nowrap; 
   overflow: hidden;
-  text-overflow: ellipsis; /* Add ellipsis if name is too long */
+  text-overflow: ellipsis; 
 }
 
-/* Style for the container holding the action buttons */
 .pending-member-actions {
   display: flex;
-  gap: 10px; /* Space between the buttons */
-  margin-top: 5px; /* Add a small top margin if content wraps */
+  gap: 10px; 
+  margin-top: 5px; 
 }
 
-/* Base style for both ACCEPT and DENY buttons, using your theme */
 .approve-member-btn,
 .deny-member-btn {
-  background: linear-gradient(#ffffff, #b3b3b3); /* Your gradient */
+  background: linear-gradient(#ffffff, #b3b3b3); 
   font-family: var(--primary-font-family);
-  font-size: 22px; /* Slightly smaller than main button to fit, adjust as needed */
+  font-size: 22px; 
   color: black;
   border: 3px solid black;
-  padding: 5px 15px; /* Adjusted padding to fit action buttons */
+  padding: 5px 15px; 
   border-radius: 10px;
   cursor: pointer;
   box-shadow: 0px 4px 0px #000000;
   transition: all 0.05s ease-in-out;
-  white-space: nowrap; /* Prevent button text from wrapping */
+  white-space: nowrap; 
 }
 
 @media screen and (max-width: 600px) {
@@ -851,25 +837,24 @@ button {
 
 .approve-member-btn:hover,
 .deny-member-btn:hover {
-  transform: translateY(2px); /* Simulate a "press" effect */
-  box-shadow: 0px 2px 0px #000000; /* Reduce shadow to complete the press effect */
+  transform: translateY(2px); 
+  box-shadow: 0px 2px 0px #000000; 
 }
 
 .approve-member-btn:active,
 .deny-member-btn:active {
-  transform: translateY(4px); /* Full press effect */
-  box-shadow: 0px 0px 0px #000000; /* Shadow disappears when fully pressed */
+  transform: translateY(4px); 
+  box-shadow: 0px 0px 0px #000000; 
 }
 
-/* Specific color adjustments for visual distinction (optional, but good practice) */
 .approve-member-btn {
   color: white;
-  background: #1c801c; /* Lighter green gradient for ACCEPT */
+  background: #1c801c; 
 }
 
 .deny-member-btn {
   color: white;
-  background: #d32727; /* Lighter red gradient for DENY */
+  background: #d32727; 
 }
 
 .approve-member-btn:hover {
@@ -888,8 +873,8 @@ button {
   background: linear-gradient(
     #f0f0f0,
     #e0e0e0
-  ); /* Slightly darker gradient for the container */
-  box-shadow: 0px 6px 0px #000000; /* Deeper shadow for the container */
+  ); 
+  box-shadow: 0px 6px 0px #000000;
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -905,10 +890,9 @@ button {
   font-weight: normal;
 }
 
-/* Style for the "No members in this club yet." message */
 #membersContainer .fancy-label {
   text-align: center;
-  color: #525252; /* A slightly softer color for informative text */
+  color: #525252; 
   font-size: 25px;
   padding: 10px;
   font-family: var(--primary-font-family);
@@ -920,30 +904,29 @@ button {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-  z-index: 999; /* Ensure it's above other content */
-  display: flex; /* Use flexbox to center the popup */
+  background-color: rgba(0, 0, 0, 0.5); 
+  z-index: 999; 
+  display: flex; 
   justify-content: center;
   align-items: center;
 }
 
-/* Styles for the Role Management Popup */
 #role-management-popup {
   padding: 10px;
   border: 3px solid black;
   background: linear-gradient(#f0f0f0, #e0e0e0);
   box-shadow: 0px 6px 0px #000000;
-  width: 80%; /* Adjust as needed */
-  max-width: 500px; /* Max width for larger screens */
+  width: 80%; 
+  max-width: 500px; 
   border-radius: 10px;
-  z-index: 1000; /* Ensure it's above the overlay */
-  position: fixed; /* Fixed position relative to viewport */
-  top: 50%; /* Center vertically */
-  left: 50%; /* Center horizontally */
-  transform: translate(-50%, -50%); /* Adjust for exact centering */
-  display: none; /* Hidden by default */
+  z-index: 1000; 
+  position: fixed; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  display: none; 
   flex-direction: column;
-  gap: 15px; /* Space between elements in the popup */
+  gap: 15px; 
   font-family: var(--primary-font-family);
   font-weight: normal;
   text-align: center;
@@ -978,8 +961,8 @@ button {
 
 .popup-actions {
   display: flex;
-  justify-content: flex-end; /* Align buttons to the right */
-  gap: 10px; /* Space between buttons */
+  justify-content: flex-end; 
+  gap: 10px; 
   margin-top: 20px;
 }
 
@@ -987,7 +970,6 @@ button {
   font-size: 24px;
 }
 
-/* --- Styles for each individual Member's "card" --- */
 .member-card {
   display: flex;
   /* flex-wrap: wrap; */
@@ -1003,7 +985,7 @@ button {
   cursor: default;
   box-shadow: 0px 4px 0px #000000;
   transition: all 0.05s ease-in-out;
-  margin-bottom: 15px; /* Space between cards */
+  margin-bottom: 15px; 
 }
 
 .member-card:hover {
@@ -1011,7 +993,6 @@ button {
   box-shadow: 0px 6px 0px #000000;
 }
 
-/* Style for the member's name display */
 .member-name-display {
   font-size: 24px;
   color: black;
@@ -1024,7 +1005,6 @@ button {
   min-width: 0;
 }
 
-/* Style for the container holding the action buttons */
 .member-actions {
   display: flex;
   gap: 10px;
@@ -1047,7 +1027,7 @@ button {
 }
 
 .remove-member-btn {
-  /* background: linear-gradient(#f0ad4e, #eb9316); Orange gradient for REMOVE */
+  /* background: linear-gradient(#f0ad4e, #eb9316);*/
   background: linear-gradient(#ff6a6a, #ff4a4a);
   font-family: var(--primary-font-family);
   font-size: 22px;
@@ -1065,7 +1045,7 @@ button {
   transform: translateY(2px);
   box-shadow: 0px 2px 0px #000000;
   background: linear-gradient(#ff5f5f, #fc4040);
-  /* background: linear-gradient(#f3b35a, #f09e2b); Slightly lighter orange on hover */
+  /* background: linear-gradient(#f3b35a, #f09e2b);*/
 }
 
 .remove-member-btn:active {
@@ -1098,12 +1078,11 @@ button {
   box-shadow: 0px 0px 0px #000000;
 }
 
-/* Styling for the member role text (e.g., MEMBER, ADMIN) */
 .member-role-text {
-  color: #666666; /* A subtle gray shade */
-  font-size: 0.9em; /* Slightly smaller than the name */
-  font-weight: normal; /* Not bold, less prominent */
-  margin-left: 8px; /* Small space between name and role */
+  color: #666666;
+  font-size: 0.9em;
+  font-weight: normal;
+  margin-left: 8px;
 }
 
 .club-role-text {
@@ -1119,9 +1098,8 @@ button {
 
 #dynamic-sections-wrapper {
   display: flex;
-  flex-direction: column; /* Stacks the content vertically */
-  /* Add any other styling for the overall wrapper if needed, like a gap */
-  gap: 20px; /* Example: adds space between the two main sections */
+  flex-direction: column;
+  gap: 20px; 
 }
 
 @media screen and (max-width: 600px) {
@@ -1137,7 +1115,7 @@ button {
     text-align: center;
     margin-right: 0;
     margin-bottom: 5px;
-    /* IMPORTANT: Override truncation for small screens */
+
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
@@ -1249,7 +1227,7 @@ button {
   max-width: 600px;
   margin: 20px auto;
   display: block;
-  text-align: center; /* Centers text and inline-block elements like the button */
+  text-align: center; 
 }
 
 #communicationSection h3,
@@ -1266,48 +1244,45 @@ button {
   /* min-height: 200px; */
   font-family: var(--primary-font-family);
   padding: 15px;
-  border: 3px dashed #474747; /* A subtle border to show it's a placeholder */
+  border: 3px dashed #474747; 
   margin-bottom: 20px;
   background-color: #d3d3d3;
   border-radius: 8px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Inner shadow for depth */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); 
   color: #555;
   font-size: 20px;
 }
 
 
 .event-card-loading {
-  /* Inherit common dimensions from .event-card */
   width: 85%;
   max-width: 600px;
   margin: 8px auto;
-  padding: 8px; /* Match .event-card padding */
+  padding: 8px; 
   line-height: 1.4;
 
-  border: 3px solid #000000; /* Lighter border for loading */
+  border: 3px solid #000000; 
   border-radius: 10px;
   background: linear-gradient(90deg, #f0f0f0 0%, #d8d8d8 20%, #f0f0f0 40%, #d8d8d8 60%, #f0f0f0 100%);
-  background-size: 200% 100%; /* For the moving gradient effect */
-  box-shadow: 0px 3px 0px #000000; /* Lighter shadow */
-  overflow: hidden; /* Hide animation overflow */
+  background-size: 200% 100%; 
+  box-shadow: 0px 3px 0px #000000; 
+  overflow: hidden; 
 
-  /* Basic height to match a typical event card */
-  min-height: 190px; /* Adjust as needed based on your real event card content */
-  position: relative; /* For the animation placeholder */
+  min-height: 190px; 
+  position: relative;
 
-  animation: loading-shimmer 1.5s infinite linear; /* Shimmer effect */
+  animation: loading-shimmer 1.5s infinite linear;
 }
 
-/* Style for text lines within the loading card */
 .event-card-loading .loading-line {
-  height: 1em; /* Roughly text line height */
-  margin-bottom: 0.5em; /* Space between lines */
-  background-color: #d0d0d0; /* Gray color for loading text */
-  border-radius: 4px; /* Rounded corners for lines */
+  height: 1em; 
+  margin-bottom: 0.5em; 
+  background-color: #d0d0d0; 
+  border-radius: 4px; 
 }
 
 .event-card-loading .loading-line:first-child {
-  width: 70%; /* Shorter line for title */
+  width: 70%; 
   margin: 0.5em auto 1em auto;
 }
 .event-card-loading .loading-line:nth-child(2) { width: 90%; }
@@ -1325,18 +1300,15 @@ button {
   }
 }
 
-/* --- Animation for the new event card sliding/shaking in --- */
-/* Base state before animation */
 .event-card.animate-in {
   opacity: 0;
-  transform: translateY(20px); /* Start slightly below its final position */
+  transform: translateY(20px); 
 }
 
-/* Final state after animation (added after a short delay in JS) */
 .event-card.animate-in.is-visible {
   opacity: 1;
-  transform: translateY(0); /* Move to its final position */
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out; /* Smooth transition */
+  transform: translateY(0); 
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out; 
 }
 
 
@@ -1347,22 +1319,21 @@ button {
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
   box-shadow: 0px 6px 0px #000000;
-  padding: 8px; /* Reduced padding for a more condensed look */
-  margin: 8px auto; /* Reduced external margin between cards */
+  padding: 8px; 
+  margin: 8px auto; 
   width: 85%;
   max-width: 600px;
   text-align: left;
   font-family: var(--primary-font-family, sans-serif);
-  /* Optional: further condense internal spacing if needed */
-  line-height: 1.4; /* Slightly tighter line height for all text in the card */
+  line-height: 1.4; 
 }
 
 .event-card h3 {
-  font-weight: normal; /* Makes the title not bold */
-  font-size: 1.6em; /* Makes the title bigger */
-  text-align: center; /* Centers the title text */
-  margin-top: 0; /* Remove default top margin on h3 */
-  margin-bottom: 8px; /* Adjust spacing below the title */
+  font-weight: normal; 
+  font-size: 1.6em; 
+  text-align: center; 
+  margin-top: 0; 
+  margin-bottom: 8px; 
   padding-bottom: 8px;
   border-bottom: 2px dotted black;
   position: relative;
@@ -1379,21 +1350,18 @@ button {
   pointer-events: none;
 }
 
-/* Optional: To make the rest of the text even more condensed,
-   you could add rules for paragraphs and their margins within the card */
 .event-card p {
   margin-top: 4px;
   margin-bottom: 4px;
-  /* font-size: 0.9em; */ /* Uncomment and adjust if you want the other text smaller */
+  /* font-size: 0.9em;*/
 }
 
-/* Ensure action buttons are also compact if many */
 .event-card-actions {
   margin-top: 8px;
   display: flex;
-  flex-wrap: wrap; /* Allows buttons to wrap to next line if space is tight */
-  gap: 5px; /* Space between buttons */
-  justify-content: center; /* Center the buttons group */
+  flex-wrap: wrap; 
+  gap: 5px; 
+  justify-content: center; 
 }
 .event-card-actions button {
   padding: 5px 10px;
@@ -1402,7 +1370,6 @@ button {
 
 
 
-/* For the canceled tag */
 .canceled-tag {
   font-size: 0.8em;
   color: #cc0000;
@@ -1587,12 +1554,11 @@ input[type="checkbox"]:checked {
   flex-wrap: nowrap;
 }
 
-/* Styles for individual RSVP buttons */
 .rsvp-buttons button {
-  flex-grow: 1; /* Allows buttons to grow and take available space */
-  flex-shrink: 1; /* Allows buttons to shrink if needed */
-  flex-basis: 0; /* Establishes a zero base for equal distribution */
-  min-width: 70px; /* <--- ADD/ADJUST THIS: Set a minimum width, but make it smaller than 80px to allow more shrinking. You can experiment with this value. */
+  flex-grow: 1; 
+  flex-shrink: 1; 
+  flex-basis: 0; 
+  min-width: 70px; 
 
   box-sizing: border-box;
   font-family: var(--primary-font-family, sans-serif);
@@ -1603,21 +1569,20 @@ input[type="checkbox"]:checked {
   cursor: pointer;
   border-radius: 8px;
   font-size: 0.9em;
-  text-align: center; /* Ensures text is centered within the button */
+  text-align: center; 
 
-  /* Fix for iPhone blue text issue */
-  color: black; /* <--- ADD THIS: Explicitly set text color to black */
-  -webkit-appearance: none; /* <--- ADD THIS: Remove default iOS button styling */
+
+  color: black; 
+  -webkit-appearance: none; 
   -moz-appearance: none;
   appearance: none;
-  text-decoration: none; /* <--- ADD THIS: Ensure no default underline for button text */
+  text-decoration: none; 
 }
 
 .rsvp-buttons button:hover {
   background-color: #e0e0e0;
 }
 
-/* Selected state styles remain the same */
 .rsvp-buttons button.selected-rsvp {
   background-color: #333;
   color: white;
@@ -1685,7 +1650,7 @@ input[type="checkbox"]:checked {
   align-items: center;
 }
 
-#rsvp-details-modal { /* THIS SHOULD BE YOUR ONLY #rsvp-details-modal BLOCK */
+#rsvp-details-modal { 
   margin-top: 20px;
   font-weight: normal;
   padding: 20px;
@@ -1708,13 +1673,11 @@ input[type="checkbox"]:checked {
   font-size: 20px;
   color: black;
 
-  /* These are the key properties for height transition and scrollbar control */
-  max-height: 80vh; /* This is the desired *final* max-height */
+  max-height: 80vh; 
   overflow-y: hidden;
-  transition: max-height 0.5s ease-out; /* ONLY max-height transitions here */
+  transition: max-height 0.5s ease-out; 
 
-  /* SCROLLBAR STYLES - NOW ALL CONSOLIDATED HERE */
-  padding-right: 14px; /* Space reserved for scrollbar if it appears */
+  padding-right: 14px; 
   box-sizing: border-box;
   scrollbar-gutter: stable;
   background-clip: padding-box;
@@ -1724,12 +1687,12 @@ input[type="checkbox"]:checked {
 
 
 .rsvp-scroll-active {
-  overflow-y: auto !important; /* Enable scrolling when the modal is fully expanded */
+  overflow-y: auto !important; 
 }
 
 .rsvp-loading-collapsed {
-  max-height: 150px !important; /* Smaller height for "LOADING..." */
-  overflow-y: hidden !important; /* Hide scrollbar during loading */
+  max-height: 150px !important; 
+  overflow-y: hidden !important; 
 }
 
 #rsvp-details-modal h2 {
@@ -2067,34 +2030,32 @@ input[type="checkbox"]:checked {
 
 
 .notification-badge {
-  background-color: rgb(182, 16, 16); /* A good, deep red */
+  background-color: rgb(182, 16, 16); 
   color: white;
-  border-radius: 4px; /* Rounded square shape */
-  padding: 3px 6px; /* Increased padding for larger size */
-  font-size: 20px; /* Increased font size for better readability in a larger badge */
+  border-radius: 4px; 
+  padding: 3px 6px; 
+  font-size: 20px; 
   position: absolute;
-  top: -10px;      /* Adjusted vertical position for larger badge */
-  right: -10px;    /* Adjusted horizontal position for larger badge */
-  min-width: 28px; /* Increased minimum width for a larger badge */
-  height: 28px;   /* Increased height for a larger badge */
-  display: flex;  /* Use flexbox for robust centering of text */
-  justify-content: center; /* Center content horizontally */
-  align-items: center;   /* Center content vertically */
-  box-sizing: border-box; /* Ensures padding and border are included in the height/min-width */
-  border: 2px solid rgb(112, 13, 13); /* Darker red border */
-  font-weight: normal; /* Text is now normal weight */
+  top: -10px;
+  right: -10px;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  border: 2px solid rgb(112, 13, 13);
+  font-weight: normal;
   font-family: var(--primary-font-family, sans-serif);
-  z-index: 10; /* Ensure it's above other elements if needed */
-  display: none; /* Hidden by default, JavaScript shows it when count > 0 */
+  z-index: 10;
+  display: none;
 }
 
-/* Ensure the announcements button has position: relative for the badge to position correctly */
 #chatButton,
 #view-members-button,
 #pollsButton,
 #announcementsButton {
   position: relative;
-  /* ... your existing button styles for #announcementsButton ... */
 }
 
 .event-card-actions .button-text {
