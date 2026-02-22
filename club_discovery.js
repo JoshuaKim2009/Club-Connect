@@ -48,6 +48,12 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         await showAppAlert("Please enter a state to search.");
         return;
     }
+
+    if (!school) {
+        clubsGrid.innerHTML = "";
+        await showAppAlert("Please enter a school to search.");
+        return;
+    }
     
     const clubsRef = collection(db, "clubs");
     const constraints = [];
