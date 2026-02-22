@@ -53,7 +53,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const constraints = [];
 
     if (state)  constraints.push(where("stateLower", "==", state.toLowerCase()));
-    if (school) constraints.push(where("schoolNameLower", "==", school.toLowerCase()));
+    // if (school) constraints.push(where("schoolNameLower", "==", school.toLowerCase()));
     if (club)   constraints.push(where("clubNameLower", "==", club.toLowerCase()));
 
     if (constraints.length === 0) {
