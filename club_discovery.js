@@ -1,7 +1,8 @@
 // club_discovery.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { showAppAlert } from './dialog.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -35,7 +36,7 @@ onAuthStateChanged(auth, (user) => {
 document.getElementById("createClubForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const school = document.getElementById("searchSchool").value.trim();
+    const school = normalizeSearchInput(document.getElementById("searchSchool").value);
     const state  = document.getElementById("searchState").value.trim();
     const club   = document.getElementById("searchClub").value.trim();
 
@@ -92,7 +93,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         }
 
         matches.forEach(data => {
-            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode);
+            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode, data.pendingMemberUIDs || [], data.memberUIDs || []);
         });
 
     } catch (error) {
@@ -103,7 +104,10 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 
 
 
-function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode) {
+function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode, pendingMemberUIDs, memberUIDs) {
+    const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
+    const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
+
     const card = document.createElement("div");
     card.className = "club-card";
     card.innerHTML = `
@@ -116,9 +120,65 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
             <span><i class="fa-solid fa-location-dot"></i> State | ${state}</span>
             <p class="club-description">${description}</p>
         </div>
-        <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}">
-            REQUEST TO JOIN
+        <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}" ${isPending || isMember ? "disabled" : ""}>
+            ${isMember ? "JOINED" : isPending ? "SENT" : "REQUEST TO JOIN"}
         </button>
     `;
     document.getElementById("clubsGrid").appendChild(card);
+}
+
+
+document.getElementById("clubsGrid").addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!e.target.classList.contains("club-join-btn")) return;
+
+    if (!currentUser) {
+        await showAppAlert("You must be logged in to join a club.");
+        return;
+    }
+
+    const clubId   = e.target.dataset.clubId;
+    const clubRef  = doc(db, "clubs", clubId);
+    const clubSnap = await getDoc(clubRef);
+
+    if (!clubSnap.exists()) {
+        await showAppAlert("Club not found.");
+        return;
+    }
+
+    const clubData = clubSnap.data();
+
+    if (clubData.managerUid === currentUser.uid) {
+        await showAppAlert("You are the manager of this club.");
+        return;
+    }
+    if ((clubData.memberUIDs || []).includes(currentUser.uid)) {
+        await showAppAlert("You are already a member of this club.");
+        return;
+    }
+    if ((clubData.pendingMemberUIDs || []).includes(currentUser.uid)) {
+        await showAppAlert("You have already sent a join request for this club.");
+        return;
+    }
+
+    await updateDoc(clubRef, { pendingMemberUIDs: arrayUnion(currentUser.uid) });
+    await showAppAlert("Join request sent!");
+});
+
+
+function normalizeSearchInput(input) {
+    let s = input.trim().toLowerCase();
+    if (s.endsWith(' hs'))  s = s.slice(0, -3) + ' high school';
+    if (s.endsWith(' ms'))  s = s.slice(0, -3) + ' middle school';
+    if (s.endsWith(' es'))  s = s.slice(0, -3) + ' elementary school';
+    if (s.endsWith(' h.s.')) s = s.slice(0, -5) + ' high school';
+    if (s.endsWith(' m.s.')) s = s.slice(0, -5) + ' middle school';
+    if (s.endsWith(' e.s.'))  s = s.slice(0, -5) + ' elementary school';
+    if (s.endsWith(' h.s'))  s = s.slice(0, -4) + ' high school';
+    if (s.endsWith(' m.s'))  s = s.slice(0, -4) + ' middle school';
+    if (s.endsWith(' e.s'))  s = s.slice(0, -4) + ' elementary school';
+    if (s.endsWith(' high'))  s = s + ' school';
+    if (s.endsWith(' middle'))  s = s + ' school';
+    if (s.endsWith(' elementary')) s = s + ' school';
+    return s;
 }

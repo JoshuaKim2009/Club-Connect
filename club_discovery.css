@@ -169,6 +169,15 @@
 .club-join-btn {
     font-size: 24px;
     padding: 3px 22px;
+    width: 220px;
+}
+
+.club-join-btn:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+    cursor: default;
+    pointer-events: none;
 }
 
 .club-card-body span {

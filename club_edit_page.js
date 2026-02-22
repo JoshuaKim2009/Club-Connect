@@ -547,6 +547,10 @@ function normalizeSchoolName(schoolName) {
         }
     }
 
+    if (normalized.toLowerCase().endsWith(' high')) normalized = normalized + ' School';
+    if (normalized.toLowerCase().endsWith(' middle')) normalized = normalized + ' School';
+    if (normalized.toLowerCase().endsWith(' elementary')) normalized = normalized + ' School';
+
     while (normalized.includes('  ')) {
         normalized = normalized.replace('  ', ' ');
     }
