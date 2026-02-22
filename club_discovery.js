@@ -1,6 +1,6 @@
 // club_discovery.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -31,9 +31,78 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-document.getElementById("createClubForm").addEventListener("submit", (e) => {
+
+document.getElementById("createClubForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const school = document.getElementById("searchSchool").value.trim();
-    const club = document.getElementById("searchClub").value.trim();
-    // filter logic here
+    const state  = document.getElementById("searchState").value.trim();
+    const club   = document.getElementById("searchClub").value.trim();
+
+    const clubsGrid = document.getElementById("clubsGrid");
+    clubsGrid.innerHTML = '<p class="no-results">Searching...</p>';
+
+    
+    const clubsRef = collection(db, "clubs");
+    const constraints = [];
+
+    if (state)  constraints.push(where("stateLower", "==", state.toLowerCase()));
+    if (school) constraints.push(where("schoolNameLower", "==", school.toLowerCase()));
+    if (club)   constraints.push(where("clubNameLower",   "==", club.toLowerCase()));
+
+    if (constraints.length === 0) {
+        clubsGrid.innerHTML = '<p class="no-results">Please enter at least one search field.</p>';
+        return;
+    }
+
+    try {
+        const q = query(clubsRef, ...constraints);
+        const snapshot = await getDocs(q);
+
+        clubsGrid.innerHTML = "";
+
+        if (snapshot.empty) {
+            clubsGrid.innerHTML = '<p class="no-results">No clubs found matching your search.</p>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            createClubCard(
+                docSnap.id,
+                data.clubName,
+                data.schoolName,
+                data.state,
+                data.clubActivity,
+                data.description,
+                data.joinCode
+            );
+        });
+
+    } catch (error) {
+        clubsGrid.innerHTML = '<p class="no-results">Error searching clubs. Please try again.</p>';
+    }
 });
+
+
+
+
+function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode) {
+    const card = document.createElement("div");
+    card.className = "club-card";
+    card.innerHTML = `
+        <div class="club-card-header">
+            <span class="club-card-name">${clubName}</span>
+            <span class="club-card-activity">Activity | ${activity}</span>
+        </div>
+        <div class="club-card-body">
+            <span><i class="fa-solid fa-school"></i> School | ${schoolName}</span>
+            <span><i class="fa-solid fa-location-dot"></i> State | ${state}</span>
+            <p class="club-description">${description}</p>
+        </div>
+        <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}">
+            REQUEST TO JOIN
+        </button>
+    `;
+    document.getElementById("clubsGrid").appendChild(card);
+}

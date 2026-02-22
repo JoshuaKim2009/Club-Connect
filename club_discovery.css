@@ -67,3 +67,118 @@
     0%   { left: -200%; }
     100% { left: 150%; }
 }
+
+
+
+
+
+
+
+
+
+
+.clubs-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 15px auto 40px auto;
+    width: min(80%, 750px);
+    box-sizing: border-box;
+    padding: 5px;
+}
+
+.club-card {
+    width: 100%;
+    box-sizing: border-box;
+    border: 3px solid black;
+    border-radius: 10px;
+    background: linear-gradient(#f0f0f0, #e0e0e0);
+    box-shadow: 0px 6px 0px #000000;
+    padding: 12px;
+    font-family: var(--primary-font-family);
+    color: black;
+    line-height: 1.4;
+}
+
+.club-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 2px dotted black;
+    margin-bottom: 10px;
+}
+
+.club-card-name {
+    font-size: 1.8em;
+    font-weight: normal;
+}
+
+.club-card-activity {
+    color: #444444;
+}
+
+.club-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 1em;
+    color: #444444;
+    margin-bottom: 10px;
+}
+
+.club-description {
+    margin-top: 6px;
+    font-size: 0.95em;
+    color: #444444;
+    /* max-height: 4.5em;
+    overflow: hidden; */
+}
+
+.club-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 2px dotted black;
+}
+
+.no-results {
+    text-align: center;
+    color: #ffffff; 
+    font-family: var(--primary-font-family);
+    font-size: 1.5em; 
+    margin-top: 30px;
+}
+
+.club-card-header {
+    position: relative;
+}
+
+.club-card-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -10px;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+    pointer-events: none;
+}
+
+.club-join-btn {
+    font-size: 24px;
+    padding: 3px 22px;
+}
+
+.club-card-body span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.club-card-body span i {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}

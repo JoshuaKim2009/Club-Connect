@@ -68,11 +68,16 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const state = stateInput.value.trim();
 
-
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
         submitButton.disabled = false;
         return; 
+    }
+
+    if (clubDescription.length > 500) {
+        await showAppAlert("Description must be 500 characters or less.");
+        submitButton.disabled = false;
+        return;
     }
 
     const normalizedState = normalizeState(state);
@@ -121,6 +126,9 @@ submitButton.addEventListener("click", async function(event){
             schoolName: schoolName,
             state: normalizedState,
             clubName: clubName,
+            clubNameLower: clubName.toLowerCase(),
+            schoolNameLower: schoolName.toLowerCase(),
+            stateLower: normalizedState.toLowerCase(),
             description: clubDescription,
             clubActivity: clubActivity,
             managerEmail: currentUserEmail,
