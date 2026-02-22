@@ -93,7 +93,7 @@
     box-sizing: border-box;
     border: 3px solid black;
     border-radius: 10px;
-    background: linear-gradient(#f0f0f0, #e0e0e0);
+    background: linear-gradient(#ffffff, #b3b3b3);
     box-shadow: 0px 6px 0px #000000;
     padding: 12px;
     font-family: var(--primary-font-family);
@@ -116,7 +116,7 @@
 }
 
 .club-card-activity {
-    color: #444444;
+    color: #333333;
 }
 
 .club-card-body {
@@ -124,14 +124,14 @@
     flex-direction: column;
     gap: 4px;
     font-size: 1em;
-    color: #444444;
+    color: #333333;
     margin-bottom: 10px;
 }
 
 .club-description {
     margin-top: 6px;
-    font-size: 0.95em;
-    color: #444444;
+    font-size: 1em;
+    color: #333333;
     /* max-height: 4.5em;
     overflow: hidden; */
 }
