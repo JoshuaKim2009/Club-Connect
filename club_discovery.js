@@ -41,7 +41,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const club   = document.getElementById("searchClub").value.trim();
 
     const clubsGrid = document.getElementById("clubsGrid");
-    clubsGrid.innerHTML = '<p class="no-results">SEARCHING...</p>';
+    clubsGrid.innerHTML = '<p class="no-results">SEARCHING <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> </p>';
 
     if (!state) {
         clubsGrid.innerHTML = "";
