@@ -1,67 +1,69 @@
 .search-bar {
     display: flex;
-    flex-direction: row;
-    align-items: stretch; /* was center */
+    flex-direction: column;
     margin: 0 auto;
     width: min(80%, 750px);
+    gap: 10px;
     padding: 5px;
-    gap: 10px;
+    box-sizing: border-box;
 }
 
-.search-bar-row {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    gap: 10px;
-    align-items: stretch; /* was center */
-}
-
-#searchSchool {
-    flex: 1;
-    width: 0; /* forces both inputs to be same size via flex, not content */
-    padding: 10px;
-    border: 2px solid #000000;
-    font-size: 20px;
-}
-
-#searchClub {
-    flex: 1;
-    width: 0;
-    padding: 10px;
-    border: 2px solid #000000;
-    font-size: 20px;
+.search-bar .fancy-input,
+#searchButton {
+    width: 100%;
+    max-width: none !important;
+    box-sizing: border-box;
 }
 
 #searchButton {
-    background: linear-gradient(#4da6ff, #0055cc);
-    color: white;
-    border: 2px solid #000000;
-    padding: 10px 20px;
+    background: linear-gradient(#cecece, #8b8b8b);
+    color: rgb(0, 0, 0);
+    border: 3px solid black;
+    padding: 5px 25px;
     border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0px 2px 0px #000000;
+    box-shadow: 0px 4px 0px #000000;
     transition: all 0.05s ease-in-out;
-    flex-shrink: 0;
+    font-family: var(--primary-font-family);
+    font-size: 32px;
+    width: 100%;
+    max-width: 200px !important;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+#searchButton:hover {
+    filter: brightness(1.1);
+    transform: translateY(2px);
+    box-shadow: 0px 2px 0px #000000;
 }
 
 #searchButton:active {
-    transform: translateY(2px);
+    transform: translateY(6px);
     box-shadow: 0px 0px 0px #000000;
 }
 
-@media (max-width: 550px) {
-    .search-bar {
-        flex-direction: column;
-        width: 90%;
-    }
+#searchButton::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -200%;
+    width: 300%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.25) 27%,
+        transparent 34%,
+        transparent 54%,
+        rgba(255, 255, 255, 0.25) 61%,
+        transparent 68%
+    );
+    animation: shimmer 2s infinite linear;
+}
 
-    #searchSchool {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .search-bar-row {
-        width: 100%;
-        box-sizing: border-box;
-    }
+@keyframes shimmer {
+    0%   { left: -200%; }
+    100% { left: 150%; }
 }
