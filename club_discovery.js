@@ -43,16 +43,22 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const clubsGrid = document.getElementById("clubsGrid");
     clubsGrid.innerHTML = '<p class="no-results">Searching...</p>';
 
+    if (!state) {
+        clubsGrid.innerHTML = "";
+        await showAppAlert("Please enter a state to search.");
+        return;
+    }
     
     const clubsRef = collection(db, "clubs");
     const constraints = [];
 
     if (state)  constraints.push(where("stateLower", "==", state.toLowerCase()));
     if (school) constraints.push(where("schoolNameLower", "==", school.toLowerCase()));
-    if (club)   constraints.push(where("clubNameLower",   "==", club.toLowerCase()));
+    if (club)   constraints.push(where("clubNameLower", "==", club.toLowerCase()));
 
     if (constraints.length === 0) {
-        clubsGrid.innerHTML = '<p class="no-results">Please enter at least one search field.</p>';
+        clubsGrid.innerHTML = "";
+        await showAppAlert("Please enter at least one search field.");
         return;
     }
 
@@ -63,7 +69,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         clubsGrid.innerHTML = "";
 
         if (snapshot.empty) {
-            clubsGrid.innerHTML = '<p class="no-results">No clubs found matching your search.</p>';
+            await showAppAlert("No clubs found matching your search.");
             return;
         }
 
@@ -88,7 +94,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         matches.sort((a, b) => (b.memberUIDs?.length ?? 0) - (a.memberUIDs?.length ?? 0));
 
         if (matches.length === 0) {
-            clubsGrid.innerHTML = '<p class="no-results">No clubs found matching your search.</p>';
+            await showAppAlert("No clubs found matching your search.");
             return;
         }
 
@@ -97,7 +103,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         });
 
     } catch (error) {
-        clubsGrid.innerHTML = '<p class="no-results">Error searching clubs. Please try again.</p>';
+        await showAppAlert("Error searching clubs. Please try again.");
     }
 });
 
