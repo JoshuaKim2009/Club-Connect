@@ -66,17 +66,33 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
             return;
         }
 
+        const matches = [];
+
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            createClubCard(
-                docSnap.id,
-                data.clubName,
-                data.schoolName,
-                data.state,
-                data.clubActivity,
-                data.description,
-                data.joinCode
-            );
+
+            const searchableName   = data.clubNameLower   ?? data.clubName?.toLowerCase()   ?? "";
+            const searchableSchool = data.schoolNameLower ?? data.schoolName?.toLowerCase() ?? "";
+            const searchableState  = data.stateLower      ?? data.state?.toLowerCase()      ?? "";
+
+            const matchesClub   = !club   || searchableName.includes(club.toLowerCase());
+            const matchesSchool = !school || searchableSchool.includes(school.toLowerCase());
+            const matchesState  = !state  || searchableState.includes(state.toLowerCase());
+
+            if (matchesClub && matchesSchool && matchesState) {
+                matches.push({ id: docSnap.id, ...data });
+            }
+        });
+
+        matches.sort((a, b) => (b.memberUIDs?.length ?? 0) - (a.memberUIDs?.length ?? 0));
+
+        if (matches.length === 0) {
+            clubsGrid.innerHTML = '<p class="no-results">No clubs found matching your search.</p>';
+            return;
+        }
+
+        matches.forEach(data => {
+            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode);
         });
 
     } catch (error) {
