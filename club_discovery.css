@@ -1,0 +1,35 @@
+.search-bar {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    max-width: 80%;
+    width: 750px;
+    padding: 5px;
+    gap: 10px;
+}
+
+#searchSchool, #searchClub {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #000000;
+    /* border-radius: 4px; */
+    font-size: 20px;
+}
+
+#searchButton {
+    background: linear-gradient(#4da6ff, #0055cc);
+    color: white;
+    border: 2px solid #000000;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 2px 0px #000000;
+    transition: all 0.05s ease-in-out;
+    transform: translateY(-2px);
+}
+
+#searchButton:active {
+    transform: translateY(0px);
+    background: linear-gradient(#47a3ff, #0051c2);
+    box-shadow: 0px 0px 0px #000000;
+}

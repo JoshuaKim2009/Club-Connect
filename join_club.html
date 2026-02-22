@@ -19,6 +19,40 @@
       .pageTitle{
         margin-top: 110px;
       }
+
+      #discover-club-button {
+        margin: 0 auto;
+        display: block;
+        width: 85%;
+        max-width: 380px;
+        background: linear-gradient(#4da6ff, #0055cc);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #discover-club-button::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -200%;
+        width: 300%;
+        height: 100%;
+        background: linear-gradient(
+          120deg,
+          transparent 20%,
+          rgba(255, 255, 255, 0.25) 27%,
+          transparent 34%,
+          transparent 54%,
+          rgba(255, 255, 255, 0.25) 61%,
+          transparent 68%
+        );
+        animation: shimmer 2s infinite linear;
+      }
+
+      @keyframes shimmer {
+        0%   { left: -200%; }
+        100% { left: 150%; }
+      }
     </style>
 
     <link href="styles.css?v=4" rel="stylesheet" />
@@ -31,20 +65,27 @@
       <span class="chat-title">JOIN</span>
     </div>
 
-    <form id="joinClubForm"> <!-- Changed ID for clarity -->
-      <h1 class="pageTitle">JOIN A CLUB</h1> <!-- Changed text for clarity -->
+    <form id="joinClubForm"> 
+      <h1 class="pageTitle">JOIN A CLUB</h1> 
 
       <label class="fancy-input-label" for="club-name-input">Club name</label>
-      <input class="fancy-input" id="club-name-input" placeholder="Club name" required name="club-name-input"> <!-- Changed name attribute -->
+      <input class="fancy-input" id="club-name-input" placeholder="Club name" required name="club-name-input"> 
 
       <label class="fancy-input-label" for="join-code-input">Join code</label>
-      <input class="fancy-input" id="join-code-input" placeholder="6 digit join code" required name="join-code-input" style="text-transform: uppercase" maxlength="6" value=""> <!-- Changed name attribute -->
+      <input class="fancy-input" id="join-code-input" placeholder="6 digit join code" required name="join-code-input" style="text-transform: uppercase" maxlength="6" value="">
 
       <hr style="background-color: transparent; height: 3px; border: none;">
 
-      <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button> <!-- Changed ID for clarity -->
+      <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button> 
 
-      <hr style="background-color: transparent; height: 150px; border: none;">
+      <hr style="background-color: transparent; height: 20px; border: none;">
+
+    </form>
+
+    <button id="discover-club-button" class="fancy-button">
+      DISCOVER CLUBS
+      <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i>
+    </button>
 
       <script>
         function goToHome(){

@@ -173,3 +173,9 @@ async function checkIfClubExists(clubName, joinCode) {
         return null;
     }
 }
+
+
+
+document.getElementById("discover-club-button").addEventListener("click", (e) => {
+    window.location.href = "club_discovery.html";
+});
