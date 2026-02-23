@@ -55,6 +55,7 @@ let oldestDoc = null;
 let hasMoreMessages = true;
 let isLoadingOlder = false;
 let previousSenderId = null;
+let previousDateKey = null;
 let loadedMessageIds = new Set();
 let selectedMessageForOptions = null;
 let replyingToMessage = null;
@@ -210,6 +211,7 @@ async function loadInitialMessages() {
             chatMessages.appendChild(messageElement);
             
             previousSenderId = messageData.createdByUid;
+            previousDateKey = currentDateKey;
             messageCount++;
             console.log(messageCount);
         }
@@ -355,17 +357,14 @@ function startRealtimeListener() {
                 loadedMessageIds.add(messageId);
                 
                 const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100;
-                const lastMessage = chatMessages.querySelector('.message-wrapper:last-of-type');
-                if (lastMessage && messageData.createdAt) {
-                    const lastMessageDate = lastMessage.dataset.dateKey;
-                    const currentDateKey = getMessageDateKey(messageData.createdAt);
-                    if (currentDateKey && currentDateKey !== lastMessageDate) {
-                        const dateSeparator = document.createElement('div');
-                        dateSeparator.className = 'date-separator show';
-                        dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
-                        chatMessages.appendChild(dateSeparator);
-                        previousSenderId = null;
-                    }
+                const currentDateKey = getMessageDateKey(messageData.createdAt);
+                if (currentDateKey && currentDateKey !== previousDateKey) {
+                    const dateSeparator = document.createElement('div');
+                    dateSeparator.className = 'date-separator show';
+                    dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                    chatMessages.appendChild(dateSeparator);
+                    previousSenderId = null;
+                    previousDateKey = currentDateKey;
                 }
                 const showSenderName = previousSenderId !== messageData.createdByUid;
                 await displayMessage(messageId, messageData, showSenderName);

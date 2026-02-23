@@ -173,9 +173,9 @@ document.getElementById("clubsGrid").addEventListener("click", async (e) => {
         return;
     }
 
-    await updateDoc(clubRef, { pendingMemberUIDs: arrayUnion(currentUser.uid) });
     e.target.textContent = "SENT";
     e.target.disabled = true;
+    await updateDoc(clubRef, { pendingMemberUIDs: arrayUnion(currentUser.uid) });
     // await showAppAlert("Join request sent!");
 });
 
