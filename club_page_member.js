@@ -450,6 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const announcementsButton = document.getElementById('announcementsButton');
     const pollsButton = document.getElementById('pollsButton');
     const chatButton = document.getElementById('chatButton');
+    const linksButton = document.getElementById('links-button');
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
             window.location.href = `schedule.html?clubId=${clubId}&returnTo=member`;
@@ -471,6 +472,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pollsButton) {
         pollsButton.addEventListener('click', () => {
             window.location.href = `polls.html?clubId=${clubId}&returnTo=member`;
+        });
+    }
+
+    if (linksButton) {
+        linksButton.addEventListener('click', () => {
+            window.location.href = `links.html?clubId=${clubId}&returnTo=member`;
         });
     }
 

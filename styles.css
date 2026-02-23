@@ -1777,6 +1777,7 @@ input[type="checkbox"]:checked {
 #chatButton,
 #edit-club-button,
 #view-members-button,
+#links-button,
 #viewScheduleButton {
   min-height: 62px;
   width: min(300px, 85vw);
@@ -1830,6 +1831,7 @@ input[type="checkbox"]:checked {
   margin-bottom: 20px; 
 }
 
+#add-section-button,
 #add-announcement-button {
   margin: 0 auto 20px auto; 
   display: block; 
