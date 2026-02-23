@@ -194,14 +194,15 @@ async function loadInitialMessages() {
             const messageId = docSnap.id;
             loadedMessageIds.add(messageId);
             
-            const currentDateKey = getMessageDateKey(messageData.createdAt);
+            const now = new Date();
+            const currentDateKey = getMessageDateKey(messageData.createdAt) || `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
             if (currentDateKey && currentDateKey !== previousDateKey) {
                 const dateSeparator = document.createElement('div');
                 dateSeparator.className = 'date-separator';
                 dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
                 chatMessages.appendChild(dateSeparator);
                 previousDateKey = currentDateKey;
-                previousSenderId = null; // Reset so sender name shows after date separator
+                previousSenderId = null; 
             }
             
             const showSenderName = previousSenderId !== messageData.createdByUid;
@@ -282,7 +283,8 @@ async function loadOlderMessages() {
             loadedMessageIds.add(messageId);
             
             // Check if there needs a date separator
-            const currentDateKey = getMessageDateKey(messageData.createdAt);
+            const now = new Date();
+            const currentDateKey = getMessageDateKey(messageData.createdAt) || `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
             if (currentDateKey && currentDateKey !== tempPreviousDateKey) {
                 const dateSeparator = document.createElement('div');
                 dateSeparator.className = 'date-separator show';
@@ -356,11 +358,12 @@ function startRealtimeListener() {
                 loadedMessageIds.add(messageId);
                 
                 const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100;
-                const currentDateKey = getMessageDateKey(messageData.createdAt);
+                const now = new Date();
+                const currentDateKey = getMessageDateKey(messageData.createdAt) || `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
                 if (currentDateKey && currentDateKey !== previousDateKey) {
                     const dateSeparator = document.createElement('div');
                     dateSeparator.className = 'date-separator show';
-                    dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                    dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt ? messageData.createdAt.toDate() : new Date())}</span>`;
                     chatMessages.appendChild(dateSeparator);
                     previousSenderId = null;
                     previousDateKey = currentDateKey;
