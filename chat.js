@@ -184,7 +184,6 @@ async function loadInitialMessages() {
         }
         
         const reversedDocs = [...messageDocs].reverse();
-        let previousDateKey = null;
         if (hasMoreMessages && docs.length > PAGE_SIZE) {
             previousDateKey = getMessageDateKey(docs[PAGE_SIZE].data().createdAt);
         }
