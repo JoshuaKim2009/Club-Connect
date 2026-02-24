@@ -1831,7 +1831,7 @@ input[type="checkbox"]:checked {
   margin-bottom: 20px; 
 }
 
-#add-section-button,
+#add-category-button,
 #add-announcement-button {
   margin: 0 auto 20px auto; 
   display: block; 

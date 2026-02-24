@@ -1,7 +1,7 @@
-#section-creation-modal {
+#category-creation-modal {
     padding: 10px;
     border: 3px solid black;
-    background: linear-gradient(#f0f0f0, #e0e0e0);
+    background: linear-gradient(#ffffff, #b3b3b3);
     box-shadow: 0px 6px 0px #000000;
     width: 80%;
     max-width: 500px;
@@ -20,7 +20,7 @@
     font-size: 24px;
 }
 
-#section-creation-modal h3 {
+#category-creation-modal h3 {
     margin-top: 0;
     font-weight: normal;
     text-align: center;
@@ -28,7 +28,7 @@
     color: black;
 }
 
-#section-creation-modal textarea {
+#category-creation-modal textarea {
     width: calc(100% - 20px);
     padding: 8px;
     border: 3px solid black;
@@ -39,20 +39,20 @@
     resize: none;
 }
 
-#section-creation-modal textarea:focus {
+#category-creation-modal textarea:focus {
     outline: none;
     box-shadow: 0 0 0 1px #000;
 }
 
-#section-creation-modal label {
+#category-creation-modal label {
     display: block;
-    font-size: 20px;
+    font-size: 25px;
     margin-bottom: 8px;
-    text-align: left;
+    text-align: center;
     color: black;
 }
 
-.section-creation-actions {
+.category-creation-actions {
     display: flex;
     justify-content: center;
     gap: 10px;

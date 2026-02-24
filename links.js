@@ -39,9 +39,9 @@ let isEditing       = false;
 
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage  = document.getElementById('noResourcesMessage');
-const addSectionButton    = document.getElementById('add-section-button');
-const sectionCreationModal = document.getElementById('section-creation-modal');
-const sectionOverlay = document.getElementById('popup-overlay');
+const addCategoryButton    = document.getElementById('add-category-button');
+const categoryCreationModal = document.getElementById('category-creation-modal');
+const categoryOverlay = document.getElementById('popup-overlay');
 
 
 
@@ -85,14 +85,14 @@ onAuthStateChanged(auth, async (user) => {
                 currentUserRole = await getMemberRoleForClub(clubId, user.uid);
 
                 if (currentUserRole === 'manager' || currentUserRole === 'admin') {
-                    if (addSectionButton) {
-                        addSectionButton.style.display = 'block';
-                        addSectionButton.removeEventListener('click', handleAddSection);
-                        addSectionButton.addEventListener('click', handleAddSection);
+                    if (addCategoryButton) {
+                        addCategoryButton.style.display = 'block';
+                        addCategoryButton.removeEventListener('click', handleAddCategory);
+                        addCategoryButton.addEventListener('click', handleAddCategory);
                     }
                 }
 
-                await fetchAndDisplaySections();
+                await fetchAndDisplayCategories();
             }
         }
     } else {
@@ -101,55 +101,55 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-function handleAddSection() {
-    sectionOverlay.style.display = 'block';
-    sectionCreationModal.style.display = 'block';
+function handleAddCategory() {
+    categoryOverlay.style.display = 'block';
+    categoryCreationModal.style.display = 'block';
     document.body.classList.add('no-scroll');
 }
 
-function hideSectionModal() {
-    sectionCreationModal.style.display = 'none';
-    sectionOverlay.style.display = 'none';
+function hideCategoryModal() {
+    categoryCreationModal.style.display = 'none';
+    categoryOverlay.style.display = 'none';
     document.body.classList.remove('no-scroll');
 }
 
-function resetSectionModal() {
-    document.getElementById('section-title-input').value = '';
+function resetCategoryModal() {
+    document.getElementById('category-title-input').value = '';
 }
 
-document.getElementById('post-section-button').addEventListener('click', async () => {
-    const saved = await saveSection();
+document.getElementById('post-category-button').addEventListener('click', async () => {
+    const saved = await saveCategory();
     if (saved) {
-        resetSectionModal();
-        hideSectionModal();
+        resetCategoryModal();
+        hideCategoryModal();
     }
 });
 
-document.getElementById('cancel-section-button').addEventListener('click', () => {
-    resetSectionModal();
-    hideSectionModal();
+document.getElementById('cancel-category-button').addEventListener('click', () => {
+    resetCategoryModal();
+    hideCategoryModal();
 });
 
-async function fetchAndDisplaySections() {
+async function fetchAndDisplayCategories() {
     // TODO
 }
 
-async function saveSection() {
+async function saveCategory() {
     if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in to create a section.");
+        await showAppAlert("You must be logged in to create a category.");
         return false;
     }
 
-    const title = document.getElementById('section-title-input').value.trim();
+    const title = document.getElementById('category-title-input').value.trim();
 
     if (!title) {
-        await showAppAlert("Section name is required!");
+        await showAppAlert("Category name is required!");
         return false;
     }
 
     try {
-        const sectionsRef = collection(db, "clubs", clubId, "resourceSections");
-        await addDoc(sectionsRef, {
+        const categoriesRef = collection(db, "clubs", clubId, "resourceCategories");
+        await addDoc(categoriesRef, {
             title,
             links: [],
             createdAt: serverTimestamp(),
@@ -158,13 +158,13 @@ async function saveSection() {
             clubId
         });
 
-        await showAppAlert("Section created successfully!");
-        await fetchAndDisplaySections();
+        await showAppAlert("Category created successfully!");
+        await fetchAndDisplayCategories();
         return true;
 
     } catch (error) {
-        console.error("Error creating section:", error);
-        await showAppAlert("Failed to create section: " + error.message);
+        console.error("Error creating category:", error);
+        await showAppAlert("Failed to create category: " + error.message);
         return false;
     }
 }
