@@ -1,0 +1,60 @@
+#section-creation-modal {
+    padding: 10px;
+    border: 3px solid black;
+    background: linear-gradient(#f0f0f0, #e0e0e0);
+    box-shadow: 0px 6px 0px #000000;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+    z-index: 1000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    font-family: var(--primary-font-family);
+    font-weight: normal;
+    text-align: center;
+    font-size: 24px;
+}
+
+#section-creation-modal h3 {
+    margin-top: 0;
+    font-weight: normal;
+    text-align: center;
+    font-size: 30px;
+    color: black;
+}
+
+#section-creation-modal textarea {
+    width: calc(100% - 20px);
+    padding: 8px;
+    border: 3px solid black;
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: var(--primary-font-family, sans-serif);
+    background-color: #ffffff;
+    resize: none;
+}
+
+#section-creation-modal textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px #000;
+}
+
+#section-creation-modal label {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 8px;
+    text-align: left;
+    color: black;
+}
+
+.section-creation-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}

@@ -40,6 +40,9 @@ let isEditing       = false;
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage  = document.getElementById('noResourcesMessage');
 const addSectionButton    = document.getElementById('add-section-button');
+const sectionCreationModal = document.getElementById('section-creation-modal');
+const sectionOverlay = document.getElementById('popup-overlay');
+
 
 
 function getUrlParameter(name) {
@@ -96,3 +99,72 @@ onAuthStateChanged(auth, async (user) => {
         setTimeout(() => { window.location.href = 'login.html'; }, 2000);
     }
 });
+
+
+function handleAddSection() {
+    sectionOverlay.style.display = 'block';
+    sectionCreationModal.style.display = 'block';
+    document.body.classList.add('no-scroll');
+}
+
+function hideSectionModal() {
+    sectionCreationModal.style.display = 'none';
+    sectionOverlay.style.display = 'none';
+    document.body.classList.remove('no-scroll');
+}
+
+function resetSectionModal() {
+    document.getElementById('section-title-input').value = '';
+}
+
+document.getElementById('post-section-button').addEventListener('click', async () => {
+    const saved = await saveSection();
+    if (saved) {
+        resetSectionModal();
+        hideSectionModal();
+    }
+});
+
+document.getElementById('cancel-section-button').addEventListener('click', () => {
+    resetSectionModal();
+    hideSectionModal();
+});
+
+async function fetchAndDisplaySections() {
+    // TODO
+}
+
+async function saveSection() {
+    if (!currentUser || !clubId) {
+        await showAppAlert("You must be logged in to create a section.");
+        return false;
+    }
+
+    const title = document.getElementById('section-title-input').value.trim();
+
+    if (!title) {
+        await showAppAlert("Section name is required!");
+        return false;
+    }
+
+    try {
+        const sectionsRef = collection(db, "clubs", clubId, "resourceSections");
+        await addDoc(sectionsRef, {
+            title,
+            links: [],
+            createdAt: serverTimestamp(),
+            createdByUid: currentUser.uid,
+            createdByName: currentUser.displayName || "Anonymous",
+            clubId
+        });
+
+        await showAppAlert("Section created successfully!");
+        await fetchAndDisplaySections();
+        return true;
+
+    } catch (error) {
+        console.error("Error creating section:", error);
+        await showAppAlert("Failed to create section: " + error.message);
+        return false;
+    }
+}
