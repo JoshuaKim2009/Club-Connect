@@ -30,7 +30,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(#f0f0f0, #e0e0e0);
+    background: linear-gradient(#ffffff, #c2c2c2);
     border: 3px solid black;
     border-radius: 10px;
     padding: 25px;
@@ -41,11 +41,13 @@ body {
     gap: 15px;
     font-family: var(--primary-font-family);
     color: black;
-    max-width: 500px;
-    width: 90%;
+    width: 500px;
+    max-width: 85%;
     text-align: center;
     max-height: 80vh;
     overflow-y: auto;
+    transform: translate(-50%, -50%) scale(0.9);
+    transform-origin: center center;
 }
 
 #poll-creation-modal h3,
@@ -227,7 +229,7 @@ body {
     border: none;
     color: #000;
     font-family: var(--primary-font-family);
-    font-size: 18px;
+    font-size: 24px;
     cursor: pointer;
     padding: 4px 0;
     text-align: left;
@@ -241,7 +243,7 @@ body {
 
 #subtract-option-btn:disabled,
 #add-option-btn:disabled {
-    color: #aaa;
+    color: #555555;
     cursor: default;
     text-decoration: none;
 }
