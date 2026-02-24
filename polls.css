@@ -74,7 +74,7 @@ body {
     padding: 8px;
     border: 3px solid black;
     border-radius: 5px;
-    font-size: 1em;
+    font-size: 20px;
     font-family: var(--primary-font-family);
     background-color: #ffffff;
 }
@@ -204,7 +204,7 @@ body {
     padding: 8px;
     border: 3px solid black;
     border-radius: 5px;
-    font-size: 1em;
+    font-size: 20px;
     font-family: var(--primary-font-family);
     background-color: #ffffff;
     resize: none;

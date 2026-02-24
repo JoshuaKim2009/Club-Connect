@@ -152,6 +152,9 @@ window.addPollOption = function () {
     autoResize(input);
     input.focus();
     updateAddButtonState();
+    const modal = document.getElementById('poll-creation-modal');
+    modal.scrollTop = modal.scrollHeight;
+
 }
 
 window.subtractPollOption = function () {
