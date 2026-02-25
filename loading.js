@@ -23,7 +23,7 @@ console.log("[LOADING SCRIPT] Scrolling disabled on body.");
 
 function revealContentStaggered() {
     const contentItems = document.querySelectorAll('#content > *');
-    const STAGGER_DELAY_MS = 100;
+    const STAGGER_DELAY_MS = 200;
 
     if (contentItems.length > 0) {
         console.log(`[LOADING SCRIPT] Initiating staggered reveal for ${contentItems.length} direct children of #content.`);
@@ -41,7 +41,7 @@ function revealContentStaggered() {
 function attemptHideLoadingScreen() {
     console.log(`[LOADING SCRIPT] Attempting to hide loader. loadCompleted: ${loadCompleted}, minTimePassed: ${minTimePassed}`);
 
-    if (loadCompleted && minTimePassed) {
+    if (minTimePassed) {
         const overlay = document.getElementById('loading-overlay');
         const content = document.getElementById('content');
 

@@ -14,60 +14,65 @@
     
   </head>
   <body>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>LOADING...</p>
+    </div>
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToClubPage()">
-          <i class="fa-solid fa-circle-left"></i>
+            <i class="fa-solid fa-circle-left"></i>
         </button>
         <span class="chat-title">POLLS</span>
     </div>
-    <h1 id="clubScheduleTitle"></h1>
-    <button id="add-poll-button" class="fancy-button" style="display: none;">CREATE A POLL</button>
+    <div id="content">
+        <h1 id="clubScheduleTitle"></h1>
+        <button id="add-poll-button" class="fancy-button" style="display: none;">CREATE A POLL</button>
 
-    <div id="polls-container"></div>
-    <p id="no-polls-message" class="fancy-label" style="display: none;"></p>
+        <div id="polls-container"></div>
+        <p id="no-polls-message" class="fancy-label" style="display: none;"></p>
 
-    <div id="popup-overlay" style="display: none;"></div>
-    <div id="poll-creation-modal" style="display: none;">
-        <h3>CREATE POLL</h3>
-        <label style="display:block; font-size:20px; margin-bottom:8px; text-align:left;">Title</label>
-        <textarea class="poll-option-input" id="poll-title-input" placeholder="Poll title..." rows="1" style="width:100%; box-sizing:border-box;"></textarea>
-        <div class="poll-options-selection">
-            <label>Show results to voter:</label>
-            <div class="checkbox-group">
-                <label>
-                    <input type="radio" name="poll-option" value="Before" checked>
-                    Before vote
-                </label>
-                <label>
-                    <input type="radio" name="poll-option" value="After">
-                    After vote
-                </label>
-                <label>
-                    <input type="radio" name="poll-option" value="Never">
-                    Never
-                </label>
-            </div>
-            <label id="poll-type-info" class = "gray-label" >Users will always see poll percentages. The creator of the poll can always see results.</label>
-        </div>
-        <div id="poll-options-container">
-            <label style="display:block; font-size:20px; margin-bottom:8px; text-align:left;">Options</label>
-            <div id="poll-options-list">
-                <div class="poll-option-row">
-                    <textarea class="poll-option-input" placeholder="Option 1" rows="1"></textarea>
+        <div id="popup-overlay" style="display: none;"></div>
+        <div id="poll-creation-modal" style="display: none;">
+            <h3>CREATE POLL</h3>
+            <label style="display:block; font-size:20px; margin-bottom:8px; text-align:left;">Title</label>
+            <textarea class="poll-option-input" id="poll-title-input" placeholder="Poll title..." rows="1" style="width:100%; box-sizing:border-box;"></textarea>
+            <div class="poll-options-selection">
+                <label>Show results to voter:</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="radio" name="poll-option" value="Before" checked>
+                        Before vote
+                    </label>
+                    <label>
+                        <input type="radio" name="poll-option" value="After">
+                        After vote
+                    </label>
+                    <label>
+                        <input type="radio" name="poll-option" value="Never">
+                        Never
+                    </label>
                 </div>
-                <div class="poll-option-row">
-                    <textarea class="poll-option-input" placeholder="Option 2" rows="1"></textarea>
-                </div>
+                <label id="poll-type-info" class = "gray-label" >Users will always see poll percentages. The creator of the poll can always see results.</label>
             </div>
-            <button id="subtract-option-btn" onclick="subtractPollOption()">REMOVE OPTION -</button>
-            <button id="add-option-btn" onclick="addPollOption()">ADD OPTION +</button>
-            <div class="poll-creation-actions">
-                <button id="post-poll-button" class="fancy-button">POST</button>
-                <button id="cancel-poll-button" class="fancy-button">Cancel</button>
+            <div id="poll-options-container">
+                <label style="display:block; font-size:20px; margin-bottom:8px; text-align:left;">Options</label>
+                <div id="poll-options-list">
+                    <div class="poll-option-row">
+                        <textarea class="poll-option-input" placeholder="Option 1" rows="1"></textarea>
+                    </div>
+                    <div class="poll-option-row">
+                        <textarea class="poll-option-input" placeholder="Option 2" rows="1"></textarea>
+                    </div>
+                </div>
+                <button id="subtract-option-btn" onclick="subtractPollOption()">REMOVE OPTION -</button>
+                <button id="add-option-btn" onclick="addPollOption()">ADD OPTION +</button>
+                <div class="poll-creation-actions">
+                    <button id="post-poll-button" class="fancy-button">POST</button>
+                    <button id="cancel-poll-button" class="fancy-button">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
-
 
 
     <div id="poll-edit-modal" style="display: none;">
@@ -98,6 +103,7 @@
 
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="polls.js?v=3"></script>
+    <script type="module" src="loading.js?v=2"></script>
   </body>
 </html>
  

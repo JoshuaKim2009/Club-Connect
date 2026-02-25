@@ -20,25 +20,34 @@
     </style>
   </head>
   <body>
-    <!-- <h1 id="clubAnnouncementsTitle"></h1> -->
+    <div id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>LOADING...</p>
+    </div>
+
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToClubPage()">
           <i class="fa-solid fa-circle-left"></i>
         </button>
         <span class="chat-title">ANNOUNCEMENTS</span>
     </div>
-    <h1 id="clubScheduleTitle"></h1>
-    <button id="add-announcement-button" class="fancy-button" style="display: none;">ADD ANNOUNCEMENT</button>
-    
 
-    <div id="announcementsContainer" class="fancy-black-label">
-        <!-- Announcement cards will be dynamically loaded here by announcements.js -->
-        <p id="noAnnouncementsMessage" style="display: none;">No announcements yet.</p>
+    <div id="content">
+      <!-- <h1 id="clubAnnouncementsTitle"></h1> -->
+      <h1 id="clubScheduleTitle"></h1>
+      <button id="add-announcement-button" class="fancy-button" style="display: none;">ADD ANNOUNCEMENT</button>
+      
+
+      <div id="announcementsContainer" class="fancy-black-label">
+          <!-- Announcement cards will be dynamically loaded here by announcements.js -->
+          <p id="noAnnouncementsMessage" style="display: none;">No announcements yet.</p>
+      </div>
     </div>
-    
+
     <!-- Assuming dialog.js is correctly linked and provides showAppAlert/showAppConfirm -->
     <script type="module" src="dialog.js"></script> 
     <!-- Link your new announcements.js file -->
     <script type="module" src="announcements.js"></script>
+    <script type="module" src="loading.js?v=2"></script>
   </body>
 </html>

@@ -26,22 +26,28 @@
     
   </head>
   <body>
+    <div id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>LOADING...</p>
+    </div>
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToClubPage()">
           <i class="fa-solid fa-circle-left"></i>
         </button>
         <span class="chat-title">SCHEDULE</span>
     </div>
-    <h1 id="clubScheduleTitle"></h1>
-    <button id="add-event-button" class="fancy-button" style="display: none;">ADD NEW EVENT</button>
+    <div id="content">
+      <h1 id="clubScheduleTitle"></h1>
+      <button id="add-event-button" class="fancy-button" style="display: none;">ADD NEW EVENT</button>
 
-    <div id="eventsContainer" class="fancy-black-label">
-        <!-- Event cards will be dynamically loaded here by schedule.js -->
+      <div id="eventsContainer" class="fancy-black-label">
+          <!-- Event cards will be dynamically loaded here by schedule.js -->
+      </div>
     </div>
-    
 
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="schedule.js"></script>
+    <script type="module" src="loading.js?v=2"></script>
   </body>
 </html>
  
