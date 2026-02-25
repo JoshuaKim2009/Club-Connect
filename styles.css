@@ -75,7 +75,7 @@ body.no-interaction {
 
 #loading-overlay {
   position: fixed;
-  inset: 0; 
+  inset: 0;
   background-color: #131330;
   background-image: linear-gradient(
       to bottom,
@@ -92,15 +92,15 @@ body.no-interaction {
       #131330 100%
     ),
     radial-gradient(circle at center, #474799, #131330);
+  display: block;
   z-index: 9999;
   transition: opacity 0.5s ease-out;
   opacity: 1;
-  display: block;
 }
 
 #loading-overlay-inner {
   position: fixed;
-  top: 50%;
+  top: 50svh;
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
