@@ -103,6 +103,8 @@ body.no-interaction {
   transition: opacity 0.5s ease-out; 
   opacity: 1; 
   height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 #loading-overlay p {
