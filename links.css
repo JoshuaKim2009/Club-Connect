@@ -310,3 +310,8 @@
 .delete-link-btn:hover {
     color: #555555;
 }
+
+
+.fancy-button {
+    background: linear-gradient(180deg, #ffffff 0%, #b3b3b3 100%);
+}
