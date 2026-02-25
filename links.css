@@ -17,7 +17,7 @@
     font-family: var(--primary-font-family);
     font-weight: normal;
     text-align: center;
-    font-size: 24px;
+    font-size: 22px;
 }
 
 #category-creation-modal h3 {
@@ -57,4 +57,256 @@
     justify-content: center;
     gap: 10px;
     margin-top: 10px;
+}
+
+
+
+
+.category {
+  border: 3px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#f0f0f0, #e0e0e0);
+  box-shadow: 0px 6px 0px #000000;
+  padding: 8px;
+  margin: 8px auto;
+  width: 85%;
+  max-width: 600px;
+  text-align: center;
+  font-family: var(--primary-font-family, sans-serif);
+  color: black;
+  line-height: 1.4;
+}
+
+.category-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-header h3 {
+  font-weight: normal;
+  font-size: 1.6em;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px dotted black;
+  position: relative;
+  width: 100%;
+}
+
+.category-header h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
+}
+
+.edit-category-button {
+  position: absolute;
+  right: 5px;
+  top: 0;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1em;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.edit-category-button:hover {
+  color: #333;
+}
+
+.links-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.link-item a {
+  font-family: var(--primary-font-family);
+  font-size: 1.3em;
+  color: rgb(61, 124, 206);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-item a:hover {
+  color: rgb(112, 174, 255);
+}
+
+.add-link-button {
+  background: transparent;
+  border: none;
+  font-family: var(--primary-font-family);
+  font-size: 1.3em;
+  color: #888;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-top: 8px;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.add-link-button:hover {
+  color: #444;
+}
+
+
+
+#add-link-modal {
+    padding: 10px;
+    border: 3px solid black;
+    background: linear-gradient(#ffffff, #c2c2c2);
+    box-shadow: 0px 6px 0px #000000;
+    max-width: 85%;
+    width: 500px;
+    border-radius: 10px;
+    z-index: 1000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    font-family: var(--primary-font-family);
+    font-weight: normal;
+    text-align: center;
+    font-size: 24px;
+}
+
+#add-link-modal h3 {
+    margin-top: 0;
+    font-weight: normal;
+    font-size: 30px;
+    color: black;
+}
+
+#add-link-modal textarea {
+    width: calc(100% - 20px);
+    padding: 8px;
+    border: 3px solid black;
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: var(--primary-font-family, sans-serif);
+    background-color: #ffffff;
+    resize: none;
+}
+
+#add-link-modal textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px #000;
+}
+
+#add-link-modal label {
+    display: block;
+    font-size: 25px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: black;
+}
+
+#add-category-button {
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+#resourcesContainer {
+    margin-top: 20px;
+    padding-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+
+
+
+#edit-category-modal {
+    padding: 10px;
+    border: 3px solid black;
+    background: linear-gradient(#ffffff, #c2c2c2);
+    box-shadow: 0px 6px 0px #000000;
+    max-width: 85%;
+    width: 500px;
+    border-radius: 10px;
+    z-index: 1000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    font-family: var(--primary-font-family);
+    font-weight: normal;
+    text-align: center;
+    font-size: 22px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#edit-category-modal h3 {
+    margin-top: 0;
+    font-weight: normal;
+    font-size: 30px;
+    color: black;
+}
+
+#edit-category-modal textarea {
+    width: calc(100% - 20px);
+    padding: 8px;
+    border: 3px solid black;
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: var(--primary-font-family, sans-serif);
+    background-color: #ffffff;
+    resize: none;
+}
+
+#edit-category-modal label {
+    display: block;
+    font-size: 25px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: black;
+}
+
+.edit-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border: 3px solid #888888;
+    border-radius: 8px;
+    background: white;
+    margin-bottom: 6px;
+    font-family: var(--primary-font-family);
+    font-size: 1.1em;
+    color: black;
+}
+
+.delete-link-btn {
+    background: transparent;
+    border: none;
+    color: #444444;
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 2px 6px;
+    flex-shrink: 0;
+}
+
+.delete-link-btn:hover {
+    color: #555555;
 }

@@ -122,6 +122,7 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
 
     const card = document.createElement("div");
     card.className = "club-card";
+    //for the card that shows the information of the clubs that you searched
     card.innerHTML = `
         <div class="club-card-header">
             <span class="club-card-name">${clubName}</span>

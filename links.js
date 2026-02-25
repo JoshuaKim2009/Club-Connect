@@ -35,6 +35,7 @@ let currentUser     = null;
 let clubId          = null;
 let currentUserRole = null;
 let isEditing       = false;
+let editingCategory = null;
 
 
 const resourcesContainer = document.getElementById('resourcesContainer');
@@ -131,8 +132,131 @@ document.getElementById('cancel-category-button').addEventListener('click', () =
 });
 
 async function fetchAndDisplayCategories() {
-    // TODO
+    const categoriesQuery = query(collection(db, "clubs", clubId, "resourceSections"), orderBy("createdAt", "asc"));
+    const categorySnapshots = await getDocs(categoriesQuery);
+    const categories = [];
+    categorySnapshots.forEach(docSnap => {
+        const data = docSnap.data();
+        categories.push({
+            id: docSnap.id,
+            title: data.title,
+            createdAt: data.createdAt,
+            createdByUid: data.createdByUid,
+            createdByName: data.createdByName,
+            links: data.links || []
+        });
+    });
+
+    resourcesContainer.innerHTML = '';
+    if (categories.length === 0) {
+        noResourcesMessage.style.display = 'block';
+        return;
+    } else {
+        noResourcesMessage.style.display = 'none';
+    }
+
+    for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
+        const categoryElement = createCategoryElement(category);
+        resourcesContainer.appendChild(categoryElement);
+    }
 }
+
+function createCategoryElement(category) {
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'category';
+    categoryDiv.innerHTML = `
+        <div class="category-header">
+            <h3>${category.title}</h3>
+            ${(currentUserRole === 'manager' || currentUserRole === 'admin') ? `<button class="edit-category-button" data-category-id="${category.id}"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+        </div>
+        <div class="links-container" id="links-${category.id}">
+            ${category.links.map(link => {
+                const url = link.url.startsWith('http') ? link.url : 'https://' + link.url;
+                return `
+                    <div class="link-item">
+                        <a href="${url}" target="_blank">${link.title}</a>
+                    </div>
+                `;
+            }).join('')}
+            ${(currentUserRole === 'manager' || currentUserRole === 'admin') ? `
+                <button class="add-link-button" data-category-id="${category.id}">+ Add Link</button>
+            ` : ''}
+        </div>
+    `;
+    if (currentUserRole === 'manager' || currentUserRole === 'admin') {
+        const editButton = categoryDiv.querySelector('.edit-category-button');
+        editButton.addEventListener('click', async () => {
+            openEditCategoryModal(category);
+        });
+        const addLinkBtn = categoryDiv.querySelector('.add-link-button');
+        if (addLinkBtn) {
+            addLinkBtn.addEventListener('click', () => openAddLinkModal(category));
+        }
+    }
+    return categoryDiv;
+}
+
+function openEditCategoryModal(category) {
+    editingCategory = category;
+    document.getElementById('edit-category-title-input').value = category.title;
+
+    const linksList = document.getElementById('edit-category-links-list');
+    linksList.innerHTML = '';
+
+    category.links.forEach((link, index) => {
+        const row = document.createElement('div');
+        row.className = 'edit-link-row';
+        row.innerHTML = `
+            <span>${link.title}</span>
+            <button class="delete-link-btn" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
+        `;
+        row.querySelector('.delete-link-btn').addEventListener('click', async () => {
+            const confirmed = await showAppConfirm(`Delete "${link.title}"?`);
+            if (!confirmed) return;
+            const updatedLinks = [...editingCategory.links];
+            updatedLinks.splice(index, 1);
+            editingCategory = { ...editingCategory, links: updatedLinks };
+            openEditCategoryModal(editingCategory); 
+        });
+
+        linksList.appendChild(row);
+    });
+
+    categoryOverlay.style.display = 'block';
+    document.getElementById('edit-category-modal').style.display = 'flex';
+    document.body.classList.add('no-scroll');
+}
+
+function hideEditCategoryModal() {
+    document.getElementById('edit-category-modal').style.display = 'none';
+    categoryOverlay.style.display = 'none';
+    document.body.classList.remove('no-scroll');
+    editingCategory = null;
+}
+
+document.getElementById('cancel-edit-category-button').addEventListener('click', hideEditCategoryModal);
+
+document.getElementById('save-edit-category-button').addEventListener('click', async () => {
+    const newTitle = document.getElementById('edit-category-title-input').value.trim();
+    if (!newTitle) { await showAppAlert("Title can't be empty!"); return; }
+    const sectionRef = doc(db, "clubs", clubId, "resourceSections", editingCategory.id);
+    await updateDoc(sectionRef, { 
+        title: newTitle,
+        links: editingCategory.links
+    });
+    hideEditCategoryModal();
+    await fetchAndDisplayCategories();
+});
+
+document.getElementById('delete-category-button').addEventListener('click', async () => {
+    const confirmed = await showAppConfirm(`Delete the entire "${editingCategory.title}" category?`);
+    if (!confirmed) return;
+    const sectionRef = doc(db, "clubs", clubId, "resourceSections", editingCategory.id);
+    await deleteDoc(sectionRef);
+    hideEditCategoryModal();
+    await fetchAndDisplayCategories();
+});
 
 async function saveCategory() {
     if (!currentUser || !clubId) {
@@ -148,7 +272,7 @@ async function saveCategory() {
     }
 
     try {
-        const categoriesRef = collection(db, "clubs", clubId, "resourceCategories");
+        const categoriesRef = collection(db, "clubs", clubId, "resourceSections");
         await addDoc(categoriesRef, {
             title,
             links: [],
@@ -158,13 +282,59 @@ async function saveCategory() {
             clubId
         });
 
-        await showAppAlert("Category created successfully!");
+        // await showAppAlert("Category created successfully!");
         await fetchAndDisplayCategories();
         return true;
 
     } catch (error) {
-        console.error("Error creating category:", error);
         await showAppAlert("Failed to create category: " + error.message);
         return false;
     }
 }
+
+
+const addLinkModal = document.getElementById('add-link-modal');
+let activeLinkCategoryId = null;
+
+function openAddLinkModal(category) {
+    activeLinkCategoryId = category.id;
+    document.getElementById('link-title-input').value = '';
+    document.getElementById('link-url-input').value = '';
+    categoryOverlay.style.display = 'block';
+    addLinkModal.style.display = 'flex';
+    document.body.classList.add('no-scroll');
+}
+
+function hideAddLinkModal() {
+    addLinkModal.style.display = 'none';
+    categoryOverlay.style.display = 'none';
+    document.body.classList.remove('no-scroll');
+    activeLinkCategoryId = null;
+}
+
+document.getElementById('cancel-link-button').addEventListener('click', hideAddLinkModal);
+
+document.getElementById('save-link-button').addEventListener('click', async () => {
+    const title = document.getElementById('link-title-input').value.trim();
+    const url = document.getElementById('link-url-input').value.trim();
+
+    if (!title || !url) {
+        await showAppAlert("Both a title and URL are required!");
+        return;
+    }
+
+    try {
+        const sectionRef = doc(db, "clubs", clubId, "resourceSections", activeLinkCategoryId);
+        const sectionSnap = await getDoc(sectionRef);
+        const existingLinks = sectionSnap.data().links || [];
+
+        await updateDoc(sectionRef, {
+            links: [...existingLinks, { title, url }]
+        });
+
+        hideAddLinkModal();
+        await fetchAndDisplayCategories();
+    } catch (error) {
+        await showAppAlert("Failed to save link: " + error.message);
+    }
+});
