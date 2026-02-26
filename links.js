@@ -212,8 +212,8 @@ function openEditCategoryModal(category) {
             <button class="delete-link-btn" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
         `;
         row.querySelector('.delete-link-btn').addEventListener('click', async () => {
-            const confirmed = await showAppConfirm(`Delete "${link.title}"?`);
-            if (!confirmed) return;
+            // const confirmed = await showAppConfirm(`Delete "${link.title}"?`);
+            // if (!confirmed) return;
             const updatedLinks = [...editingCategory.links];
             updatedLinks.splice(index, 1);
             editingCategory = { ...editingCategory, links: updatedLinks };
