@@ -36,6 +36,8 @@ let clubId          = null;
 let currentUserRole = null;
 let isEditing       = false;
 let editingCategory = null;
+let categoriesCache = [];
+let sortableInstance = null;
 
 
 const resourcesContainer = document.getElementById('resourcesContainer');
@@ -134,31 +136,62 @@ document.getElementById('cancel-category-button').addEventListener('click', () =
 async function fetchAndDisplayCategories() {
     const categoriesQuery = query(collection(db, "clubs", clubId, "resourceSections"), orderBy("createdAt", "asc"));
     const categorySnapshots = await getDocs(categoriesQuery);
-    const categories = [];
-    categorySnapshots.forEach(docSnap => {
+    categoriesCache = [];
+    categorySnapshots.forEach((docSnap, i) => {
         const data = docSnap.data();
-        categories.push({
+        categoriesCache.push({
             id: docSnap.id,
             title: data.title,
             createdAt: data.createdAt,
             createdByUid: data.createdByUid,
             createdByName: data.createdByName,
-            links: data.links || []
+            links: data.links || [],
+            order: data.order ?? i
         });
     });
 
+    categoriesCache.sort((a, b) => a.order - b.order);
+
     resourcesContainer.innerHTML = '';
-    if (categories.length === 0) {
+    if (categoriesCache.length === 0) {
         noResourcesMessage.style.display = 'block';
         return;
     } else {
         noResourcesMessage.style.display = 'none';
     }
 
-    for (let i = 0; i < categories.length; i++) {
-        const category = categories[i];
-        const categoryElement = createCategoryElement(category);
-        resourcesContainer.appendChild(categoryElement);
+    categoriesCache.forEach(category => {
+        const el = createCategoryElement(category);
+        el.dataset.id = category.id;
+        resourcesContainer.appendChild(el);
+    });
+
+    if (currentUserRole === 'manager' || currentUserRole === 'admin') {
+        sortableInstance = window.Sortable.create(resourcesContainer, {
+            animation: 150,
+            forceFallback: true,
+            // handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onStart: (evt) => {
+                const style = document.createElement('style');
+                style.id = 'drag-cursor-style';
+                style.innerHTML = '* { cursor: grabbing !important; }';
+                document.head.appendChild(style);
+                const width = evt.item.offsetWidth;
+                document.querySelector('.sortable-fallback')?.style.setProperty('width', width + 'px', 'important');
+            },
+            onEnd: async () => {
+                document.getElementById('drag-cursor-style')?.remove();
+                const items = resourcesContainer.querySelectorAll('.category');
+                const updates = [];
+                items.forEach((el, index) => {
+                    const id = el.dataset.id;
+                    updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", id), { order: index }));
+                });
+                await Promise.all(updates);
+            }
+        });
     }
 }
 
@@ -208,7 +241,7 @@ function openEditCategoryModal(category) {
         const row = document.createElement('div');
         row.className = 'edit-link-row';
         row.innerHTML = `
-            <span>${link.title}</span>
+            <input class="edit-link-title-input" type="text" value="${link.title}" data-index="${index}" />
             <button class="delete-link-btn" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
         `;
         row.querySelector('.delete-link-btn').addEventListener('click', async () => {
@@ -240,11 +273,14 @@ document.getElementById('cancel-edit-category-button').addEventListener('click',
 document.getElementById('save-edit-category-button').addEventListener('click', async () => {
     const newTitle = document.getElementById('edit-category-title-input').value.trim();
     if (!newTitle) { await showAppAlert("Title can't be empty!"); return; }
-    const sectionRef = doc(db, "clubs", clubId, "resourceSections", editingCategory.id);
-    await updateDoc(sectionRef, { 
-        title: newTitle,
-        links: editingCategory.links
+
+    const updatedLinks = editingCategory.links.map((link, index) => {
+        const input = document.querySelector(`.edit-link-title-input[data-index="${index}"]`);
+        return { ...link, title: input ? input.value.trim() || link.title : link.title };
     });
+
+    const sectionRef = doc(db, "clubs", clubId, "resourceSections", editingCategory.id);
+    await updateDoc(sectionRef, { title: newTitle, links: updatedLinks });
     hideEditCategoryModal();
     await fetchAndDisplayCategories();
 });
@@ -276,6 +312,7 @@ async function saveCategory() {
         await addDoc(categoriesRef, {
             title,
             links: [],
+            order: categoriesCache.length,
             createdAt: serverTimestamp(),
             createdByUid: currentUser.uid,
             createdByName: currentUser.displayName || "Anonymous",
