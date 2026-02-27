@@ -173,7 +173,11 @@ async function fetchAndDisplayCategories() {
     if (currentUserRole === 'manager' || currentUserRole === 'admin') {
         reorderMode = false;
         const reorderButton = document.getElementById('reorder-button');
-        reorderButton.style.display = 'block';
+        if (categoriesCache.length >= 2) {
+            reorderButton.style.display = 'block';
+        } else {
+            reorderButton.style.display = 'none';
+        }
         reorderButton.style.width = reorderButton.offsetWidth + 'px';
         reorderButton.textContent = 'REORDER CATEGORIES';
         reorderButton.classList.remove('save-mode');
