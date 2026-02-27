@@ -369,4 +369,60 @@
 .sortable-fallback {
     opacity: 1 !important;
     box-sizing: border-box !important;
+    animation: none !important;
+}
+
+#reorder-button {
+    display: block;
+    margin: 0 auto 20px auto;
+    font-family: var(--primary-font-family);
+    font-size: 22px;
+    border: 3px solid black;
+    background: linear-gradient(#ffffff, #b3b3b3);
+    box-shadow: 0px 4px 0px #000000;
+    cursor: pointer;
+    min-width: fit-content;
+    color: black;
+    padding: 5px 25px;
+    border-radius: 10px;
+    transition: all 0.05s ease-in-out;
+}
+
+#reorder-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px #000000;
+}
+
+#reorder-button:active {
+  transform: translateY(6px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+#reorder-button.save-mode {
+    background: linear-gradient(#b6f5b6, #6dcc6d);
+    box-shadow: 0px 4px 0px #2a6e2a;
+    border-color: #2a6e2a;
+    color: #1a3d1a;
+}
+#reorder-button.save-mode:hover {
+    filter: brightness(1.1);
+    transform: translateY(2px);
+    box-shadow: 0px 2px 0px #2a6e2a;
+}
+#reorder-button.save-mode:active {
+    transform: translateY(6px);
+    box-shadow: 0px 0px 0px #2a6e2a;
+}
+
+
+@keyframes category-shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-1deg); }
+    75% { transform: rotate(1deg); }
+}
+
+.reorder-mode .category {
+    animation: category-shake 0.3s ease-in-out infinite;
+    cursor: grab;
 }

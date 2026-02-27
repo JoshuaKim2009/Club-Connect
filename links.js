@@ -38,7 +38,7 @@ let isEditing       = false;
 let editingCategory = null;
 let categoriesCache = [];
 let sortableInstance = null;
-
+let reorderMode = false;
 
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage  = document.getElementById('noResourcesMessage');
@@ -167,12 +167,19 @@ async function fetchAndDisplayCategories() {
     });
 
     if (currentUserRole === 'manager' || currentUserRole === 'admin') {
+        reorderMode = false;
+        const reorderButton = document.getElementById('reorder-button');
+        reorderButton.style.display = 'block';
+        reorderButton.style.width = reorderButton.offsetWidth + 'px';
+        reorderButton.textContent = 'REORDER CATEGORIES';
+        reorderButton.classList.remove('save-mode');
+
         sortableInstance = window.Sortable.create(resourcesContainer, {
             animation: 150,
             forceFallback: true,
-            // handle: '.drag-handle',
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
+            disabled: true,
             onStart: (evt) => {
                 const style = document.createElement('style');
                 style.id = 'drag-cursor-style';
@@ -181,8 +188,24 @@ async function fetchAndDisplayCategories() {
                 const width = evt.item.offsetWidth;
                 document.querySelector('.sortable-fallback')?.style.setProperty('width', width + 'px', 'important');
             },
-            onEnd: async () => {
+            onEnd: () => {
                 document.getElementById('drag-cursor-style')?.remove();
+            }
+        });
+
+        reorderButton.onclick = async () => {
+            if (!reorderMode) {
+                reorderMode = true;
+                sortableInstance.option('disabled', false);
+                reorderButton.textContent = 'SAVE ORDER';
+                reorderButton.classList.add('save-mode');
+                resourcesContainer.classList.add('reorder-mode');
+            } else {
+                reorderMode = false;
+                sortableInstance.option('disabled', true);
+                reorderButton.textContent = 'REORDER CATEGORIES';
+                reorderButton.classList.remove('save-mode');
+                resourcesContainer.classList.remove('reorder-mode');
                 const items = resourcesContainer.querySelectorAll('.category');
                 const updates = [];
                 items.forEach((el, index) => {
@@ -191,7 +214,7 @@ async function fetchAndDisplayCategories() {
                 });
                 await Promise.all(updates);
             }
-        });
+        };
     }
 }
 
