@@ -105,6 +105,10 @@ onAuthStateChanged(auth, async (user) => {
 
 
 function handleAddCategory() {
+    if (reorderMode) {
+        showAppAlert("Finish reordering before adding a category!");
+        return;
+    }
     categoryOverlay.style.display = 'block';
     categoryCreationModal.style.display = 'block';
     document.body.classList.add('no-scroll');
@@ -193,6 +197,8 @@ async function fetchAndDisplayCategories() {
             }
         });
 
+        let originalOrder = categoriesCache.map(c => c.id);
+
         reorderButton.onclick = async () => {
             if (!reorderMode) {
                 reorderMode = true;
@@ -210,7 +216,9 @@ async function fetchAndDisplayCategories() {
                 const updates = [];
                 items.forEach((el, index) => {
                     const id = el.dataset.id;
-                    updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", id), { order: index }));
+                    if (originalOrder[index] !== id) {
+                        updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", id), { order: index }));
+                    }
                 });
                 await Promise.all(updates);
             }
