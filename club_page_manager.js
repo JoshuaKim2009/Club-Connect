@@ -118,10 +118,10 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                     }
                 }
 
+                // <p>Manager | ${actualManagerName}</p>
+                // <p>Your Role | ${capitalizeFirstLetter(currentUserRole)}</p>
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
-                        <p>Manager | ${actualManagerName}</p>
-                        <p>Your Role | ${capitalizeFirstLetter(currentUserRole)}</p>
                         <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
