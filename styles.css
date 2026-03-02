@@ -1478,7 +1478,9 @@ input[type="checkbox"]:checked {
   font-size: 1em;
   font-family: var(--primary-font-family, sans-serif);
   background-color: #ffffff;
+  text-align: left;
 }
+
 .editing-event-card input[type="text"]:focus,
 .editing-event-card input[type="date"]:focus,
 .editing-event-card input[type="time"]:focus,
@@ -1486,6 +1488,13 @@ input[type="checkbox"]:checked {
   outline: none;
   border-color: #000000;
   box-shadow: 0 0 0 1px #000000;
+}
+
+@media (max-width: 768px) {
+    #rsvp-details-modal {
+        max-height: 50vh;
+        width: 92%;
+    }
 }
 
 .event-card-actions {

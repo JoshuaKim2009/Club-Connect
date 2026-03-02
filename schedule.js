@@ -835,6 +835,7 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
     const viewAvailabilityBtn = cardDiv.querySelector('.view-availability-btn');
     if (viewAvailabilityBtn) {
         viewAvailabilityBtn.addEventListener('click', (e) => {
+            document.body.classList.add('no-scroll');
             const eventId = e.target.dataset.eventId;
             const occurrenceDate = e.target.dataset.occurrenceDate;
             showRsvpDetailsModal(eventId, occurrenceDate);
