@@ -430,14 +430,26 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         isEditingEvent = false;
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
-        cardDiv.remove();
-        isEditingEvent = false; 
+        isEditingEvent = false;
         if (!isNewEvent) {
-            //await fetchAndDisplayEvents();
-        } else if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
-            noEventsMessage.style.display = 'block';
+            const fetchId = isEditingInstance ? originalEventIdForInstance : eventIdToUpdate;
+            const eventDocRef = doc(db, "clubs", clubId, "events", fetchId);
+            const eventSnap = await getDoc(eventDocRef);
+            if (eventSnap.exists()) {
+                const eventData = eventSnap.data();
+                const occDateStr = isEditingInstance ? originalOccurrenceDate : (eventData.eventDate || originalOccurrenceDate);
+                const occDate = new Date(occDateStr + 'T00:00:00Z');
+                const displayCard = createSingleOccurrenceDisplayCard(eventData, occDate, fetchId);
+                cardDiv.replaceWith(displayCard);
+            } else {
+                cardDiv.remove();
+            }
+        } else {
+            cardDiv.remove();
+            if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
+                noEventsMessage.style.display = 'block';
+            }
         }
-        //await showAppAlert("Event editing/creation canceled.");
     });
 
     return cardDiv;

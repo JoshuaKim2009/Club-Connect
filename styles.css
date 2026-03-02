@@ -1479,6 +1479,11 @@ input[type="checkbox"]:checked {
   font-family: var(--primary-font-family, sans-serif);
   background-color: #ffffff;
   text-align: left;
+  text-align: left !important;
+  text-align-last: left !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .editing-event-card input[type="text"]:focus,
@@ -1490,10 +1495,16 @@ input[type="checkbox"]:checked {
   box-shadow: 0 0 0 1px #000000;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 800px) {
     #rsvp-details-modal {
-        max-height: 50vh;
+        max-height: 50vh !important;
         width: 92%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #rsvp-details-modal.rsvp-loading-collapsed {
+        max-height: 120px !important;
     }
 }
 
