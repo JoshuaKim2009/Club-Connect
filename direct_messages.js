@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
@@ -498,7 +498,7 @@ async function saveMessage() {
         lastMessageText: text,
         lastMessageType: "text",
         lastMessageSenderUid: currentUser.uid,
-        [`unreadCounts.${otherUid}`]: (await getDoc(getConvRef())).data()?.unreadCounts?.[otherUid] + 1 || 1
+        [`unreadCounts.${otherUid}`]: increment(1)
     });
 
     try {
