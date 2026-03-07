@@ -70,9 +70,10 @@ function createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadC
     if (unreadCount === 1){
         messageText = "message";
     }
+    const avatarColor = getColorFromLetter(initial);
 
     card.innerHTML = `
-        <div class="dm-card-avatar">${initial}</div>
+        <div class="dm-card-avatar" style="background-color: ${avatarColor};">${initial}</div>
         <div class="dm-card-body">
             <div class="dm-card-name">${otherName}</div>
             <div class="dm-card-preview">${lastMessage}</div>
@@ -88,6 +89,19 @@ function createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadC
     });
 
     return card;
+}
+
+function getColorFromLetter(letter) {
+    const colors = [
+        'rgb(130, 80, 180)',
+        'rgb(60, 140, 130)',
+        'rgb(190, 75, 75)',
+        'rgb(75, 150, 60)',
+        'rgb(60, 110, 190)',
+        'rgb(190, 130, 45)',
+    ];
+    const index = letter.charCodeAt(0) % colors.length;
+    return colors[index];
 }
 
 
