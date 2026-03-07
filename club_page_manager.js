@@ -68,6 +68,8 @@ onAuthStateChanged(auth, async (user) => {
             updatePendingRequestsBadge(pendingCount);
             setupPendingRequestsListeners(clubId);
 
+            setupDirectMessageListeners(currentUser.uid);
+
         } else {
             clubPageTitle.textContent = "Error: No Club ID provided";
             clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
@@ -223,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const announcementsButton = document.getElementById('announcementsButton');
     const pollsButton = document.getElementById('pollsButton');
     const chatButton = document.getElementById('chatButton');
+    const directMessagesButton = document.getElementById('directMessagesButton');
     const linksButton = document.getElementById('links-button');
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
@@ -251,6 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (linksButton) {
         linksButton.addEventListener('click', () => {
             window.location.href = `links.html?clubId=${clubId}&returnTo=manager`;
+        });
+    }
+
+    if (directMessagesButton) {
+        directMessagesButton.addEventListener('click', () => {
+            window.location.href = `dm_menu.html?clubId=${clubId}&returnTo=manager`;
         });
     }
 
@@ -803,4 +812,34 @@ async function fetchMemberData(clubId, userId) {
         console.error("Error fetching member data:", error);
         return null;
     }
+}
+
+
+function updateUnreadDirectMessagesBadge(count) {
+    const badgeElement = document.getElementById('unreadDirectMessagesBadge');
+    if (badgeElement) {
+        if (count > 0) {
+            badgeElement.textContent = count;
+            badgeElement.style.display = 'flex';
+        } else {
+            badgeElement.style.display = 'none';
+        }
+    }
+}
+
+function setupDirectMessageListeners(userId) {
+    const q = query(
+        collection(db, 'directMessages'),
+        where('participants', 'array-contains', userId)
+    );
+
+    onSnapshot(q, (snapshot) => {
+        let totalUnread = 0;
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!data.lastMessageText) return;
+            totalUnread += data.unreadCounts?.[userId] || 0;
+        });
+        updateUnreadDirectMessagesBadge(totalUnread);
+    });
 }

@@ -1802,6 +1802,7 @@ input[type="checkbox"]:checked {
 #announcementsButton,
 #pollsButton,
 #chatButton,
+#directMessagesButton,
 #edit-club-button,
 #view-members-button,
 #links-button,
@@ -2081,6 +2082,7 @@ input[type="checkbox"]:checked {
 }
 
 #chatButton,
+#directMessagesButton,
 #view-members-button,
 #pollsButton,
 #announcementsButton {
