@@ -667,12 +667,14 @@ async function fetchAndDisplayMembers() {
         displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
 
         dynamicWrapper.classList.add('loaded');
+        document.body.classList.remove('no-scroll');
         firstLoad = false;
 
     } catch (error) {
         console.error("Error fetching members:", error);
         membersContainer.innerHTML = "<p class='fancy-label'>Error loading members.</p>";
         dynamicWrapper.classList.add('loaded');
+        document.body.classList.remove('no-scroll');
         firstLoad = false;
     }
 }

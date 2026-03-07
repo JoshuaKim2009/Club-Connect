@@ -25,7 +25,7 @@
         }
         #dynamic-sections-wrapper {
             position: relative;
-            min-height: 200px;
+            min-height: calc(100vh - 200px);
         }
 
         #pendingRequestsContainer, 
@@ -50,7 +50,7 @@
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -64,7 +64,7 @@
     </style>
     
   </head>
-  <body>
+  <body class="no-scroll">
     <div class="chat-header">
       <button id="back-button" class="fancy-button" onclick="goToClubPage()">
         <i class="fa-solid fa-circle-left"></i>
@@ -100,6 +100,6 @@
     </div>
 
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="members.js"></script>
+    <script type="module" src="members.js?v=2"></script>
   </body>
 </html>
