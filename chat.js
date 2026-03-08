@@ -412,19 +412,16 @@ function createMessageElement(messageId, messageData, showSenderName) {
         nameText.textContent = messageData.createdByName || "Anonymous";
         senderName.appendChild(nameText);
         
-        if (messageData.createdAt) {
-            const timestamp = document.createElement('span');
-            timestamp.className = 'message-timestamp';
-            
-            const date = messageData.createdAt.toDate();
-            const hours = date.getHours();
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12;
-            
-            timestamp.textContent = `${displayHours}:${minutes} ${ampm}`;
-            senderName.appendChild(timestamp);
-        }
+        const timestamp = document.createElement('span');
+        timestamp.className = 'message-timestamp';
+        const date = messageData.createdAt ? messageData.createdAt.toDate() : new Date();
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        
+        timestamp.textContent = `${displayHours}:${minutes} ${ampm}`;
+        senderName.appendChild(timestamp);
         
         messageWrapper.appendChild(senderName);
     }
