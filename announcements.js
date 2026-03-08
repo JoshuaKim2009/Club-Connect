@@ -319,7 +319,7 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
 
     cardDiv.innerHTML = `
         <h3>${announcementData.title}</h3>
-        <p>${announcementData.content}</p>
+        <p>${linkifyText(announcementData.content)}</p>
         <p class="announcement-meta">Posted by: ${announcementData.createdByName} on ${formatTimestamp(announcementData.createdAt)}</p>
         ${actionButtonsHtml}
     `;
@@ -417,4 +417,14 @@ async function updateLastSeenAnnouncements() {
     } catch (error) {
         console.error("Failed to update lastSeenAnnouncements:", error);
     }
+}
+
+
+
+function linkifyText(text) {
+    const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
+    return text.replace(urlPattern, (url) => {
+        let href = url.startsWith('http') ? url : 'https://' + url;
+        return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
+    });
 }

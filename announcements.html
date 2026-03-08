@@ -17,6 +17,20 @@
             padding-top: env(safe-area-inset-top);
             background: var(--header-bg-start);
         }
+
+        .message-link {
+            color: #0066cc;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
+        .message-link:hover {
+            color: #0052a3;
+        }
+
+        .message-link:active {
+            color: #003d7a;
+        }
     </style>
   </head>
   <body>
@@ -49,7 +63,7 @@
     <!-- Assuming dialog.js is correctly linked and provides showAppAlert/showAppConfirm -->
     <script type="module" src="dialog.js"></script> 
     <!-- Link your new announcements.js file -->
-    <script type="module" src="announcements.js"></script>
+    <script type="module" src="announcements.js?v=2"></script>
     <script type="module" src="loading.js?v=2"></script>
   </body>
 </html>
