@@ -24,6 +24,8 @@
     transition: all 0.05s ease-in-out;
     -webkit-user-select: none;
     user-select: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .dm-card:hover {
