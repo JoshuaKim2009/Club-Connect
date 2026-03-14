@@ -59,7 +59,12 @@
     <script>
       
       function goToHome(){
-        window.location.href = "join_club.html?v=8";
+        const from = new URLSearchParams(window.location.search).get('from');
+        if (from === 'your_clubs') {
+          window.location.href = "your_clubs.html";
+        } else {
+          window.location.href = "join_club.html?v=8";
+        }
       }
       
     </script>

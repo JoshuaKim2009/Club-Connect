@@ -186,122 +186,122 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-function displayList(listNames, listIds) {
-    const container = document.getElementById("clubContainer");
-    const containerText = document.getElementById("your-clubs-loading-text");
+// function displayList(listNames, listIds) {
+//     const container = document.getElementById("clubContainer");
+//     const containerText = document.getElementById("your-clubs-loading-text");
 
-    if (!container) {
-        console.error("HTML element with id 'clubContainer' not found.");
-        return;
-    }
+//     if (!container) {
+//         console.error("HTML element with id 'clubContainer' not found.");
+//         return;
+//     }
 
     
-    Array.from(container.children).forEach(child => {
-        if (child.classList.contains("club-btn")) { 
-            container.removeChild(child);
-        }
-    });
+//     Array.from(container.children).forEach(child => {
+//         if (child.classList.contains("club-btn")) { 
+//             container.removeChild(child);
+//         }
+//     });
 
 
 
-    containerText.style.display = 'none'; 
-    containerText.textContent = ""; 
+//     containerText.style.display = 'none'; 
+//     containerText.textContent = ""; 
 
 
-    for(let i = 0; i < listNames.length; i++){
-        const name = listNames[i];
-        const uid = listIds[i]; 
+//     for(let i = 0; i < listNames.length; i++){
+//         const name = listNames[i];
+//         const uid = listIds[i]; 
 
-        const btn = document.createElement("button");
+//         const btn = document.createElement("button");
 
-        btn.textContent = name; 
+//         btn.textContent = name; 
 
-        const roleSpan = document.createElement("span");
-        roleSpan.textContent = " Manager";
-        roleSpan.classList.add("club-role-text"); 
-        btn.appendChild(roleSpan);
+//         const roleSpan = document.createElement("span");
+//         roleSpan.textContent = " Manager";
+//         roleSpan.classList.add("club-role-text"); 
+//         btn.appendChild(roleSpan);
 
 
-        btn.dataset.clubId = uid;
-        btn.className = "club-btn fancy-button"; 
+//         btn.dataset.clubId = uid;
+//         btn.className = "club-btn fancy-button"; 
 
-        btn.addEventListener("click", () => {
-            window.location.href = `club_page_manager.html?id=${btn.dataset.clubId}`;
-        });
+//         btn.addEventListener("click", () => {
+//             window.location.href = `club_page_manager.html?id=${btn.dataset.clubId}`;
+//         });
 
-        container.appendChild(btn);
-    }
-}
+//         container.appendChild(btn);
+//     }
+// }
 
 function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-async function displayMemberClubs(listNames, listIds) {
-    const container = document.getElementById("memberClubContainer");
-    const containerText = document.getElementById("member-clubs-loading-text");
+// async function displayMemberClubs(listNames, listIds) {
+//     const container = document.getElementById("memberClubContainer");
+//     const containerText = document.getElementById("member-clubs-loading-text");
     
-    if (!container) {
-        console.error("HTML element with id 'memberClubContainer' not found.");
-        return;
-    }
+//     if (!container) {
+//         console.error("HTML element with id 'memberClubContainer' not found.");
+//         return;
+//     }
 
-    Array.from(container.children).forEach(child => {
-        if (child.classList.contains("club-btn")) { 
-            container.removeChild(child);
-        }
-    });
+//     Array.from(container.children).forEach(child => {
+//         if (child.classList.contains("club-btn")) { 
+//             container.removeChild(child);
+//         }
+//     });
 
-    containerText.style.display = 'none';
-    containerText.textContent = "";
+//     containerText.style.display = 'none';
+//     containerText.textContent = "";
 
-    const rolePromises = listIds.map(clubId => getMemberRoleForClub(clubId, currentUser.uid));
+//     const rolePromises = listIds.map(clubId => getMemberRoleForClub(clubId, currentUser.uid));
 
-    const roles = await Promise.all(rolePromises); 
+//     const roles = await Promise.all(rolePromises); 
 
-    for(let i = 0; i < listNames.length; i++){
-        const name = listNames[i];
-        const clubId = listIds[i]; 
-        const currentRole = roles[i];
+//     for(let i = 0; i < listNames.length; i++){
+//         const name = listNames[i];
+//         const clubId = listIds[i]; 
+//         const currentRole = roles[i];
 
-        if (!currentRole) {
-            console.warn(`Could not determine role for club ${clubId}. Skipping button creation.`);
-            continue;
-        }
+//         if (!currentRole) {
+//             console.warn(`Could not determine role for club ${clubId}. Skipping button creation.`);
+//             continue;
+//         }
 
-        const btn = document.createElement("button");
-        //btn.textContent = `${name} | ${currentRole.toUpperCase()}`; 
-        btn.textContent = name; 
+//         const btn = document.createElement("button");
+//         //btn.textContent = `${name} | ${currentRole.toUpperCase()}`; 
+//         btn.textContent = name; 
 
-        const roleSpan = document.createElement("span");
-        roleSpan.textContent = ` ${capitalizeFirstLetter(currentRole)}`;
-        roleSpan.classList.add("club-role-text");
+//         const roleSpan = document.createElement("span");
+//         roleSpan.textContent = ` ${capitalizeFirstLetter(currentRole)}`;
+//         roleSpan.classList.add("club-role-text");
 
-        btn.appendChild(roleSpan); 
+//         btn.appendChild(roleSpan); 
 
 
-        btn.dataset.clubId = clubId;
-        btn.dataset.userRole = currentRole; 
-        btn.className = "club-btn fancy-button member-club-btn"; 
-        btn.style.cursor = "pointer"; 
+//         btn.dataset.clubId = clubId;
+//         btn.dataset.userRole = currentRole; 
+//         btn.className = "club-btn fancy-button member-club-btn"; 
+//         btn.style.cursor = "pointer"; 
 
-        btn.addEventListener("click", async () => {
-            const clickedClubId = btn.dataset.clubId;
-            const clickedUserRole = btn.dataset.userRole; 
+//         btn.addEventListener("click", async () => {
+//             const clickedClubId = btn.dataset.clubId;
+//             const clickedUserRole = btn.dataset.userRole; 
 
-            if (clickedUserRole === 'manager' || clickedUserRole === 'admin'){
-                window.location.href = `club_page_manager.html?id=${clickedClubId}`;
-            } else if (clickedUserRole === 'member'){
-                window.location.href = `club_page_member.html?id=${clickedClubId}`;
-            } else {
-                await showAppAlert("Could not determine your role for this club. Please try again.");
-                console.error("Unknown role for redirection:", clickedUserRole);
-            }
-        });
+//             if (clickedUserRole === 'manager' || clickedUserRole === 'admin'){
+//                 window.location.href = `club_page_manager.html?id=${clickedClubId}`;
+//             } else if (clickedUserRole === 'member'){
+//                 window.location.href = `club_page_member.html?id=${clickedClubId}`;
+//             } else {
+//                 await showAppAlert("Could not determine your role for this club. Please try again.");
+//                 console.error("Unknown role for redirection:", clickedUserRole);
+//             }
+//         });
         
-        container.appendChild(btn);
-    }
-}
+//         container.appendChild(btn);
+//     }
+// }
 
 
 
@@ -337,7 +337,75 @@ async function getMemberRoleForClub(clubID, memberUid) {
 }
 
 
+async function loadAllClubs() {
+    const container = document.getElementById("clubContainer");
+    
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const userDocSnap = await getDoc(userDocRef, { source: 'server' });
+    
+    if (!userDocSnap.exists()) return;
+    
+    const userData = userDocSnap.data();
+    const managedClubs = userData.managed_clubs || [];
+    const memberClubs = userData.member_clubs || [];
+    
+    const [managedSnaps, memberSnaps] = await Promise.all([
+        Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
+        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
+    ]);
 
+    const roles = await Promise.all(
+        memberClubs.map(id => getMemberRoleForClub(id, currentUser.uid))
+    );
+
+    container.innerHTML = '';
+
+    managedSnaps.forEach((snap, i) => {
+        if (!snap.exists()) return;
+        const btn = document.createElement("button");
+        btn.textContent = snap.data().clubName;
+        const roleSpan = document.createElement("span");
+        roleSpan.textContent = " Manager";
+        roleSpan.className = "club-role-text";
+        btn.appendChild(roleSpan);
+        btn.dataset.clubId = managedClubs[i];
+        btn.className = "club-btn fancy-button";
+        btn.addEventListener("click", () => {
+            window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
+        });
+        container.appendChild(btn);
+    });
+
+    memberSnaps.forEach((snap, i) => {
+        if (!snap.exists()) return;
+        const role = roles[i];
+        if (!role) return;
+        const btn = document.createElement("button");
+        btn.textContent = snap.data().clubName;
+        const roleSpan = document.createElement("span");
+        roleSpan.textContent = ` ${capitalizeFirstLetter(role)}`;
+        roleSpan.className = "club-role-text";
+        btn.appendChild(roleSpan);
+        btn.dataset.clubId = memberClubs[i];
+        btn.dataset.userRole = role;
+        btn.className = "club-btn fancy-button member-club-btn";
+        btn.addEventListener("click", async () => {
+            if (role === 'manager' || role === 'admin') {
+                window.location.href = `club_page_manager.html?id=${memberClubs[i]}`;
+            } else {
+                window.location.href = `club_page_member.html?id=${memberClubs[i]}`;
+            }
+        });
+        container.appendChild(btn);
+    });
+
+    if (container.children.length === 0) {
+        const p = document.createElement("p");
+        p.className = "fancy-label";
+        p.textContent = "NO CLUBS YET";
+        container.appendChild(p);
+    }
+}
 
 
 function setupRealtimeClubUpdates() {
@@ -347,8 +415,7 @@ function setupRealtimeClubUpdates() {
 
     unsubscribeUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
         console.log("User document updated in real-time. Refreshing club lists.");
-        loadManagedClubs();
-        loadMemberClubs();
+        loadAllClubs();
     }, (error) => {
         console.error("Error listening to user document for club updates:", error);
         showAppAlert("Real-time club updates failed: " + error.message);

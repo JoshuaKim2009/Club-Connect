@@ -40,16 +40,13 @@
 
     
     <div class="button-container">
-      <button id="create-club-button" class="fancy-black-button" >CREATE A CLUB</button>
-      <button id="join-club-button" class="fancy-black-button" >JOIN A CLUB</button>
+      <button id="create-club-button" class="fancy-black-button">CREATE CLUB</button>
+      <button id="join-club-button" class="fancy-black-button">JOIN CLUB</button>
+      <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER</button>
     </div>
     
-    
-
-    
     <div id="clubContainer">
-      <p class="big-label"></p>
-      <p id="your-clubs-loading-text" class="fancy-label" >LOADING...</p>
+      <p id="your-clubs-loading-text" class="fancy-label">LOADING...</p>
     </div>
 
     
@@ -96,7 +93,7 @@
     </script>
     
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="your_clubs.js"></script>
+    <script type="module" src="your_clubs.js?v=2"></script>
     
   </body>
 </html>

@@ -177,5 +177,5 @@ async function checkIfClubExists(clubName, joinCode) {
 
 
 document.getElementById("discover-club-button").addEventListener("click", (e) => {
-    window.location.href = "club_discovery.html";
+    window.location.href = "club_discovery.html?from=join_club";
 });
