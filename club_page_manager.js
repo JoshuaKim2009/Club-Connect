@@ -325,12 +325,7 @@ function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
 
 async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
-    if (!closestEventDisplay) {
-        console.warn("Element with ID 'closestEventDisplay' not found in HTML.");
-        return;
-    }
-
-
+    closestEventDisplay.style.display = '';
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
 
@@ -448,11 +443,8 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
 
         } else {
             console.log("No events found at all.");
-           finalCardElement = createNoEventsCardHtml();
-            if (!animateCard) {
-                finalCardElement.classList.remove('animate-in');
-            }
-            closestEventDisplay.appendChild(finalCardElement);
+            closestEventDisplay.style.display = 'none';
+            return;
         }
 
         if (animateCard) { 
@@ -470,6 +462,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
     } catch (error) {
         console.error("Error fetching event:", error);
         closestEventDisplay.innerHTML = ''; 
+        closestEventDisplay.style.display = 'none';
         const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
         closestEventDisplay.appendChild(errorCard);
         if (animateCard) {
