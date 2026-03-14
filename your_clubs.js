@@ -50,7 +50,7 @@ async function loadManagedClubs() {
 
         if (managedClubs.length === 0) {
             console.log("User does not manage any clubs.");
-            const loading_text = document.getElementById('your-clubs-loading-text');
+            // const loading_text = document.getElementById('your-clubs-loading-text');
             loading_text.textContent = "NO CLUBS YET";
             loading_text.hidden = true;
             const btn = document.createElement("button");
@@ -405,6 +405,8 @@ async function loadAllClubs() {
         p.textContent = "NO CLUBS YET";
         container.appendChild(p);
     }
+    document.getElementById('clubs-wrapper').classList.add('loaded');
+
 }
 
 
