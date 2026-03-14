@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=17" rel="stylesheet" />
+    <link href="styles.css?v=18" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Clubs</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,6 +26,16 @@
       #page-title{
         margin-top: 110px;
       }
+
+      .join-club-box {
+        margin: 15px auto;
+        padding: 15px;
+        border: 3px solid black;
+        border-radius: 10px;
+        background: linear-gradient(#cecece, #8b8b8b);
+        box-shadow: 0px 4px 0px #000000;
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body>
@@ -39,10 +49,12 @@
     <h1 id="page-title" class="pageTitle">MY CLUBS</h1>
 
     
-    <div class="button-container">
-      <button id="create-club-button" class="fancy-black-button">CREATE CLUB</button>
-      <button id="join-club-button" class="fancy-black-button">JOIN CLUB</button>
-      <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER</button>
+    <div class="join-club-box" style="margin: 15px auto; width: 85%; max-width: 630px;">
+      <div class="button-container" style="margin-bottom: 0;">
+        <button id="create-club-button" class="fancy-black-button">CREATE A CLUB</button>
+        <button id="join-club-button" class="fancy-black-button">JOIN A CLUB</button>
+        <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER CLUBS</button>
+      </div>
     </div>
     
     <div id="clubContainer">
