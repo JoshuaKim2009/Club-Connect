@@ -408,18 +408,58 @@ button {
   margin-top: 20px;
 }
 
-@media (max-width: 700px) {
-  .club-btn {
-    width: 85%;
-    margin-bottom: 5px;
-  }
+.club-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 85%;
+  max-width: 600px;
+  margin-bottom: 10px;
+  padding: 14px 18px;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 32px;
 }
 
-@media (min-width: 701px) {
-  .club-btn {
-    width: 630px;
-    margin-bottom: 5px;
-  }
+.club-btn-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.club-role-text {
+  margin-top: 5px;
+  font-size: 18px;
+  color: #444444;
+}
+
+.club-btn-name {
+  font-size: 26px;
+  line-height: 1.1;
+  padding-bottom: 6px;
+  border-bottom: 2px dotted black;
+  width: 100%;
+  position: relative;
+}
+
+.club-btn-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
+}
+
+.club-btn-meta {
+  font-size: 18px;
+  color: #444444;
 }
 
 #clubDetails {
@@ -1098,12 +1138,6 @@ button {
   margin-left: 8px;
 }
 
-.club-role-text {
-  color: rgb(100, 100, 100);
-  font-size: 0.9em;
-  margin-left: 5px;
-}
-
 .member-actions {
   display: flex;
   gap: 5px;
@@ -1490,6 +1524,7 @@ input[type="checkbox"]:checked {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  min-height: 32px;
 }
 
 .editing-event-card input[type="text"]:focus,

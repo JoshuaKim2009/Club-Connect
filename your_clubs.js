@@ -122,14 +122,30 @@ async function loadAllClubs() {
 
     managedSnaps.forEach((snap, i) => {
         if (!snap.exists()) return;
+        const data = snap.data();
         const btn = document.createElement("button");
-        btn.textContent = snap.data().clubName;
-        const roleSpan = document.createElement("span");
-        roleSpan.textContent = " Manager";
-        roleSpan.className = "club-role-text";
-        btn.appendChild(roleSpan);
-        btn.dataset.clubId = managedClubs[i];
         btn.className = "club-btn fancy-button";
+        btn.dataset.clubId = managedClubs[i];
+
+        const inner = document.createElement("div");
+        inner.className = "club-btn-inner";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "club-btn-name";
+        nameSpan.textContent = data.clubName;
+
+        const roleSpan = document.createElement("span");
+        roleSpan.className = "club-role-text";
+        roleSpan.textContent = "Manager";
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "club-btn-meta";
+        metaDiv.textContent = `${data.clubActivity}  •  ${(data.memberUIDs || []).length} members`;
+
+        inner.appendChild(nameSpan);
+        inner.appendChild(roleSpan);
+        inner.appendChild(metaDiv);
+        btn.appendChild(inner);
         btn.addEventListener("click", () => {
             window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
         });
@@ -140,15 +156,31 @@ async function loadAllClubs() {
         if (!snap.exists()) return;
         const role = roles[i];
         if (!role) return;
+        const data = snap.data();
         const btn = document.createElement("button");
-        btn.textContent = snap.data().clubName;
-        const roleSpan = document.createElement("span");
-        roleSpan.textContent = ` ${capitalizeFirstLetter(role)}`;
-        roleSpan.className = "club-role-text";
-        btn.appendChild(roleSpan);
+        btn.className = "club-btn fancy-button member-club-btn";
         btn.dataset.clubId = memberClubs[i];
         btn.dataset.userRole = role;
-        btn.className = "club-btn fancy-button member-club-btn";
+
+        const inner = document.createElement("div");
+        inner.className = "club-btn-inner";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "club-btn-name";
+        nameSpan.textContent = data.clubName;
+
+        const roleSpan = document.createElement("span");
+        roleSpan.className = "club-role-text";
+        roleSpan.textContent = capitalizeFirstLetter(role);
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "club-btn-meta";
+        metaDiv.textContent = `${data.clubActivity}  •  ${(data.memberUIDs || []).length} members`;
+
+        inner.appendChild(nameSpan);
+        inner.appendChild(roleSpan);
+        inner.appendChild(metaDiv);
+        btn.appendChild(inner);
         btn.addEventListener("click", async () => {
             if (role === 'manager' || role === 'admin') {
                 window.location.href = `club_page_manager.html?id=${memberClubs[i]}`;
