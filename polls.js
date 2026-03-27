@@ -306,7 +306,7 @@ function setupRealtimePollsListener() {
 
             if (change.type === "added") {
                 const pollCard = createPollCard(pollData, pollId);
-                pollsContainer.appendChild(pollCard);
+                pollsContainer.insertBefore(pollCard, pollsContainer.firstChild);
             }
             else if (change.type === "modified") {
                 const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);

@@ -278,14 +278,14 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 
     const weeklyStartDateInputFieldHtml = `
         <div id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
-            <label for="edit-weekly-start-date-${currentEditId}">Weekly Recurrence Start Date:</label>
+            <label for="edit-weekly-start-date-${currentEditId}">Start Date:</label>
             <input type="date" id="edit-weekly-start-date-${currentEditId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
     `;
 
     const weeklyEndDateInputFieldHtml = `
         <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
-            <label for="edit-weekly-end-date-${currentEditId}">Weekly Recurrence End Date:</label>
+            <label for="edit-weekly-end-date-${currentEditId}">End Date:</label>
             <input type="date" id="edit-weekly-end-date-${currentEditId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
     `;
