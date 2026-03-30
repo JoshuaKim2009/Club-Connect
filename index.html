@@ -21,10 +21,38 @@
         display: block;
       }
       
+      .tagline-section {
+        width: 80%;
+        margin: 10px auto 20px;
+        text-align: center;
+      }
+
+      .dotted-line {
+        border: none;
+        border-top: 2px dotted rgba(255,255,255,0.5);
+        background: transparent;
+        height: 0;
+      }
+
+      .tagline {
+        font-family: var(--primary-font-family);
+        font-size: 16px;
+        color: white;
+        font-weight: 50;
+        text-align: center;
+      }
+      
     </style>
   </head>
   <body>
     <h1 id="main-page-title" class="pageTitle">CLUB CONNECT</h1>
+    
+    <div class="tagline-section">
+      <hr class="dotted-line">
+      <p class="tagline">A FREE school club management & organization app. No subscriptions, no hassle — simple enough for any student to pick up and use.</p>
+      <hr class="dotted-line">
+    </div>
+    
     <h1 id="welcomeMessage" >LOADING...</h1>
     <button id="club-button" class="hidden fancy-button" >MY CLUBS</button>
     <hr style="background-color: transparent; height: 4px; border: none;">
