@@ -451,7 +451,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
                 noEventsMessage.style.display = 'block';
             }
             if (addEventButton){
-                addEventButton.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                addEventButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
     });
