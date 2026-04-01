@@ -145,7 +145,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function cancelSingleOccurrence(eventId, occurrenceDateString) {
-    const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${occurrenceDateString}? It will no longer appear on the schedule.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${formatDate(occurrenceDateString)}? It will no longer appear on the schedule.`);
     if (!confirmed) {
         return;
     }
@@ -188,7 +188,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             await deleteEntireEvent(eventId, eventData.isWeekly, true);
             finalAlertMessage = "This was the last active instance. The event has been automatically deleted.";
 
-            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${formatDate(occurrenceDateString)} has been canceled. Would you like to make an announcement about this cancellation?`);
             if (makeAnnouncementConfirm) {
                 const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
@@ -205,7 +205,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             });
             finalAlertMessage = `The event on ${occurrenceDateString} has been canceled.`;
 
-            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${occurrenceDateString} has been canceled. Would you like to make an announcement about this cancellation?`);
+            const makeAnnouncementConfirm = await showAppConfirm(`The event on $${formatDate(occurrenceDateString)} has been canceled. Would you like to make an announcement about this cancellation?`);
             if (makeAnnouncementConfirm) {
                 const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
                     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
