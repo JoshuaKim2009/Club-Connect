@@ -441,6 +441,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
                 const occDate = new Date(occDateStr + 'T00:00:00Z');
                 const displayCard = createSingleOccurrenceDisplayCard(eventData, occDate, fetchId);
                 cardDiv.replaceWith(displayCard);
+                scrollToEditedEvent(fetchId, isEditingInstance ? originalOccurrenceDate : null);
             } else {
                 cardDiv.remove();
             }
@@ -448,6 +449,9 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
             cardDiv.remove();
             if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
                 noEventsMessage.style.display = 'block';
+            }
+            if (addEventButton){
+                addEventButton.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
     });
