@@ -71,13 +71,13 @@ submit.addEventListener("click", async function(event){
           await showAppAlert("User registered and profile created!");
 
         } catch (error) { 
-          await showAppAlert("Error during user profile setup (Auth profile or Firestore): " + error.message);
+          await showAppAlert("Something went wrong while setting up your account. Please try again.");
           submit.disabled = false;
           submit.innerHTML = 'Register';
 
         }
       } else if (user) {
-          await showAppAlert("User registered, but no display name was provided. Data not saved to Firestore.");
+          await showAppAlert("Please enter your full name to register.");
           submit.disabled = false;
           submit.innerHTML = 'Register';
 
