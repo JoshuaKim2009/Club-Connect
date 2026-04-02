@@ -68,7 +68,7 @@ submit.addEventListener("click", async function(event){
           
           
 
-
+          submit.disabled = false;
           submit.innerHTML = 'Register';
           await showAppAlert("User registered and profile created!");
 
