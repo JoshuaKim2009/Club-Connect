@@ -32,6 +32,8 @@ const submit = document.getElementById("register-submit");
 submit.addEventListener("click", async function(event){
 
   event.preventDefault()
+  submit.style.width = submit.offsetWidth + 'px';
+  submit.style.height = submit.offsetHeight + 'px';
   submit.disabled = true;
   submit.innerHTML = '<span class="spinner"></span>';
 
