@@ -77,11 +77,12 @@ submit.addEventListener("click", async function(event){
 
         }
       } else if (user) {
-          await showAppAlert("Please enter your full name to register.");
-          submit.disabled = false;
-          submit.innerHTML = 'Register';
-
+        await showAppAlert("Please enter your full name to register.");
+        submit.disabled = false;
+        submit.innerHTML = 'Register';
+        return;
       }
+
 
       window.location.href = "index.html";
     })
