@@ -32,6 +32,22 @@
           padding: 10px;
           box-sizing: border-box; 
       }
+      
+      @keyframes spin {
+          to { transform: rotate(360deg); }
+      }
+
+      .spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(0,0,0,0.2);
+          border-top-color: black;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          vertical-align: middle;
+      }
+      
       /* form {
           width: 500px;
           padding: 20px;
@@ -71,7 +87,7 @@
 
       
       <script type="module" src="dialog.js"></script> 
-      <script type = "module" src="login.js" defer></script>
+      <script type = "module" src="login.js?v=2" defer></script>
     </form>
   </body>
 </html>
