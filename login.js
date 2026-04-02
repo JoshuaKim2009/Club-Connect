@@ -26,9 +26,15 @@ const auth = getAuth(app);
 //submit
 const submit = document.getElementById("login-submit");
 
-submit.addEventListener("click", function(event){
+submit.addEventListener("click", async function(event){
   
   event.preventDefault()
+  submit.style.width = submit.offsetWidth + 'px';
+  submit.style.height = submit.offsetHeight + 'px';
+  submit.disabled = true;
+  submit.innerHTML = '<span class="spinner"></span>';
+
+  
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   
@@ -63,6 +69,9 @@ submit.addEventListener("click", function(event){
           userFriendlyMessage = `Error: ${error.message}`;
           break;
       }
+      submit.disabled = false;
+      submit.innerHTML = 'Login';
+
       await showAppAlert(userFriendlyMessage);
     });
 
