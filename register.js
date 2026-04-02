@@ -32,12 +32,17 @@ const submit = document.getElementById("register-submit");
 submit.addEventListener("click", async function(event){
 
   event.preventDefault()
+  submit.disabled = true;
+  submit.innerHTML = '<span class="spinner"></span>';
+
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const confirmPassword = document.getElementById("confirmPassword").value;
   const displayName = document.getElementById("name").value;
   if (password !== confirmPassword) {
     await showAppAlert("Passwords do not match. Please try again.");
+    submit.disabled = false;
+    submit.innerHTML = 'Register';
     return; 
   }
 
@@ -67,9 +72,15 @@ submit.addEventListener("click", async function(event){
 
         } catch (error) { 
           await showAppAlert("Error during user profile setup (Auth profile or Firestore): " + error.message);
+          submit.disabled = false;
+          submit.innerHTML = 'Register';
+
         }
       } else if (user) {
           await showAppAlert("User registered, but no display name was provided. Data not saved to Firestore.");
+          submit.disabled = false;
+          submit.innerHTML = 'Register';
+
       }
 
       window.location.href = "index.html";
@@ -96,6 +107,9 @@ submit.addEventListener("click", async function(event){
           break;
       }
       await showAppAlert(userFriendlyMessage);
+      submit.disabled = false;
+      submit.innerHTML = 'Register';
+
     });
 
 });
