@@ -239,7 +239,6 @@ function createCategoryElement(category) {
             ${(currentUserRole === 'manager' || currentUserRole === 'admin') ? `<button class="edit-category-button" data-category-id="${category.id}"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
         </div>
         <div class="links-container" id="links-${category.id}">
-            ${category.links.length === 0 ? `<p style="margin: 0; color: white;">NO LINKS YET</p>` : ''}
             ${category.links.map(link => {
                 const url = link.url.startsWith('http') ? link.url : 'https://' + link.url;
                 return `
