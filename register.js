@@ -71,7 +71,9 @@ submit.addEventListener("click", async function(event){
 
           
           await showAppAlert("User registered and profile created!");
+          submit.innerHTML = 'Register';
 
+          
         } catch (error) { 
           await showAppAlert("Something went wrong while setting up your account. Please try again.");
           submit.disabled = false;
