@@ -158,12 +158,15 @@ async function fetchAndDisplayCategories() {
 
     resourcesContainer.innerHTML = '';
     if (categoriesCache.length === 0) {
-        noResourcesMessage.style.display = 'block';
+        if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
+            noResourcesMessage.style.display = 'block';
+        } else {
+            noResourcesMessage.style.display = 'none';
+        }
         return;
     } else {
         noResourcesMessage.style.display = 'none';
     }
-
     categoriesCache.forEach(category => {
         const el = createCategoryElement(category);
         el.dataset.id = category.id;
