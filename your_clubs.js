@@ -192,11 +192,13 @@ async function loadAllClubs() {
     });
 
     if (container.children.length === 0) {
-        const p = document.createElement("p");
-        p.className = "fancy-label";
-        p.textContent = "NO CLUBS YET";
-        container.appendChild(p);
+      const p = document.createElement("p");
+      p.className = "fancy-label";
+      p.textContent = "NO CLUBS YET";
+      container.appendChild(p);
     }
+
+    document.getElementById("clubs-loading-text").style.display = "none";
     document.getElementById('clubs-wrapper').classList.add('loaded');
 
 }
