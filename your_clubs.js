@@ -33,6 +33,9 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Auth state changed: User is logged in.", user.uid);
         
+        const container = document.getElementById("clubContainer");
+        container.innerHTML = `<p class="fancy-label loading-text">LOADING...</p>`;
+        
         userDocRef = doc(db, "users", currentUser.uid);
         setupRealtimeClubUpdates();
 
