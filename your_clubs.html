@@ -49,19 +49,10 @@
         opacity: 1;
       }
       
-      .clubs-loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin-top: 30px;
-        gap: 10px;
-      }
-      
-      .loading-text {
+      #clubs-loading-text {
         text-align: center;
         width: 100%;
-        margin-top: 20px;
+        margin-top: 30px;
       }
     </style>
   </head>
@@ -93,12 +84,9 @@
       </div>
       
       <div id="clubs-wrapper">
-        <div id="clubContainer">
-          <div class="clubs-loading">
-            <div class="loading-spinner"></div>
-            <p class="fancy-label">LOADING...</p>
-          </div>
-        </div>
+        <p id="clubs-loading-text" class="fancy-label">LOADING...</p>
+
+        <div id="clubContainer"></div>
         <div id="memberClubContainer">
           <p id="member-clubs-loading-text" class="fancy-label"></p>
         </div>
@@ -143,7 +131,7 @@
     </script>
     
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="your_clubs.js?v=8"></script>
+    <script type="module" src="your_clubs.js?v=9"></script>
     <script type="module" src="loading.js?v=2"></script>
     
   </body>
