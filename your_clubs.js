@@ -99,12 +99,7 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 async function loadAllClubs() {
     const container = document.getElementById("clubContainer");
-    container.innerHTML = `
-    <div class="clubs-loading">
-      <div class="loading-spinner"></div>
-        <p class="fancy-label">LOADING...</p>
-      </div>
-    `;
+    
     const userDocRef = doc(db, "users", currentUser.uid);
     const userDocSnap = await getDoc(userDocRef, { source: 'server' });
     
