@@ -33,15 +33,6 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Auth state changed: User is logged in.", user.uid);
         
-        const container = document.getElementById("clubContainer");
-        container.innerHTML = `
-        <div class="clubs-loading">
-          <div class="loading-spinner"></div>
-            <p class="fancy-label">LOADING...</p>
-          </div>
-        `;
-
-        
         userDocRef = doc(db, "users", currentUser.uid);
         setupRealtimeClubUpdates();
 
@@ -108,7 +99,12 @@ async function getMemberRoleForClub(clubID, memberUid) {
 
 async function loadAllClubs() {
     const container = document.getElementById("clubContainer");
-    
+    container.innerHTML = `
+    <div class="clubs-loading">
+      <div class="loading-spinner"></div>
+        <p class="fancy-label">LOADING...</p>
+      </div>
+    `;
     const userDocRef = doc(db, "users", currentUser.uid);
     const userDocSnap = await getDoc(userDocRef, { source: 'server' });
     
