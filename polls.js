@@ -103,6 +103,7 @@ var pollTypeChoice = "After";
 async function createPollEditingCard() {
     pollOverlay.style.display = 'block';
     pollCreationModal.style.display = 'block';
+    pollCreationModal.scrollTop = 0;
     document.body.classList.add('no-scroll');
 }
 
