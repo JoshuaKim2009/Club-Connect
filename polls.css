@@ -50,6 +50,13 @@ body {
     transform-origin: center center;
 }
 
+@media (max-width: 768px) {
+    #poll-creation-modal,
+    #poll-edit-modal {
+        max-height: 50vh;
+    }
+}
+
 #poll-creation-modal h3,
 #poll-edit-modal h3 {
     margin: 0 0 10px 0;
@@ -156,9 +163,9 @@ body {
 #poll-creation-modal .checkbox-group label,
 #poll-edit-modal .checkbox-group label {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     font-weight: normal;
-    color: #4b5563;
+    color: #000000;
     cursor: pointer;
     font-family: var(--primary-font-family);
     font-size: 18px;
@@ -166,6 +173,7 @@ body {
     line-height: 1.4;
     gap: 8px;
 }
+
 
 #poll-creation-modal input[type="radio"],
 #poll-edit-modal input[type="radio"] {
