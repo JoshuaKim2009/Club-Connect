@@ -58,51 +58,59 @@
   </head>
   <body>
 
-    
     <div class="chat-header">
-      <button id="back-button-edit" class="fancy-button">
-        <i class="fa-solid fa-circle-left"></i>
-      </button>
-      <span class="chat-title">EDIT</span>
-    </div>
-    <form id = "createClubForm">
+        <button id="back-button-edit" class="fancy-button">
+          <i class="fa-solid fa-circle-left"></i>
+        </button>
+        <span class="chat-title">EDIT</span>
+      </div>
+      <form id = "createClubForm">
     <h1 class="pageTitle">EDIT DETAILS</h1>
 
-    
-    
-
-    <label class="fancy-input-label" >School name</label>
-    <input class="fancy-input" id="school-name-edit" placeholder="School name" required value ="">
-
-    <label class="fancy-input-label">State</label>
-    <div class="state-dropdown-wrapper">
-      <input class="fancy-input" id="state-edit" placeholder="State name" required autocomplete="off">
-      <div class="state-dropdown-list" id="state-dropdown-list-edit"></div>
+    <div id="loading-overlay">
+      <div id="loading-overlay-inner">
+        <div class="loading-spinner"></div>
+        <p>LOADING CLUB PAGE...</p>
+      </div>
     </div>
 
-    <label class="fancy-input-label" >Club name</label>
-    <input class="fancy-input" id="club-name-edit" placeholder="Club name" required autocomplete="off">
+    <div id="content">  
 
-    <label class="fancy-input-label" >Main Activity</label>
-    <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required autocomplete="off">
+      
+      
 
-    <label class="fancy-input-label" >Description</label>
+      <label class="fancy-input-label" >School name</label>
+      <input class="fancy-input" id="school-name-edit" placeholder="School name" required value ="">
 
-    <textarea id="description-edit" class="fancy-input" rows="3" placeholder="A short description about your club..." required maxlength="500"></textarea>
+      <label class="fancy-input-label">State</label>
+      <div class="state-dropdown-wrapper">
+        <input class="fancy-input" id="state-edit" placeholder="State name" required autocomplete="off">
+        <div class="state-dropdown-list" id="state-dropdown-list-edit"></div>
+      </div>
+
+      <label class="fancy-input-label" >Club name</label>
+      <input class="fancy-input" id="club-name-edit" placeholder="Club name" required autocomplete="off">
+
+      <label class="fancy-input-label" >Main Activity</label>
+      <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required autocomplete="off">
+
+      <label class="fancy-input-label" >Description</label>
+
+      <textarea id="description-edit" class="fancy-input" rows="3" placeholder="A short description about your club..." required maxlength="500"></textarea>
 
 
-    <hr style="background-color: transparent; height: 3px; border: none;">
-    
-    <div class="edit-page-actions-container">
-        <button id = "update-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
-        <button id = "delete-club-button" class = "fancy-button" >DELETE</button>
+      <hr style="background-color: transparent; height: 3px; border: none;">
+      
+      <div class="edit-page-actions-container">
+          <button id = "update-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
+          <button id = "delete-club-button" class = "fancy-button" >DELETE</button>
+      </div>
+      
+      
+
+
+      <hr style="background-color: transparent; height: 150px; border: none;">
     </div>
-    
-    
-
-
-    <hr style="background-color: transparent; height: 150px; border: none;">
-    
     
           
     <script type="module" src="loading.js?v=2"></script>
