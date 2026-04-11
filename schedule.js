@@ -271,7 +271,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         <div class="weekly-event-checkbox" style="display: ${isNewEvent ? 'block' : 'none'};">
             <label>
                 <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isNewEvent ? '' : 'disabled'}>
-                Weekly Event
+                Repeating Event
             </label>
         </div>
     `;
@@ -532,8 +532,8 @@ async function saveEvent(cardDiv, existingEventId = null) {
 
     if (!eventName) { await showAppAlert("Event Name is required!"); return; }
     if (!isWeekly && !eventDate) { await showAppAlert("Please provide an Event Date for one-time events."); return; }
-    if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Weekly events require both a start and end date for recurrence."); return; }
-    if (isWeekly && daysOfWeek.length === 0) { await showAppAlert("Please select at least one day of the week for weekly events."); return; }
+    if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Repeating events require both a start and end date."); return; }
+    if (isWeekly && daysOfWeek.length === 0) { await showAppAlert("Please select at least one day of the week for repeating events."); return; }
     if (!startTime || !endTime) { await showAppAlert("Start Time and End Time are required."); return; }
     if (!address) { await showAppAlert("Address is required."); return; }
     if (!location) { await showAppAlert("Specific Location (e.g., Room 132) is required."); return; }
@@ -546,7 +546,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
     if (isWeekly && !isEditingInstance) { 
         const futureOccurrences = calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime);
         if (futureOccurrences === 0) {
-            await showAppAlert("This weekly event configuration results in no events. Please adjust the dates or days of the week.");
+            await showAppAlert("This repeating event configuration results in no events. Please adjust the dates or days of the week.");
             return; 
         }
     }
