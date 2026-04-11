@@ -21,64 +21,116 @@
         display: block;
       }
       
-      .tagline-section {
-        width: 80%;
-        max-width: 300px;
-        margin: 10px auto 20px;
-        text-align: center;
-      }
-
-      .dotted-line {
-        border: none;
-        border-top: 2px dotted rgba(255,255,255,0.5);
-        background: transparent;
-        height: 0;
-      }
-
-      .tagline {
-        font-family: var(--primary-font-family);
-        font-size: 20px;
-        color: white;
-        font-weight: 50;
-        text-align: center;
-      }
-      
       #logoutButton {
-        margin-bottom: 30px;
+        margin-bottom: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
       }
+
       #logout-icon {
         font-size: 0.8em;
         position: relative;
         bottom: 1px;
       }
+
+      .header-button {
+        background: linear-gradient(#ffffff, #b3b3b3);
+        font-family: var(--primary-font-family);
+        font-size: 20px;
+        color: black;
+        border: 3px solid black;
+        padding: 4px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0;
+      }
+
+      .header-button:active {
+        transform: scale(0.92);
+      }
+
+      #main-page-title {
+        margin-top: 100px;
+      }
+
+      #main-page-title {
+        font-size: clamp(70px, 8vw, 100px);
+        white-space: nowrap;
+      }
+
+      #home-section {
+        font-family: var(--primary-font-family);
+        padding: 10px;
+        border: 3px solid black;
+        border-radius: 10px;
+        background: linear-gradient(#f0f0f0, #e0e0e0);
+        box-shadow: 0px 6px 0px #000000;
+        width: 85%;
+        max-width: 390px;
+        margin: 20px auto;
+        text-align: center;
+      }
+
+      #home-section button {
+        margin-bottom: 15px;
+      }
+
+      #home-section h3 {
+        font-family: var(--primary-font-family);
+        text-align: center;
+        color: black;
+        font-size: 25px;
+        font-weight: normal;
+        margin-bottom: 20px;
+        padding-bottom: 8px;
+        border-bottom: 2px dotted black;
+        position: relative;
+      }
+
+      #home-section h3::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -20px;
+        height: 20px;
+        background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+        pointer-events: none;
+      }
       
     </style>
   </head>
   <body>
+    <div class="chat-header">
+      <span class="chat-title">CLUB CONNECT</span>
+      <button id="logoutButton" class="header-button">
+        LOGOUT
+        <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+
     <h1 id="main-page-title" class="pageTitle">CLUB CONNECT</h1>
     
-    <div class="tagline-section">
-      <hr class="dotted-line">
-      <p class="tagline">A FREE school club management & organization app, simple enough for any student to pick up and use.</p>
-      <hr class="dotted-line">
+    <div id="home-section">
+      <h3 id="welcomeMessage">LOADING...</h3>
+      <button id="club-button" class="fancy-button">MY CLUBS</button>
     </div>
-    
-    <h1 id="welcomeMessage" >LOADING...</h1>
-    <button id="club-button" class="hidden fancy-button" >MY CLUBS</button>
     <hr style="background-color: transparent; height: 4px; border: none;">
-    <button id="logoutButton" class="hidden fancy-button">
+    <!-- <button id="logoutButton" class="hidden fancy-button">
       LOGOUT
       <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
-    </button>
+    </button> -->
 
 
     
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="script.js"></script>
+    <script type="module" src="script.js?v=2"></script>
   </body>
 </html>
 

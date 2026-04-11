@@ -210,7 +210,7 @@ button {
 
 .goldLink {
   text-decoration: underline;
-  color: white;
+  color: rgb(0, 0, 0);
   display: inline-block;
   animation: bobbing 0.5s ease-in-out infinite;
 }
@@ -277,7 +277,7 @@ button {
 
 #logoutButton {
   margin: 0 auto;
-  width: 300px;
+  /* width: 300px; */
 }
 
 #club-button {

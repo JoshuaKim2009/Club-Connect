@@ -33,62 +33,28 @@ var userName = "";
 
 var isLoggedIn = false;
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // User is signed in
-    let isLoggedIn = true;
-    let userName = user.displayName;
-    let userEmail = user.email; // Access the user's email directly from the user object
-    document.getElementById("welcomeMessage").innerHTML = "Signed in as " + userName;
-    document.getElementById("logoutButton").classList.remove("hidden");
-    document.getElementById("logoutButton").classList.add("show");
-    document.getElementById("club-button").classList.remove("hidden");
-    document.getElementById("club-button").classList.add("show");
-  } else {
-    // User is signed out
-    let isLoggedIn = false;
-    document.getElementById("logoutButton").classList.remove("show");
-    document.getElementById("logoutButton").classList.add("hidden");
-    document.getElementById("club-button").classList.remove("show");
-    document.getElementById("club-button").classList.add("hidden");
-    document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href = 'login.html' class='goldLink'> login </a>"
-  }
-});
-
-
-
 const logoutButton = document.getElementById("logoutButton");
 
-// Add event listener for the logout button
-if (logoutButton) { // Check if the button exists before adding listener
-    logoutButton.addEventListener('click', () => {
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    let userName = user.displayName;
+    document.getElementById("welcomeMessage").innerHTML = "Welcome, " + userName;
+    document.getElementById("club-button").onclick = () => window.location.href = 'your_clubs.html';
+
+    logoutButton.innerHTML = 'LOGOUT <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>';
+    logoutButton.onclick = () => {
         signOut(auth).then(() => {
-            // Sign-out successful.
             console.log("User signed out successfully.");
-            // The onAuthStateChanged listener will handle UI updates
-            // and potentially redirection to the login page.
         }).catch(async (error) => {
-            // An error happened.
             console.error("Error signing out:", error);
             await showAppAlert("Error signing out: " + error.message);
         });
-    });
-}
+    };
+  } else {
+    document.getElementById("club-button").onclick = () => window.location.href = 'login.html';
+    document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
 
-
-
-
-
-
-const clubButton = document.getElementById("club-button");
-if (clubButton) {
-  clubButton.addEventListener("click", function() {
-    window.location.href = "your_clubs.html";
-  });
-}
-
-
-
-
-
-
+    logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
+    logoutButton.onclick = () => window.location.href = 'login.html';
+  }
+});
