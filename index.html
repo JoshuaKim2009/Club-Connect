@@ -2,6 +2,7 @@
 <html>
   <head>
     <link href="styles.css?v=20" rel="stylesheet" />
+    <link href="index.css?v=1" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,103 +15,7 @@
 
 
     <style>
-      .hidden {
-        display: none;
-      }
-      .show {
-        display: block;
-      }
       
-      #logoutButton {
-        margin-bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-      }
-
-      #logout-icon {
-        font-size: 0.8em;
-        position: relative;
-        bottom: 1px;
-      }
-
-      .header-button {
-        background: linear-gradient(#ffffff, #b3b3b3);
-        font-family: var(--primary-font-family);
-        font-size: 20px;
-        color: black;
-        border: 3px solid black;
-        padding: 4px 12px;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 0;
-      }
-
-      .header-button:active {
-        transform: scale(0.92);
-      }
-
-      #main-page-title {
-        margin-top: 100px;
-      }
-
-      #main-page-title {
-        font-size: clamp(70px, 8vw, 100px);
-        white-space: nowrap;
-      }
-
-      #home-section {
-        font-family: var(--primary-font-family);
-        padding: 10px;
-        border: 3px solid black;
-        border-radius: 10px;
-        background: linear-gradient(#f0f0f0, #e0e0e0);
-        box-shadow: 0px 6px 0px #000000;
-        width: 85%;
-        max-width: 390px;
-        margin: 20px auto;
-        text-align: center;
-      }
-
-      #home-section button {
-        margin-bottom: 15px;
-      }
-
-      #home-section h3 {
-        font-family: var(--primary-font-family);
-        text-align: center;
-        color: black;
-        font-size: 25px;
-        font-weight: normal;
-        margin-bottom: 20px;
-        padding-bottom: 8px;
-        border-bottom: 2px dotted black;
-        position: relative;
-      }
-
-      #home-section h3::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -20px;
-        height: 20px;
-        background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
-        pointer-events: none;
-      }
-      
-      .chat-header img {
-        height: 45px;
-        width: auto;
-        -webkit-user-drag: none;
-      }
-      
-
     </style>
   </head>
   <body>
@@ -118,9 +23,22 @@
       <img src="logo.png" alt="Club Connect Logo" draggable="false">
       <span class="chat-title">CLUB CONNECT</span>
       <button id="logoutButton" class="header-button">
-        LOGOUT
-        <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
+        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        LOGIN
       </button>
+
+      <div id="profile-dropdown">
+        <button id="dropdown-appearance">APPEARANCE <i class="fa-solid fa-palette"></i></button>
+        <button id="dropdown-logout">LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+      </div>
+
+      <div id="profile-overlay"></div>
+
+      <div id="appearance-modal">
+        <h3>APPEARANCE</h3>
+        <div id="theme-options"></div>
+        <button id="close-appearance" class="fancy-button" style="margin-top:20px;">CLOSE</button>
+      </div>
     </div>
 
     <h1 id="main-page-title" class="pageTitle">CLUB CONNECT</h1>
@@ -136,7 +54,7 @@
     </button> -->
 
 
-    
+    <script src="theme.js"></script>
     <script type="module" src="dialog.js"></script> 
     <script type="module" src="script.js?v=2"></script>
   </body>

@@ -1,16 +1,22 @@
-body {
-  background-color: #131330;
-  min-height: 100vh;
-  margin: 5px; 
-  position: relative; 
-}
-
 :root {
   /* --header-bg-start: #222222;
   --header-bg-end: #111111; */
-  --header-bg-start: #131330;
   --header-bg-end: #000000;
-  --input-bg: #131330;
+  --bg-dark: #131b30;
+  --bg-accent: #405aa0;
+  --bg-light: #3498db;
+  /* --bg-dark: #330a0a;
+  --bg-accent: #a53d3d;
+  --bg-light: #f55e5e; */
+  --input-bg: var(--bg-dark);
+  --header-bg-start: var(--bg-dark);
+}
+
+body {
+  background-color: var(--bg-dark);
+  min-height: 100vh;
+  margin: 5px; 
+  position: relative; 
 }
 
 #content {
@@ -76,22 +82,22 @@ body.no-interaction {
 #loading-overlay {
   position: fixed;
   inset: 0;
-  background-color: #131330;
+  background-color: var(--bg-dark);
   background-image: linear-gradient(
       to bottom,
-      #131330 0%,
+      var(--bg-dark) 0%,
       transparent 5%,
       transparent 95%,
-      #131330 100%
+      var(--bg-dark) 100%
     ),
     linear-gradient(
       to left,
-      #131330 0%,
+      var(--bg-dark) 0%,
       transparent 5%,
       transparent 95%,
-      #131330 100%
+      var(--bg-dark) 100%
     ),
-    radial-gradient(circle at center, #474799, #131330);
+    radial-gradient(circle at center, var(--bg-accent), var(--bg-dark));
   display: block;
   z-index: 9999;
   transition: opacity 0.5s ease-out;
@@ -123,7 +129,7 @@ body.no-interaction {
 
 .loading-spinner {
   border: 8px solid #f3f3f3;
-  border-top: 8px solid #3498db;
+  border-top: 8px solid var(--bg-light);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -147,19 +153,19 @@ body::before {
 
   background-image: linear-gradient(
       to bottom,
-      #131330 0%,
+      var(--bg-dark) 0%,
       transparent 5%,
       transparent 95%,
-      #131330 100%
+      var(--bg-dark) 100%
     ),
     linear-gradient(
       to left,
-      #131330 0%,
+      var(--bg-dark) 0%,
       transparent 5%,
       transparent 95%,
-      #131330 100%
+      var(--bg-dark) 100%
     ),
-    radial-gradient(circle at center, #474799, #131330);
+    radial-gradient(circle at center, var(--bg-accent), var(--bg-dark));
   background-size: cover;
   background-repeat: no-repeat;
 }
