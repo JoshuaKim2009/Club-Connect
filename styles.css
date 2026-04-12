@@ -7,6 +7,7 @@
   --bg-light: #f55e5e; */
   --input-bg: var(--bg-dark);
   --header-bg-end: #000000;
+  --header-bg-start: var(--bg-dark);
 }
 
 body {
