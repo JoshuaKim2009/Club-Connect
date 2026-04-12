@@ -35,24 +35,42 @@ var isLoggedIn = false;
 
 const logoutButton = document.getElementById("logoutButton");
 
+const cachedUser = JSON.parse(localStorage.getItem('cc-user') || 'null');
+if (cachedUser) {
+  document.getElementById("welcomeMessage").innerHTML = "Welcome, " + cachedUser.displayName;
+  document.getElementById("club-button").onclick = () => window.location.href = 'your_clubs.html';
+  logoutButton.innerHTML = '<i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
+  document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
+} else {
+  // Show logged-out state immediately while Firebase loads
+  document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
+  logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
+  document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+}
+
+let resolveAuth;
+const authReady = new Promise(resolve => resolveAuth = resolve);
+
 onAuthStateChanged(auth, (user) => {
+  resolveAuth(user); 
+
   if (user) {
-    let userName = user.displayName;
-    document.getElementById("welcomeMessage").innerHTML = "Welcome, " + userName;
-    document.getElementById("club-button").onclick = () => window.location.href = 'your_clubs.html';
-
-    logoutButton.innerHTML = ' <i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
+    localStorage.setItem('cc-user', JSON.stringify({ displayName: user.displayName, email: user.email, uid: user.uid }));
+    document.getElementById("welcomeMessage").innerHTML = "Welcome, " + user.displayName;
+    logoutButton.innerHTML = '<i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
     document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
-
   } else {
-    document.getElementById("club-button").onclick = () => window.location.href = 'login.html';
+    localStorage.removeItem('cc-user');
     document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
-
     logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
     document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
-
   }
 });
+
+document.getElementById("club-button").onclick = async () => {
+  const user = await authReady; // instant if already resolved, otherwise waits
+  window.location.href = user ? 'your_clubs.html' : 'login.html';
+};
 
 
 logoutButton.onclick = () => {
