@@ -1,16 +1,18 @@
 (function() {
-  const saved = localStorage.getItem('cc-theme');
-  const map = {
-    default: ['#131b30','#405aa0','#3498db'],
-    forest:  ['#0f2318','#2d6a4f','#52b788'],
-    crimson: ['#1a0a0a','#8b1a1a','#e63946'],
-    slate:   ['#1a1a2e','#4a4a6a','#9b9bc4']
-  };
-  const c = map[saved] || map.default;
-  const r = document.documentElement;
-  r.style.setProperty('--bg-dark',   c[0]);
-  r.style.setProperty('--bg-accent', c[1]);
-  r.style.setProperty('--bg-light',  c[2]);
+    const saved = localStorage.getItem('cc-theme');
+    const map = {
+        default: ['#131b30','#405aa0','#3498db'],
+        forest:  ['#0f2318','#2d6a4f','#52b788'],
+        crimson: ['#551d1d','#a53131','#e63946'],
+        slate:   ['#1a1a2e','#4a4a6a','#9b9bc4']
+    };
+    const c = map[saved] || map.default;
+    const r = document.documentElement;
+    r.style.setProperty('--bg-dark',   c[0]);
+    r.style.setProperty('--bg-accent', c[1]);
+    r.style.setProperty('--bg-light',  c[2]);
+    const meta = document.getElementById('theme-color-meta');
+    if (meta) meta.setAttribute('content', c[0]);
 })();
 
 
@@ -29,8 +31,8 @@ const THEMES = {
     },
     crimson: {
         name: 'Crimson',
-        dark: '#1a0a0a',
-        accent: '#8b1a1a',
+        dark: '#551d1d',
+        accent: '#a53131',
         light: '#e63946'
     },
     slate: {
@@ -47,6 +49,8 @@ function applyTheme(themeKey) {
     root.style.setProperty('--bg-dark', theme.dark);
     root.style.setProperty('--bg-accent', theme.accent);
     root.style.setProperty('--bg-light', theme.light);
+    const metaThemeColor = document.getElementById('theme-color-meta');
+    if (metaThemeColor) metaThemeColor.setAttribute('content', theme.dark);
 }
 
 function getSavedTheme() {

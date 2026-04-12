@@ -26,7 +26,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 
-let selectedTheme = window.getSavedTheme();
 
 
 var userEmail = "";
@@ -36,12 +35,6 @@ var isLoggedIn = false;
 
 const logoutButton = document.getElementById("logoutButton");
 
-const cachedName = sessionStorage.getItem('cc-username');
-if (cachedName) {
-  document.getElementById('welcomeMessage').innerHTML = "Welcome, " + cachedName;
-  logoutButton.innerHTML = '<i class="fa-solid fa-user"></i> PROFILE';
-}
-
 onAuthStateChanged(auth, (user) => {
   if (user) {
     let userName = user.displayName;
@@ -50,7 +43,6 @@ onAuthStateChanged(auth, (user) => {
 
     logoutButton.innerHTML = ' <i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
     document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
-    sessionStorage.setItem('cc-username', user.displayName);
 
   } else {
     document.getElementById("club-button").onclick = () => window.location.href = 'login.html';
@@ -58,7 +50,6 @@ onAuthStateChanged(auth, (user) => {
 
     logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
     document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
-    sessionStorage.removeItem('cc-username');
 
   }
 });
@@ -96,12 +87,6 @@ document.getElementById('profile-overlay').onclick = () => {
   closeAppearanceModal();
 };
 
-document.getElementById('apply-theme').onclick = () => {
-  window.saveTheme(selectedTheme);
-  closeAppearanceModal();
-  location.reload();
-};
-
 function closeAppearanceModal() {
   document.getElementById('appearance-modal').style.display = 'none';
   document.getElementById('profile-overlay').style.display = 'none';
@@ -110,14 +95,14 @@ function closeAppearanceModal() {
 function buildThemeOptions() {
   const container = document.getElementById('theme-options');
   container.innerHTML = '';
-  const current = selectedTheme;
+  const current = window.getSavedTheme();
   Object.entries(window.THEMES).forEach(([key, theme]) => {
     const btn = document.createElement('button');
     btn.className = 'theme-swatch';
     if (key === current) btn.classList.add('theme-swatch-active');
     btn.style.background = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.accent} 100%)`;
     btn.onclick = () => {
-      selectedTheme = key;
+      window.saveTheme(key);
       buildThemeOptions();
     };
     container.appendChild(btn);
