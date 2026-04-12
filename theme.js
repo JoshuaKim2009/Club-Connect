@@ -1,7 +1,7 @@
 (function() {
   const saved = localStorage.getItem('cc-theme');
   const map = {
-    default: ['#131330','#474799','#3498db'],
+    default: ['#131b30','#405aa0','#3498db'],
     forest:  ['#0f2318','#2d6a4f','#52b788'],
     crimson: ['#1a0a0a','#8b1a1a','#e63946'],
     slate:   ['#1a1a2e','#4a4a6a','#9b9bc4']
@@ -47,7 +47,6 @@ function applyTheme(themeKey) {
     root.style.setProperty('--bg-dark', theme.dark);
     root.style.setProperty('--bg-accent', theme.accent);
     root.style.setProperty('--bg-light', theme.light);
-    document.querySelector('html').style.backgroundColor = theme.dark;
 }
 
 function getSavedTheme() {
