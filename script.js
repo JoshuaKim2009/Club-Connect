@@ -26,6 +26,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 
+let selectedTheme = window.getSavedTheme();
 
 
 var userEmail = "";
@@ -95,6 +96,12 @@ document.getElementById('profile-overlay').onclick = () => {
   closeAppearanceModal();
 };
 
+document.getElementById('apply-theme').onclick = () => {
+  window.saveTheme(selectedTheme);
+  closeAppearanceModal();
+  location.reload();
+};
+
 function closeAppearanceModal() {
   document.getElementById('appearance-modal').style.display = 'none';
   document.getElementById('profile-overlay').style.display = 'none';
@@ -103,14 +110,14 @@ function closeAppearanceModal() {
 function buildThemeOptions() {
   const container = document.getElementById('theme-options');
   container.innerHTML = '';
-  const current = window.getSavedTheme();
+  const current = selectedTheme;
   Object.entries(window.THEMES).forEach(([key, theme]) => {
     const btn = document.createElement('button');
     btn.className = 'theme-swatch';
     if (key === current) btn.classList.add('theme-swatch-active');
     btn.style.background = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.accent} 100%)`;
     btn.onclick = () => {
-      window.saveTheme(key);
+      selectedTheme = key;
       buildThemeOptions();
     };
     container.appendChild(btn);
