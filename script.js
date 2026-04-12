@@ -95,16 +95,24 @@ function closeAppearanceModal() {
 function buildThemeOptions() {
   const container = document.getElementById('theme-options');
   container.innerHTML = '';
-  const current = window.getSavedTheme();
+  let pending = window.getSavedTheme();
+
   Object.entries(window.THEMES).forEach(([key, theme]) => {
     const btn = document.createElement('button');
     btn.className = 'theme-swatch';
-    if (key === current) btn.classList.add('theme-swatch-active');
+    btn.dataset.key = key;
+    if (key === pending) btn.classList.add('theme-swatch-active');
     btn.style.background = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.accent} 100%)`;
     btn.onclick = () => {
-      window.saveTheme(key);
-      buildThemeOptions();
+      pending = key;
+      container.querySelectorAll('.theme-swatch').forEach(b => b.classList.remove('theme-swatch-active'));
+      btn.classList.add('theme-swatch-active');
     };
     container.appendChild(btn);
   });
+
+  document.getElementById('save-theme-button').onclick = () => {
+    localStorage.setItem('cc-theme', pending);
+    window.location.reload();
+  };
 }
