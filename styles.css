@@ -1,7 +1,4 @@
 :root {
-  /* --header-bg-start: #222222;
-  --header-bg-end: #111111; */
-  --header-bg-end: #000000;
   --bg-dark: #131b30;
   --bg-accent: #405aa0;
   --bg-light: #3498db;
@@ -9,7 +6,7 @@
   --bg-accent: #a53d3d;
   --bg-light: #f55e5e; */
   --input-bg: var(--bg-dark);
-  --header-bg-start: var(--bg-dark);
+  --header-bg-end: #000000;
 }
 
 body {
@@ -44,7 +41,7 @@ body {
   top: env(safe-area-inset-top);
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
+  background: linear-gradient(to bottom, var(--bg-dark), var(--header-bg-end));
   color: rgb(0, 0, 0);
   padding: 15px;
   font-size: 35px;
