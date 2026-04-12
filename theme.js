@@ -47,6 +47,7 @@ function applyTheme(themeKey) {
     root.style.setProperty('--bg-dark', theme.dark);
     root.style.setProperty('--bg-accent', theme.accent);
     root.style.setProperty('--bg-light', theme.light);
+    document.querySelector('html').style.backgroundColor = theme.dark;
 }
 
 function getSavedTheme() {
