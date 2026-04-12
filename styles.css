@@ -17,10 +17,6 @@ body {
   position: relative; 
 }
 
-html, body {
-  overscroll-behavior: none;
-}
-
 #content {
   display: none; 
 }
