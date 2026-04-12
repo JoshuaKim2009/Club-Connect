@@ -38,7 +38,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 
     const school = normalizeSearchInput(document.getElementById("searchSchool").value);
     const state  = document.getElementById("searchState").value.trim();
-    const club   = document.getElementById("searchClub").value.trim();
+    const club = "";
 
     const clubsGrid = document.getElementById("clubsGrid");
     clubsGrid.innerHTML = '<p class="no-results">SEARCHING <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> </p>';

@@ -117,13 +117,14 @@
 
 .club-card-activity {
     color: #333333;
+    font-size: 1.3em;
 }
 
 .club-card-body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 1em;
+    font-size: 1.3em;
     color: #333333;
     margin-bottom: 10px;
 }
@@ -187,7 +188,7 @@
 }
 
 .club-card-body span i {
-    width: 16px;
+    width: 1.2em;
     text-align: center;
     flex-shrink: 0;
 }
