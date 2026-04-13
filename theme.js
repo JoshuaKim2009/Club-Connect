@@ -3,8 +3,8 @@
     const map = {
         default: ['#131b30','#405aa0','#3498db'],
         forest:  ['#0f2318','#2d6a4f','#52b788'],
-        crimson: ['#551d1d','#a53131','#e63946'],
-        slate:   ['#1a1a2e','#4a4a6a','#9b9bc4']
+        crimson: ['#4e1818','#a53131','#f85c69'],
+        slate:   ['#0f0f0f','#21213f','#9b9bc4']
     };
     const c = map[saved] || map.default;
     const r = document.documentElement;
@@ -31,15 +31,15 @@ const THEMES = {
     },
     crimson: {
         name: 'Crimson',
-        dark: '#551d1d',
+        dark: '#4e1818',
         accent: '#a53131',
-        light: '#e63946'
+        light: '#f85c69'
     },
     slate: {
         name: 'Slate',
         dark: '#0f0f0f',
-        accent: '#464652',
-        light: '#65656d'
+        accent: '#21213f',
+        light: '#9b9bc4'
     }
 };
 
