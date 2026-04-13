@@ -1,13 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-//import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-import { getAuth, onAuthStateChanged, signOut} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { showAppAlert, showAppConfirm } from './dialog.js';
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { showAppAlert } from './dialog.js';
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
   authDomain: "club-connect-data.firebaseapp.com",
@@ -18,60 +12,54 @@ const firebaseConfig = {
   measurementId: "G-B8DR377JX6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-//const analytics = getAnalytics(app);
-
-
 const auth = getAuth(app);
 
-
-
-
-var userEmail = "";
-var userName = "";
-
-var isLoggedIn = false;
-
 const logoutButton = document.getElementById("logoutButton");
+const welcomeMessage = document.getElementById("welcomeMessage");
 
-const cachedUser = JSON.parse(localStorage.getItem('cc-user') || 'null');
-if (cachedUser) {
-  document.getElementById("welcomeMessage").innerHTML = "Welcome, " + cachedUser.displayName;
-  document.getElementById("club-button").onclick = () => window.location.href = 'your_clubs.html';
-  logoutButton.innerHTML = '<i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
+function setLoggedInUI(displayName) {
+  welcomeMessage.innerHTML = `Welcome, ${displayName}`;
+  logoutButton.innerHTML = '<i class="fa-solid fa-user"></i> PROFILE';
   document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
-} else {
-  // Show logged-out state immediately while Firebase loads
-  document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
-  logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
+}
+
+function setLoggedOutUI() {
+  welcomeMessage.innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
+  logoutButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> LOGIN';
   document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
 }
 
+// Paint correct UI immediately on first frame using cached data
+const cached = JSON.parse(sessionStorage.getItem('cc-user') || localStorage.getItem('cc-user') || 'null');
+if (cached) {
+  setLoggedInUI(cached.displayName);
+} else {
+  setLoggedOutUI();
+}
+
+// Firebase confirms truth — updates UI if cache was wrong
 let resolveAuth;
 const authReady = new Promise(resolve => resolveAuth = resolve);
 
 onAuthStateChanged(auth, (user) => {
-  resolveAuth(user); 
-
+  resolveAuth(user);
   if (user) {
-    localStorage.setItem('cc-user', JSON.stringify({ displayName: user.displayName, email: user.email, uid: user.uid }));
-    document.getElementById("welcomeMessage").innerHTML = "Welcome, " + user.displayName;
-    logoutButton.innerHTML = '<i id="logout-icon" class="fa-solid fa-user"></i> PROFILE';
-    document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
+    const data = { displayName: user.displayName, email: user.email, uid: user.uid };
+    localStorage.setItem('cc-user', JSON.stringify(data));
+    sessionStorage.setItem('cc-user', JSON.stringify(data));
+    setLoggedInUI(user.displayName);
   } else {
     localStorage.removeItem('cc-user');
-    document.getElementById("welcomeMessage").innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
-    logoutButton.innerHTML = 'LOGIN <i id="logout-icon" class="fa-solid fa-arrow-right-to-bracket"></i>';
-    document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+    sessionStorage.removeItem('cc-user');
+    setLoggedOutUI();
   }
 });
 
 document.getElementById("club-button").onclick = async () => {
-  const user = await authReady; // instant if already resolved, otherwise waits
+  const user = await authReady;
   window.location.href = user ? 'your_clubs.html' : 'login.html';
 };
-
 
 logoutButton.onclick = () => {
   if (!auth.currentUser) {
@@ -79,13 +67,12 @@ logoutButton.onclick = () => {
     return;
   }
   const dd = document.getElementById('profile-dropdown');
-  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
 };
 
 document.getElementById('dropdown-logout').onclick = () => {
   document.getElementById('profile-dropdown').style.display = 'none';
-  const user = auth.currentUser;
-  if (user) {
+  if (auth.currentUser) {
     signOut(auth).catch(async (e) => await showAppAlert("Error signing out: " + e.message));
   } else {
     window.location.href = 'login.html';

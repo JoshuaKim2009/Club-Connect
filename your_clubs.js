@@ -26,6 +26,8 @@ let memberClubNames = [];
 let memberClubIds = [];
 let userDocRef = null;
 let unsubscribeUserDoc = null;
+let cardIndex = 0;
+
 
 
 onAuthStateChanged(auth, (user) => {
@@ -150,6 +152,8 @@ async function loadAllClubs() {
             window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
         });
         container.appendChild(btn);
+        btn.style.animationDelay = `${cardIndex * 150}ms`;
+        cardIndex++;
     });
 
     memberSnaps.forEach((snap, i) => {
@@ -189,6 +193,8 @@ async function loadAllClubs() {
             }
         });
         container.appendChild(btn);
+        btn.style.animationDelay = `${cardIndex * 150}ms`;
+        cardIndex++;
     });
 
     if (container.children.length === 0) {
@@ -197,10 +203,7 @@ async function loadAllClubs() {
       p.textContent = "NO CLUBS YET";
       container.appendChild(p);
     }
-
-    document.getElementById("clubs-loading-text").style.display = "none";
-    document.getElementById('clubs-wrapper').classList.add('loaded');
-
+    document.getElementById("clubs-spinner").style.display = "none";
 }
 
 

@@ -38,33 +38,25 @@
         box-sizing: border-box;
         margin-bottom: 30px !important;
       }
-
-      #clubContainer,
-      #memberClubContainer {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      #clubs-wrapper.loaded #clubContainer,
-      #clubs-wrapper.loaded #memberClubContainer {
-        opacity: 1;
-      }
       
       #clubs-loading-text {
         text-align: center;
         width: 100%;
         margin-top: 30px;
       }
+
+      @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+      }
+
+      .club-btn {
+          opacity: 0;
+          animation: fadeIn 0.4s ease forwards;
+      }
     </style>
   </head>
   <body>
-    <div id="loading-overlay">
-        <div id="loading-overlay-inner">
-            <div class="loading-spinner"></div>
-            <p>LOADING...</p>
-        </div>
-    </div>
-    <!-- <button id="back-button" class="fancy-button" onclick="goToHome()">HOME</button> -->
 
     <div class="chat-header">
         <button id="back-button" class="fancy-button" onclick="goToHome()">
@@ -74,25 +66,22 @@
       </div>
     <h1 id="page-title" class="pageTitle">MY CLUBS</h1>
 
-    <div id="content">  
 
       
-      <div class="join-club-box" style="margin: 15px auto; width: 85%; max-width: 630px;">
-        <div class="button-container" style="margin-bottom: 0;">
-          <button id="create-club-button" class="fancy-black-button">CREATE A CLUB</button>
-          <button id="join-club-button" class="fancy-black-button">JOIN A CLUB</button>
-          <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER CLUBS</button>
-        </div>
+    <div class="join-club-box" style="margin: 15px auto; width: 85%; max-width: 630px;">
+      <div class="button-container" style="margin-bottom: 0;">
+        <button id="create-club-button" class="fancy-black-button">CREATE A CLUB</button>
+        <button id="join-club-button" class="fancy-black-button">JOIN A CLUB</button>
+        <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER CLUBS</button>
       </div>
-      
-      <div id="clubs-wrapper">
-        <p id="clubs-loading-text" class="fancy-label">LOADING...</p>
-
-        <div id="clubContainer"></div>
-        <div id="memberClubContainer">
-          <p id="member-clubs-loading-text" class="fancy-label"></p>
-        </div>
+    </div>
+    
+    <div id="clubs-wrapper">
+      <div id="clubs-spinner" style="display:flex; justify-content:center; margin-top:50px;">
+        <div class="loading-spinner"></div>
       </div>
+      <div id="clubContainer"></div>
+      <div id="memberClubContainer"></div>
     </div>
 
     
@@ -134,8 +123,7 @@
     
     <script src="theme.js?v=6"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="your_clubs.js?v=9"></script>
-    <script type="module" src="loading.js?v=2"></script>
+    <script type="module" src="your_clubs.js?v=10"></script>
     
   </body>
 </html>
