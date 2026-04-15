@@ -21,7 +21,7 @@
 }
 
 .header-button {
-	background: linear-gradient(#ffffff, #b3b3b3);
+	background: linear-gradient(#ffffff, #e2e2e2);
 	font-family: var(--primary-font-family);
 	font-size: 20px;
 	color: black;
