@@ -1,8 +1,8 @@
 #category-creation-modal {
     padding: 10px;
-    border: 3px solid black;
+    border: 2px solid black;
     background: linear-gradient(#ffffff, #c2c2c2);
-    box-shadow: 0px 6px 0px #000000;
+    box-shadow: 0px 2px 0px #000000;
     max-width: 85%;
     width: 500px;
     border-radius: 10px;
@@ -31,7 +31,7 @@
 #category-creation-modal textarea {
     width: calc(100% - 20px);
     padding: 8px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 5px;
     font-size: 1em;
     font-family: var(--primary-font-family, sans-serif);
@@ -63,10 +63,10 @@
 
 
 .category {
-  border: 3px solid black;
+  border: 2px solid black;
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000;
   padding: 8px;
   margin: 8px auto;
   width: min(85%, 600px);
@@ -175,9 +175,9 @@
 
 #add-link-modal {
     padding: 10px;
-    border: 3px solid black;
+    border: 2px solid black;
     background: linear-gradient(#ffffff, #c2c2c2);
-    box-shadow: 0px 6px 0px #000000;
+    box-shadow: 0px 2px 0px #000000;
     max-width: 85%;
     width: 500px;
     border-radius: 10px;
@@ -205,7 +205,7 @@
 #add-link-modal textarea {
     width: calc(100% - 20px);
     padding: 8px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 5px;
     font-size: 1em;
     font-family: var(--primary-font-family, sans-serif);
@@ -246,9 +246,9 @@
 
 #edit-category-modal {
     padding: 10px;
-    border: 3px solid black;
+    border: 2px solid black;
     background: linear-gradient(#ffffff, #c2c2c2);
-    box-shadow: 0px 6px 0px #000000;
+    box-shadow: 0px 2px 0px #000000;
     max-width: 85%;
     width: 500px;
     border-radius: 10px;
@@ -278,7 +278,7 @@
 #edit-category-modal textarea {
     width: calc(100% - 20px);
     padding: 8px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 5px;
     font-size: 1em;
     font-family: var(--primary-font-family, sans-serif);
@@ -299,7 +299,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 6px 8px;
-    border: 3px solid #888888;
+    border: 2px solid #888888;
     border-radius: 8px;
     background: white;
     margin-bottom: 6px;
@@ -377,9 +377,9 @@
     margin: 0 auto 20px auto;
     font-family: var(--primary-font-family);
     font-size: 22px;
-    border: 3px solid black;
-    background: linear-gradient(#ffffff, #b3b3b3);
-    box-shadow: 0px 4px 0px #000000;
+    border: 2px solid black;
+    background: linear-gradient(#ffffff, #b3b3b3); /*CHANGED TO NEW GRADIENT*/
+    box-shadow: 0px 2px 0px #000000;
     cursor: pointer;
     min-width: fit-content;
     color: black;
@@ -391,7 +391,7 @@
 #reorder-button:hover {
   filter: brightness(1.1);
   transform: translateY(2px);
-  box-shadow: 0px 2px 0px #000000;
+  box-shadow: 0px 1px 0px #000000;
 }
 
 #reorder-button:active {
@@ -401,14 +401,14 @@
 
 #reorder-button.save-mode {
     background: linear-gradient(#b6f5b6, #6dcc6d);
-    box-shadow: 0px 4px 0px #2a6e2a;
+    box-shadow: 0px 2px 0px #2a6e2a;
     border-color: #2a6e2a;
     color: #1a3d1a;
 }
 #reorder-button.save-mode:hover {
     filter: brightness(1.1);
     transform: translateY(2px);
-    box-shadow: 0px 2px 0px #2a6e2a;
+    box-shadow: 0px 1px 0px #2a6e2a;
 }
 #reorder-button.save-mode:active {
     transform: translateY(6px);

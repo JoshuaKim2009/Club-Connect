@@ -18,11 +18,11 @@
 #searchButton {
     background: linear-gradient(#cecece, #8b8b8b);
     color: rgb(0, 0, 0);
-    border: 3px solid black;
+    border: 2px solid black;
     padding: 5px 25px;
     border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0px 4px 0px #000000;
+    box-shadow: 0px 2px 0px #000000;
     transition: all 0.05s ease-in-out;
     font-family: var(--primary-font-family);
     font-size: 32px;
@@ -36,7 +36,7 @@
 #searchButton:hover {
     filter: brightness(1.1);
     transform: translateY(2px);
-    box-shadow: 0px 2px 0px #000000;
+    box-shadow: 0px 1px 0px #000000;
 }
 
 #searchButton:active {
@@ -91,10 +91,10 @@
 .club-card {
     width: 100%;
     box-sizing: border-box;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     background: linear-gradient(#ffffff, #b3b3b3);
-    box-shadow: 0px 6px 0px #000000;
+    box-shadow: 0px 2px 0px #000000;
     padding: 12px;
     font-family: var(--primary-font-family);
     color: black;

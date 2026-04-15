@@ -87,7 +87,7 @@ body {
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
 
     background: linear-gradient(to top, var(--bg-dark), var(--header-bg-end));
-    border-top: 3px solid black;
+    border-top: 2px solid black;
 
     box-sizing: border-box;
     max-width: 100vw;
@@ -121,7 +121,7 @@ body {
     min-width: 0;
     height: 45px;
     padding: 0 15px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     background: linear-gradient(#ffffff, #b3b3b3);
     outline: none;
@@ -140,7 +140,7 @@ body {
     font-size: 20px;
     flex-shrink: 0;
     background: radial-gradient(circle at center, #474799, #131330);
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     color: white;
 }
@@ -160,7 +160,7 @@ body {
     font-size: 38px;
     flex-shrink: 0;
     background: radial-gradient(circle at center, #ffffff, #b3b3b3);
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     color: rgb(0, 0, 0);
 }
@@ -306,7 +306,7 @@ body {
     bottom: calc(75px + env(safe-area-inset-bottom));
     left: max(10px, env(safe-area-inset-left));
     background: radial-gradient(circle at center, #ffffff, #e0e0e0);
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     padding: 5px;
     z-index: 999;
@@ -363,7 +363,7 @@ body {
     position: relative;
     width: 80px;
     height: 80px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     overflow: hidden;
     background: white;
@@ -452,7 +452,7 @@ body {
 
 .message-options-modal {
     background: radial-gradient(circle at center, #ffffff, #e0e0e0);
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 15px;
     min-width: 280px;
     width: 90%;

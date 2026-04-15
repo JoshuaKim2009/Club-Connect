@@ -47,13 +47,13 @@ body {
   padding: 15px;
   font-size: 35px;
   font-weight: normal;
-  border-bottom: 3px solid black;
+  border-bottom: 2px solid black; /* 3→2 */
   display: flex;
   align-items: center;
   gap: 15px;
   z-index: 10000;
   height: 85px;
-  border-bottom: 3px solid black;
+  border-bottom: 2px solid black; /* 3→2 */
   color: white;
   overflow: hidden;
   position: fixed;
@@ -557,19 +557,6 @@ button {
   color: rgb(112, 174, 255);
 }
 
-/* .fancy-link-label {
-  font-family: "New Amsterdam", sans-serif;
-  font-size: 25px;
-  color: white;
-}
-
-@media screen and (max-width: 600px) {
-  .fancy-link-label {
-    margin-top: 5px;
-    font-size: 18px;
-  }
-} */
-
 .fancy-black-label {
   font-family: var(--primary-font-family);
   font-size: 25px;
@@ -590,7 +577,7 @@ button {
   font-family: var(--primary-font-family);
   font-size: 20px;
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 10px 10px;
   border-radius: 10px;
   cursor: pointer;
@@ -602,7 +589,7 @@ button {
   font-family: var(--primary-font-family);
   font-size: 25px;
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 2px 5px;
   border-radius: 10px;
   cursor: pointer;
@@ -614,24 +601,24 @@ button {
   font-family: var(--primary-font-family);
   font-size: 26px;
   color: rgb(0, 0, 0);
-  border: 3px solid black;
+  border: 2px solid black;
   padding: 1px 25px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
 }
 
 .fancy-button {
-  background: linear-gradient(#ffffff, #b3b3b3);
+  background: linear-gradient(#ffffff, #e2e2e2);
   font-family: var(--primary-font-family);
   font-size: 32px;
   color: black;
-  border: 3px solid black;
+  border: 2px solid black;
   padding: 5px 25px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
 }
 
@@ -660,7 +647,7 @@ button {
   font-family: var(--primary-font-family);
   font-size: 32px;
   color: rgb(70, 70, 70);
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 5px 25px;
   border-radius: 10px;
   cursor: pointer;
@@ -670,23 +657,23 @@ button {
 
 .fancy-button:hover {
   filter: brightness(1.1);
-  transform: translateY(2px);
-  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
 }
 
 .fancy-button:active {
-  transform: translateY(6px);
+  transform: translateY(4px); /* was 6 but shadow is now 2 so travel stays proportional */
   box-shadow: 0px 0px 0px #000000;
 }
 
 .fancy-black-button:hover {
   filter: brightness(1.1);
-  transform: translateY(2px);
-  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
 }
 
 .fancy-black-button:active {
-  transform: translateY(6px);
+  transform: translateY(4px);
   box-shadow: 0px 0px 0px #000000;
 }
 
@@ -714,9 +701,6 @@ button {
   #create-club-button {
     width: 100%;
   }
-  /* .fancy-black-button {
-    max-width: 85%;
-  } */
   .fancy-button {
     max-width: 85%;
   }
@@ -774,13 +758,13 @@ button {
 #pendingRequestsContainer {
   margin-top: 20px;
   padding: 10px; 
-  border: 3px solid black; 
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px; 
   background: linear-gradient(
     #f0f0f0,
     #e0e0e0
   ); 
-  box-shadow: 0px 6px 0px #000000; 
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -805,11 +789,11 @@ button {
   background: linear-gradient(#ffffff, #b3b3b3);
   font-family: var(--primary-font-family);
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 10px 20px; 
   border-radius: 10px;
   cursor: default; 
-  box-shadow: 0px 4px 0px #000000; 
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   margin-bottom: 15px; 
 }
@@ -824,7 +808,7 @@ button {
 
 .pending-member-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 3px 0px #000000; /* 6→3 */
 }
 
 .pending-member-name-display {
@@ -849,11 +833,11 @@ button {
   font-family: var(--primary-font-family);
   font-size: 22px; 
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 5px 15px; 
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   white-space: nowrap; 
 }
@@ -894,14 +878,14 @@ button {
 
 .approve-member-btn:hover,
 .deny-member-btn:hover {
-  transform: translateY(2px); 
-  box-shadow: 0px 2px 0px #000000; 
+  transform: translateY(1px); 
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
 }
 
 .approve-member-btn:active,
 .deny-member-btn:active {
-  transform: translateY(4px); 
-  box-shadow: 0px 0px 0px #000000; 
+  transform: translateY(2px); 
+  box-shadow: 0px 0px 0px #000000;
 }
 
 .approve-member-btn {
@@ -925,13 +909,13 @@ button {
 #membersContainer {
   margin-top: 20px;
   padding: 10px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(
     #f0f0f0,
     #e0e0e0
   ); 
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -970,9 +954,9 @@ button {
 
 #role-management-popup {
   padding: 10px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 80%; 
   max-width: 500px; 
   border-radius: 10px;
@@ -1009,8 +993,8 @@ button {
   color: #525252;
   margin-top: 5px;
   border-radius: 5px;
-  border: 3px solid #525252;
-  box-shadow: 0px -3px 0px #525252;
+  border: 2px solid #525252; /* 3→2 */
+  box-shadow: 0px -2px 0px #525252; /* -3→-2 */
   border-radius: 5px;
   font-size: 24px;
   text-align: center;
@@ -1029,25 +1013,24 @@ button {
 
 .member-card {
   display: flex;
-  /* flex-wrap: wrap; */
   flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(#ffffff, #b3b3b3);
   font-family: var(--primary-font-family);
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 10px 20px;
   border-radius: 10px;
   cursor: default;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   margin-bottom: 15px; 
 }
 
 .member-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 3px 0px #000000; /* 6→3 */
 }
 
 .member-name-display {
@@ -1074,7 +1057,7 @@ button {
   font-family: var(--primary-font-family);
   font-size: 22px;
   color: rgb(131, 131, 131);
-  border: 3px solid rgb(131, 131, 131);
+  border: 2px solid rgb(131, 131, 131); /* 3→2 */
   padding: 5px 15px;
   border-radius: 10px;
   cursor: pointer;
@@ -1084,29 +1067,27 @@ button {
 }
 
 .remove-member-btn {
-  /* background: linear-gradient(#f0ad4e, #eb9316);*/
   background: linear-gradient(#ff6a6a, #ff4a4a);
   font-family: var(--primary-font-family);
   font-size: 22px;
   color: rgb(0, 0, 0);
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 5px 15px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   white-space: nowrap;
 }
 
 .remove-member-btn:hover {
-  transform: translateY(2px);
-  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
   background: linear-gradient(#ff5f5f, #fc4040);
-  /* background: linear-gradient(#f3b35a, #f09e2b);*/
 }
 
 .remove-member-btn:active {
-  transform: translateY(4px);
+  transform: translateY(2px);
   box-shadow: 0px 0px 0px #000000;
 }
 
@@ -1115,23 +1096,23 @@ button {
   font-family: var(--primary-font-family);
   font-size: 22px;
   color: rgb(0, 0, 0);
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 5px 15px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   white-space: nowrap;
 }
 
 .options-member-btn:hover {
-  transform: translateY(2px);
-  box-shadow: 0px 2px 0px #000000;
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
   background: linear-gradient(#afafaf, #818181);
 }
 
 .options-member-btn:active {
-  transform: translateY(4px);
+  transform: translateY(2px);
   box-shadow: 0px 0px 0px #000000;
 }
 
@@ -1204,10 +1185,10 @@ button {
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   padding: 25px;
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   z-index: 10000;
   display: none;
   flex-direction: column;
@@ -1242,12 +1223,11 @@ button {
 
 #adminActionsSection {
   font-family: var(--primary-font-family);
-  /* margin-top: 20px; */
   padding: 10px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 85%;
   max-width: 600px;
   margin: 20px auto;
@@ -1266,14 +1246,13 @@ button {
 
 #communicationSection,
 #scheduleSection {
-  /* min-height: 530px; */
   font-family: var(--primary-font-family);
   margin-top: 20px;
   padding: 10px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 85%;
   max-width: 600px;
   margin: 20px auto;
@@ -1292,10 +1271,9 @@ button {
 }
 
 #closestEventDisplay {
-  /* min-height: 200px; */
   font-family: var(--primary-font-family);
   padding: 15px;
-  border: 3px dashed #474747; 
+  border: 2px dashed #474747; /* 3→2 */
   margin-bottom: 20px;
   background-color: #d3d3d3;
   border-radius: 8px;
@@ -1312,11 +1290,11 @@ button {
   padding: 8px; 
   line-height: 1.4;
 
-  border: 3px solid #000000; 
+  border: 2px solid #000000; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(90deg, #f0f0f0 0%, #d8d8d8 20%, #f0f0f0 40%, #d8d8d8 60%, #f0f0f0 100%);
   background-size: 200% 100%; 
-  box-shadow: 0px 3px 0px #000000; 
+  box-shadow: 0px 2px 0px #000000; /* 3→2 */
   overflow: hidden; 
 
   min-height: 190px; 
@@ -1366,10 +1344,10 @@ button {
 
 
 .event-card {
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   padding: 8px; 
   margin: 8px auto; 
   width: 85%;
@@ -1404,7 +1382,6 @@ button {
 .event-card p {
   margin-top: 4px;
   margin-bottom: 4px;
-  /* font-size: 0.9em;*/
 }
 
 .event-card-actions {
@@ -1429,8 +1406,8 @@ button {
 }
 
 .editing-event-card {
-  border: 3px solid #000000;
-  box-shadow: 0px 6px 0px #000000;
+  border: 2px solid #000000; /* 3→2 */
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   background: linear-gradient(#f0f0f0, #e0e0e0);
   padding: 15px;
   display: flex;
@@ -1456,7 +1433,7 @@ input[type="checkbox"] {
   margin-right: 5px;
   padding: 0;
   vertical-align: middle;
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   border-radius: 3px;
 }
 
@@ -1481,7 +1458,7 @@ input[type="checkbox"]:checked {
 .days-of-week-selection {
   margin-top: 15px;
   margin-bottom: 10px;
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   border-radius: 5px;
   padding: 10px;
   background-color: #ffffff;
@@ -1517,7 +1494,7 @@ input[type="checkbox"]:checked {
 .editing-event-card textarea {
   width: calc(100% - 20px);
   padding: 8px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 5px;
   font-size: 1em;
   font-family: var(--primary-font-family, sans-serif);
@@ -1565,22 +1542,22 @@ input[type="checkbox"]:checked {
   font-family: var(--primary-font-family, sans-serif);
   font-size: 0.9em;
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 4px 12px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
 }
 
 .event-card-actions button:hover {
-  box-shadow: 0px 2px 0px #000000;
-  transform: translateY(2px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
+  transform: translateY(1px);
 }
 
 .event-card-actions button:active {
   box-shadow: 0px 0px 0px #000000;
-  transform: translateY(4px);
+  transform: translateY(2px);
 }
 
 .no-events-message {
@@ -1604,7 +1581,7 @@ input[type="checkbox"]:checked {
 }
 
 .rsvp-box {
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   border-radius: 8px;
   padding: 10px;
   margin: 10px auto;
@@ -1635,14 +1612,13 @@ input[type="checkbox"]:checked {
   box-sizing: border-box;
   font-family: var(--primary-font-family, sans-serif);
   background-color: #f0f0f0;
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   padding: 8px 15px;
   margin: 0;
   cursor: pointer;
   border-radius: 8px;
   font-size: 0.9em;
   text-align: center; 
-
 
   color: black; 
   -webkit-appearance: none; 
@@ -1682,7 +1658,7 @@ input[type="checkbox"]:checked {
   box-sizing: border-box;
   font-family: var(--primary-font-family, sans-serif);
   background: linear-gradient(#868686, #747474);
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   padding: 6px 10px;
   margin: 0;
   cursor: pointer;
@@ -1726,9 +1702,9 @@ input[type="checkbox"]:checked {
   margin-top: 20px;
   font-weight: normal;
   padding: 20px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   width: 90%;
   max-width: 600px;
   border-radius: 10px;
@@ -1799,7 +1775,7 @@ input[type="checkbox"]:checked {
   list-style: none;
   padding: 10px;
   margin: 0;
-  border: 3px solid #000000;
+  border: 2px solid #000000; /* 3→2 */
   border-radius: 10px;
   background-color: #fff;
   width: 100%;
@@ -1835,12 +1811,12 @@ input[type="checkbox"]:checked {
 
 #rsvp-details-modal #rsvp-lists #close-rsvp-modal:hover {
   filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 0px 4px 0px #000000;
+  transform: translateY(-1px);
+  box-shadow: 0px 3px 0px #000000; /* 4→3 */
 }
 
 #rsvp-details-modal #rsvp-lists #close-rsvp-modal:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0px 0px 0px #000000;
 }
 
@@ -1887,11 +1863,6 @@ input[type="checkbox"]:checked {
 }
 
 
-
-
-
-
-
 #clubAnnouncementsTitle {
   min-height: 78px; 
   font-size: 65px; 
@@ -1928,10 +1899,10 @@ input[type="checkbox"]:checked {
 }
 
 .announcement-card {
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 6px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   padding: 8px; 
   margin: 8px auto; 
   width: 85%; 
@@ -1999,26 +1970,26 @@ input[type="checkbox"]:checked {
   background: linear-gradient(#ffffff, #b3b3b3);
   font-family: var(--primary-font-family, sans-serif);
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
 }
 
 .announcement-card .announcement-card-actions button:hover {
-  box-shadow: 0px 2px 0px #000000;
-  transform: translateY(2px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
+  transform: translateY(1px);
 }
 
 .announcement-card .announcement-card-actions button:active {
   box-shadow: 0px 0px 0px #000000;
-  transform: translateY(4px);
+  transform: translateY(2px);
 }
 
 .announcement-card.editing-announcement-card {
-  border: 3px solid #000000;
-  box-shadow: 0px 6px 0px #000000;
+  border: 2px solid #000000; /* 3→2 */
+  box-shadow: 0px 2px 0px #000000; /* 6→2 */
   background: linear-gradient(#f0f0f0, #e0e0e0);
   padding: 8px;
   display: flex;
@@ -2042,7 +2013,7 @@ input[type="checkbox"]:checked {
 .editing-announcement-card textarea {
   width: calc(100% - 20px);
   padding: 8px;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   border-radius: 5px;
   font-size: 1em;
   font-family: var(--primary-font-family, sans-serif);
@@ -2068,22 +2039,22 @@ input[type="checkbox"]:checked {
   font-family: var(--primary-font-family, sans-serif);
   font-size: 0.9em;
   color: black;
-  border: 3px solid black;
+  border: 2px solid black; /* 3→2 */
   padding: 4px 12px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0px 4px 0px #000000;
+  box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
 }
 
 .editing-announcement-card .announcement-card-actions button:hover {
-  box-shadow: 0px 2px 0px #000000;
-  transform: translateY(2px);
+  box-shadow: 0px 1px 0px #000000; /* 2→1 */
+  transform: translateY(1px);
 }
 
 .editing-announcement-card .announcement-card-actions button:active {
   box-shadow: 0px 0px 0px #000000;
-  transform: translateY(4px);
+  transform: translateY(2px);
 }
 
 @media (max-width: 700px) {
