@@ -427,7 +427,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
 
                     ${nextEvent.eventData.notes ? `
                     <div class="einfo-row">
-                        <span class="einfo-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                        <span class="einfo-icon"><i class="fa-regular fa-clipboard"></i></span>
                         <span class="einfo-text">${nextEvent.eventData.notes}</span>
                     </div>` : ''}
                 </div>
