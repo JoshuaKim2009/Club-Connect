@@ -398,12 +398,39 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
             const formattedEndTime = formatTime(nextEvent.eventData.endTime);
 
             finalCardElement.innerHTML = `
-                <h3>${nextEvent.eventData.eventName}</h3>
-                <p>•  Date: ${formattedDate}</p>
-                <p>•  Time: ${formattedStartTime} - ${formattedEndTime}</p>
-                <p>•  Address: ${nextEvent.eventData.address}</p>
-                <p>•  Location: ${nextEvent.eventData.location}</p>
-                ${nextEvent.eventData.notes ? `<p>•  Notes: ${nextEvent.eventData.notes}</p>` : ''}
+                <div class="event-card-header">
+                    <h3 class="event-card-title">${nextEvent.eventData.eventName}</h3>
+                </div>
+
+                <div class="event-date-strip">
+                    <i class="fa-regular fa-calendar"></i>
+                    ${formattedDate}
+                </div>
+
+                <div class="event-date-strip-divider"></div>
+
+                <div class="event-card-body">
+                    <div class="einfo-row">
+                        <span class="einfo-icon"><i class="fa-regular fa-clock"></i></span>
+                        <span class="einfo-text">${formattedStartTime} – ${formattedEndTime}</span>
+                    </div>
+
+                    <div class="einfo-row">
+                        <span class="einfo-icon"><i class="fa-solid fa-location-dot"></i></span>
+                        <span class="einfo-text">${nextEvent.eventData.address}</span>
+                    </div>
+
+                    <div class="einfo-row">
+                        <span class="einfo-icon"><i class="fa-solid fa-map-pin"></i></span>
+                        <span class="einfo-text">${nextEvent.eventData.location}</span>
+                    </div>
+
+                    ${nextEvent.eventData.notes ? `
+                    <div class="einfo-row">
+                        <span class="einfo-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                        <span class="einfo-text">${nextEvent.eventData.notes}</span>
+                    </div>` : ''}
+                </div>
             `;
             closestEventDisplay.appendChild(finalCardElement);
 

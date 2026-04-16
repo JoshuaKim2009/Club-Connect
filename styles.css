@@ -1282,7 +1282,6 @@ button {
   font-size: 20px;
 }
 
-
 .event-card-loading {
   width: 85%;
   max-width: 600px;
@@ -1355,28 +1354,7 @@ button {
   text-align: left;
   font-family: var(--primary-font-family, sans-serif);
   line-height: 1.4; 
-}
-
-.event-card h3 {
-  font-weight: normal; 
-  font-size: 1.6em; 
-  text-align: center; 
-  margin-top: 0; 
-  margin-bottom: 8px; 
-  padding-bottom: 8px;
-  border-bottom: 2px dotted black;
-  position: relative;
-}
-
-.event-card h3::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -20px;
-  height: 20px;
-  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
-  pointer-events: none;
+  overflow: hidden;
 }
 
 .event-card p {
@@ -2235,4 +2213,86 @@ input[type="checkbox"]:checked {
   font-family: var(--primary-font-family);
   font-size: 22px;
   color: white;
+}
+
+
+
+
+.event-card-header {
+  position: relative;
+  padding-bottom: 10px;
+  border-bottom: 2px dotted black;
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.event-card-title {
+  font-weight: normal;
+  font-size: 1.6em;
+  margin: 0;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.event-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+.einfo-row {
+  display: flex;
+  align-items: flex-start;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.1em;
+  line-height: 1.25;
+}
+.einfo-icon {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 16px;
+  
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.einfo-text {
+  flex: 1;
+  color: #222;
+}
+
+.event-date-strip {
+  background: #e6e6e6;
+  color: #000000;
+  padding: 5px 14px;
+  font-family: var(--primary-font-family);
+  font-size: 1em;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 -8px;
+}
+
+.event-date-strip-divider {
+  border-top: 2px dotted black;
+  position: relative;
+  margin: 0 -8px;
+  margin-bottom: 10px;
+}
+
+.event-date-strip-divider::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
