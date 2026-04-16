@@ -837,7 +837,7 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
 
             ${eventData.notes ? `
             <div class="einfo-row">
-                <span class="einfo-icon"><i class="fa-regular fa-clipboard"></i></span>
+                <span class="einfo-icon"><i class="fa-regular fa-pen-to-square"></i></span>
                 <span class="einfo-text">${eventData.notes}</span>
             </div>` : ''}
         </div>
