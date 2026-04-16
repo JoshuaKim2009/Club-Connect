@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=28" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=3" rel="stylesheet" />
+    <link href="index.css?v=4" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,6 +57,12 @@
     <div id="home-section">
       <h3 id="welcomeMessage">Welcome</h3>
       <button id="club-button" class="fancy-button">MY CLUBS</button>
+      <div style="position: relative; display: inline-block; width: 100%;">
+        <button id="announcements-home-button" class="fancy-button" style="margin-bottom: 15px;">
+          ANNOUNCEMENTS
+          <span id="homeUnreadAnnouncementsBadge" class="notification-badge"></span>
+        </button>
+      </div>
     </div>
     <hr style="background-color: transparent; height: 4px; border: none;">
     <!-- <button id="logoutButton" class="hidden fancy-button">
@@ -67,7 +73,7 @@
 
     <script src="theme.js?v=6"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="script.js?v=8"></script>
+    <script type="module" src="script.js?v=9"></script>
   </body>
 </html>
 

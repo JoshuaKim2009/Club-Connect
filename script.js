@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getCountFromServer, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert } from './dialog.js';
 
 const firebaseConfig = {
@@ -14,6 +15,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
+
 
 const logoutButton = document.getElementById("logoutButton");
 const welcomeMessage = document.getElementById("welcomeMessage");
@@ -121,3 +124,66 @@ function buildThemeOptions() {
     window.location.reload();
   };
 }
+
+
+
+// Announcements badge on home page
+document.getElementById('announcements-home-button').addEventListener('click', async () => {
+  const user = await authReady;
+  window.location.href = user ? 'global_announcements.html' : 'login.html';
+});
+
+async function getTotalUnreadAnnouncementsAcrossClubs(userId) {
+  if (!userId) return 0;
+  try {
+    // Get all clubs
+    const clubsSnap = await getDocs(collection(db, "clubs"));
+    let total = 0;
+
+    await Promise.all(clubsSnap.docs.map(async (clubDoc) => {
+      try {
+        const clubId = clubDoc.id;
+        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
+        const memberSnap = await getDoc(memberDocRef);
+        if (!memberSnap.exists()) return;
+
+        const memberData = memberSnap.data();
+        const cutoff = memberData.lastSeenAnnouncements || memberData.joinedAt;
+        if (!cutoff) return;
+
+        const announcementsRef = collection(db, "clubs", clubId, "announcements");
+        const q = query(
+          announcementsRef,
+          where("createdAt", ">", cutoff),
+          where("createdByUid", "!=", userId)
+        );
+        const snap = await getCountFromServer(q);
+        total += snap.data().count;
+      } catch (e) {
+        console.warn(`Skipping club for unread count:`, e);
+      }
+    }));
+
+    return total;
+  } catch (e) {
+    console.error("Error getting total unread announcements:", e);
+    return 0;
+  }
+}
+
+function updateHomeAnnouncementsBadge(count) {
+  const badge = document.getElementById('homeUnreadAnnouncementsBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+authReady.then(async (user) => {
+  if (!user) return;
+  const count = await getTotalUnreadAnnouncementsAcrossClubs(user.uid);
+  updateHomeAnnouncementsBadge(count);
+});

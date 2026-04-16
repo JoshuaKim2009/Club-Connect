@@ -23,6 +23,8 @@ let clubId = null;
 let currentUserRole = null; 
 let isEditingAnnouncement = false; 
 
+let currentPage = 1;
+const PAGE_SIZE = 5;
 
 // const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
 const announcementsContainer = document.getElementById('announcementsContainer'); 
@@ -243,57 +245,92 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
 }
 
 
+let allAnnouncements = [];
+
 async function fetchAndDisplayAnnouncements() {
-    if (!clubId) {
-        console.warn("fetchAndDisplayAnnouncements called without a clubId.");
-        if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
+  if (!clubId) {
+    if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
+    return;
+  }
+
+  announcementsContainer.innerHTML = '';
+  currentPage = 1;
+
+  const announcementsRef = collection(db, "clubs", clubId, "announcements");
+  const q = query(announcementsRef, orderBy("createdAt", "desc"));
+
+  try {
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      if (currentUserRole === 'member') {
+        announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
         if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
-        return;
-    }
-
-
-    if (announcementsContainer) {
+      } else {
         announcementsContainer.innerHTML = '';
+        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+      }
+      hidePagination();
+      return;
     }
 
-    console.log(`Fetching announcements for club ID: ${clubId}`);
-    const announcementsRef = collection(db, "clubs", clubId, "announcements");
-    const q = query(announcementsRef, orderBy("createdAt", "desc"));
+    if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
 
-    try {
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            console.log("No announcements found for this club.");
-            if (currentUserRole === 'member') {
-                if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
-                if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
-            } else {
-                
-                if (announcementsContainer) announcementsContainer.innerHTML = '';
-                if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
-            }
-            return;
-        }
+    allAnnouncements = [];
+    querySnapshot.forEach((doc) => {
+      allAnnouncements.push({ id: doc.id, ...doc.data() });
+    });
 
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none'; 
+    renderPage(currentPage);
 
-        querySnapshot.forEach((doc) => {
-            const announcementData = doc.data();
-            const announcementId = doc.id;
-            const announcementDisplayCard = _createAnnouncementDisplayCard(announcementData, announcementId);
-            if (announcementsContainer) {
-                announcementsContainer.appendChild(announcementDisplayCard);
-            }
-        });
-        console.log(`Displayed ${querySnapshot.size} announcements.`);
-
-    } catch (error) {
-        console.error("Error fetching announcements:", error);
-        if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">Error loading announcements. Please try again later.</p>';
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
-    }
+  } catch (error) {
+    console.error("Error fetching announcements:", error);
+    announcementsContainer.innerHTML = '<p class="fancy-label">Error loading announcements.</p>';
+  }
 }
+
+function renderPage(page) {
+  announcementsContainer.innerHTML = '';
+
+  const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(page, totalPages));
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageItems = allAnnouncements.slice(start, end);
+
+  pageItems.forEach((announcement) => {
+    announcementsContainer.appendChild(_createAnnouncementDisplayCard(announcement, announcement.id));
+  });
+
+  if (totalPages > 1) {
+    const paginationControls = document.getElementById('pagination-controls');
+    const pageIndicator = document.getElementById('page-indicator');
+    const prevButton = document.getElementById('prev-page-button');
+    const nextButton = document.getElementById('next-page-button');
+
+    paginationControls.style.display = 'flex';
+    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+    prevButton.disabled = currentPage === 1;
+    nextButton.disabled = currentPage === totalPages;
+  } else {
+    hidePagination();
+  }
+}
+
+function hidePagination() {
+  const paginationControls = document.getElementById('pagination-controls');
+  if (paginationControls) paginationControls.style.display = 'none';
+}
+
+document.getElementById('prev-page-button').addEventListener('click', () => {
+  if (currentPage > 1) renderPage(currentPage - 1);
+});
+
+document.getElementById('next-page-button').addEventListener('click', () => {
+  const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
+  if (currentPage < totalPages) renderPage(currentPage + 1);
+});
 
 
 function _createAnnouncementDisplayCard(announcementData, announcementId) {

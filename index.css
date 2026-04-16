@@ -212,3 +212,9 @@
   outline: 4px solid black;
   outline-offset: 4px;
 }
+
+
+#announcements-home-button {
+  position: relative;
+  width: 300px;
+}

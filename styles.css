@@ -2225,3 +2225,14 @@ input[type="checkbox"]:checked {
     max-height: 80vh;
     overflow-y: auto;
 }
+
+#pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin: 20px auto;
+  font-family: var(--primary-font-family);
+  font-size: 22px;
+  color: white;
+}

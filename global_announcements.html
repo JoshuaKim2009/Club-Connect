@@ -11,27 +11,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
+
     <style>
-        body {
-            font-family: var(--primary-font-family);
-            padding-top: env(safe-area-inset-top);
-            background: var(--bg-dark);
-        }
+      body {
+        font-family: var(--primary-font-family);
+        padding-top: env(safe-area-inset-top);
+        background: var(--bg-dark);
+        padding-bottom: 100px;
+      }
 
-        .message-link {
-            color: #0066cc;
-            text-decoration: underline;
-            word-break: break-all;
-        }
+      .message-link {
+        color: #0066cc;
+        text-decoration: underline;
+        word-break: break-all;
+      }
+      .message-link:hover { color: #0052a3; }
+      .message-link:active { color: #003d7a; }
 
-        .message-link:hover {
-            color: #0052a3;
-        }
+      .club-label {
+        display: inline-block;
+        font-size: 0.7em;
+        background: #444;
+        color: #fff;
+        border-radius: 5px;
+        padding: 1px 7px;
+        margin-bottom: 4px;
+        font-family: var(--primary-font-family);
+      }
 
-        .message-link:active {
-            color: #003d7a;
-        }
+      #pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin: 20px auto;
+        font-family: var(--primary-font-family);
+        font-size: 22px;
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -43,22 +60,19 @@
     </div>
 
     <div class="chat-header">
-        <button id="back-button" class="fancy-button" onclick="goToClubPage()">
-          <i class="fa-solid fa-circle-left"></i>
-        </button>
-        <span class="chat-title">ANNOUNCEMENTS</span>
+      <button id="back-button" class="fancy-button" onclick="window.location.href='index.html'">
+        <i class="fa-solid fa-circle-left"></i>
+      </button>
+      <span class="chat-title">ANNOUNCEMENTS</span>
     </div>
 
     <div id="content">
-      <!-- <h1 id="clubAnnouncementsTitle"></h1> -->
-      <h1 id="clubScheduleTitle"></h1>
-      <button id="add-announcement-button" class="fancy-button" style="display: none;">ADD ANNOUNCEMENT</button>
-      
+      <h1 id="clubAnnouncementsTitle">ALL ANNOUNCEMENTS</h1>
 
       <div id="announcementsContainer" class="fancy-black-label">
-          <!-- Announcement cards will be dynamically loaded here by announcements.js -->
-          <p id="noAnnouncementsMessage" style="display: none;">No announcements yet.</p>
+        <p id="noAnnouncementsMessage" style="display: none;">No announcements yet.</p>
       </div>
+
       <div id="pagination-controls" style="display: none;">
         <button id="prev-page-button" class="fancy-button">&#8592; PREV</button>
         <span id="page-indicator"></span>
@@ -67,9 +81,8 @@
     </div>
 
     <script src="theme.js?v=6"></script>
-    <script type="module" src="dialog.js"></script> 
-    <!-- Link your new announcements.js file -->
-    <script type="module" src="announcements.js?v=3"></script>
+    <script type="module" src="dialog.js"></script>
+    <script type="module" src="global_announcements.js"></script>
     <script type="module" src="loading.js?v=2"></script>
   </body>
 </html>
