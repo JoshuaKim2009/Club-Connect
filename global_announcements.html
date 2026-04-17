@@ -13,42 +13,56 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
-      body {
-        font-family: var(--primary-font-family);
-        padding-top: env(safe-area-inset-top);
-        background: var(--bg-dark);
-        padding-bottom: 100px;
-      }
+        body {
+            font-family: var(--primary-font-family);
+            padding-top: env(safe-area-inset-top);
+            background: var(--bg-dark);
+            padding-bottom: 100px;
+        }
 
-      .message-link {
-        color: #0066cc;
-        text-decoration: underline;
-        word-break: break-all;
-      }
-      .message-link:hover { color: #0052a3; }
-      .message-link:active { color: #003d7a; }
+        .message-link {
+            color: #0066cc;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+        .message-link:hover { color: #0052a3; }
+        .message-link:active { color: #003d7a; }
 
-      .club-label {
-        display: inline-block;
-        font-size: 0.7em;
-        background: #444;
-        color: #fff;
-        border-radius: 5px;
-        padding: 1px 7px;
-        margin-bottom: 4px;
-        font-family: var(--primary-font-family);
-      }
+        .club-label {
+            display: inline-block;
+            font-size: 0.7em;
+            background: #444;
+            color: #fff;
+            border-radius: 5px;
+            padding: 1px 7px;
+            margin-bottom: 4px;
+            font-family: var(--primary-font-family);
+        }
 
-      #pagination-controls {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 15px;
-        margin: 20px auto;
-        font-family: var(--primary-font-family);
-        font-size: 22px;
-        color: white;
-      }
+        #pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px auto;
+            font-family: var(--primary-font-family);
+            font-size: 22px;
+            color: white;
+        }
+
+        #pagination-controls .fancy-button.pagination-btn {
+            font-size: 20px;
+            padding: 8px 16px;
+            transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+
+        #pagination-controls .fancy-button.pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none;
+            transform: none;
+        }
     </style>
   </head>
   <body>
@@ -74,9 +88,9 @@
       </div>
 
       <div id="pagination-controls" style="display: none;">
-        <button id="prev-page-button" class="fancy-button">&#8592; PREV</button>
+        <button id="prev-page-button" class="fancy-button pagination-btn"><i class="fa-solid fa-chevron-left"></i></button>
         <span id="page-indicator"></span>
-        <button id="next-page-button" class="fancy-button">NEXT &#8594;</button>
+        <button id="next-page-button" class="fancy-button pagination-btn"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
 

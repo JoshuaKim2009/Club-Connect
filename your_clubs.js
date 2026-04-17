@@ -197,11 +197,14 @@ async function loadAllClubs() {
         cardIndex++;
     });
 
+    // if (container.children.length === 0) {
+    //   const p = document.createElement("p");
+    //   p.className = "fancy-label";
+    //   p.textContent = "NO CLUBS YET";
+    //   container.appendChild(p);
+    // }
     if (container.children.length === 0) {
-      const p = document.createElement("p");
-      p.className = "fancy-label";
-      p.textContent = "NO CLUBS YET";
-      container.appendChild(p);
+        showNoClubsCard(container);
     }
     document.getElementById("clubs-spinner").style.display = "none";
 }
@@ -219,4 +222,39 @@ function setupRealtimeClubUpdates() {
         console.error("Error listening to user document for club updates:", error);
         showAppAlert("Real-time club updates failed: " + error.message);
     });
+}
+
+
+function showNoClubsCard(container) {
+  const card = document.createElement("div");
+  card.className = "no-clubs-card";
+
+  const inner = document.createElement("div");
+  inner.className = "club-btn-inner";
+
+  const nameSpan = document.createElement("span");
+  nameSpan.className = "club-btn-name";
+  nameSpan.textContent = "NO CLUBS YET";
+
+  const roleSpan = document.createElement("span");
+  roleSpan.className = "club-role-text";
+  roleSpan.textContent = "Join or create a club to get started";
+
+  const metaDiv = document.createElement("div");
+  metaDiv.className = "no-clubs-card-meta";
+
+  const findBtn = document.createElement("button");
+  findBtn.className = "fancy-black-button";
+  findBtn.textContent = "FIND CLUBS";
+  findBtn.addEventListener("click", () => {
+    window.location.href = "join_club.html";
+  });
+
+  metaDiv.appendChild(roleSpan);
+  metaDiv.appendChild(findBtn);
+
+  inner.appendChild(nameSpan);
+  inner.appendChild(metaDiv);
+  card.appendChild(inner);
+  container.appendChild(card);
 }
