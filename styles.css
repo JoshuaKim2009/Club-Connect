@@ -1271,15 +1271,17 @@ button {
 }
 
 #closestEventDisplay {
-  font-family: var(--primary-font-family);
-  padding: 15px;
-  border: 2px dashed #474747; /* 3→2 */
+  border: none;
+  padding: 0;
   margin-bottom: 20px;
-  background-color: #d3d3d3;
-  border-radius: 8px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); 
-  color: #555;
-  font-size: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+#closestEventDisplay .event-card {
+  width: min(85vw, 600px);
+  margin: 0 auto;
 }
 
 .event-card-loading {
@@ -2259,6 +2261,7 @@ input[type="checkbox"]:checked {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #222;
 }
 .einfo-text {
   flex: 1;
@@ -2295,4 +2298,14 @@ input[type="checkbox"]:checked {
   height: 20px;
   background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
   pointer-events: none;
+}
+
+#closestEventDisplay .event-card {
+  font-size: 20px;
+  color: #222;
+}
+
+.display-event-card {
+  font-size: 24px;
+  color: #222;
 }
