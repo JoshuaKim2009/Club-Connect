@@ -66,6 +66,20 @@ body {
   text-align: left;
 }
 
+.chat-title {
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 28px;
+  font-style: normal;
+  display: inline-block;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  background: linear-gradient(to bottom, #ffffff 0%, #cccccc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 .hidden {
   display: none !important;
 }
@@ -235,12 +249,13 @@ button {
     to bottom,
     #ffffff 0%,
 
-    #b3b3b3 100%
+    #f3f3f3 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  letter-spacing: 0.05em;
 }
 #clubScheduleTitle,
 #clubPageTitle {
@@ -253,6 +268,7 @@ button {
   text-align: center;
   color: white;
   /* white-space: nowrap; */
+  letter-spacing: 0.05em;
 }
 
 #clubPageTitle {
