@@ -69,6 +69,7 @@ logoutButton.onclick = () => {
     window.location.href = 'login.html';
     return;
   }
+  if (document.getElementById('appearance-modal').style.display === 'block') return;
   const dd = document.getElementById('profile-dropdown');
   dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
 };
