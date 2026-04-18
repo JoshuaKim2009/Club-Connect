@@ -142,7 +142,7 @@ async function loadAllClubs() {
 
         const metaDiv = document.createElement("div");
         metaDiv.className = "club-btn-meta";
-        metaDiv.textContent = `${data.clubActivity}  •  ${(data.memberUIDs || []).length} members`;
+        metaDiv.textContent = `${(data.memberUIDs || []).length} members`;
 
         inner.appendChild(nameSpan);
         inner.appendChild(roleSpan);
@@ -179,7 +179,7 @@ async function loadAllClubs() {
 
         const metaDiv = document.createElement("div");
         metaDiv.className = "club-btn-meta";
-        metaDiv.textContent = `${data.clubActivity}  •  ${(data.memberUIDs || []).length} members`;
+        metaDiv.textContent = `${(data.memberUIDs || []).length} members`;
 
         inner.appendChild(nameSpan);
         inner.appendChild(roleSpan);
