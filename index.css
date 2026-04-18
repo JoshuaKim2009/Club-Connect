@@ -240,7 +240,7 @@
 
 .intro-strip-title {
   font-family: var(--primary-font-family);
-  font-size: 38px;
+  font-size: clamp(28px, 5vw, 38px);
   color: black;
   margin: 0 0 6px 0;
   line-height: 1;
