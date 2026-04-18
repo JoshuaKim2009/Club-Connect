@@ -74,8 +74,8 @@
 	color: black;
 	font-size: 25px;
 	font-weight: normal;
-	margin-bottom: 20px;
-	padding-bottom: 8px;
+	margin: 0 -10px 20px -10px;
+	padding: 0 10px 8px 10px;
 	border-bottom: 2px dotted black;
 	position: relative;
 }
@@ -240,17 +240,44 @@
 
 .intro-strip-title {
   font-family: var(--primary-font-family);
-  font-size: clamp(28px, 5vw, 38px);
+  font-size: clamp(32px, 5vw, 38px);
   color: black;
-  margin: 0 0 6px 0;
   line-height: 1;
+  padding-bottom: 8px;
+  border-bottom: 2px dotted black;
+  position: relative;
+  margin: 0 -20px 20px -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.intro-strip-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
+}
+
+.intro-strip-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
 
 .intro-strip-sub {
   font-family: var(--primary-font-family);
   font-size: 20px;
   color: #3b3b3b;
-  margin: 0 0 28px 0;
+  margin: 10px 0 28px 0; 
 }
 
 .intro-steps {
