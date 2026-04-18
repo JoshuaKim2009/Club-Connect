@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=30" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=9" rel="stylesheet" />
+    <link href="index.css?v=10" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,10 +27,10 @@
 
       .chat-title {
         font-family: "New Amsterdam", sans-serif;
-        font-size: 32px;
-        font-size: 36px;
+        font-size: clamp(1.75rem, 4vw, 2.25rem);
         font-style: normal;
-        display: incline-block;
+        display: inline-block;
+        white-space: nowrap;
 
         background: linear-gradient(to bottom, #ffffff 0%, #cccccc 100%);
         -webkit-background-clip: text;

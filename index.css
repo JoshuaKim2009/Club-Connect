@@ -45,7 +45,7 @@
 }
 
 #main-page-title {
-	font-size: clamp(70px, 8vw, 100px);
+	font-size: clamp(3rem, 8vw, 6rem);
 	white-space: nowrap;
 }
 
