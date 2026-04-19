@@ -246,16 +246,17 @@
 }
 
 .intro-strip-title {
+  font-size: clamp(25px, 5vw, 30px);
   font-family: var(--primary-font-family);
-  font-size: clamp(32px, 5vw, 38px);
   color: black;
   line-height: 1;
-  padding-bottom: 8px;
+  padding-bottom: 15px; 
   border-bottom: 2px dotted black;
   position: relative;
   margin: 0 -20px 20px -20px;
   padding-left: 20px;
   padding-right: 20px;
+  font-weight: normal;
 }
 
 .intro-strip-title::after {

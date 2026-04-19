@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=31" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=14" rel="stylesheet" />
+    <link href="index.css?v=15" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,6 +38,18 @@
         -webkit-text-fill-color: transparent;
         color: transparent;
       }
+
+      #logo-container {
+        display: flex;
+        justify-content: center;
+      }
+
+      #school-icon {
+        font-size: 32px;
+        color: #292929;
+        margin-bottom: 10px;
+      }
+
     </style>
   </head>
   <body>
@@ -93,7 +105,10 @@
     </button> -->
 
     <div id="home-intro-strip">
-      <p class="intro-strip-title">SCHOOL CLUBS MADE EASIER</p>
+      <div id="logo-container">
+        <i id="school-icon" class="fa-solid fa-school"></i>
+      </div>
+      <p class="intro-strip-title">SCHOOL CLUBS MADE EASY</p>
       <!-- <p class="intro-strip-sub">Everything your club needs, in one place!</p> -->
       <div class="intro-steps">
         <div class="intro-step">
