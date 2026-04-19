@@ -139,14 +139,14 @@ body {
     cursor: pointer;
     font-size: 20px;
     flex-shrink: 0;
-    background: radial-gradient(circle at center, #474799, #131330);
+    background: radial-gradient(circle at center, var(--bg-accent), var(--bg-dark));
     border: 2px solid black;
     border-radius: 10px;
     color: white;
 }
 
 .send-button:active {
-    background: radial-gradient(circle at center, #32326d, #070713);
+    background: radial-gradient(circle at center, var(--bg-light), var(--bg-accent));
     transform: scale(0.95);
 }
 
