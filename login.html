@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=32" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="login.css?v=2" rel="stylesheet" />
+    <link href="login.css?v=3" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
   <body>
 
     <div class="chat-header">
-      <button type="button" class="fancy-button" onclick="goToHome()">
+      <button type="button" class="fancy-button" onclick="history.length > 1 ? history.back() : window.location.href='index.html'">
         <i class="fa-solid fa-circle-left"></i>
       </button>
       <span class="chat-title">LOGIN</span>
@@ -34,18 +34,12 @@
         </div>
 
         <div class="auth-register-card">
-          <h2 class="auth-register-card-title">REGISTER</h2>
+          <h2 class="auth-box-title">REGISTER</h2>
           <p class="auth-register-card-subtitle">No account? Create one here!</p>
           <a href="register.html" class="fancy-button auth-register-card-btn">CREATE</a>
         </div>
       </div>
     </form>
-
-    <script>
-      function goToHome() {
-        window.location.href = "index.html";
-      }
-    </script>
     <script src="theme.js?v=6"></script>
     <script type="module" src="dialog.js"></script>
     <script type="module" src="login.js?v=2" defer></script>
