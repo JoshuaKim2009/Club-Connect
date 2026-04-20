@@ -309,7 +309,7 @@
   max-width: 300px;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 700px) {
   .intro-steps {
     flex-direction: row;
     align-items: stretch;
@@ -347,3 +347,34 @@
   color: #555;
   line-height: 1.3;
 }
+
+
+#home-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* @media (min-width: 1200px) {
+  #home-main {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    padding: 0 40px;
+    box-sizing: border-box;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  #home-section {
+    width: 40%;
+    margin: 20px 0;
+  }
+
+  #home-intro-strip {
+    width: 55%;
+    margin: 20px 0;
+  }
+} */

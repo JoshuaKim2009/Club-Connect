@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=31" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=15" rel="stylesheet" />
+    <link href="index.css?v=16" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,6 +57,16 @@
         color: transparent;
       }
 
+      #home-tagline {
+        font-family: var(--primary-font-family);
+        font-size: clamp(18px, 4vw, 28px);
+        color: #ebebeb;
+        text-align: center;
+        letter-spacing: 0.08em;
+        margin: 0 auto 20px auto;
+        font-weight: normal;
+      }
+
     </style>
   </head>
   <body>
@@ -95,43 +105,47 @@
       </defs>
       <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150" fill="url(#textGrad)" textLength="800" lengthAdjust="spacing">CLUB CONNECT</text>
     </svg>
-    
-    <div id="home-section">
-      <h3 id="welcomeMessage">Welcome</h3>
-      <button id="club-button" class="fancy-button">MY CLUBS</button>
-      <div style="position: relative; display: inline-block; width: 100%;">
-        <button id="announcements-home-button" class="fancy-button" style="margin-bottom: 15px;">
-          ANNOUNCEMENTS
-          <span id="homeUnreadAnnouncementsBadge" class="notification-badge"></span>
-        </button>
-      </div>
-    </div>
-    <!-- <button id="logoutButton" class="hidden fancy-button">
-      LOGOUT
-      <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
-    </button> -->
 
-    <div id="home-intro-strip">
-      <div id="logo-container">
-        <i id="school-icon" class="fa-solid fa-school"></i>
+    <p id="home-tagline">THE BEST WAY TO DISCOVER, JOIN, AND LEAD CLUBS</p>
+    
+    <div id="home-main">
+      <div id="home-section">
+        <h3 id="welcomeMessage">Welcome</h3>
+        <button id="club-button" class="fancy-button">MY CLUBS</button>
+        <div style="position: relative; display: inline-block; width: 100%;">
+          <button id="announcements-home-button" class="fancy-button" style="margin-bottom: 15px;">
+            ANNOUNCEMENTS
+            <span id="homeUnreadAnnouncementsBadge" class="notification-badge"></span>
+          </button>
+        </div>
       </div>
-      <p class="intro-strip-title">SCHOOL CLUBS MADE EASY</p>
-      <!-- <p class="intro-strip-sub">Everything your club needs, in one place!</p> -->
-      <div class="intro-steps">
-        <div class="intro-step">
-          <div class="intro-step-num">1</div>
-          <div class="intro-step-title">JOIN CLUBS</div>
-          <div class="intro-step-body">Join clubs with a 6-character code, or discover new ones on the club discovery page.</div>
+      <!-- <button id="logoutButton" class="hidden fancy-button">
+        LOGOUT
+        <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button> -->
+
+      <div id="home-intro-strip">
+        <div id="logo-container">
+          <i id="school-icon" class="fa-solid fa-school"></i>
         </div>
-        <div class="intro-step">
-          <div class="intro-step-num">2</div>
-          <div class="intro-step-title">STAY UPDATED</div>
-          <div class="intro-step-body">Stay up to date with club announcements, events, polls, and group chat discussions.</div>
-        </div>
-        <div class="intro-step">
-          <div class="intro-step-num">3</div>
-          <div class="intro-step-title">LEAD YOUR CLUB</div>
-          <div class="intro-step-body">Lead clubs by posting updates, scheduling events, and managing members in one place.</div>
+        <p class="intro-strip-title">SCHOOL CLUBS MADE EASY</p>
+        <!-- <p class="intro-strip-sub">Everything your club needs, in one place!</p> -->
+        <div class="intro-steps">
+          <div class="intro-step">
+            <div class="intro-step-num">1</div>
+            <div class="intro-step-title">JOIN CLUBS</div>
+            <div class="intro-step-body">Join clubs with a 6-character code, or discover new ones on the club discovery page.</div>
+          </div>
+          <div class="intro-step">
+            <div class="intro-step-num">2</div>
+            <div class="intro-step-title">STAY UPDATED</div>
+            <div class="intro-step-body">Stay up to date with club announcements, events, polls, and group chat discussions.</div>
+          </div>
+          <div class="intro-step">
+            <div class="intro-step-num">3</div>
+            <div class="intro-step-title">LEAD YOUR CLUB</div>
+            <div class="intro-step-body">Lead clubs by posting updates, scheduling events, and managing members in one place.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -139,7 +153,7 @@
 
     <script src="theme.js?v=6"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="script.js?v=10"></script>
+    <script type="module" src="script.js?v=11"></script>
   </body>
 </html>
 

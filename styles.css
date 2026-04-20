@@ -227,10 +227,13 @@ button {
 }
 
 .goldLink {
-  text-decoration: underline;
   color: rgb(0, 0, 0);
   display: inline-block;
   animation: bobbing 0.5s ease-in-out infinite;
+  border: 2px solid black;
+  border-radius: 6px;
+  padding: 0px 6px;
+  text-decoration: none;
 }
 
 .pageTitle {

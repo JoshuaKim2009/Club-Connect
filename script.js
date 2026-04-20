@@ -28,7 +28,7 @@ function setLoggedInUI(displayName) {
 }
 
 function setLoggedOutUI() {
-  welcomeMessage.innerHTML = "Welcome, please <a href='login.html' class='goldLink'>login</a>";
+  welcomeMessage.innerHTML = "<a href='register.html' class='goldLink'>GET STARTED</a>";
   logoutButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> LOGIN';
   document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
 }
