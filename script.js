@@ -65,7 +65,8 @@ document.getElementById("club-button").onclick = async () => {
 };
 
 logoutButton.onclick = () => {
-  if (!auth.currentUser) {
+  const isLoggedIn = auth.currentUser || JSON.parse(sessionStorage.getItem('cc-user') || localStorage.getItem('cc-user') || 'null');
+  if (!isLoggedIn) {
     window.location.href = 'login.html';
     return;
   }
