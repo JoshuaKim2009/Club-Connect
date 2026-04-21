@@ -41,8 +41,10 @@ submit.addEventListener("click", async function(event){
 
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
-      // Signed up 
       const user = userCredential.user;
+      const data = { displayName: user.displayName, email: user.email, uid: user.uid };
+      localStorage.setItem('cc-user', JSON.stringify(data));
+      sessionStorage.setItem('cc-user', JSON.stringify(data));
       window.location.href = "index.html";
     })
     .catch(async (error) => {

@@ -55,30 +55,26 @@ submit.addEventListener("click", async function(event){
       
       if (user && displayName) {
         try {
-          await updateProfile(user, {
-            displayName: displayName,
-          });
+          await updateProfile(user, { displayName: displayName });
 
           await setDoc(doc(db, "users", user.uid), {
             name: displayName,
             email: email,
-            //managed_clubs: [],
-            //member_clubs: [] 
           });
-          
-          
 
           submit.disabled = false;
           submit.innerHTML = 'Register';
           await showAppAlert("User registered and profile created!");
 
+          const data = { displayName: displayName, email: email, uid: user.uid };
+          localStorage.setItem('cc-user', JSON.stringify(data));
+          sessionStorage.setItem('cc-user', JSON.stringify(data));
+          window.location.href = "index.html";
 
-          
-        } catch (error) { 
+        } catch (error) {
           await showAppAlert("Something went wrong while setting up your account. Please try again.");
           submit.disabled = false;
           submit.innerHTML = 'Register';
-
         }
       } else if (user) {
         await showAppAlert("Please enter your full name to register.");
@@ -88,7 +84,6 @@ submit.addEventListener("click", async function(event){
       }
 
 
-      window.location.href = "index.html";
     })
     .catch(async (error) => {
       const errorCode = error.code;
