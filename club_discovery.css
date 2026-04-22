@@ -93,7 +93,7 @@
     box-sizing: border-box;
     border: 2px solid black;
     border-radius: 10px;
-    background: linear-gradient(#ffffff, #b3b3b3);
+    background: linear-gradient(#ffffff, #e2e2e2);
     box-shadow: 0px 2px 0px #000000;
     padding: 12px;
     font-family: var(--primary-font-family);

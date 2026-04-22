@@ -129,8 +129,8 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
             <span class="club-card-activity">Activity | ${activity}</span>
         </div>
         <div class="club-card-body">
-            <span><i class="fa-solid fa-school"></i> School | ${schoolName}</span>
-            <span><i class="fa-solid fa-location-dot"></i> State | ${state}</span>
+            <span><i class="fa-solid fa-school"></i> ${schoolName}</span>
+            <span><i class="fa-solid fa-location-dot"></i> ${state}</span>
             <p class="club-description">${description}</p>
         </div>
         <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}" ${isPending || isMember ? "disabled" : ""}>

@@ -30,7 +30,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(#ffffff, #c2c2c2);
+    background: linear-gradient(#ffffff, #e2e2e2);
     border: 2px solid black;
     border-radius: 10px;
     padding: 25px;
@@ -351,7 +351,7 @@ body {
 }
 
 .delete-poll-btn {
-    background: linear-gradient(#ffffff, #b3b3b3); /*CHANGED TO NEW GRADIENT*/
+    background: linear-gradient(#ffffff, #e2e2e2); /*CHANGED TO NEW GRADIENT*/
     font-family: var(--primary-font-family);
     font-size: 1.5em;
     color: black;
@@ -464,7 +464,7 @@ body {
 }
 
 .edit-poll-btn {
-    background: linear-gradient(#ffffff, #b3b3b3); /*CHANGED TO NEW GRADIENT*/
+    background: linear-gradient(#ffffff, #e2e2e2); /*CHANGED TO NEW GRADIENT*/
     font-family: var(--primary-font-family);
     font-size: 1.5em;
     color: black;

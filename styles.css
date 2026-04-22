@@ -616,7 +616,7 @@ button {
 }
 
 .fancy-black-button {
-  background: linear-gradient(#cecece, #afafaf);
+  background: linear-gradient(#cecece, #b4b4b4);
   font-family: var(--primary-font-family);
   font-size: 26px;
   color: rgb(0, 0, 0);
@@ -776,14 +776,11 @@ button {
 
 #pendingRequestsContainer {
   margin-top: 20px;
-  padding: 10px; 
-  border: 2px solid black; /* 3→2 */
-  border-radius: 10px; 
-  background: linear-gradient(
-    #f0f0f0,
-    #e0e0e0
-  ); 
-  box-shadow: 0px 2px 0px #000000; /* 6→2 */
+  padding: 10px;
+  border: 2px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#ffffff, #cecece);
+  box-shadow: 0px 2px 0px #000000;
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -791,12 +788,32 @@ button {
 }
 
 #pendingRequestsContainer h3 {
-  text-align: center;
-  color: black; 
+  font-size: 50px;
   font-family: var(--primary-font-family);
-  font-size: 40px; 
-  margin-bottom: 20px;
-  font-weight: normal;
+  font-weight: 400;
+  text-align: center;
+  display: block;
+  background: linear-gradient(to bottom, #383838 0%, #000000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* letter-spacing: 0.05em; */
+  margin: 0 -10px 20px -10px;
+  padding: 0 10px 4px 10px;
+  border-bottom: 2px dotted black;
+  position: relative;
+}
+
+#pendingRequestsContainer h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
 
 .pending-member-card {
@@ -805,7 +822,7 @@ button {
   justify-content: space-between;
   align-items: center;
 
-  background: linear-gradient(#ffffff, #b3b3b3);
+  background: linear-gradient(#ffffff, #e2e2e2);
   font-family: var(--primary-font-family);
   color: black;
   border: 2px solid black; /* 3→2 */
@@ -848,7 +865,7 @@ button {
 
 .approve-member-btn,
 .deny-member-btn {
-  background: linear-gradient(#ffffff, #b3b3b3); 
+  background: linear-gradient(#ffffff, #cecece); 
   font-family: var(--primary-font-family);
   font-size: 22px; 
   color: black;
@@ -859,38 +876,6 @@ button {
   box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
   white-space: nowrap; 
-}
-
-@media screen and (max-width: 600px) {
-
-  .pending-member-card {
-    flex-direction: column; 
-    align-items: center; 
-    padding: 15px 10px; 
-  }
-
-  .pending-member-name-display {
-    width: 100%; 
-    text-align: center; 
-    margin-right: 0; 
-    margin-bottom: 5px; 
-    white-space: normal; 
-    overflow: visible; 
-    text-overflow: clip; 
-  }
-
-  .pending-member-actions {
-    width: 100%; 
-    justify-content: center; 
-    margin-top: 15px; 
-    gap: 8px; 
-  }
-
-  .approve-member-btn,
-  .deny-member-btn {
-    font-size: 18px; 
-    padding: 6px 12px; 
-  }
 }
 
 
@@ -928,13 +913,10 @@ button {
 #membersContainer {
   margin-top: 20px;
   padding: 10px;
-  border: 2px solid black; /* 3→2 */
+  border: 2px solid black;
   border-radius: 10px;
-  background: linear-gradient(
-    #f0f0f0,
-    #e0e0e0
-  ); 
-  box-shadow: 0px 2px 0px #000000; /* 6→2 */
+  background: linear-gradient(#ffffff, #cecece);
+  box-shadow: 0px 2px 0px #000000;
   width: 85%;
   max-width: 600px;
   margin: 0 auto;
@@ -942,12 +924,32 @@ button {
 }
 
 #membersContainer h3 {
-  text-align: center;
-  color: black;
+  font-size: 50px;
   font-family: var(--primary-font-family);
-  font-size: 40px;
-  margin-bottom: 20px;
-  font-weight: normal;
+  font-weight: 400;
+  text-align: center;
+  display: block;
+  background: linear-gradient(to bottom, #383838 0%, #000000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* letter-spacing: 0.05em; */
+  margin: 0 -10px 20px -10px;
+  padding: 0 10px 4px 10px;
+  border-bottom: 2px dotted black;
+  position: relative;
+}
+
+#membersContainer h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  pointer-events: none;
 }
 
 #membersContainer .fancy-label {
@@ -972,21 +974,21 @@ button {
 }
 
 #role-management-popup {
-  padding: 10px;
-  border: 2px solid black; /* 3→2 */
+  padding: 15px;
+  border: 2px solid black;
   background: linear-gradient(#f0f0f0, #e0e0e0);
-  box-shadow: 0px 2px 0px #000000; /* 6→2 */
-  width: 80%; 
-  max-width: 500px; 
+  box-shadow: 0px 2px 0px #000000;
+  width: 80%;
+  max-width: 400px;
   border-radius: 10px;
-  z-index: 1000; 
-  position: fixed; 
-  top: 50%; 
-  left: 50%; 
-  transform: translate(-50%, -50%); 
-  display: none; 
+  z-index: 1000;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
   flex-direction: column;
-  gap: 15px; 
+  gap: 12px;
   font-family: var(--primary-font-family);
   font-weight: normal;
   text-align: center;
@@ -995,13 +997,15 @@ button {
 
 #role-select-label {
   color: #525252;
+  font-size: 20px;
 }
 
+
 #role-management-popup h3 {
-  margin-top: 0;
+  margin: 0;
   font-weight: normal;
   text-align: center;
-  font-size: 30px;
+  font-size: 28px;
   color: black;
 }
 
@@ -1009,25 +1013,60 @@ button {
   width: 100%;
   padding: 10px;
   font-family: var(--primary-font-family);
-  color: #525252;
-  margin-top: 5px;
-  border-radius: 5px;
-  border: 2px solid #525252; /* 3→2 */
-  box-shadow: 0px -2px 0px #525252; /* -3→-2 */
-  border-radius: 5px;
+  color: black;
+  border-radius: 10px;
+  border: 2px solid #aaaaaa;
+  box-shadow: none;
   font-size: 24px;
   text-align: center;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.popup-actions {
-  display: flex;
-  justify-content: flex-end; 
-  gap: 10px; 
-  margin-top: 20px;
-}
-
-#role-management-popup .fancy-button {
+#submit-role-change {
+  flex: 1;
   font-size: 24px;
+}
+
+#cancel-role-change {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 20px;
+  padding: 4px 8px;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+}
+
+#cancel-role-change:hover {
+  color: #000;
+}
+
+.options-member-btn--disabled {
+  background: transparent;
+  border-color: #cccccc;
+  color: #cccccc;
+  cursor: default;
+  box-shadow: none;
+}
+
+.options-member-btn--disabled:hover {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+  background: transparent;
+}
+
+.popup-bottom-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
 }
 
 .member-card {
@@ -1035,7 +1074,7 @@ button {
   flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(#ffffff, #b3b3b3);
+  background: linear-gradient(#ffffff, #e2e2e2);
   font-family: var(--primary-font-family);
   color: black;
   border: 2px solid black; /* 3→2 */
@@ -1064,73 +1103,57 @@ button {
   min-width: 0;
 }
 
-.member-actions {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.manager-remove-member-btn {
-  background: transparent;
-  font-family: var(--primary-font-family);
-  font-size: 22px;
-  color: rgb(131, 131, 131);
-  border: 2px solid rgb(131, 131, 131); /* 3→2 */
-  padding: 5px 15px;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0px 0px 0px #000000;
-  transition: all 0.05s ease-in-out;
-  white-space: nowrap;
-}
-
-.remove-member-btn {
-  background: linear-gradient(#ff6a6a, #ff4a4a);
-  font-family: var(--primary-font-family);
-  font-size: 22px;
-  color: rgb(0, 0, 0);
-  border: 2px solid black; /* 3→2 */
-  padding: 5px 15px;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0px 2px 0px #000000; /* 4→2 */
-  transition: all 0.05s ease-in-out;
-  white-space: nowrap;
-}
-
-.remove-member-btn:hover {
-  transform: translateY(1px);
-  box-shadow: 0px 1px 0px #000000; /* 2→1 */
-  background: linear-gradient(#ff5f5f, #fc4040);
-}
-
-.remove-member-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0px 0px 0px #000000;
-}
-
 .options-member-btn {
-  background: linear-gradient(#a3a3a3, #858585);
+  background: linear-gradient(#cecece, #afafaf);
   font-family: var(--primary-font-family);
-  font-size: 22px;
+  font-size: 18px;
   color: rgb(0, 0, 0);
-  border: 2px solid black; /* 3→2 */
-  padding: 5px 15px;
-  border-radius: 10px;
+  border: 2px solid black;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0px 2px 0px #000000; /* 4→2 */
+  box-shadow: 0px 2px 0px #000000;
   transition: all 0.05s ease-in-out;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
 }
 
 .options-member-btn:hover {
   transform: translateY(1px);
-  box-shadow: 0px 1px 0px #000000; /* 2→1 */
-  background: linear-gradient(#afafaf, #818181);
+  box-shadow: 0px 1px 0px #000000;
+  background: linear-gradient(#dfdfdf, #d1d1d1);
 }
 
 .options-member-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.remove-member-popup-btn {
+  flex: 1;
+  background: linear-gradient(#ffb2b2, #ff7878);
+  font-family: var(--primary-font-family);
+  font-size: 24px;
+  color: black;
+  border: 2px solid black;
+  padding: 8px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 2px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.remove-member-popup-btn:hover {
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000;
+  background: linear-gradient(#ffcccc, #ff9494);
+}
+
+.remove-member-popup-btn:active {
   transform: translateY(2px);
   box-shadow: 0px 0px 0px #000000;
 }
@@ -1151,40 +1174,6 @@ button {
   display: flex;
   flex-direction: column;
   gap: 20px; 
-}
-
-@media screen and (max-width: 600px) {
-  .member-card {
-    flex-direction: column;
-    align-items: center;
-    flex-wrap: wrap;
-    padding: 15px 10px;
-  }
-
-  .member-name-display {
-    width: 100%;
-    text-align: center;
-    margin-right: 0;
-    margin-bottom: 5px;
-
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
-
-  .member-actions {
-    width: 100%;
-    justify-content: center;
-    margin-top: 15px;
-    gap: 8px;
-  }
-
-  .manager-remove-member-btn,
-  .member-actions .remove-member-btn,
-  .member-actions .options-member-btn {
-    font-size: 18px;
-    padding: 6px 12px;
-  }
 }
 
 .custom-dialog-overlay {
@@ -1299,7 +1288,8 @@ button {
 }
 
 #closestEventDisplay .event-card {
-  width: min(85vw, 600px);
+  width: 85%;
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -1537,7 +1527,7 @@ input[type="checkbox"]:checked {
 }
 
 .event-card-actions button {
-  background: linear-gradient(#ffffff, #b3b3b3);
+  background: linear-gradient(#ffffff, #e2e2e2);
   font-family: var(--primary-font-family, sans-serif);
   font-size: 0.9em;
   color: black;

@@ -422,7 +422,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
     membersContainer.innerHTML = "";
    
     const title = document.createElement("h3");
-    title.textContent = `CLUB MEMBERS (${memberNames.length})`; 
+    title.textContent = `CLUB MEMBERS`;
     membersContainer.appendChild(title);
 
     memberNames.forEach((name, index) => {
@@ -433,21 +433,20 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             const memberCardDivManager = document.createElement("div");
             memberCardDivManager.className = "member-card";
             const nameDisplayDivManager = document.createElement("div");
-            nameDisplayDivManager.innerHTML = `${managerName} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
+            nameDisplayDivManager.innerHTML = `${managerName} ${(memberRole === 'admin' || memberRole === 'manager') ? `<span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>` : ''}`;
             nameDisplayDivManager.className = "member-name-display";
             memberCardDivManager.appendChild(nameDisplayDivManager);
 
             if (myUid === managerUid && (role === 'manager' || role === 'admin')){
                 const actionButtonsDivManager = document.createElement("div");
                 actionButtonsDivManager.className = "member-actions";
-                const removeBtnManager = document.createElement("button");
-                removeBtnManager.textContent = "REMOVE";
-                removeBtnManager.className = "manager-remove-member-btn";
                 const optionsBtn = document.createElement("button");
-                optionsBtn.textContent = "OPTIONS";
-                optionsBtn.className = "manager-remove-member-btn";
+                optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
+                optionsBtn.className = "options-member-btn options-member-btn--disabled";
+                optionsBtn.addEventListener("click", async () => {
+                    await showAppAlert("You cannot manage yourself.");
+                });
                 actionButtonsDivManager.appendChild(optionsBtn);
-                actionButtonsDivManager.appendChild(removeBtnManager);
                 memberCardDivManager.appendChild(actionButtonsDivManager);
             }
             membersContainer.appendChild(memberCardDivManager);
@@ -457,7 +456,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             memberCardDiv.className = "member-card";
 
             const nameDisplayDiv = document.createElement("div");
-            nameDisplayDiv.innerHTML = `${name} <span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>`;
+            nameDisplayDiv.innerHTML = `${name} ${(memberRole === 'admin' || memberRole === 'manager') ? `<span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>` : ''}`;
             nameDisplayDiv.className = "member-name-display";
             memberCardDiv.appendChild(nameDisplayDiv);
 
@@ -466,7 +465,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
             if(myUid === managerUid && (role === 'manager' || role === 'admin')){
                 const optionsBtn = document.createElement("button");
-                optionsBtn.textContent = "OPTIONS";
+                optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
                 optionsBtn.className = "options-member-btn";
                 optionsBtn.dataset.memberUid = memberUid;
                 optionsBtn.dataset.memberName = name;
@@ -477,19 +476,6 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                 actionButtonsDiv.appendChild(optionsBtn);
 
                 memberCardDiv.appendChild(actionButtonsDiv);
-
-                const removeBtn = document.createElement("button");
-                removeBtn.textContent = "REMOVE";
-                removeBtn.className = "remove-member-btn";
-                removeBtn.dataset.memberUid = memberUid;
-                removeBtn.dataset.memberName = name;
-                removeBtn.addEventListener("click", async () => {
-                    console.log(`Attempting to remove member: ${name} (UID: ${memberUid}) from club ${clubId}`);
-                    if (await showAppConfirm(`Are you sure you want to remove ${name} from this club?`)) {
-                        await removeMember(clubId, memberUid);
-                    }
-                });
-                actionButtonsDiv.appendChild(removeBtn);
             }
             membersContainer.appendChild(memberCardDiv);
         }
@@ -519,6 +505,14 @@ function closeRoleManagementPopup() {
 }
 
 cancelRoleChangeButton.addEventListener('click', closeRoleManagementPopup);
+
+document.getElementById('remove-member-popup-btn').addEventListener('click', async () => {
+    const memberName = memberNameForRoleDisplay.textContent.replace('Manage ', '');
+    if (await showAppConfirm(`Are you sure you want to remove ${memberName} from this club?`)) {
+        await removeMember(clubId, selectedMemberUid);
+        closeRoleManagementPopup();
+    }
+});
 
 submitRoleChangeButton.addEventListener('click', async () => {
     const newRole = roleSelect.value;

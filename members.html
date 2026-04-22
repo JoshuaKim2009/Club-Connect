@@ -21,7 +21,7 @@
             padding-top: env(safe-area-inset-top);
             background: var(--bg-dark);
         }
-        #page-title{
+        #dynamic-sections-wrapper{
             margin-top: 110px;
         }
         #dynamic-sections-wrapper {
@@ -73,7 +73,7 @@
       <span class="chat-title">MEMBERS</span>
     </div>
 
-    <h1 id="page-title" class="pageTitle">MEMBERS</h1>
+    <!-- <h1 id="page-title" class="pageTitle">MEMBERS</h1> -->
     
 
     <div id="dynamic-sections-wrapper">
@@ -85,23 +85,22 @@
 
     <div id="popup-overlay" style="display: none;"></div>
     <div id="role-management-popup" style="display: none;">
-      <div class="popup-content">
-        <h3 id="member-name-for-role">Manage [Member Name]</h3>
-        <label for="role-select" id="role-select-label">Select New Role</label>
-        <select id="role-select">
-          <option value="member">Member</option>
-          <option value="admin">Admin</option>
-          <option value="manager">Manager</option>
-        </select>
-        <div class="popup-actions">
-          <button id="submit-role-change" class="fancy-button">Update</button>
-          <button id="cancel-role-change" class="fancy-button">Cancel</button>
-        </div>
+      <button id="cancel-role-change"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="member-name-for-role">Manage [Member Name]</h3>
+      <label for="role-select" id="role-select-label">Select New Role</label>
+      <select id="role-select">
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+        <option value="manager">Manager</option>
+      </select>
+      <div class="popup-bottom-actions">
+        <button id="submit-role-change" class="fancy-button">UPDATE</button>
+        <button id="remove-member-popup-btn" class="remove-member-popup-btn">REMOVE</button>
       </div>
     </div>
 
     <script src="theme.js?v=6"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="members.js?v=2"></script>
+    <script type="module" src="members.js?v=3"></script>
   </body>
 </html>
