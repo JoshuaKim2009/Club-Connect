@@ -36,11 +36,19 @@ onAuthStateChanged(auth, (user) => {
 document.getElementById("createClubForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const clubsGrid = document.getElementById("clubsGrid");
+
     const school = normalizeSearchInput(document.getElementById("searchSchool").value);
-    const state  = document.getElementById("searchState").value.trim();
+    const rawState = document.getElementById("searchState").value.trim();
+    const state = normalizeState(rawState);
+
+    if (!state) {
+        clubsGrid.innerHTML = "";
+        await showAppAlert("Please enter a valid US state.");
+        return;
+    }
     const club = "";
 
-    const clubsGrid = document.getElementById("clubsGrid");
     clubsGrid.innerHTML = '<p class="no-results">SEARCHING <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> </p>';
 
     if (!state) {
@@ -196,4 +204,70 @@ function normalizeSearchInput(input) {
     if (s.endsWith(' middle'))  s = s + ' school';
     if (s.endsWith(' elementary')) s = s + ' school';
     return s;
+}
+
+
+
+const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+
+const stateInput = document.getElementById('searchState');
+const stateDropdownList = document.getElementById('state-dropdown-list');
+
+stateInput.addEventListener('input', function () {
+    const value = this.value.toLowerCase();
+    stateDropdownList.innerHTML = '';
+
+    if (value) {
+        const filtered = states.filter(state => state.toLowerCase().includes(value));
+        if (filtered.length > 0) {
+            filtered.forEach(state => {
+                const div = document.createElement('div');
+                div.className = 'state-option';
+                div.textContent = state;
+                div.onclick = () => {
+                    stateInput.value = state;
+                    stateDropdownList.classList.remove('show');
+                };
+                stateDropdownList.appendChild(div);
+            });
+            stateDropdownList.classList.add('show');
+        } else {
+            stateDropdownList.classList.remove('show');
+        }
+    } else {
+        stateDropdownList.classList.remove('show');
+    }
+});
+
+document.addEventListener('click', function (e) {
+    if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
+        stateDropdownList.classList.remove('show');
+    }
+});
+
+
+function normalizeState(input) {
+    const trimmed = input.trim();
+
+    const abbreviations = {
+        'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+        'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+        'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+        'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+        'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+        'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+        'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+        'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+        'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+        'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+        'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+        'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+        'WI': 'Wisconsin', 'WY': 'Wyoming'
+    };
+
+    const fromAbbr = abbreviations[trimmed.toUpperCase()];
+    if (fromAbbr) return fromAbbr;
+
+    const matched = states.find(s => s.toLowerCase() === trimmed.toLowerCase());
+    return matched || null;
 }
