@@ -37,8 +37,8 @@ const THEMES = {
     },
     slate: {
         name: 'Slate',
-        dark: '#0f0f0f',
-        accent: '#21213f',
+        dark: '#0b0b13',
+        accent: '#232342',
         light: '#9b9bc4'
     }
 };
