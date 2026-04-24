@@ -42,18 +42,18 @@ body {
   top: env(safe-area-inset-top);
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, var(--bg-dark), var(--header-bg-end));
+  background: linear-gradient(to bottom, var(--bg-dark), color-mix(in srgb, var(--bg-dark), var(--header-bg-end)));
   color: rgb(0, 0, 0);
   padding: 15px;
   font-size: 35px;
   font-weight: normal;
-  border-bottom: 2px solid black; /* 3→2 */
+  border-bottom: 2px solid black;
   display: flex;
   align-items: center;
   gap: 15px;
   z-index: 10000;
   height: 85px;
-  border-bottom: 2px solid black; /* 3→2 */
+  border-bottom: 2px solid black;
   color: white;
   overflow: hidden;
   position: fixed;
