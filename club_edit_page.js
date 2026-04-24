@@ -24,7 +24,9 @@ const auth = getAuth(app);
 let currentUser = null;
 let currentUserEmail = null;
 let currentClubId = null;
-//let currentUserRoles = []; 
+//let currentUserRoles = [];
+let originalClubData = null;
+
 
 function getClubIdFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -96,9 +98,13 @@ async function loadClubData(clubId, managerUid) {
         submitButton.disabled = false;
         stateInput.disabled = false;
 
-
-        
-
+        originalClubData = {
+            schoolName: clubData.schoolName || '',
+            clubName: clubData.clubName || '',
+            clubActivity: clubData.clubActivity || '',
+            description: clubData.description || '',
+            state: clubData.state || ''
+        };
     } else {
       await showAppAlert("Club not found.");
       console.error("Club document not found:", clubId);
@@ -162,6 +168,19 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
+
+    if (
+        originalClubData &&
+        rawSchoolName === originalClubData.schoolName &&
+        clubName === originalClubData.clubName &&
+        clubActivity === originalClubData.clubActivity &&
+        clubDescription === originalClubData.description &&
+        state === originalClubData.state
+    ) {
+        await showAppAlert("No changes were made.");
+        submitButton.disabled = false;
+        return;
+    }
 
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
@@ -434,27 +453,6 @@ function normalizeState(stateInput) {
 
 const stateDropdownList = document.getElementById('state-dropdown-list-edit');
 
-stateInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  stateDropdownList.innerHTML = '';
-  
-  if (value) {
-    const filtered = states.filter(state => state.toLowerCase().includes(value));
-    filtered.forEach(state => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = state;
-      div.onclick = () => {
-        stateInput.value = state;
-        stateDropdownList.classList.remove('show');
-      };
-      stateDropdownList.appendChild(div);
-    });
-    stateDropdownList.classList.add('show');
-  } else {
-    stateDropdownList.classList.remove('show');
-  }
-});
 
 stateInput.addEventListener('input', function() {
   const value = this.value.toLowerCase();
