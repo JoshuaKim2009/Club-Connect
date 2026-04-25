@@ -464,8 +464,7 @@
   margin: 0 0 20px 0;
   line-height: 1.05;
   letter-spacing: 0.05em;
-  white-space: nowrap;
-  font-size: clamp(32px, 5.5vw, 58px);
+  font-size: clamp(38px, 5.5vw, 58px);
 }
 
 
