@@ -198,7 +198,7 @@ const scrollHintBtn = document.getElementById('scroll-hint-btn');
 const featuresSection = document.querySelector('.features');
 
 scrollHintBtn.addEventListener('click', () => {
-  const top = featuresSection.getBoundingClientRect().top + window.scrollY - 80;
+  const top = featuresSection.getBoundingClientRect().top + window.scrollY - 50;
   window.scrollTo({ top, behavior: 'smooth' });
 });
 
