@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=34" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=16" rel="stylesheet" />
+    <link href="index.css?v=17" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -95,67 +95,117 @@
 
     <div id="profile-overlay"></div>
 
-    <!-- <h1 id="main-page-title" class="pageTitle">CLUB CONNECT</h1> -->
-    <svg viewBox="0 0 800 110" xmlns="http://www.w3.org/2000/svg" id="main-page-title">
-      <defs>
-        <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="100%" stop-color="#cccccc"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150" fill="url(#textGrad)" textLength="800" lengthAdjust="spacing">CLUB CONNECT</text>
-    </svg>
+    <section class="hero">
+      <svg viewBox="0 0 800 110" xmlns="http://www.w3.org/2000/svg" id="main-page-title" aria-label="Club Connect">
+        <defs>
+          <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#cccccc"/>
+          </linearGradient>
+        </defs>
+        <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150"
+              fill="url(#textGrad)" textLength="800" lengthAdjust="spacing">CLUB CONNECT</text>
+      </svg>
 
-    <!-- <p id="home-tagline">THE BEST WAY TO DISCOVER, JOIN, AND LEAD CLUBS</p> -->
-    
-    <div id="home-main">
-      <div id="home-section">
-        <h3 id="welcomeMessage">GET STARTED</h3>
-        <button id="club-button" class="fancy-button">MY CLUBS</button>
-        <div style="position: relative; display: inline-block; width: 100%;">
-          <button id="announcements-home-button" class="fancy-button" style="margin-bottom: 15px;">
-            ANNOUNCEMENTS
-            <span id="homeUnreadAnnouncementsBadge" class="notification-badge"></span>
-          </button>
+      <p class="tagline">THE PLATFORM FOR SCHOOL CLUBS</p>
+
+      <h3 id="welcomeMessage" style="display:none;"></h3>
+      
+      <div id="hero-buttons">
+        <button id="club-button" class="fancy-button hero-btn">
+          <i class="fa-solid fa-users"></i>&nbsp; MY CLUBS
+        </button>
+        <button id="announcements-home-button" class="fancy-button hero-btn">
+          <i class="fa-solid fa-bell"></i>&nbsp; ANNOUNCEMENTS
+          <span id="homeUnreadAnnouncementsBadge" class="notification-badge"></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="inner">
+        <h2 class="heading heading--light">EVERYTHING YOUR CLUB NEEDS</h2>
+
+        <div class="features-grid">
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+            <h3>EVENTS</h3>
+            <p>Schedule meetings, track RSVPs, and keep everyone on the same page with a shared calendar.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-bullhorn"></i></div>
+            <h3>ANNOUNCEMENTS</h3>
+            <p>Post important updates that reach every club member the moment they're published.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-comments"></i></div>
+            <h3>GROUP CHAT</h3>
+            <p>Discuss, plan, and coordinate with your entire club through built-in group messaging.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-chart-simple"></i></div>
+            <h3>POLLS</h3>
+            <p>Gather instant feedback and make group decisions fast with built-in club polls.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-user-group"></i></div>
+            <h3>MEMBER MANAGEMENT</h3>
+            <p>Approve requests, manage your roster, and keep membership organized with ease.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fa-solid fa-key"></i></div>
+            <h3>ROLE-BASED ACCESS</h3>
+            <p>Assign leadership roles and pick who can post, edit, and manage your club with you.</p>
+          </div>
         </div>
       </div>
-      <!-- <button id="logoutButton" class="hidden fancy-button">
-        LOGOUT
-        <i id="logout-icon" class="fa-solid fa-arrow-right-from-bracket"></i>
-      </button> -->
+    </section>
 
-      <div id="home-intro-strip">
-        <div id="logo-container">
-          <i id="school-icon" class="fa-solid fa-school"></i>
-        </div>
-        <p class="intro-strip-title">SCHOOL CLUBS MADE EASY</p>
-        <!-- <p class="intro-strip-sub">Everything your club needs, in one place!</p> -->
-        <div class="intro-steps">
-          <div class="intro-step">
-            <div class="intro-step-num">1</div>
-            <div class="intro-step-title">JOIN CLUBS</div>
-            <div class="intro-step-body">Join clubs with a 6-character code, or discover new ones on the club discovery page.</div>
+
+    <section class="how" id="home-intro-strip">
+      <div class="inner">
+        <h2 class="heading heading--light">HOW TO GET STARTED NOW</h2>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">01</div>
+            <h3 class="step-title">CREATE AN ACCOUNT</h3>
+            <p class="step-body">Sign up for free in seconds and get access to the entire platform instantly.</p>
           </div>
-          <div class="intro-step">
-            <div class="intro-step-num">2</div>
-            <div class="intro-step-title">STAY UPDATED</div>
-            <div class="intro-step-body">Stay up to date with club announcements, events, polls, and group chat discussions.</div>
+
+          <div class="step">
+            <div class="step-num">02</div>
+            <h3 class="step-title">JOIN YOUR CLUBS</h3>
+            <p class="step-body">Use a 6-character code or browse the public discovery page to find clubs at your school.</p>
           </div>
-          <div class="intro-step">
-            <div class="intro-step-num">3</div>
-            <div class="intro-step-title">LEAD YOUR CLUB</div>
-            <div class="intro-step-body">Lead clubs by posting updates, scheduling events, and managing members in one place.</div>
+
+          <div class="step">
+            <div class="step-num">03</div>
+            <h3 class="step-title">STAY CONNECTED</h3>
+            <p class="step-body">Get updates, chat with members, RSVP to events, and never miss a beat.</p>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
+    <section class="cta-strip">
+      <div class="cta-card">
+        <!-- <i class="fa-solid fa-school cta-icon" aria-hidden="true"></i> -->
+        <h2 class="heading heading-dark">READY TO GET STARTED?</h2>
+        <div class="cta-btns">
+          <a href="register.html" class="fancy-button cta-anchor">CREATE ACCOUNT &nbsp;<i class="fa-solid fa-arrow-right-to-bracket"></i></a>
+          <!-- <a href="login.html" class="fancy-black-button cta-anchor">SIGN BACK IN</a> -->
+        </div>
+      </div>
+    </section>
+
+
+    <button id="scroll-hint-btn" aria-label="Scroll down">
+      <i class="fa-solid fa-chevron-down"></i>
+    </button>
 
     <script src="theme.js?v=7"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="script.js?v=12"></script>
+    <script type="module" src="script.js?v=13"></script>
   </body>
 </html>
-
-
-

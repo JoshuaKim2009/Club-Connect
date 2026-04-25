@@ -22,13 +22,13 @@ const logoutButton = document.getElementById("logoutButton");
 const welcomeMessage = document.getElementById("welcomeMessage");
 
 function setLoggedInUI(displayName) {
-  welcomeMessage.innerHTML = `Welcome, ${displayName}`;
+  document.querySelector('.tagline').textContent = getDayMessage(displayName);
   logoutButton.innerHTML = '<i class="fa-solid fa-user"></i> PROFILE';
   document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
 }
 
 function setLoggedOutUI() {
-  welcomeMessage.innerHTML = "<a href='register.html' class='goldLink'>GET STARTED</a>";
+  document.querySelector('.tagline').textContent = 'THE PLATFORM FOR SCHOOL CLUBS';
   logoutButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> LOGIN';
   document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
 }
@@ -189,3 +189,54 @@ authReady.then(async (user) => {
   const count = await getTotalUnreadAnnouncementsAcrossClubs(user.uid);
   updateHomeAnnouncementsBadge(count);
 });
+
+
+
+
+
+const scrollHintBtn = document.getElementById('scroll-hint-btn');
+const featuresSection = document.querySelector('.features');
+
+scrollHintBtn.addEventListener('click', () => {
+  const top = featuresSection.getBoundingClientRect().top + window.scrollY - 80;
+  window.scrollTo({ top, behavior: 'smooth' });
+});
+
+const hintObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      scrollHintBtn.classList.add('hidden');
+      hintObserver.disconnect();
+    }
+  });
+}, { threshold: 0.1 });
+
+hintObserver.observe(featuresSection);
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const atBottom =
+      window.scrollY + window.innerHeight >= document.body.scrollHeight - 10;
+
+    if (!atBottom) {
+      scrollHintBtn.classList.add('show');
+    }
+  }, 600);
+});
+
+
+
+function getDayMessage(displayName) {
+  const day = new Date().getDay();
+  const name = displayName;
+  const messages = {
+    0: `What's up, ${name}!`,
+    1: `Back at it, ${name}?`,
+    2: `Welcome, ${name}!`,
+    3: `Let's go, ${name}!`,
+    4: `Good to see you, ${name}?`,
+    5: `Happy Friday, ${name}!`,
+    6: `Happy Saturday, ${name}!`,
+  };
+  return messages[day];
+}
