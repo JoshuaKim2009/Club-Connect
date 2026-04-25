@@ -225,7 +225,6 @@
 
 #announcements-home-button {
   position: relative;
-  width: 300px;
 }
 
 
@@ -380,7 +379,7 @@
 .tagline {
   font-family: "New Amsterdam", sans-serif;
   font-size: clamp(18px, 4vw, 28px);
-  color: rgba(236, 236, 236, 0.95);
+  color: #f8f8f8;
   letter-spacing: 0.15em;
   margin: 0 0 32px 0;
   position: relative;
@@ -423,7 +422,28 @@
   50%       { transform: translateY(7px); }
 }
 
+#club-button-icon,
+#announcements-button-icon {
+  margin-right: 10px;
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+@media (max-width: 600px) {
+  .hero-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 22px !important;
+  }
 
+  #club-button-icon,
+  #announcements-button-icon {
+    margin-right: 0px;
+    margin-bottom: 2px;
+    margin-top: 2px;
+  }
+}
 
 /* Features */
 
@@ -439,16 +459,18 @@
 
 .heading {
   font-family: "New Amsterdam", sans-serif;
-  font-size: clamp(36px, 6vw, 58px);
   font-weight: 400;
   text-align: center;
-  margin: 0 0 48px 0;
+  margin: 0 0 20px 0;
   line-height: 1.05;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  font-size: clamp(32px, 5.5vw, 58px);
 }
 
+
 .heading-dark {
-  background: linear-gradient(to bottom, #2b2b2b 0%, #000000 100%);
+  background: linear-gradient(to bottom, var(--bg-accent) -50%, color-mix(in srgb, var(--bg-dark), var(--bg-accent)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -457,7 +479,7 @@
 }
 
 .heading--light {
-  background: linear-gradient(to bottom, #ffffff 0%, #cccccc 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, #ffffff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -481,15 +503,19 @@
 
 .feat-icon {
   font-size: 28px;
-  color: var(--bg-accent);
   margin-bottom: 10px;
+  background: linear-gradient(to bottom, var(--bg-accent) 0%, var(--bg-dark) 150%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .feat-card h3 {
   font-family: var(--primary-font-family);
-  font-size: 19px;
+  font-size: 24px;
   font-weight: normal;
-  color: black;
+  color: color-mix(in srgb, var(--bg-dark), var(--bg-accent));
   margin: 0 0 8px 0;
   padding-bottom: 6px;
   border-bottom: 1px dotted #aaa;
@@ -498,7 +524,7 @@
 .feat-card p {
   font-family: var(--primary-font-family);
   font-size: 18px;
-  color: #555;
+  color: color-mix(in srgb, var(--bg-dark), var(--bg-accent));
   margin: 0;
   line-height: 1.3;
 }
