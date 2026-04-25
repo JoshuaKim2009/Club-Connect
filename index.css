@@ -400,6 +400,7 @@
   position: relative;
   z-index: 1;
   animation: lp-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  flex-shrink: 0;
 }
 
 
@@ -463,7 +464,7 @@
 
 .features {
   background: transparent;
-  padding: 64px 20px 72px;
+  padding: 90px 20px 72px;
 }
 
 .inner {
