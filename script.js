@@ -209,7 +209,7 @@ const hintObserver = new IntersectionObserver((entries) => {
       hintObserver.disconnect();
     }
   });
-}, { threshold: 0.1 });
+}, { threshold: 0.02 });
 
 hintObserver.observe(featuresSection);
 

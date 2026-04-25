@@ -227,8 +227,8 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #131330 0%, #131330 100%);
-    background-color: #131330;
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark) 100%);
+    background-color: var(--bg-dark);
     z-index: 99999;
     justify-content: center;
     align-items: center;

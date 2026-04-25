@@ -371,9 +371,15 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: calc(85px + env(safe-area-inset-top) - 120px) 20px 80px;
   position: relative;
   overflow: hidden;
+  padding: 20px;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero {
+    padding-top: calc(85px + env(safe-area-inset-top) + 20px);
+  }
 }
 
 .tagline {
@@ -409,6 +415,7 @@
   flex: 1 1 0;
   justify-content: center;
   font-size: clamp(20px, 3.5vw, 32px) !important;
+  white-space: nowrap;
 }
 
 
@@ -442,7 +449,7 @@
   #announcements-button-icon {
     margin-right: 0px;
     margin-bottom: 2px;
-    margin-top: 2px;
+    margin-top: 7px;
     font-size: 40px;
     background: linear-gradient(to bottom, #4b4b4b, #000000);
     -webkit-background-clip: text;
