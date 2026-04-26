@@ -155,8 +155,17 @@ function renderPage(page) {
   const end = start + PAGE_SIZE;
   const pageItems = allAnnouncements.slice(start, end);
 
-  pageItems.forEach((announcement) => {
-    announcementsContainer.appendChild(createAnnouncementCard(announcement));
+  pageItems.forEach((announcement, index) => {
+    const card = createAnnouncementCard(announcement);
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    announcementsContainer.appendChild(card);
+
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 80);
   });
 
   if (totalPages > 1) {
@@ -186,7 +195,7 @@ function createAnnouncementCard(data) {
 
   cardDiv.innerHTML = `
     <h3>
-      <span class="club-label">${data.clubName}</span><br>
+      <span class="club-label club-label--link" data-club-id="${data.clubId}">${data.clubName}</span><br>
       ${data.title}
     </h3>
     <p>${linkifyText(data.content)}</p>
@@ -194,6 +203,16 @@ function createAnnouncementCard(data) {
       Posted by: ${data.createdByName} on ${formatTimestamp(data.createdAt)}
     </p>
   `;
+
+  const label = cardDiv.querySelector('.club-label--link');
+  label.addEventListener('click', async () => {
+    const role = await getMemberRoleForClub(data.clubId, currentUser.uid);
+    if (role === 'manager' || role === 'admin') {
+      window.location.href = `club_page_manager.html?id=${data.clubId}`;
+    } else {
+      window.location.href = `club_page_member.html?id=${data.clubId}`;
+    }
+  });
 
   return cardDiv;
 }
@@ -231,4 +250,22 @@ function linkifyText(text) {
     const href = url.startsWith('http') ? url : 'https://' + url;
     return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
   });
+}
+
+
+async function getMemberRoleForClub(clubId, uid) {
+  try {
+    const memberSnap = await getDoc(doc(db, "clubs", clubId, "members", uid));
+    if (memberSnap.exists() && memberSnap.data().role) {
+      return memberSnap.data().role;
+    }
+    const clubSnap = await getDoc(doc(db, "clubs", clubId));
+    if (clubSnap.exists() && clubSnap.data().managerUid === uid) {
+      return 'manager';
+    }
+    return 'member';
+  } catch (e) {
+    console.error("Error fetching role:", e);
+    return 'member';
+  }
 }
