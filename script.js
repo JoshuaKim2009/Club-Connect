@@ -27,7 +27,7 @@ function setLoggedInUI(displayName) {
   document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
   const cta = document.getElementById('cta-action-btn');
   cta.href = 'your_clubs.html';
-  cta.innerHTML = 'FIND CLUBS &nbsp;<i class="fa-solid fa-users"></i>';
+  cta.innerHTML = 'FIND A CLUB &nbsp;<i class="fa-solid fa-users"></i>';
 }
 
 function setLoggedOutUI() {
