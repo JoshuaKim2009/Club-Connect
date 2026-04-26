@@ -179,8 +179,11 @@ function updateHomeAnnouncementsBadge(count) {
   if (count > 0) {
     badge.textContent = count;
     badge.style.display = 'flex';
+    // Small timeout so display:flex registers before animation starts
+    requestAnimationFrame(() => badge.classList.add('badge-visible'));
   } else {
     badge.style.display = 'none';
+    badge.classList.remove('badge-visible');
   }
 }
 

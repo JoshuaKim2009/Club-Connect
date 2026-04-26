@@ -442,7 +442,7 @@
   margin-right: 10px;
   margin-bottom: 0px;
   margin-top: 6px;
-  background: linear-gradient(to bottom, #2c2c2c, #000000);
+  background: linear-gradient(to bottom, #3b3b3b, #000000);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -491,7 +491,7 @@
   margin: 0 0 20px 0;
   line-height: 1.05;
   letter-spacing: 0.05em;
-  font-size: clamp(38px, 5.5vw, 58px);
+  font-size: clamp(32px, 5.5vw, 58px);
 }
 
 

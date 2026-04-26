@@ -574,9 +574,11 @@ function updateUnreadBadge(count) {
     if (badgeElement) {
         if (count > 0) {
             badgeElement.textContent = count;
-            badgeElement.style.display = 'flex'; 
+            badgeElement.style.display = 'flex';
+            requestAnimationFrame(() => badgeElement.classList.add('badge-visible'));
         } else {
-            badgeElement.style.display = 'none'; 
+            badgeElement.style.display = 'none';
+            badgeElement.classList.remove('badge-visible');
         }
     }
 }
@@ -652,9 +654,11 @@ function updateUnreadMessagesBadge(count) {
     if (badgeElement) {
         if (count > 0) {
             badgeElement.textContent = count;
-            badgeElement.style.display = 'flex'; 
+            badgeElement.style.display = 'flex';
+            requestAnimationFrame(() => badgeElement.classList.add('badge-visible'));
         } else {
-            badgeElement.style.display = 'none'; 
+            badgeElement.style.display = 'none';
+            badgeElement.classList.remove('badge-visible');
         }
     }
 }
@@ -732,8 +736,10 @@ function updateUnreadPollsBadge(count) {
         if (count > 0) {
             badgeElement.textContent = count;
             badgeElement.style.display = 'flex';
+            requestAnimationFrame(() => badgeElement.classList.add('badge-visible'));
         } else {
             badgeElement.style.display = 'none';
+            badgeElement.classList.remove('badge-visible');
         }
     }
 }
@@ -822,8 +828,10 @@ function updateUnreadDirectMessagesBadge(count) {
         if (count > 0) {
             badgeElement.textContent = count;
             badgeElement.style.display = 'flex';
+            requestAnimationFrame(() => badgeElement.classList.add('badge-visible'));
         } else {
             badgeElement.style.display = 'none';
+            badgeElement.classList.remove('badge-visible');
         }
     }
 }
