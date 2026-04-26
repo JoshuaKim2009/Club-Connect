@@ -81,7 +81,7 @@
     </div>
 
     <div class="chat-header">
-      <button id="back-button" class="fancy-button" onclick="goToHome()">
+      <button id="back-button" class="fancy-button" onclick="history.length > 1 ? history.back() : window.location.href='your_clubs.html'">
         <i class="fa-solid fa-circle-left"></i>
       </button>
       <span class="chat-title">CLUB PAGE</span>
