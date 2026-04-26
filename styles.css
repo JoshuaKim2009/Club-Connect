@@ -42,7 +42,11 @@ body {
   top: env(safe-area-inset-top);
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, var(--bg-dark), color-mix(in srgb, var(--bg-dark), var(--header-bg-end)));
+  background: linear-gradient(
+    to bottom,
+    var(--bg-dark) 8%,
+    color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 150%
+  );
   color: rgb(0, 0, 0);
   padding: 15px;
   font-size: 35px;
