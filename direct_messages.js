@@ -540,8 +540,6 @@ if (chatMessages) {
         if (chatMessages.scrollTop < 300 && hasMoreMessages && !isLoadingOlder) loadOlderMessages();
     });
     chatMessages.addEventListener('wheel', (e) => { if (replyingToMessage) e.preventDefault(); }, { passive: false });
-    chatMessages.addEventListener('touchstart', (e) => { if (replyingToMessage) e.preventDefault(); }, { passive: false });
-    chatMessages.addEventListener('touchmove', (e) => { if (replyingToMessage) e.preventDefault(); }, { passive: false });
 }
 
 async function saveImages() {
@@ -710,6 +708,14 @@ function cancelReply() {
     document.body.classList.remove('scroll-locked');
     document.body.style.touchAction = ''; 
 }
+
+chatInput.addEventListener('blur', () => {
+    // Keyboard was dismissed — release body lock but keep reply state
+    document.body.classList.remove('scroll-locked');
+    document.body.style.touchAction = '';
+    chatMessages.classList.remove('scroll-locked');
+    // Don't cancel the reply itself, just unblock touches
+});
 
 document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);
 
