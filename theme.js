@@ -1,7 +1,7 @@
 (function() {
     const saved = localStorage.getItem('cc-theme');
     const map = {
-        default: ['#131b30','#405aa0','#3498db'],
+        default: ['#152242','#405aa0','#3498db'],
         forest:  ['#0f2318','#2d6a4f','#52b788'],
         crimson: ['#4e1818','#a53131','#f85c69'],
         slate:   ['#0f0f0f','#21213f','#9b9bc4']
@@ -19,7 +19,7 @@
 const THEMES = {
     default: {
         name: 'Midnight Blue',
-        dark: '#131b30',
+        dark: '#152242',
         accent: '#405aa0',
         light: '#3498db'
     },
@@ -37,7 +37,7 @@ const THEMES = {
     },
     slate: {
         name: 'Slate',
-        dark: '#0b0b13',
+        dark: '#080813',
         accent: '#232342',
         light: '#9b9bc4'
     }
