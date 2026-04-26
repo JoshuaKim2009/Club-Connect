@@ -26,9 +26,9 @@ let currentUser = null;
 
 const addPollButton = document.getElementById('add-poll-button');
 const visMessages = {
-    Before: "Results are visible to all members before and after voting. The poll creator and manager can always see results.",
-    After:  "Results are hidden until a member votes, then revealed to them. The poll creator and manager can always see results.",
-    Never:  "Results are never shown to members regardless of voting. The poll creator and manager can always see results."
+    Before: "Everyone can see the results at any time, even before they vote. The creator of the poll and manager can always see results.",
+    After:  "Results are hidden until a member votes, after which they can see them. The creator of the poll and manager can always see results.",
+    Never:  "Results are always hidden from members no matter what they do. The creator of the poll and manager can always see results."
 };
 
 const clubId = getUrlParameter('clubId');
@@ -178,9 +178,6 @@ function _createPollEditingCardElement() {
             strip.classList.add('vis-strip-selected');
         });
     });
-    // set default selected
-    card.querySelector('.vis-strip[data-value="After"]').classList.add('vis-strip-selected');
-
     // add / remove option buttons
     const optionsList = card.querySelector('.poll-options-list-inline');
     const addBtn      = card.querySelector('.add-option-inline-btn');
@@ -223,7 +220,10 @@ function _createPollEditingCardElement() {
         const title   = card.querySelector('.poll-title-input-inline').value.trim();
         const options = [...card.querySelectorAll('.poll-options-list-inline .poll-option-input')]
             .map(i => i.value.trim()).filter(Boolean).map(text => ({ text, votes: [] }));
-        const visibility = card.querySelector('.vis-strip-selected')?.dataset.value || 'After';
+        const visibility = card.querySelector('.vis-strip-selected')?.dataset.value;
+        if (!visibility) {
+            await showAppAlert("Please select a visibility option!"); return;
+        }
 
         if (!title)            { await showAppAlert("Poll title is required!");                  return; }
         if (options.length < 2){ await showAppAlert("Please provide at least 2 poll options!"); return; }
@@ -358,7 +358,7 @@ function createPollCard(pollData, pollId) {
                                 data-option-index="${index}"
                                 ${userVotedForThis ? 'checked' : ''}>
                         <span class="poll-option-text">${option.text}</span>
-                        ${canSeeResults ? `<span class="poll-vote-count">(${voteCount})</span>` : ''}
+                        ${canSeeResults ? `<span class="poll-vote-count">${voteCount} vote${voteCount !== 1 ? 's' : ''}</span>` : ''}
                     </label>
                 </div>
                 ${canSeeResults ? `
@@ -472,12 +472,12 @@ function updatePollCard(existingCard, pollData, pollId) {
         const voteCountElement = optionElement.querySelector('.poll-vote-count');
         if (canSeeResults) {
             if (voteCountElement) {
-                voteCountElement.textContent = `(${voteCount})`;
+                voteCountElement.textContent = `${voteCount} vote${voteCount !== 1 ? 's' : ''}`;
             } else {
                 const label = optionElement.querySelector('.poll-option-label');
                 const span = document.createElement('span');
                 span.className = 'poll-vote-count';
-                span.textContent = `(${voteCount})`;
+                span.textContent = `${voteCount} vote${voteCount !== 1 ? 's' : ''}`;
                 label.appendChild(span);
             }
         } else {
