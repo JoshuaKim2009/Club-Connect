@@ -25,12 +25,18 @@ function setLoggedInUI(displayName) {
   document.querySelector('.tagline').textContent = getDayMessage(displayName);
   logoutButton.innerHTML = '<i class="fa-solid fa-user"></i> PROFILE';
   document.getElementById('dropdown-logout').innerHTML = 'LOGOUT <i class="fa-solid fa-arrow-right-from-bracket"></i>';
+  const cta = document.getElementById('cta-action-btn');
+  cta.href = 'your_clubs.html';
+  cta.innerHTML = 'GO TO MY CLUBS &nbsp;<i class="fa-solid fa-users"></i>';
 }
 
 function setLoggedOutUI() {
   document.querySelector('.tagline').textContent = 'THE PLATFORM FOR SCHOOL CLUBS';
   logoutButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> LOGIN';
   document.getElementById('dropdown-logout').innerHTML = 'LOGIN <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+  const cta = document.getElementById('cta-action-btn');
+  cta.href = 'register.html';
+  cta.innerHTML = 'CREATE ACCOUNT &nbsp;<i class="fa-solid fa-arrow-right-to-bracket"></i>';
 }
 
 // Paint correct UI immediately on first frame using cached data
