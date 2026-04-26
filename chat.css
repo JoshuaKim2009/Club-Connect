@@ -150,6 +150,14 @@ body {
     transform: scale(0.95);
 }
 
+.custom-dialog-overlay {
+    z-index: 1000;
+}
+
+.msgBox {
+    z-index: 1001;
+}
+
 .add-button {
     width: 45px;
     height: 45px;
@@ -163,6 +171,7 @@ body {
     border: 2px solid black;
     border-radius: 10px;
     color: rgb(0, 0, 0);
+    line-height: 1;
 }
 
 .add-button:active {
