@@ -441,7 +441,12 @@
 #announcements-button-icon {
   margin-right: 10px;
   margin-bottom: 0px;
-  margin-top: 0px;
+  margin-top: 6px;
+  background: linear-gradient(to bottom, #2c2c2c, #000000);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 @media (max-width: 550px) {
