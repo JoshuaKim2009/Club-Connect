@@ -214,14 +214,19 @@ const hintObserver = new IntersectionObserver((entries) => {
 hintObserver.observe(featuresSection);
 
 window.addEventListener('load', () => {
-  setTimeout(() => {
-    const atBottom =
-      window.scrollY + window.innerHeight >= document.body.scrollHeight - 10;
-
-    if (!atBottom) {
-      scrollHintBtn.classList.add('show');
-    }
-  }, 600);
+  const start = Date.now();
+  authReady.then((user) => {
+    if (user) return;
+    const elapsed = Date.now() - start;
+    const delay = Math.max(0, 50 - elapsed);
+    setTimeout(() => {
+      const atBottom =
+        window.scrollY + window.innerHeight >= document.body.scrollHeight - 10;
+      if (!atBottom) {
+        scrollHintBtn.classList.add('show');
+      }
+    }, delay);
+  });
 });
 
 
