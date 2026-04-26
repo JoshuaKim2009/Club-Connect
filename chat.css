@@ -86,7 +86,11 @@ body {
                     calc(10px + env(safe-area-inset-right));
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
 
-    background: linear-gradient(to top, var(--bg-dark), color-mix(in srgb, var(--bg-dark), var(--header-bg-end)));
+    background: linear-gradient(
+        to top,
+        var(--bg-dark) 8%,
+        color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 150%
+    );
     border-top: 2px solid black;
 
     box-sizing: border-box;
