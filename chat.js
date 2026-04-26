@@ -921,6 +921,7 @@ function cancelReply() {
     
     // chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;
     document.body.classList.remove('scroll-locked');
+    document.body.style.touchAction = ''; 
 }
 
 document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);

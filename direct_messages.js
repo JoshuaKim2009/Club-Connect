@@ -708,6 +708,7 @@ function cancelReply() {
     chatMessages.classList.remove('scroll-locked');
     chatMessages.classList.remove('blur-background');
     document.body.classList.remove('scroll-locked');
+    document.body.style.touchAction = ''; 
 }
 
 document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);
