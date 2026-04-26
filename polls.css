@@ -134,10 +134,10 @@ body {
 .poll-options-selection {
     margin-top: 15px;
     margin-bottom: 15px;
-    border: 2px solid #000000;
+    border: 2px solid #00000000;
     border-radius: 5px;
     padding: 10px;
-    background-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0);
 }
 
 .poll-options-selection > label {
@@ -161,7 +161,8 @@ body {
 }
 
 #poll-creation-modal .checkbox-group label,
-#poll-edit-modal .checkbox-group label {
+#poll-edit-modal .checkbox-group label,
+.editing-poll-card .checkbox-group label {
     display: flex;
     align-items: flex-start;
     font-weight: normal;
@@ -176,7 +177,8 @@ body {
 
 
 #poll-creation-modal input[type="radio"],
-#poll-edit-modal input[type="radio"] {
+#poll-edit-modal input[type="radio"],
+.editing-poll-card input[type="radio"] {
     appearance: none;
     -webkit-appearance: none;
     width: 18px;
@@ -191,7 +193,8 @@ body {
 }
 
 #poll-creation-modal input[type="radio"]:checked,
-#poll-edit-modal input[type="radio"]:checked {
+#poll-edit-modal input[type="radio"]:checked,
+.editing-poll-card input[type="radio"]:checked {
     background-color: #000000;
 }
 
@@ -228,32 +231,40 @@ body {
     box-shadow: 0 0 0 1px #000000;
 }
 
-#subtract-option-btn,
-#add-option-btn {
-    margin-left: 5px;
-    margin-right: 5px;
-    margin-top: 10px;
-    background: none;
-    border: none;
+.subtract-option-inline-btn {
+    margin-right: 10px;
+}
+
+.add-option-inline-btn,
+.subtract-option-inline-btn {
     color: #000;
-    font-family: var(--primary-font-family);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid black;
+    border-radius: 6px;
+
+    width: 36px;
+    height: 36px;
+
     font-size: 20px;
     cursor: pointer;
-    padding: 4px 0;
-    text-align: left;
-    font-weight: normal;
+
+    background: transparent;
+    margin-top: 10px;
+    margin-right: 8px;
 }
 
-#subtract-option-btn:hover,
-#add-option-btn:hover {
-    text-decoration: underline;
+.add-option-inline-btn:hover,
+.subtract-option-inline-btn:hover {
+    background: rgba(0,0,0,0.05);
 }
 
-#subtract-option-btn:disabled,
-#add-option-btn:disabled {
-    color: #555555;
+.add-option-inline-btn:disabled,
+.subtract-option-inline-btn:disabled {
+    opacity: 0.4;
     cursor: default;
-    text-decoration: none;
 }
 
 .poll-creation-actions {
@@ -315,8 +326,8 @@ body {
     font-size: 1.6em;
     text-align: center;
     margin-top: 0;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
     border-bottom: 2px dotted black;
     position: relative;
 }
@@ -489,4 +500,70 @@ body {
 .edit-poll-btn .button-icon {
     display: inline-block;
     margin-left: 8px;
+}
+
+.editing-poll-card .poll-options-selection {
+    text-align: left;
+}
+
+.poll-inline-vis-info,
+.poll-edit-inline-vis-info {
+    margin-top: 8px;
+    display: block;
+}
+
+
+.vis-strip-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.vis-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 2px solid #000;
+    border-radius: 7px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.05s ease-in-out;
+    text-align: left;
+}
+
+.vis-strip-selected {
+    background: #000;
+    color: #fff;
+}
+
+.vis-strip-title {
+    font-family: var(--primary-font-family);
+    font-size: 22px;
+}
+
+.vis-strip-sub {
+    font-size: 18px;
+    color: #555;
+    font-family: var(--primary-font-family);
+    line-height: 1.3;
+}
+
+.vis-strip-selected .vis-strip-sub {
+    color: #ccc;
+}
+
+.poll-section-box {
+    border: 2px solid rgba(0, 0, 0, 0);
+    border-radius: 5px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0);
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.poll-section-box label {
+    display: block;
+    margin-bottom: 6px;
 }

@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { runTransaction } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 
@@ -24,10 +25,11 @@ let role = null;
 let currentUser = null;
 
 const addPollButton = document.getElementById('add-poll-button');
-const pollCreationModal = document.getElementById('poll-creation-modal');
-const pollOverlay = document.getElementById('popup-overlay');
-const pollEditModal = document.getElementById('poll-edit-modal');
-
+const visMessages = {
+    Before: "Results are visible to all members before and after voting. The poll creator and manager can always see results.",
+    After:  "Results are hidden until a member votes, then revealed to them. The poll creator and manager can always see results.",
+    Never:  "Results are never shown to members regardless of voting. The poll creator and manager can always see results."
+};
 
 const clubId = getUrlParameter('clubId');
 
@@ -98,28 +100,162 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-var pollTypeChoice = "After";
-
 async function createPollEditingCard() {
-    pollOverlay.style.display = 'block';
-    pollCreationModal.style.display = 'block';
-    pollCreationModal.scrollTop = 0;
-    document.body.classList.add('no-scroll');
+    if (document.querySelector('.editing-poll-card')) {
+        await showAppAlert("Please finish the current poll before adding a new one.");
+        return;
+    }
+    const card = _createPollEditingCardElement();
+    const pollsContainer = document.getElementById('polls-container');
+    const noPollsMessage = document.getElementById('no-polls-message');
+    if (noPollsMessage) noPollsMessage.style.display = 'none';
+    pollsContainer.insertBefore(card, pollsContainer.firstChild);
+    card.querySelector('.poll-title-input-inline').focus();
 }
 
+function _createPollEditingCardElement() {
+    const card = document.createElement('div');
+    card.className = 'poll-card editing-poll-card';
 
-document.querySelector('.checkbox-group').addEventListener('change', (e) => {
-    const pollInfoText = document.getElementById('poll-type-info');
-    if (e.target.value === "Before"){
-        pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
-    } else if (e.target.value === "After"){
-        pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
-    } else {
-        pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
+    card.innerHTML = `
+        <h3>CREATE POLL</h3>
+        <div class="poll-section-box">
+            <label style="font-size:20px;margin-bottom:6px;">Title</label>
+            <textarea class="poll-option-input poll-title-input-inline" placeholder="Poll title..." rows="1"></textarea>
+        </div>
+
+        <div class="poll-options-selection">
+            <label>Show results to voter:</label>
+            <div class="vis-strip-group">
+                <div class="vis-strip" data-value="Before">
+                    <span class="vis-strip-title">BEFORE</span>
+                    <span class="vis-strip-sub">${visMessages.Before}</span>
+                </div>
+                <div class="vis-strip" data-value="After">
+                    <span class="vis-strip-title">AFTER</span>
+                    <span class="vis-strip-sub">${visMessages.After}</span>
+                </div>
+                <div class="vis-strip" data-value="Never">
+                    <span class="vis-strip-title">NEVER</span>
+                    <span class="vis-strip-sub">${visMessages.Never}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="poll-section-box">
+            <label style="font-size:20px;margin-bottom:6px;">Options</label>
+            <div class="poll-options-list-inline" style="display:flex;flex-direction:column;gap:8px;">
+                <div class="poll-option-row"><textarea class="poll-option-input" placeholder="Option 1" rows="1"></textarea></div>
+                <div class="poll-option-row"><textarea class="poll-option-input" placeholder="Option 2" rows="1"></textarea></div>
+            </div>
+
+            <button class="subtract-option-inline-btn" disabled>
+                <i class="fa-solid fa-minus"></i>
+            </button>
+
+            <button class="add-option-inline-btn">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+
+        <div class="poll-creation-actions">
+            <button class="post-poll-inline-btn fancy-button">POST</button>
+            <button class="cancel-poll-inline-btn fancy-button">CANCEL</button>
+        </div>
+    `;
+
+    // auto-resize on input
+    card.querySelectorAll('.poll-option-input').forEach(autoResize);
+    card.addEventListener('input', (e) => {
+        if (e.target.classList.contains('poll-option-input')) autoResize(e.target);
+    });
+
+    // visibility radio info text
+    const visStrips = card.querySelectorAll('.vis-strip');
+    visStrips.forEach(strip => {
+        strip.addEventListener('click', () => {
+            visStrips.forEach(s => s.classList.remove('vis-strip-selected'));
+            strip.classList.add('vis-strip-selected');
+        });
+    });
+    // set default selected
+    card.querySelector('.vis-strip[data-value="After"]').classList.add('vis-strip-selected');
+
+    // add / remove option buttons
+    const optionsList = card.querySelector('.poll-options-list-inline');
+    const addBtn      = card.querySelector('.add-option-inline-btn');
+    const subtractBtn = card.querySelector('.subtract-option-inline-btn');
+
+    function updateInlineOptionBtns() {
+        const count = optionsList.querySelectorAll('.poll-option-row').length;
+        addBtn.disabled      = count >= MAX_OPTIONS;
+        subtractBtn.disabled = count <= 2;
+        addBtn.style.color      = addBtn.disabled      ? '#555' : '#000';
+        subtractBtn.style.color = subtractBtn.disabled ? '#555' : '#000';
     }
-    pollTypeChoice = e.target.value;
-    console.log(pollTypeChoice);
-});
+    updateInlineOptionBtns();
+
+    addBtn.addEventListener('click', () => {
+        const count = optionsList.querySelectorAll('.poll-option-row').length;
+        if (count >= MAX_OPTIONS) return;
+        const row = document.createElement('div');
+        row.className = 'poll-option-row';
+        const ta = document.createElement('textarea');
+        ta.className = 'poll-option-input';
+        ta.placeholder = `Option ${count + 1}`;
+        ta.rows = 1;
+        row.appendChild(ta);
+        optionsList.appendChild(row);
+        autoResize(ta);
+        ta.focus();
+        updateInlineOptionBtns();
+    });
+
+    subtractBtn.addEventListener('click', () => {
+        const rows = optionsList.querySelectorAll('.poll-option-row');
+        if (rows.length <= 2) return;
+        rows[rows.length - 1].remove();
+        updateInlineOptionBtns();
+    });
+
+    // POST
+    card.querySelector('.post-poll-inline-btn').addEventListener('click', async () => {
+        const title   = card.querySelector('.poll-title-input-inline').value.trim();
+        const options = [...card.querySelectorAll('.poll-options-list-inline .poll-option-input')]
+            .map(i => i.value.trim()).filter(Boolean).map(text => ({ text, votes: [] }));
+        const visibility = card.querySelector('.vis-strip-selected')?.dataset.value || 'After';
+
+        if (!title)            { await showAppAlert("Poll title is required!");                  return; }
+        if (options.length < 2){ await showAppAlert("Please provide at least 2 poll options!"); return; }
+
+        try {
+            await addDoc(collection(db, "clubs", clubId, "polls"), {
+                title, options, visibility,
+                createdAt:     serverTimestamp(),
+                createdByUid:  currentUser.uid,
+                createdByName: currentUser.displayName || "Anonymous",
+                clubId, isActive: true
+            });
+            await updateLastSeenPolls();
+            card.remove();
+        } catch (err) {
+            console.error("Error creating poll:", err);
+            await showAppAlert("Failed to create poll: " + err.message);
+        }
+    });
+
+    // CANCEL
+    card.querySelector('.cancel-poll-inline-btn').addEventListener('click', () => {
+        card.remove();
+        const pollsContainer = document.getElementById('polls-container');
+        const noPollsMessage = document.getElementById('no-polls-message');
+        if (noPollsMessage && pollsContainer.querySelectorAll('.poll-card:not(.editing-poll-card)').length === 0) {
+            if (role === 'member') { noPollsMessage.style.display = 'block'; }
+        }
+    });
+
+    return card;
+}
 
 function autoResize(textarea) {
     textarea.style.height = 'auto';
@@ -134,214 +270,54 @@ document.addEventListener('input', (e) => {
 
 const MAX_OPTIONS = 10;
 
-window.addPollOption = function () {
-    const list = document.getElementById('poll-options-list');
-    const current = list.querySelectorAll('.poll-option-row').length;
-    if (current >= MAX_OPTIONS) return;
-
-    const row = document.createElement('div');
-    row.className = 'poll-option-row';
-
-    const input = document.createElement('textarea');
-    input.className = 'poll-option-input';
-    input.placeholder = `Option ${current + 1}`;
-    input.rows = 1;
-
-    row.appendChild(input);
-    list.appendChild(row);
-
-    autoResize(input);
-    input.focus();
-    updateAddButtonState();
-    const modal = document.getElementById('poll-creation-modal');
-    modal.scrollTop = modal.scrollHeight;
-
-}
-
-window.subtractPollOption = function () {
-    const list = document.getElementById('poll-options-list');
-    const rows = list.querySelectorAll('.poll-option-row');
-    if (rows.length <= 2) return;
-
-    rows[rows.length - 1].remove();
-    updateAddButtonState();
-}
-
-function updateAddButtonState() {
-    const list = document.getElementById('poll-options-list');
-    const current = list.querySelectorAll('.poll-option-row').length;
-    document.getElementById('add-option-btn').disabled = current >= MAX_OPTIONS;
-    document.getElementById('subtract-option-btn').disabled = current <= 2;
-}
-
-document.querySelectorAll('.poll-option-input').forEach(autoResize);
-updateAddButtonState();
-
-function resetPollEditingCard(){
-    document.getElementById('poll-title-input').value = '';
-
-    const list = document.getElementById('poll-options-list');
-    list.innerHTML = `
-        <div class="poll-option-row">
-            <textarea class="poll-option-input" placeholder="Option 1" rows="1"></textarea>
-        </div>
-        <div class="poll-option-row">
-            <textarea class="poll-option-input" placeholder="Option 2" rows="1"></textarea>
-        </div>
-    `;
-
-    list.querySelectorAll('.poll-option-input').forEach(autoResize);
-
-    updateAddButtonState();
-}
-
-function hidePollEditingCard(){
-    pollCreationModal.style.display = 'none';
-    pollOverlay.style.display = 'none';
-    document.body.classList.remove('no-scroll');
-}
-
-const postButton = document.getElementById('post-poll-button');
-
-postButton.addEventListener('click', async () => {
-    const pollId = await savePoll();
-    
-    if (pollId) {
-        resetPollEditingCard();
-        hidePollEditingCard();
-    }
-});
-
-
-const cancelButton = document.getElementById('cancel-poll-button');
-
-cancelButton.addEventListener('click', async ()  => {
-    resetPollEditingCard();
-    hidePollEditingCard();
-});
-
-async function savePoll() {
-    if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in to create a poll.");
-        return null;
-    }
-
-    const titleInput = document.getElementById('poll-title-input').value.trim();
-    
-
-    const optionInputs = document.querySelectorAll('#poll-options-list .poll-option-input');
-    const options = [];
-    
-    optionInputs.forEach((input, index) => {
-        const optionText = input.value.trim();
-        if (optionText) {
-            options.push({
-                text: optionText,
-                votes: [] 
-            });
-        }
-    });
-
-    if (!titleInput) {
-        await showAppAlert("Poll title is required!");
-        return null;
-    }
-
-    if (options.length < 2) {
-        await showAppAlert("Please provide at least 2 poll options!");
-        return null;
-    }
-
-    try {
-        const pollsRef = collection(db, "clubs", clubId, "polls");
-        
-        const pollData = {
-            title: titleInput,
-            options: options,
-            visibility: pollTypeChoice, 
-            createdAt: serverTimestamp(),
-            createdByUid: currentUser.uid,
-            createdByName: currentUser.displayName || "Anonymous",
-            clubId: clubId,
-            isActive: true
-        };
-
-        const newPollRef = await addDoc(pollsRef, pollData);
-        const newPollId = newPollRef.id;
-
-        await updateLastSeenPolls();
-
-        hidePollEditingCard()
-        await showAppAlert("Poll created successfully!");
-        return newPollId;
-
-    } catch (error) {
-        console.error("Error creating poll:", error);
-        await showAppAlert("Failed to create poll: " + error.message);
-        return null;
-    }
-}
-
 let pollsListenerUnsubscribe = null;
 
 function setupRealtimePollsListener() {
-    if (!clubId) {
-        console.warn("setupRealtimePollsListener called without clubId.");
-        return;
-    }
-
-    if (pollsListenerUnsubscribe) {
-        pollsListenerUnsubscribe();
-        pollsListenerUnsubscribe = null;
-    }
+    if (!clubId) return;
+    if (pollsListenerUnsubscribe) { pollsListenerUnsubscribe(); pollsListenerUnsubscribe = null; }
 
     const pollsRef = collection(db, "clubs", clubId, "polls");
     const q = query(pollsRef, orderBy("createdAt", "desc"));
 
+    let isInitialSnapshot = true; // <-- ADD THIS
+
     pollsListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
         const pollsContainer = document.getElementById('polls-container');
-        
+
         querySnapshot.docChanges().forEach((change) => {
             const pollData = change.doc.data();
             const pollId = change.doc.id;
 
             if (change.type === "added") {
                 const pollCard = createPollCard(pollData, pollId);
-                pollsContainer.insertBefore(pollCard, pollsContainer.firstChild);
-            }
-            else if (change.type === "modified") {
-                const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);
-                if (existingCard) {
-                    updatePollCard(existingCard, pollData, pollId);
+                if (isInitialSnapshot) {
+                    pollsContainer.appendChild(pollCard);       // preserve desc order
+                } else {
+                    pollsContainer.insertBefore(pollCard, pollsContainer.firstChild); // new poll → top
                 }
-            } 
-            else if (change.type === "removed") {
+            } else if (change.type === "modified") {
                 const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);
-                if (existingCard) {
-                    existingCard.remove();
-                }
+                if (existingCard) updatePollCard(existingCard, pollData, pollId);
+            } else if (change.type === "removed") {
+                const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);
+                if (existingCard) existingCard.remove();
             }
         });
 
+        isInitialSnapshot = false; // <-- flip after first batch
+
         const noPollsMessage = document.getElementById('no-polls-message');
         if (pollsContainer.children.length === 0) {
-            if (role === 'member') {
-                if (noPollsMessage) {
-                    noPollsMessage.textContent = 'NO POLLS YET';
-                    noPollsMessage.style.display = 'block';
-                }
-            } else {
-                if (noPollsMessage) noPollsMessage.style.display = 'none';
+            if (role === 'member' && noPollsMessage) {
+                noPollsMessage.textContent = 'NO POLLS YET';
+                noPollsMessage.style.display = 'block';
             }
         } else if (noPollsMessage) {
             noPollsMessage.style.display = 'none';
         }
 
         updateLastSeenPolls();
-
-    }, (error) => {
-        console.error("Error fetching realtime polls:", error);
-    });
+    }, (error) => { console.error("Error fetching realtime polls:", error); });
 }
 
 function createPollCard(pollData, pollId) {
@@ -549,52 +525,52 @@ window.addEventListener('beforeunload', () => {
 });
 
 
-async function handleVote(pollId, optionIndex) { // Remove pollData parameter
+async function handleVote(pollId, optionIndex) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in to vote.");
         return;
     }
 
+    const pollRef = doc(db, "clubs", clubId, "polls", pollId);
+    const userUid = currentUser.uid;
+
     try {
-        const pollRef = doc(db, "clubs", clubId, "polls", pollId);
-        
-        const pollSnap = await getDoc(pollRef);
-        if (!pollSnap.exists()) {
-            await showAppAlert("Poll not found.");
-            return;
-        }
-        
-        const pollData = pollSnap.data();
-        const userUid = currentUser.uid;
+        await runTransaction(db, async (transaction) => {
+            const pollSnap = await transaction.get(pollRef);
 
-        let previousVoteIndex = -1;
-        pollData.options.forEach((option, index) => {
-            if (option.votes.includes(userUid)) {
-                previousVoteIndex = index;
+            if (!pollSnap.exists()) {
+                throw new Error("Poll not found");
             }
-        });
 
-        if (previousVoteIndex === optionIndex) {
-            pollData.options[optionIndex].votes = pollData.options[optionIndex].votes.filter(
-                uid => uid !== userUid
-            );
-        } 
-        else if (previousVoteIndex !== -1) {
-            pollData.options[previousVoteIndex].votes = pollData.options[previousVoteIndex].votes.filter(
-                uid => uid !== userUid
-            );
-            pollData.options[optionIndex].votes.push(userUid);
-        }
-        else {
-            pollData.options[optionIndex].votes.push(userUid);
-        }
+            const pollData = pollSnap.data();
+            const options = structuredClone(pollData.options);
 
-        await updateDoc(pollRef, {
-            options: pollData.options
+            let previousVoteIndex = -1;
+
+            options.forEach((option, index) => {
+                if (option.votes.includes(userUid)) {
+                    previousVoteIndex = index;
+                }
+            });
+
+            // toggle logic (same as yours, just safer)
+            if (previousVoteIndex === optionIndex) {
+                options[optionIndex].votes =
+                    options[optionIndex].votes.filter(uid => uid !== userUid);
+            } 
+            else {
+                if (previousVoteIndex !== -1) {
+                    options[previousVoteIndex].votes =
+                        options[previousVoteIndex].votes.filter(uid => uid !== userUid);
+                }
+                options[optionIndex].votes.push(userUid);
+            }
+
+            transaction.update(pollRef, { options });
         });
 
     } catch (error) {
-        console.error("Error saving vote:", error);
+        console.error("Transaction failed:", error);
         await showAppAlert("Failed to save vote: " + error.message);
     }
 }
@@ -617,77 +593,70 @@ async function deletePoll(pollId) {
 async function editPoll(pollId, pollData) {
     const pollRef = doc(db, "clubs", clubId, "polls", pollId);
     const pollSnap = await getDoc(pollRef);
-
-    if (!pollSnap.exists()) {
-        await showAppAlert("Poll not found.");
-        return;
-    }
-
+    if (!pollSnap.exists()) { await showAppAlert("Poll not found."); return; }
     pollData = pollSnap.data();
-    pollOverlay.style.display = 'block';
-    pollEditModal.style.display = 'block';
-    document.body.classList.add('no-scroll');
-    
-    const visibilityRadios = pollEditModal.querySelectorAll('input[name="poll-edit-option"]');
-    visibilityRadios.forEach(radio => {
-        if (radio.value === pollData.visibility) {
-            radio.checked = true;
-        }
-    });
 
-    const editModalRadios = pollEditModal.querySelectorAll('input[name="poll-edit-option"]');
-    editModalRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const pollInfoText = document.getElementById('poll-edit-type-info');
-            if (e.target.value === "Before"){
-                pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
-            } else if (e.target.value === "After"){
-                pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
-            } else {
-                pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
-            }
+    const existingCard = document.querySelector(`[data-poll-id="${pollId}"]`);
+    if (!existingCard) return;
+
+    const editCard = document.createElement('div');
+    editCard.className = 'poll-card editing-poll-card';
+    editCard.innerHTML = `
+        <h3>${pollData.title}</h3>
+        <div class="poll-options-selection" style="margin-top:12px;">
+            <label>Show results to voter:</label>
+            <div class="vis-strip-group">
+                <div class="vis-strip" data-value="Before">
+                    <span class="vis-strip-title">BEFORE</span>
+                    <span class="vis-strip-sub">${visMessages.Before}</span>
+                </div>
+                <div class="vis-strip" data-value="After">
+                    <span class="vis-strip-title">AFTER</span>
+                    <span class="vis-strip-sub">${visMessages.After}</span>
+                </div>
+                <div class="vis-strip" data-value="Never">
+                    <span class="vis-strip-title">NEVER</span>
+                    <span class="vis-strip-sub">${visMessages.Never}</span>
+                </div>
+            </div>
+        </div>
+        <div class="poll-creation-actions" style="margin-top:14px;">
+            <button class="save-edit-inline-btn fancy-button">SAVE</button>
+            <button class="cancel-edit-inline-btn fancy-button">CANCEL</button>
+        </div>
+    `;
+
+    // pre-check current visibility
+    const editVisStrips = editCard.querySelectorAll('.vis-strip');
+    editVisStrips.forEach(strip => {
+        strip.addEventListener('click', () => {
+            editVisStrips.forEach(s => s.classList.remove('vis-strip-selected'));
+            strip.classList.add('vis-strip-selected');
         });
     });
 
-    const pollInfoText = document.getElementById('poll-edit-type-info');
-    if (pollData.visibility === "Before"){
-        pollInfoText.textContent = `Users will always see poll percentages. The creator of the poll and manager can always see results.`;
-    } else if (pollData.visibility === "After"){
-        pollInfoText.textContent = `Poll percentages will be shown after a user votes. The creator of the poll and manager can always see results.`;
-    } else {
-        pollInfoText.textContent = `Poll percentages will never be revealed to users. The creator of the poll and manager can always see results.`;
-    }
-    
-    const saveButton = document.getElementById('save-poll-edit-button');
-    const cancelButton = document.getElementById('cancel-poll-edit-button');
-    
-    const newSaveButton = saveButton.cloneNode(true);
-    const newCancelButton = cancelButton.cloneNode(true);
-    saveButton.parentNode.replaceChild(newSaveButton, saveButton);
-    cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
-    
-    newSaveButton.addEventListener('click', async () => {
-        const selectedVisibility = pollEditModal.querySelector('input[name="poll-edit-option"]:checked').value;
-        
-        try {
-            const pollRef = doc(db, "clubs", clubId, "polls", pollId);
-            await updateDoc(pollRef, { visibility: selectedVisibility });
+    const currentVisibility = pollData.visibility || 'After';
 
-            pollEditModal.style.display = 'none';
-            pollOverlay.style.display = 'none';
-            document.body.classList.remove('no-scroll');
-            await showAppAlert("Poll visibility updated successfully!");
-        } catch (error) {
-            console.error("Error updating poll:", error);
-            await showAppAlert("Failed to update poll: " + error.message);
+    const selectedStrip = editCard.querySelector(`.vis-strip[data-value="${currentVisibility}"]`);
+    if (selectedStrip) {
+        selectedStrip.classList.add('vis-strip-selected');
+    }
+
+    editCard.querySelector('.save-edit-inline-btn').addEventListener('click', async () => {
+        const selected = editCard.querySelector('.vis-strip-selected')?.dataset.value || 'After';
+        try {
+            await updateDoc(doc(db, "clubs", clubId, "polls", pollId), { visibility: selected });
+            editCard.replaceWith(existingCard);
+        } catch (err) {
+            await showAppAlert("Failed to update poll: " + err.message);
         }
     });
-    
-    newCancelButton.addEventListener('click', () => {
-        pollEditModal.style.display = 'none';
-        pollOverlay.style.display = 'none';
-        document.body.classList.remove('no-scroll');
+
+    editCard.querySelector('.cancel-edit-inline-btn').addEventListener('click', () => {
+        editCard.replaceWith(existingCard);
     });
+
+    existingCard.replaceWith(editCard);
 }
 
 
