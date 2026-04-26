@@ -2064,7 +2064,8 @@ input[type="checkbox"]:checked {
 
 
 .notification-badge {
-  background-color: rgb(182, 16, 16); 
+  background-color: #a53131; 
+  background-image: radial-gradient(circle, rgb(255, 66, 60), #a53131);
   color: white;
   border-radius: 4px; 
   padding: 3px 6px; 
@@ -2078,7 +2079,7 @@ input[type="checkbox"]:checked {
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
-  border: 2px solid rgb(112, 13, 13);
+  border: 2px solid #4b1010;
   font-weight: normal;
   font-family: var(--primary-font-family, sans-serif);
   z-index: 10;

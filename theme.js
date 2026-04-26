@@ -2,8 +2,8 @@
     const saved = localStorage.getItem('cc-theme');
     const map = {
         default: ['#152242','#405aa0','#3498db'],
-        forest:  ['#0f2318','#2d6a4f','#52b788'],
-        crimson: ['#4e1818','#a53131','#f85c69'],
+        forest:  ['#18422b','#2d6a4f','#52b788'],
+        crimson: ['#6b1b1b','#a53131','#f85c69'],
         slate:   ['#0f0f0f','#21213f','#9b9bc4']
     };
     const c = map[saved] || map.default;
@@ -25,13 +25,13 @@ const THEMES = {
     },
     forest: {
         name: 'Forest',
-        dark: '#0f2318',
+        dark: '#18422b',
         accent: '#2d6a4f',
         light: '#52b788'
     },
     crimson: {
         name: 'Crimson',
-        dark: '#4e1818',
+        dark: '#6b1b1b',
         accent: '#a53131',
         light: '#f85c69'
     },
