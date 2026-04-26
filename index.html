@@ -3,7 +3,7 @@
   <head>
     <link href="styles.css?v=35" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#131b30">
-    <link href="index.css?v=22" rel="stylesheet" />
+    <link href="index.css?v=23" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,13 +71,6 @@
         margin-bottom: 18px;
       }
 
-      #main-page-title {
-        filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.4));
-      }
-
-      .tagline {
-        text-shadow: 0px 2px 12px rgba(0, 0, 0, 0.4);
-      }
 
     </style>
   </head>
@@ -108,16 +101,18 @@
     <div id="profile-overlay"></div>
 
     <section class="hero">
-      <svg viewBox="0 0 800 110" xmlns="http://www.w3.org/2000/svg" id="main-page-title" aria-label="Club Connect" style="overflow: visible;">
-        <defs>
-          <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="100%" stop-color="#cccccc"/>
-          </linearGradient>
-        </defs>
-        <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150"
-              fill="url(#textGrad)" textLength="800" lengthAdjust="spacing">CLUB CONNECT</text>
-      </svg>
+      <div id="main-page-title-wrapper">
+        <svg viewBox="0 0 800 110" xmlns="http://www.w3.org/2000/svg" id="main-page-title" aria-label="Club Connect" style="overflow: visible;">
+          <defs>
+            <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#cccccc"/>
+            </linearGradient>
+          </defs>
+          <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150"
+                fill="url(#textGrad)" textLength="800" lengthAdjust="spacing">CLUB CONNECT</text>
+        </svg>
+      </div>
 
       <p class="tagline">THE PLATFORM FOR SCHOOL CLUBS</p>
 
