@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
@@ -14,14 +14,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '💀', '😭'];
 
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open');
-    else if (err.code === 'unimplemented') console.warn('Persistence not available in this browser');
+const db = initializeFirestore(app, {
+    cache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+    })
 });
 
 let currentUser = null;
