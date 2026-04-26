@@ -165,13 +165,12 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 38px;
+    font-size: 22px;
     flex-shrink: 0;
     background: radial-gradient(circle at center, #ffffff, #b3b3b3);
     border: 2px solid black;
     border-radius: 10px;
     color: rgb(0, 0, 0);
-    line-height: 1;
 }
 
 .add-button:active {
