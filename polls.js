@@ -121,7 +121,7 @@ function _createPollEditingCardElement() {
         <h3>CREATE POLL</h3>
         <div class="poll-section-box">
             <label style="font-size:20px;margin-bottom:6px;">Title</label>
-            <textarea class="poll-option-input poll-title-input-inline" placeholder="Poll title..." rows="1"></textarea>
+            <textarea class="poll-option-input poll-title-input-inline" placeholder="What is the title of your poll?" rows="1"></textarea>
         </div>
 
         <div class="poll-options-selection">

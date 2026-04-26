@@ -1554,7 +1554,7 @@ function scrollToEditedEvent(eventId, occurrenceDateString = null) {
     if (targetElement) {
         const topPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo({
-            top: topPosition - 110, 
+            top: topPosition - 90, 
             behavior: 'smooth'
         });
     } else {

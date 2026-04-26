@@ -299,8 +299,10 @@ function renderPage(page) {
   const end = start + PAGE_SIZE;
   const pageItems = allAnnouncements.slice(start, end);
 
-  pageItems.forEach((announcement) => {
-    announcementsContainer.appendChild(_createAnnouncementDisplayCard(announcement, announcement.id));
+  pageItems.forEach((announcement, index) => {
+    const card = _createAnnouncementDisplayCard(announcement, announcement.id);
+    announcementsContainer.appendChild(card);
+    animateCardIn(card, index);
   });
 
   if (totalPages > 1) {
@@ -464,4 +466,16 @@ function linkifyText(text) {
         let href = url.startsWith('http') ? url : 'https://' + url;
         return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
+}
+
+
+function animateCardIn(card, index = 0) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 80);
 }
