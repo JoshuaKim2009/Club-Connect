@@ -46,7 +46,7 @@
     padding: 9px 10px;
     border: 2px solid black;
     border-radius: 6px;
-    font-size: 1em;
+    font-size: 20px;
     font-family: var(--primary-font-family, sans-serif);
     background-color: #ffffff;
     resize: none;
@@ -257,7 +257,7 @@
     padding: 8px 10px;
     border: 2px solid black;
     border-radius: 6px;
-    font-size: 18px;
+    font-size: 20px;
     font-family: var(--primary-font-family, sans-serif);
     background: #ffffff;
     box-sizing: border-box;
@@ -356,7 +356,7 @@
     padding: 7px 9px;
     border: 2px solid black;
     border-radius: 6px;
-    font-size: 18px;
+    font-size: 20px;
     font-family: var(--primary-font-family, sans-serif);
     background: #fff;
     box-sizing: border-box;
