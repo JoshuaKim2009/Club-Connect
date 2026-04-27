@@ -302,7 +302,6 @@ function openEditingCard(category, existingCard) {
 
     // Swap in
     existingCard.replaceWith(editCard);
-    titleInput.focus();
 }
 
 
