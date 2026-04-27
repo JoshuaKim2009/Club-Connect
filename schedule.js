@@ -1428,14 +1428,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         <h2>Responses for ${formatDate(occurrenceDateString)}</h2>
         <div id="rsvp-lists-container"> 
             <div id="rsvp-lists" style="display: none; text-align: left; padding: 0 15px;">
-                <h3>Going (<span id="going-count">0</span>)</h3>
-                <ul id="rsvp-going-list"></ul>
-                <h3>Maybe (<span id="rsvp-maybe-count">0</span>)</h3>
-                <ul id="rsvp-maybe-list"></ul>
-                <h3>Not Going (<span id="not-going-count">0</span>)</h3>
-                <ul id="rsvp-not-going-list"></ul>
-                <h3>No Response (<span id="not-responded-count">0</span>)</h3>
-                <ul id="rsvp-not-responded-list"></ul>
+                <div id="rsvp-sections-content"></div>
                 <button id="close-rsvp-modal" class="fancy-button" disabled>Close</button>
             </div>
         </div>
@@ -1474,39 +1467,42 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
         const allMembers = await getAllClubMembers(clubId);
 
-        const goingList = document.getElementById('rsvp-going-list');
-        const notGoingList = document.getElementById('rsvp-not-going-list');
-        const maybeList = document.getElementById('rsvp-maybe-list');
-        const notRespondedList = document.getElementById('rsvp-not-responded-list');
-
-        goingList.innerHTML = '';
-        notGoingList.innerHTML = '';
-        maybeList.innerHTML = '';
-        notRespondedList.innerHTML = '';
-
-        let goingCount = 0;
-        let notGoingCount = 0;
-        let maybeCount = 0;
-        let notRespondedCount = 0;
+        const goingNames = [];
+        const maybeNames = [];
+        const notGoingNames = [];
+        const notRespondedNames = [];
 
         allMembers.forEach(member => {
             const rsvp = rsvpsMap[member.uid];
             if (rsvp) {
-                if (rsvp.status === 'YES') {
-                    goingList.innerHTML += `<li>${rsvp.userName}</li>`;
-                    goingCount++;
-                } else if (rsvp.status === 'NO') {
-                    notGoingList.innerHTML += `<li>${rsvp.userName}</li>`;
-                    notGoingCount++;
-                } else if (rsvp.status === 'MAYBE') {
-                    maybeList.innerHTML += `<li>${rsvp.userName}</li>`;
-                    maybeCount++;
-                }
+                if (rsvp.status === 'YES') goingNames.push(rsvp.userName);
+                else if (rsvp.status === 'NO') notGoingNames.push(rsvp.userName);
+                else if (rsvp.status === 'MAYBE') maybeNames.push(rsvp.userName);
             } else {
-                notRespondedList.innerHTML += `<li>${member.name}</li>`; 
-                notRespondedCount++;
+                notRespondedNames.push(member.name);
             }
         });
+
+        const sectionsContent = document.getElementById('rsvp-sections-content');
+        sectionsContent.innerHTML = '';
+
+        const buildSection = (label, names) => {
+            if (names.length === 0) return '';
+            return `
+                <h3>${label} (${names.length})</h3>
+                <ul>${names.map(n => `<li>${n}</li>`).join('')}</ul>
+            `;
+        };
+
+        const hasAnyResponse = goingNames.length + maybeNames.length + notGoingNames.length > 0;
+
+        sectionsContent.innerHTML =
+            buildSection('Going', goingNames) +
+            buildSection('Maybe', maybeNames) +
+            buildSection('Not Going', notGoingNames) +
+            (notRespondedNames.length > 0 && (hasAnyResponse || notRespondedNames.length > 0)
+                ? buildSection('No Response', notRespondedNames)
+                : '');
         document.getElementById('rsvp-lists').style.display = 'block';
 
         modal.classList.remove('rsvp-loading-collapsed');
@@ -1522,11 +1518,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                 modal.removeEventListener('transitionend', handler); 
             }
         });
-
-        document.getElementById('going-count').textContent = goingCount;
-        document.getElementById('not-going-count').textContent = notGoingCount;
-        document.getElementById('rsvp-maybe-count').textContent = maybeCount;
-        document.getElementById('not-responded-count').textContent = notRespondedCount;
 
     } catch (error) {
         console.error("Error fetching RSVP details:", error);
