@@ -94,6 +94,7 @@ document.getElementById('dropdown-appearance').onclick = () => {
   document.getElementById('profile-dropdown').style.display = 'none';
   document.getElementById('profile-overlay').style.display = 'block';
   document.getElementById('appearance-modal').style.display = 'block';
+  document.body.classList.add('no-scroll');
   buildThemeOptions();
 };
 
@@ -106,6 +107,7 @@ document.getElementById('profile-overlay').onclick = () => {
 function closeAppearanceModal() {
   document.getElementById('appearance-modal').style.display = 'none';
   document.getElementById('profile-overlay').style.display = 'none';
+  document.body.classList.remove('no-scroll');
 }
 
 function buildThemeOptions() {
