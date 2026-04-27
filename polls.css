@@ -81,7 +81,7 @@ body {
     padding: 8px;
     border: 2px solid black;
     border-radius: 5px;
-    font-size: 18px;
+    font-size: 20px;
     font-family: var(--primary-font-family);
     background-color: #ffffff;
 }
@@ -215,7 +215,7 @@ body {
     padding: 8px;
     border: 2px solid black;
     border-radius: 5px;
-    font-size: 18px;
+    font-size: 20px;
     font-family: var(--primary-font-family);
     background-color: #ffffff;
     resize: none;

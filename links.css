@@ -399,6 +399,10 @@
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
+    background: #ffffff;
+    border: 2px solid #cccccc;
+    border-radius: 8px;
+    padding: 12px;
 }
 
 .edit-card-actions .fancy-button {
