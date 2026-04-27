@@ -733,10 +733,11 @@ function setupRealtimeUpdates() {
 
         if (noEventsMessage) noEventsMessage.style.display = 'none';
 
-        allEventOccurrences.forEach(occurrence => {
+        allEventOccurrences.forEach((occurrence, index) => {
             const eventDisplayCard = createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
             if (eventsContainer) {
                 eventsContainer.appendChild(eventDisplayCard);
+                animateCardIn(eventDisplayCard, index);
             }
         });
     }, (error) => {
@@ -1685,4 +1686,15 @@ async function saveAnnouncement(title, content) {
         await showAppAlert("Failed to save announcement: " + error.message);
         return false;
     }
+}
+
+
+function animateCardIn(card, index = 0) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 80);
 }

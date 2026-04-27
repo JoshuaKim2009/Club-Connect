@@ -167,10 +167,11 @@ async function fetchAndDisplayCategories() {
     } else {
         noResourcesMessage.style.display = 'none';
     }
-    categoriesCache.forEach(category => {
+    categoriesCache.forEach((category, index) => {
         const el = createCategoryElement(category);
         el.dataset.id = category.id;
         resourcesContainer.appendChild(el);
+        animateCardIn(el, index);
     });
 
     if (currentUserRole === 'manager' || currentUserRole === 'admin') {
@@ -413,3 +414,15 @@ document.getElementById('save-link-button').addEventListener('click', async () =
         await showAppAlert("Failed to save link: " + error.message);
     }
 });
+
+
+
+function animateCardIn(card, index = 0) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 80);
+}

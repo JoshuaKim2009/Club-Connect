@@ -291,9 +291,11 @@ function setupRealtimePollsListener() {
             if (change.type === "added") {
                 const pollCard = createPollCard(pollData, pollId);
                 if (isInitialSnapshot) {
-                    pollsContainer.appendChild(pollCard);       // preserve desc order
+                    pollsContainer.appendChild(pollCard);
+                    animateCardIn(pollCard, pollsContainer.children.length - 1);
                 } else {
-                    pollsContainer.insertBefore(pollCard, pollsContainer.firstChild); // new poll → top
+                    pollsContainer.insertBefore(pollCard, pollsContainer.firstChild);
+                    animateCardIn(pollCard, 0);
                 }
             } else if (change.type === "modified") {
                 const existingCard = pollsContainer.querySelector(`[data-poll-id="${pollId}"]`);
@@ -673,4 +675,14 @@ async function updateLastSeenPolls() {
     } catch (error) {
         console.error("Failed to update lastSeenPolls:", error);
     }
+}
+
+function animateCardIn(card, index = 0) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 80);
 }
