@@ -110,7 +110,7 @@ async function createPollEditingCard() {
     const noPollsMessage = document.getElementById('no-polls-message');
     if (noPollsMessage) noPollsMessage.style.display = 'none';
     pollsContainer.insertBefore(card, pollsContainer.firstChild);
-    card.querySelector('.poll-title-input-inline').focus();
+    // card.querySelector('.poll-title-input-inline').focus();
 }
 
 function _createPollEditingCardElement() {
@@ -204,7 +204,7 @@ function _createPollEditingCardElement() {
         row.appendChild(ta);
         optionsList.appendChild(row);
         autoResize(ta);
-        ta.focus();
+        // ta.focus();
         updateInlineOptionBtns();
     });
 
