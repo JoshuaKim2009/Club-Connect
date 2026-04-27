@@ -23,6 +23,7 @@ const newDmButton = document.getElementById('newDmButton');
 const newDmModal = document.getElementById('new-dm-modal');
 const newDmOverlay = document.getElementById('new-dm-overlay');
 const cancelNewDmButton = document.getElementById('cancel-new-dm-button');
+let isInitialDmLoad = true;
 let cachedMembers = null;
 
 function getUrlParameter(name) {
@@ -107,7 +108,6 @@ function getColorFromLetter(letter) {
 
 function loadDms() {
     const list = document.getElementById('dm-list');
-    const newDmBtn = list.querySelector('.new-dm-btn');
 
     const q = query(
         collection(db, 'directMessages'),
@@ -115,9 +115,12 @@ function loadDms() {
         orderBy('lastMessageAt', 'desc')
     );
 
+    let isInitialDmLoad = true;
+
     onSnapshot(q, (snapshot) => {
         list.querySelectorAll('.dm-card').forEach(c => c.remove());
 
+        let cardIndex = 0;
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             if (!data.lastMessageText) return;
@@ -151,7 +154,10 @@ function loadDms() {
 
             const card = createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadCount);
             list.appendChild(card);
+            if (isInitialDmLoad) animateCardIn(card, cardIndex++);
         });
+
+        isInitialDmLoad = false;
     });
 }
 
@@ -267,3 +273,15 @@ if (cancelNewDmButton) {
 }
 
 newDmOverlay.addEventListener('click', closeNewDmModal);
+
+
+
+function animateCardIn(card, index = 0) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 80);
+}
