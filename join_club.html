@@ -17,21 +17,19 @@
         padding-top: env(safe-area-inset-top);
         background: var(--bg-dark);
       }
-      .pageTitle{
+      .pageTitle {
         margin-top: 110px;
       }
-
       #discover-club-button {
-        margin: 0 auto;
+        margin: 0 auto 24px auto;
         display: block;
         width: 85%;
-        max-width: 400px;
-        background: linear-gradient(#f3d470, #ce9c30);
+        max-width: 600px;
+        /* background: linear-gradient(#f3d470, #ce9c30); */
+        background: linear-gradient(#cecece, #b4b4b4);
         position: relative;
         overflow: hidden;
-        margin-bottom: 20px;
       }
-
       #discover-club-button::after {
         content: '';
         position: absolute;
@@ -42,35 +40,17 @@
         background: linear-gradient(
           120deg,
           transparent 20%,
-          rgba(255, 255, 255, 0.25) 27%,
+          rgba(255,255,255,0.25) 27%,
           transparent 34%,
           transparent 54%,
-          rgba(255, 255, 255, 0.25) 61%,
+          rgba(255,255,255,0.25) 61%,
           transparent 68%
         );
         animation: shimmer 2s infinite linear;
       }
-
       @keyframes shimmer {
         0%   { left: -200%; }
         100% { left: 150%; }
-      }
-
-      .join-club-box {
-        margin: 15px auto;
-        padding: 15px;
-        border: 2px solid black;
-        border-radius: 10px;
-        background: linear-gradient(to bottom, #ffffff 0%,#b3b3b3 100%);
-        box-shadow: 0px 2px 0px #000000;
-        width: 85%;
-        max-width: 400px;
-        box-sizing: border-box;
-      }
-
-      #club-name-label,
-      #join-code-label {
-        color: black;
       }
     </style>
 
@@ -83,30 +63,45 @@
       <span class="chat-title">JOIN</span>
     </div>
 
-    <h1 class="pageTitle">JOIN A CLUB</h1> 
+    <h1 class="pageTitle">JOIN A CLUB</h1>
 
-    <button id="discover-club-button" class="fancy-button">
-      DISCOVER CLUBS
-      <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i>
-    </button>
+    <form id="joinClubForm">
+      <div class="club-form-card">
+        <h2>USE JOIN CODE</h2>
 
-    <form id="joinClubForm"> 
+        <div class="club-form-section">
+          <label for="club-name-input">Club Name</label>
+          <input class="fancy-input" id="club-name-input"
+                placeholder="Club name" required name="club-name-input"
+                autocomplete="off">
+        </div>
 
-      <div class="join-club-box"> 
-        <label id= "club-name-label" class="fancy-input-label" for="club-name-input">Club name</label>
-        <input class="fancy-input" id="club-name-input" placeholder="Club name" required name="club-name-input"> 
+        <div class="club-form-section">
+          <label for="join-code-input">Join Code</label>
+          <input class="fancy-input" id="join-code-input"
+                placeholder="6 digit join code" required name="join-code-input"
+                style="text-transform: uppercase" maxlength="6" value=""
+                autocomplete="off">
+        </div>
 
-        <label id= "join-code-label" class="fancy-input-label" for="join-code-input">Join code</label>
-        <input class="fancy-input" id="join-code-input" placeholder="6 digit join code" required name="join-code-input" style="text-transform: uppercase" maxlength="6" value="">
-
-        <hr style="background-color: transparent; height: 3px; border: none;">
-
-        <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button> 
+        <div class="club-form-actions">
+          <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button>
+        </div>
       </div>
-
-      <hr style="background-color: transparent; height: 20px; border: none;">
-
     </form>
+
+    <div class="club-form-card" style="margin-bottom: 16px;">
+      <h2>DISCOVER CLUBS</h2>
+      <div class="club-form-section" style="text-align: center;">
+        <label>Search for clubs at your school on the discovery page.</label>
+        <button id="discover-club-button" class="fancy-button" style="width: 100%; margin-top: 8px;">
+          DISCOVER
+          <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <hr style="background-color: transparent; height: 150px; border: none;">
 
     
 

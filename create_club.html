@@ -21,49 +21,6 @@
       .pageTitle{
         margin-top: 110px;
       }
-      .state-dropdown-wrapper {
-        position: relative;
-      }
-
-      .state-dropdown-list {
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-top: none;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        font-family: var(--primary-font-family);
-        box-sizing: border-box;
-        width: 85%;
-        max-width: 380px;
-      }
-
-      .state-option {
-        padding: 5px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-      }
-
-      .state-option:hover {
-        background-color: #f0f0f0;
-      }
-
-      .state-dropdown-list.show {
-        display: block;
-      }
-
-      .state-dropdown-list:not(.show) {
-        display: none;
-      }
-
-      .state-dropdown-list:empty {
-        display: none !important;
-      }
     </style>
 
     
@@ -79,42 +36,83 @@
       </button>
       <span class="chat-title">CREATE</span>
     </div>
-    <form id = "createClubForm">
-    <h1 class="pageTitle">CREATE A CLUB</h1>
+    <form id="createClubForm">
+      <h1 class="pageTitle">CREATE A CLUB</h1>
 
-    
-    
+      <div class="club-form-card">
+        <h2>Club Details</h2>
 
-    <label class="fancy-input-label" >School name</label>
-    <input class="fancy-input" id="school-name-select" placeholder="FULL name of school (no abbreviations)" required name = "school-name-select" value ="">
+        <div class="club-form-section">
+          <label for="school-name-select">School Name</label>
+          <input class="fancy-input" id="school-name-select"
+                placeholder="Full name — no abbreviations" required
+                name="school-name-select" value="" autocomplete="off">
+        </div>
 
-    <label class="fancy-input-label">State</label>
-    <div class="state-dropdown-wrapper">
-      <input class="fancy-input" id="state-select" placeholder="State name" required name="state-select" value="" autocomplete="off">
-      <div class="state-dropdown-list" id="state-dropdown-list"></div>
-    </div>
+        <div class="club-form-section">
+          <label for="state-select">State</label>
+          <div class="state-dropdown-wrapper">
+            <input class="fancy-input" id="state-select"
+                  placeholder="State name" required
+                  name="state-select" value="" autocomplete="off">
+            <div class="state-dropdown-list" id="state-dropdown-list"></div>
+          </div>
+        </div>
 
-    <label class="fancy-input-label" >Club name</label>
-    <input class="fancy-input" id="club-name-select" placeholder="Club name" required name = "club-name-select" autocomplete="off">
+        <div class="club-form-section">
+          <label for="club-name-select">Club Name</label>
+          <input class="fancy-input" id="club-name-select"
+                placeholder="Club name" required
+                name="club-name-select" autocomplete="off">
+        </div>
 
-    <label class="fancy-input-label" >Main Activity</label>
-    <input class="fancy-input" id="main-activity-select" placeholder="Your main activity in a word or two" required name = "main-activity-select" autocomplete="off">
+        <div class="club-form-section">
+          <label for="main-activity-select">Main Activity</label>
+          <input class="fancy-input" id="main-activity-select"
+                placeholder="e.g. Chess, Robotics, Art" required
+                name="main-activity-select" autocomplete="off">
+        </div>
 
-    <label class="fancy-input-label" >Description</label>
+        <div class="club-form-section">
+          <label for="description-input">Description</label>
+          <textarea id="description-input" class="fancy-input"
+                    rows="3" placeholder="Tell people what your club is about…"
+                    required name="description-input" maxlength="500"></textarea>
+        </div>
 
-    <textarea id="description-input" class="fancy-input" rows="3" placeholder="A description about your club..." required name = "description-input"  maxlength="500"></textarea>
+        <div class="club-form-section">
+          <label>Club Visibility</label>
+          <div class="club-vis-strip-group" id="visibility-strip-group-create">
 
-    <hr style="background-color: transparent; height: 3px; border: none;">
-      
-    <button id = "submit-club-button" type = "submit" class = "fancy-button" >SUBMIT</button>
+            <div class="club-vis-strip" data-value="public">
+              <span class="club-vis-strip-title">PUBLIC</span>
+              <span class="club-vis-strip-sub">
+                Anyone can find your club on the discovery page and request to join.
+                You approve or deny each request.
+              </span>
+            </div>
 
+            <div class="club-vis-strip" data-value="private">
+              <span class="club-vis-strip-title">PRIVATE</span>
+              <span class="club-vis-strip-sub">
+                Your club won't appear in discovery. Members can only join using
+                your club's unique access code.
+              </span>
+            </div>
 
-    <hr style="background-color: transparent; height: 150px; border: none;">
+          </div>
+        </div>
+
+        <div class="club-form-actions">
+          <button id="submit-club-button" type="submit" class="fancy-button">SUBMIT</button>
+        </div>
+      </div>
+    </form>
 
           
     <script src="theme.js?v=10"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="create_club.js"></script>
+    <script type="module" src="create_club.js?v=2"></script>
 
     
     <script>

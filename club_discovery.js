@@ -100,7 +100,9 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
             const matchesSchool = !school || searchableSchool.includes(school.toLowerCase());
             const matchesState  = !state  || searchableState.includes(state.toLowerCase());
 
-            if (matchesClub && matchesSchool && matchesState) {
+            const isPublic = (data.visibility ?? 'public') !== 'private';
+
+            if (matchesClub && matchesSchool && matchesState && isPublic) {
                 matches.push({ id: docSnap.id, ...data });
             }
         });
@@ -134,7 +136,7 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
     card.innerHTML = `
         <div class="club-card-header">
             <span class="club-card-name">${clubName}</span>
-            <span class="club-card-activity">Activity | ${activity}</span>
+            <span class="club-card-activity">${activity}</span>
         </div>
         <div class="club-card-body">
             <span><i class="fa-solid fa-school"></i> ${schoolName}</span>

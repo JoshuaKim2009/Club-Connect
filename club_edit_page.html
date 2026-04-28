@@ -20,39 +20,6 @@
           padding-top: env(safe-area-inset-top);
           background: var(--bg-dark);
       }
-      .state-dropdown-wrapper {
-        position: relative;
-      }
-
-      .state-dropdown-list {
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-top: none;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        font-family: var(--primary-font-family);
-        box-sizing: border-box;
-        width: 85%;
-        max-width: 380px;
-      }
-
-      .state-dropdown-list.show {
-        display: block;
-      }
-
-      .state-dropdown-list:not(.show) {
-        display: none;
-      }
-
-      .state-dropdown-list:empty {
-        display: none !important;
-      }
     </style>
     
     <title>Club Connect | Edit</title>
@@ -75,49 +42,83 @@
       </div>
     </div>
 
-    <div id="content">  
+    <div id="content">
+      <div class="club-form-card">
+        <h2>Edit Details</h2>
 
-      
-      
+        <div class="club-form-section">
+          <label for="school-name-edit">School Name</label>
+          <input class="fancy-input" id="school-name-edit"
+                placeholder="School name" required value="" autocomplete="off">
+        </div>
 
-      <label class="fancy-input-label" >School name</label>
-      <input class="fancy-input" id="school-name-edit" placeholder="School name" required value ="">
+        <div class="club-form-section">
+          <label for="state-edit">State</label>
+          <div class="state-dropdown-wrapper">
+            <input class="fancy-input" id="state-edit"
+                  placeholder="State name" required autocomplete="off">
+            <div class="state-dropdown-list" id="state-dropdown-list-edit"></div>
+          </div>
+        </div>
 
-      <label class="fancy-input-label">State</label>
-      <div class="state-dropdown-wrapper">
-        <input class="fancy-input" id="state-edit" placeholder="State name" required autocomplete="off">
-        <div class="state-dropdown-list" id="state-dropdown-list-edit"></div>
+        <div class="club-form-section">
+          <label for="club-name-edit">Club Name</label>
+          <input class="fancy-input" id="club-name-edit"
+                placeholder="Club name" required autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="main-activity-edit">Main Activity</label>
+          <input class="fancy-input" id="main-activity-edit"
+                placeholder="e.g. Chess, Robotics, Art" required autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="description-edit">Description</label>
+          <textarea id="description-edit" class="fancy-input"
+                    rows="3" placeholder="A short description about your club…"
+                    required maxlength="500"></textarea>
+        </div>
+
+        <!-- ── Visibility ───────────────────────────────── -->
+        <div class="club-form-section">
+          <label>Club Visibility</label>
+          <div class="club-vis-strip-group" id="visibility-strip-group-edit">
+
+            <div class="club-vis-strip" data-value="public">
+              <span class="club-vis-strip-title">PUBLIC</span>
+              <span class="club-vis-strip-sub">
+                Anyone can find your club on the discovery page and request to join.
+                You approve or deny each request.
+              </span>
+            </div>
+
+            <div class="club-vis-strip" data-value="private">
+              <span class="club-vis-strip-title">PRIVATE</span>
+              <span class="club-vis-strip-sub">
+                Your club won't appear in discovery. Members can only join using
+                your club's unique access code.
+              </span>
+            </div>
+
+          </div>
+        </div>
+        <!-- ─────────────────────────────────────────────── -->
+
+        <div class="club-form-actions">
+          <button id="update-club-button" type="submit" class="fancy-button">UPDATE</button>
+          <button id="delete-club-button" type="button" class="fancy-button">DELETE</button>
+        </div>
       </div>
 
-      <label class="fancy-input-label" >Club name</label>
-      <input class="fancy-input" id="club-name-edit" placeholder="Club name" required autocomplete="off">
-
-      <label class="fancy-input-label" >Main Activity</label>
-      <input class="fancy-input" id="main-activity-edit" placeholder="Your main activity in a word or two" required autocomplete="off">
-
-      <label class="fancy-input-label" >Description</label>
-
-      <textarea id="description-edit" class="fancy-input" rows="3" placeholder="A short description about your club..." required maxlength="500"></textarea>
-
-
-      <hr style="background-color: transparent; height: 3px; border: none;">
-      
-      <div class="edit-page-actions-container">
-          <button id = "update-club-button" type = "submit" class = "fancy-button" >UPDATE</button>
-          <button id = "delete-club-button" class = "fancy-button" >DELETE</button>
-      </div>
-      
-      
-
-
-      <hr style="background-color: transparent; height: 150px; border: none;">
+      <hr style="background-color:transparent;height:150px;border:none;">
     </div>
     
           
     <script src="theme.js?v=10"></script>
     <script type="module" src="loading_instant.js"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_edit_page.js?v=3"></script>
+    <script type="module" src="club_edit_page.js?v=4"></script>
 
     
 

@@ -567,3 +567,8 @@ body {
     display: block;
     margin-bottom: 6px;
 }
+
+
+.vis-strip:not(.vis-strip-selected):hover {
+  background: #f0f0f0;
+}

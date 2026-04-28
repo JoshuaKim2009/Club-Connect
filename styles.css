@@ -331,7 +331,7 @@ button {
   width: 300px;
 }
 
-#state-edit,
+/* #state-edit,
 #school-name-edit,
 #club-name-edit,
 #main-activity-edit,
@@ -340,17 +340,17 @@ button {
   display: block;
   width: 85%;
   max-width: 380px;
-}
+} */
 
-#club-name-select {
+/* #club-name-select {
   margin: 0 auto;
   display: block;
   width: 85%;
   max-width: 380px;
-}
+} */
 
 
-#state-select{
+/* #state-select{
   margin: 0 auto;
   display: block;
   width: 85%;
@@ -362,14 +362,14 @@ button {
   display: block;
   width: 85%;
   max-width: 380px;
-}
+} */
 
-#main-activity-select {
+/* #main-activity-select {
   margin: 0 auto;
   display: block;
   width: 85%;
   max-width: 380px;
-}
+} */
 
 #club-name-input {
   margin: 0 auto;
@@ -385,12 +385,12 @@ button {
   max-width: 380px;
 }
 
-#description-input {
+/* #description-input {
   margin: 0 auto;
   display: block;
   width: 85%;
   max-width: 380px;
-}
+} */
 
 #submit-join-club-button {
   margin: 0 auto;
@@ -607,7 +607,7 @@ button {
 }
 
 .fancy-input {
-  background: linear-gradient(#ffffff, #e2e2e2);
+  background: linear-gradient(#ffffff, #f5f5f5);
   font-family: var(--primary-font-family);
   font-size: 25px;
   color: black;
@@ -642,6 +642,7 @@ button {
   cursor: pointer;
   box-shadow: 0px 2px 0px #000000; /* 4→2 */
   transition: all 0.05s ease-in-out;
+  position: relative;
 }
 
 #back-button,
@@ -2336,4 +2337,226 @@ input[type="checkbox"]:checked {
 .display-event-card {
   font-size: 24px;
   color: #222;
+}
+
+
+
+.club-form-card {
+  border: 2px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#f0f0f0, #e0e0e0);
+  box-shadow: 0px 2px 0px #000000;
+  padding: 20px 20px 10px 20px;
+  width: 85%;
+  max-width: 600px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.club-form-card h2 {
+  font-family: "New Amsterdam", sans-serif;
+  font-size: 42px;
+  font-weight: 400;
+  text-align: center;
+  margin: 0 -20px 16px -20px;
+  padding: 0 20px 12px 20px;
+  border-bottom: 2px dotted black;
+  background: linear-gradient(to bottom, #383838 0%, #000000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  position: relative;
+}
+
+.club-form-card h2::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(128,128,128,0.25), transparent);
+  pointer-events: none;
+}
+
+.club-form-section {
+  border: 2px solid rgba(0,0,0,0);
+  border-radius: 5px;
+  padding: 12px 10px 4px 10px;
+  background-color: rgba(255,255,255,0);
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.club-form-section label {
+  display: block;
+  font-family: var(--primary-font-family);
+  font-size: 22px;
+  color: #222;
+  margin-bottom: 6px;
+}
+
+.club-form-section .fancy-input,
+.club-form-section textarea.fancy-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 22px;
+  display: block;
+  margin: 0;
+}
+
+.club-vis-strip-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.club-vis-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 2px solid #000;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.05s ease-in-out;
+  text-align: left;
+  user-select: none;
+}
+
+.club-vis-strip:not(.club-vis-strip-selected):hover {
+  background: #f0f0f0;
+}
+
+.club-vis-strip-selected {
+  background: #000;
+  color: #fff;
+}
+
+.club-vis-strip-title {
+  font-family: var(--primary-font-family);
+  font-size: 22px;
+}
+
+.club-vis-strip-sub {
+  font-size: 20px;
+  color: #555;
+  font-family: var(--primary-font-family);
+  line-height: 1.3;
+}
+
+.club-vis-strip-selected .club-vis-strip-sub {
+  color: #ccc;
+}
+
+.club-form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.club-form-actions .fancy-button {
+  font-size: 26px;
+  min-width: 120px;
+}
+
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.7;
+  position: relative !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: black;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: black;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+.club-form-section .fancy-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  margin: 0 !important;
+  font-size: 22px !important;
+}
+
+
+
+
+.state-dropdown-wrapper {
+  position: relative;
+}
+
+.state-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  background-color: rgb(0, 0, 0);
+  border: 1px solid #000000;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  font-family: var(--primary-font-family);
+  box-sizing: border-box;
+  width: 100%;
+  color: white;
+  border-radius: 10px;
+  overflow: hidden; 
+  border: 2px solid #000000;
+  border-top: none;
+}
+
+.state-option:hover {
+  background-color: #222222;
+}
+
+.state-option {
+  padding: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.state-dropdown-list.show {
+  display: block;
+}
+
+.state-dropdown-list:not(.show) {
+  display: none;
+}
+
+.state-dropdown-list:empty {
+  display: none !important;
 }

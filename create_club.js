@@ -26,18 +26,28 @@ let currentUserEmail = null;
 const JOIN_CODE_LENGTH = 6;
 const JOIN_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
 
+function setLoading(btn) {
+    btn._origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+}
+
+function clearLoading(btn) {
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML;
+}
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUser = user;
     currentUserEmail = user.email;
+    submitButton.disabled = false;
     console.log(currentUser.uid);
     console.log(currentUserEmail);
-    document.getElementById("submit-club-button").disabled = false;
   } else {
     currentUser = null;
     currentUserEmail = null;
     console.warn("No user is logged in. Club creation will not have an manager and cannot link to user profile.");
-    document.getElementById("submit-club-button").disabled = true;
   }
 });
 
@@ -49,12 +59,25 @@ const clubActivityInput = document.getElementById("main-activity-select");
 const stateInput = document.getElementById("state-select");
 
 
+const createVisStrips = document.querySelectorAll('#visibility-strip-group-create .club-vis-strip');
+createVisStrips.forEach(strip => {
+  strip.addEventListener('click', () => {
+    createVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
+    strip.classList.add('club-vis-strip-selected');
+  });
+});
+
+function getSelectedVisibility(groupId) {
+  const selected = document.querySelector(`#${groupId} .club-vis-strip-selected`);
+  return selected ? selected.dataset.value : null;
+}
+
 
 submitButton.disabled = true;
 
 submitButton.addEventListener("click", async function(event){
     event.preventDefault();
-    submitButton.disabled = true;
+    setLoading(submitButton);
 
     if (!currentUser || !currentUser.uid) {
       await showAppAlert("You must be logged in to create a club.");
@@ -70,13 +93,13 @@ submitButton.addEventListener("click", async function(event){
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return; 
     }
 
     if (clubDescription.length > 500) {
         await showAppAlert("Description must be 500 characters or less.");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return;
     }
 
@@ -84,7 +107,7 @@ submitButton.addEventListener("click", async function(event){
 
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return;
     }
 
@@ -94,7 +117,7 @@ submitButton.addEventListener("click", async function(event){
     if (!schoolNameResult.valid) {
         const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES if to continue or NO to correct it.`);
         if (!confirmed) {
-            submitButton.disabled = false;
+            clearLoading(submitButton);
             return;
         }
         schoolName = rawSchoolName; 
@@ -111,10 +134,18 @@ submitButton.addEventListener("click", async function(event){
         }
     }
 
+    const clubVisibility = getSelectedVisibility('visibility-strip-group-create');
+    if (!clubVisibility) {
+        await showAppAlert("Please select a club visibility (Public or Private).");
+        clearLoading(submitButton);
+        return;
+    }
+
     try {
         const joinCode = await getUniqueJoinCode();
         if (!joinCode) {
             await showAppAlert("Failed to generate a unique join code. Please try again.");
+            clearLoading(submitButton);
             return;
         }
         console.log(`join code: ${joinCode}`);
@@ -136,7 +167,8 @@ submitButton.addEventListener("click", async function(event){
             memberUIDs: [currentUser.uid],
             pendingMemberUIDs: [],
             managerUid: currentUser.uid,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            visibility: clubVisibility
         });
         console.log("Club document written with ID: ", newClubId);
 
@@ -167,8 +199,7 @@ submitButton.addEventListener("click", async function(event){
         console.error("Error creating club or updating user profile:", error);
         await showAppAlert("Failed to create club: " + error.message);
     } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = "Create Club";
+        clearLoading(submitButton);
     }
 });
 

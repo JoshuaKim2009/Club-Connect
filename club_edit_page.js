@@ -34,6 +34,16 @@ function getClubIdFromUrl() {
 }
 currentClubId = getClubIdFromUrl();
 
+function setLoading(btn) {
+    btn._origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+}
+
+function clearLoading(btn) {
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML;
+}
 
 const submitButton = document.getElementById("update-club-button");
 const schoolNameInput = document.getElementById("school-name-edit");
@@ -43,7 +53,6 @@ const clubDescriptionInput = document.getElementById("description-edit");
 const deleteButton = document.getElementById("delete-club-button");
 const backButton = document.getElementById("back-button-edit");
 const stateInput = document.getElementById("state-edit");
-
 
 submitButton.disabled = true;
 schoolNameInput.disabled = true;
@@ -91,6 +100,11 @@ async function loadClubData(clubId, managerUid) {
         clubDescriptionInput.value = clubData.description || '';
         stateInput.value = clubData.state || '';
 
+        const savedVis = clubData.visibility || 'public';
+        editVisStrips.forEach(s => {
+            s.classList.toggle('club-vis-strip-selected', s.dataset.value === savedVis);
+        });
+
         schoolNameInput.disabled = false;
         clubNameInput.disabled = false;
         clubActivityInput.disabled = false;
@@ -103,7 +117,8 @@ async function loadClubData(clubId, managerUid) {
             clubName: clubData.clubName || '',
             clubActivity: clubData.clubActivity || '',
             description: clubData.description || '',
-            state: clubData.state || ''
+            state: clubData.state || '',
+            visibility: clubData.visibility || 'public'
         };
     } else {
       await showAppAlert("Club not found.");
@@ -143,23 +158,36 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
+const editVisStrips = document.querySelectorAll('#visibility-strip-group-edit .club-vis-strip');
+editVisStrips.forEach(strip => {
+  strip.addEventListener('click', () => {
+    editVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
+    strip.classList.add('club-vis-strip-selected');
+  });
+});
+
+function getSelectedVisibilityEdit() {
+  const selected = document.querySelector('#visibility-strip-group-edit .club-vis-strip-selected');
+  return selected ? selected.dataset.value : null;
+}
+
+
 submitButton.addEventListener("click", async function(event){
     event.preventDefault();
 
     submitButton.disabled = true;
+    setLoading(submitButton)
 
     if (!currentUser || !currentUser.uid) {
       await showAppAlert("You must be logged in to update a club.");
       console.warn("Attempted club update by unauthenticated user. Aborting.");
-      submitButton.disabled = false;
-      submitButton.textContent = "UPDATE";
+      clearLoading(submitButton);
       return;
     }
     if (!currentClubId) {
         await showAppAlert("No club selected for update.");
         console.warn("Attempted club update without a club ID. Aborting.");
-        submitButton.disabled = false;
-        submitButton.textContent = "UPDATE";
+        clearLoading(submitButton);
         return;
     }
 
@@ -168,6 +196,7 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
+    const clubVisibility = getSelectedVisibilityEdit();
 
     if (
         originalClubData &&
@@ -175,24 +204,24 @@ submitButton.addEventListener("click", async function(event){
         clubName === originalClubData.clubName &&
         clubActivity === originalClubData.clubActivity &&
         clubDescription === originalClubData.description &&
-        state === originalClubData.state
+        state === originalClubData.state &&
+        clubVisibility === originalClubData.visibility
     ) {
         await showAppAlert("No changes were made.");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return;
     }
 
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
-        submitButton.disabled = false;
-        submitButton.textContent = "UPDATE";
+        clearLoading(submitButton);
         return;
     }
 
     if (clubDescription.length > 500) {
         await showAppAlert("Description must be 500 characters or less.");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return;
     }
 
@@ -200,7 +229,7 @@ submitButton.addEventListener("click", async function(event){
     
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
-        submitButton.disabled = false;
+        clearLoading(submitButton);
         return;
     }
 
@@ -210,8 +239,7 @@ submitButton.addEventListener("click", async function(event){
     if (!schoolNameResult.valid) {
         const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES to continue or NO to correct it.`);
         if (!confirmed) {
-            submitButton.disabled = false;
-            submitButton.textContent = "UPDATE";
+            clearLoading(submitButton);
             return;
         }
         schoolName = rawSchoolName; 
@@ -224,6 +252,12 @@ submitButton.addEventListener("click", async function(event){
                 schoolName = schoolNameResult.normalized;
             }
         }
+    }
+
+    if (!clubVisibility) {
+        await showAppAlert("Please select a club visibility.");
+        clearLoading(submitButton);
+        return;
     }
 
     try {
@@ -240,7 +274,8 @@ submitButton.addEventListener("click", async function(event){
             description: clubDescription,
             clubActivity: clubActivity,
             lastModifiedBy: currentUser.uid,
-            lastModifiedAt: serverTimestamp()
+            lastModifiedAt: serverTimestamp(),
+            visibility: clubVisibility
         });
         console.log("Club document updated with ID: ", currentClubId);
 
@@ -251,8 +286,7 @@ submitButton.addEventListener("click", async function(event){
         console.error("Error updating club:", error);
         await showAppAlert("Failed to update club: " + error.message);
     } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = "UPDATE";
+        clearLoading(submitButton);
     }
 });
 
@@ -264,7 +298,9 @@ backButton.addEventListener("click", async function(event){
 
 deleteButton.addEventListener("click", async function(event){
     event.preventDefault();
+    setLoading(deleteButton);
     await deleteClub(currentClubId);
+    clearLoading(deleteButton);
 });
 
 
