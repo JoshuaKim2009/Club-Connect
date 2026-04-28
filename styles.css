@@ -2342,6 +2342,7 @@ input[type="checkbox"]:checked {
 
 
 .club-form-card {
+  box-sizing: border-box;
   border: 2px solid black;
   border-radius: 10px;
   background: linear-gradient(#f0f0f0, #e0e0e0);

@@ -83,8 +83,8 @@
     align-items: stretch;
     gap: 12px;
     margin: 15px auto 40px auto;
-    width: calc(85% + 44px);
-    max-width: 644px;
+    width: 85%;
+    max-width: 600px;
     box-sizing: border-box;
 }
 
