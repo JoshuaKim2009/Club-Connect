@@ -457,13 +457,13 @@ button {
   min-width: 0;
 }
 
-.club-role-text {
+/* .club-role-text {
   margin-top: 5px;
   font-size: 18px;
   color: #444444;
-}
+} */
 
-.club-btn-name {
+/* .club-btn-name {
   font-size: 26px;
   line-height: 1.1;
   padding-bottom: 6px;
@@ -481,12 +481,13 @@ button {
   height: 20px;
   background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
   pointer-events: none;
-}
+} */
 
-.club-btn-meta {
+/* .club-btn-meta {
   font-size: 18px;
   color: #444444;
 }
+ */
 
 #clubDetails {
   min-height: 30px;
@@ -699,6 +700,19 @@ button {
   transform: translateY(4px);
   box-shadow: 0px 0px 0px #000000;
 }
+
+
+.club-btn {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+.club-btn-inner {
+  display: none;
+}
+
+
 
 .button-container {
   display: flex;

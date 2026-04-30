@@ -11,151 +11,350 @@
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-
-
-
-
     <style>
-      body {
-        padding-bottom: 100px;
-      }
       body {
         font-family: var(--primary-font-family);
         padding-top: env(safe-area-inset-top);
         background: var(--bg-dark);
-      }
-      #page-title{
-        margin-top: 110px;
+        padding-bottom: 100px;
       }
 
-      .join-club-box {
-        margin: 15px auto;
-        padding: 15px;
-        border: 2px solid black;
-        border-radius: 10px;
-        background: linear-gradient(#cecece, #b4b4b4);
-        box-shadow: 0px 2px 0px #000000;
-        box-sizing: border-box;
-        margin-bottom: 30px !important;
-      }
-      
-      #clubs-loading-text {
-        text-align: center;
-        width: 100%;
-        margin-top: 30px;
-      }
-
-      @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-      }
-
-      .club-btn {
-          opacity: 0;
-          animation: fadeIn 0.4s ease forwards;
-      }
-
-      .no-clubs-card {
+      /* ── ACTION BAR ─────────────────────────────────────── */
+      .yc-action-bar {
         display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
         gap: 10px;
-        width: 85%;
-        max-width: 600px;
-        margin-bottom: 10px;
-        padding: 14px 18px;
-        text-align: left;
-        white-space: normal;
-        word-break: break-word;
-        font-size: 32px;
-        background: linear-gradient(#e7e7e7, #bebebe);
-        font-family: var(--primary-font-family);
-        color: black;
-        border: 2px solid black;
-        border-radius: 10px;
-        box-shadow: 0px 2px 0px #000000;
-        opacity: 0.90;
+        width: 90%;
+        max-width: 580px;
+        margin: 100px auto 28px auto;
         box-sizing: border-box;
       }
 
-      .no-clubs-card-meta {
-        display: flex;
+      .action-pill {
+        flex: 1;
+        display: flex !important;          /* override display:block from ID rules in styles.css */
         flex-direction: row;
-        justify-content: space-between;
         align-items: center;
-        margin-top: 10px;
+        justify-content: center;
+        gap: 7px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        border: 2px solid black;
+        box-shadow: 0px 2px 0px #000000;
+        cursor: pointer;
+        font-family: var(--primary-font-family);
+        font-size: 20px;
+        letter-spacing: 0.07em;
+        line-height: 1;
+        text-transform: uppercase;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out;
+      }
+
+      .action-pill i {
+        font-size: 20px;
+      }
+
+      .action-pill:hover {
+        transform: translateY(1px);
+        box-shadow: 0px 1px 0px #000000;
+        filter: brightness(1.1);
+      }
+
+      .action-pill:active {
+        transform: translateY(4px);
+        box-shadow: 0px 0px 0px #000000;
+        filter: brightness(1.0);
+      }
+
+      /* .action-create {
+        background: linear-gradient(to bottom, var(--bg-light) -100%, var(--bg-accent));
+        color: #fff;
+      }
+
+      .action-join {
+        background: linear-gradient(to bottom, var(--bg-light) -100%, var(--bg-accent));
+        color: #fff;
+      }
+
+      .action-discover {
+        background: linear-gradient(to bottom, var(--bg-light) -100%, var(--bg-accent));
+        color: #fff;
+      } */
+
+      .action-create  { background: linear-gradient(#ffbd80, #ff8349); color: #000000; }
+      .action-join    { background: linear-gradient(#75c571, #508b50);  color: #000000; }
+      .action-discover{ background: linear-gradient(#b1a5ee, #8074ce);  color: #000000; }
+      /* ── SECTION ────────────────────────────────────────── */
+      .yc-section {
+        width: 90%;
+        max-width: 580px;
+        margin: 0 auto 28px auto;
+      }
+
+      .yc-section-label {
+        font-family: var(--primary-font-family);
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        padding-left: 4px;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .yc-card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* ── CARD ANIMATION ──────────────────────────────────────
+         KEY FIX: uses the separate CSS `translate` property
+         (not `transform`), so the forwards fill mode that keeps
+         opacity:1 / translate:0 never fights with :hover or
+         :active transform states. Box-shadow was already working
+         because the animation never set it — now transform will
+         work too.                                               */
+      @keyframes cardIn {
+        from { opacity: 0; translate: 0 14px; }
+        to   { opacity: 1; translate: 0 0px;  }
+      }
+
+      /* ── CARD ───────────────────────────────────────────── */
+      .club-btn {
+        display: block;
         width: 100%;
+        text-align: left;
+        padding: 0;
+        font-size: 16px;
+        border: 2px solid black;
+        border-radius: 10px;
+        box-shadow: 0px 2px 0px #000000;
+        background: linear-gradient(#ffffff, #efefef);
+        cursor: pointer;
+        overflow: hidden;
+        font-family: var(--primary-font-family);
+        color: #111;
+        box-sizing: border-box;
+        opacity: 0;
+        animation: cardIn 0.35s ease forwards;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out;
+        position: relative;
+      }
+
+      .club-btn:hover {
+        filter: brightness(1.04);
+        transform: translateY(1px);
+        box-shadow: 0px 1px 0px #000000;
+      }
+
+      .club-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0px 0px 0px #000000;
+        filter: brightness(1.0);
+      }
+
+      /* Card inner layout */
+      .cc-card-inner {
+        display: flex;
+        align-items: center;
+        padding: 13px 14px 13px 16px;
+        gap: 10px;
+      }
+
+      .cc-card-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      .club-card-name {
+        font-family: "New Amsterdam", sans-serif;
+        font-size: 27px;
+        font-weight: 400;
+        line-height: 1.05;
+        color: #111;
+        letter-spacing: 0.02em;
+        word-break: break-word;
+      }
+
+      .cc-card-meta-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      /* Role pill — background color comes from --accent var */
+      .club-role-pill {
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--primary-font-family);
+        font-size: 17px;
+        line-height: 1;
+        padding: 3px 9px 2px 9px;
+        border-radius: 5px;
+        background: var(--accent, #888888);
+        color: #fff;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      /* Member count */
+      .club-card-meta {
+        font-family: var(--primary-font-family);
+        font-size: 22px;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .club-card-meta i {
+        font-size: 16px;
+        color: #888;
+      }
+
+      .cc-card-arrow { display: none; }
+
+      /* ── SPINNER ─────────────────────────────────────── */
+      #clubs-spinner {
+        display: flex;
+        justify-content: center;
+        margin-top: 60px;
+      }
+
+      /* ── EMPTY STATE ─────────────────────────────────── */
+      .no-clubs-card {
+        width: 100%;
+        box-sizing: border-box;
+        border: 2px solid black;
+        border-radius: 10px;
+        box-shadow: 0px 2px 0px #000000;
+        background: linear-gradient(#ffffff, #efefef);
+        overflow: hidden;
+        font-family: var(--primary-font-family);
+      }
+
+      .no-clubs-header {
+        background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-accent) 100%);
+        padding: 22px 16px 18px 16px;
+        border-bottom: 1.5px solid rgba(0,0,0,0.2);
+        text-align: center;
+      }
+
+      .no-clubs-icon {
+        font-size: 34px;
+        color: rgba(255,255,255,0.2);
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .no-clubs-title {
+        font-family: "New Amsterdam", sans-serif;
+        font-size: 26px;
+        font-weight: 400;
+        color: #fff;
+        letter-spacing: 0.05em;
+        display: block;
+      }
+
+      .no-clubs-body {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .no-clubs-sub {
+        font-size: 19px;
+        color: #666;
+        line-height: 1.2;
+        flex: 1;
       }
 
       .no-clubs-card .fancy-black-button {
+        font-size: 19px;
+        padding: 3px 14px;
         white-space: nowrap;
-        font-size: 20px;
-        padding: 1px 12px;
+        flex-shrink: 0;
       }
 
-      .club-btn-name {
-        margin: 0 -25px !important;
-        padding: 0 25px 6px 25px !important;
-      }
+      #roleModal { display: none; }
 
-      .no-clubs-card .club-btn-name {
-        margin: 0 -18px !important;
-        padding: 0 18px 6px 18px !important;
+      @media (max-width: 420px) {
+        .action-pill {
+          font-size: 17px;
+        }
+        .action-pill i {
+          font-size: 18px;
+        }
+        .club-card-name {
+          font-size: 23px;
+        }
       }
-
     </style>
   </head>
   <body>
 
     <div class="chat-header">
-        <button id="back-button" class="fancy-button" onclick="goToHome()">
-          <i class="fa-solid fa-circle-left"></i>
-        </button>
-        <span class="chat-title">MY CLUBS</span>
-      </div>
-    <h1 id="page-title" class="pageTitle">MY CLUBS</h1>
-
-
-      
-    <div class="join-club-box" style="margin: 15px auto; width: 85%; max-width: 630px;">
-      <div class="button-container" style="margin-bottom: 0;">
-        <button id="create-club-button" class="fancy-black-button">CREATE A CLUB</button>
-        <button id="join-club-button" class="fancy-black-button">JOIN A CLUB</button>
-        <button id="discover-club-button-main" class="fancy-black-button" onclick="window.location.href='club_discovery.html?from=your_clubs'">DISCOVER CLUBS</button>
-      </div>
+      <button id="back-button" class="fancy-button" onclick="goToHome()">
+        <i class="fa-solid fa-circle-left"></i>
+      </button>
+      <span class="chat-title">MY CLUBS</span>
     </div>
-    
+
+    <div class="yc-action-bar">
+      <button id="create-club-button" class="action-pill action-create">
+        <i class="fa-solid fa-plus"></i>
+        <span>Create</span>
+      </button>
+      <button id="join-club-button" class="action-pill action-join">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>Join</span>
+      </button>
+      <button id="discover-club-button-main" class="action-pill action-discover"
+              onclick="window.location.href='club_discovery.html?from=your_clubs'">
+        <i class="fa-solid fa-compass"></i>
+        <span>Discover</span>
+      </button>
+    </div>
+
     <div id="clubs-wrapper">
-      <div id="clubs-spinner" style="display:flex; justify-content:center; margin-top:50px;">
+      <div id="clubs-spinner">
         <div class="loading-spinner"></div>
       </div>
-      <div id="clubContainer"></div>
-      <div id="memberClubContainer"></div>
+
+      <div class="yc-section" id="managed-section" style="display:none;">
+        <div class="yc-card-list" id="clubContainer"></div>
+      </div>
+
+      <div class="yc-section" id="member-section" style="display:none;">
+        <div class="yc-card-list" id="memberClubContainer"></div>
+      </div>
     </div>
 
-    
     <div id="roleModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeRoleModal()">&times;</span>
-            <h2>Set Role for <span id="modalMemberName"></span></h2>
-            <div class="role-options">
-                <label>
-                    <input type="radio" name="memberRole" value="member" id="radioMember"> Member
-                </label>
-                <label>
-                    <input type="radio" name="memberRole" value="admin" id="radioAdmin"> Admin
-                </label>
-            </div>
-            <button id="saveRoleButton">Save Role</button>
-            <button onclick="closeRoleModal()">Cancel</button>
+      <div class="modal-content">
+        <span class="close-button" onclick="closeRoleModal()">&times;</span>
+        <h2>Set Role for <span id="modalMemberName"></span></h2>
+        <div class="role-options">
+          <label><input type="radio" name="memberRole" value="member" id="radioMember"> Member</label>
+          <label><input type="radio" name="memberRole" value="admin"  id="radioAdmin">  Admin</label>
         </div>
+        <button id="saveRoleButton">Save Role</button>
+        <button onclick="closeRoleModal()">Cancel</button>
+      </div>
     </div>
 
     <script>
       const createClubButton = document.getElementById("create-club-button");
-      const joinClubButton = document.getElementById("join-club-button");
-      
+      const joinClubButton   = document.getElementById("join-club-button");
+
       if (createClubButton) {
         createClubButton.addEventListener("click", function() {
           window.location.href = "create_club.html";
@@ -166,14 +365,31 @@
           window.location.href = "join_club.html";
         });
       }
-      function goToHome(){
+      function goToHome() {
         window.location.href = "index.html";
       }
+
+      // Reveal section wrappers once JS populates the containers
+      const managedObserver = new MutationObserver(() => {
+        const container = document.getElementById("clubContainer");
+        if (container && container.children.length > 0)
+          document.getElementById("managed-section").style.display = "block";
+      });
+      const memberObserver = new MutationObserver(() => {
+        const container = document.getElementById("memberClubContainer");
+        if (container && container.children.length > 0)
+          document.getElementById("member-section").style.display = "block";
+      });
+
+      const cc = document.getElementById("clubContainer");
+      const mc = document.getElementById("memberClubContainer");
+      if (cc) managedObserver.observe(cc, { childList: true });
+      if (mc) memberObserver.observe(mc, { childList: true });
     </script>
-    
+
     <script src="theme.js?v=10"></script>
-    <script type="module" src="dialog.js"></script> 
-    <script type="module" src="your_clubs.js?v=12"></script>
-    
+    <script type="module" src="dialog.js"></script>
+    <script type="module" src="your_clubs.js?v=13"></script>
+
   </body>
 </html>
