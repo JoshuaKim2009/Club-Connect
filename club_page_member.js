@@ -129,7 +129,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 // <p>Your Role | ${capitalizeFirstLetter(myCurrentRoleInClub)}</p>
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
-                        <p>Join Code | <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
+                        <p>Join Code <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
 
