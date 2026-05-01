@@ -248,9 +248,9 @@ function getDayMessage(displayName) {
   const messages = {
     0: `What's up, ${name}!`,
     1: `Back at it, ${name}?`,
-    2: `Welcome, ${name}!`,
+    2: `Welcome back, ${name}!`,
     3: `Let's go, ${name}!`,
-    4: `Good to see you, ${name}?`,
+    4: `Good to see you, ${name}!`,
     5: `Happy Friday, ${name}!`,
     6: `Happy Saturday, ${name}!`,
   };
