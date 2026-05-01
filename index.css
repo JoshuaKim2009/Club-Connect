@@ -24,7 +24,7 @@
 	background: linear-gradient(#ffffff, #e2e2e2);
 	font-family: var(--primary-font-family);
 	font-size: 20px;
-  font-size: min(20px, 4.5vw) !important;
+  font-size: min(20px, 5.5vw) !important;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
 	color: black;
@@ -45,7 +45,7 @@
 }
 
 .chat-title {
-  font-size: min(28px, 5.5vw) !important;
+  font-size: min(28px, 7.5vw) !important;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
 }
