@@ -31,7 +31,7 @@
 
       .action-pill {
         flex: 1;
-        display: flex !important;          /* override display:block from ID rules in styles.css */
+        display: flex !important;
         flex-direction: row;
         align-items: center;
         justify-content: center;
@@ -48,10 +48,14 @@
         text-transform: uppercase;
         -webkit-tap-highlight-color: transparent;
         transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out;
+        font-size: min(20px, 4.2vw) !important;
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none;
       }
 
       .action-pill i {
         font-size: 20px;
+        font-size: min(20px, 4.2vw) !important;
       }
 
       .action-pill:hover {
@@ -389,7 +393,7 @@
 
     <script src="theme.js?v=10"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="your_clubs.js?v=13"></script>
+    <script type="module" src="your_clubs.js?v=14"></script>
 
   </body>
 </html>

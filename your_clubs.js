@@ -20,7 +20,7 @@ const db = getFirestore(app);
 // Role accent colors — left stripe + pill background
 const ACCENT = {
   manager: '#1c375f',   // app navy  — authoritative
-  admin:   '#b07400',   // amber     — elevated
+  admin:   '#ce4141',   // amber     — elevated
   member:  '#5f6b78',   // slate     — standard
 };
 
