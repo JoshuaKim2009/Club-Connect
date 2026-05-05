@@ -186,36 +186,16 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
 
         if (activeOccurrencesCount === 0) {
             await deleteEntireEvent(eventId, eventData.isWeekly, true);
-            finalAlertMessage = "This was the last active instance. The event has been automatically deleted.";
-
-            const makeAnnouncementConfirm = await showAppConfirm(`The event on ${formatDate(occurrenceDateString)} has been canceled. Would you like to make an announcement about this cancellation?`);
-            if (makeAnnouncementConfirm) {
-                const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
-                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
-                });
-                const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-                const defaultTitle = `Canceled ${eventData.eventName}`;
-                const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
-                await createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
-            }
+            finalAlertMessage = "That was the last occurrence of this event, so it's been fully removed.";
 
         } else {
             await updateDoc(eventDocRef, {
                 exceptions: arrayUnion(occurrenceDateString)
             });
-            finalAlertMessage = `The event on ${occurrenceDateString} has been canceled.`;
-
-            const makeAnnouncementConfirm = await showAppConfirm(`The event on $${formatDate(occurrenceDateString)} has been canceled. Would you like to make an announcement about this cancellation?`);
-            if (makeAnnouncementConfirm) {
-                const formattedDate = new Date(occurrenceDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
-                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
-                });
-                const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-                const defaultTitle = `Canceled ${eventData.eventName}`;
-                const defaultContent = `The event "${eventData.eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
-                await createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
-            }
+            finalAlertMessage = `The event on ${formatDate(occurrenceDateString)} has been canceled.`;
         }
+
+        await showAppAlert(finalAlertMessage);
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
         //await fetchAndDisplayEvents(); 
@@ -227,7 +207,7 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
 
 //Don't need to use this anymore since it is too complicated to keep, but keeping in case I need it later for some reason (but it is not actually used for anything)
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
-    const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${occurrenceDateString}? It will reappear on the schedule.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${formatDate(occurrenceDateString)}? It will reappear on the schedule.`);
     if (!confirmed) {
         return;
     }
@@ -237,7 +217,7 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
         await updateDoc(eventDocRef, {
             exceptions: arrayRemove(occurrenceDateString)
         });
-        await showAppAlert(`The event on ${occurrenceDateString} has been un-canceled.`);
+        await showAppAlert(`The event on ${formatDate(occurrenceDateString)} has been un-canceled.`);
     } catch (error) {
         console.error("Error un-canceling single event occurrence:", error);
         await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
@@ -546,7 +526,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
     if (isWeekly && !isEditingInstance) { 
         const futureOccurrences = calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime);
         if (futureOccurrences === 0) {
-            await showAppAlert("This repeating event configuration results in no events. Please adjust the dates or days of the week.");
+            await showAppAlert("This setup doesn't include any upcoming events. Try adjusting the dates or days of the week.");
             return; 
         }
     }
@@ -958,7 +938,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     const mainEventData = mainEventSnap.data();
     const eventName = mainEventData.eventName || "Untitled Event Series"; 
 
-    const confirmed = await showAppConfirm(`Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`);
 
     if (!confirmed) {
         return;
@@ -1015,9 +995,9 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
     if (!skipConfirm) { 
         let confirmMessage;
         if (isWeeklyEvent) {
-            confirmMessage = `Are you sure you want to delete this ENTIRE event series? All events of type "${eventName}" will be deleted. This action cannot be undone.`;
+            confirmMessage = `Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`;
         } else {
-            confirmMessage = `Are you sure you want to cancel the event "${eventName}"? This action cannot be undone.`;
+            confirmMessage = `Are you sure you want to cancel "${eventName}"? This action cannot be undone.`;
         }
 
         const confirmed = await showAppConfirm(confirmMessage);
@@ -1055,27 +1035,6 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
                 rsvpsSnapForOverrides.forEach((rsvpDoc) => {
                     batch.delete(rsvpDoc.ref);
                 });
-            }
-        }
-
-        if (!skipConfirm && eventData && !isWeeklyEvent) { 
-            let announcementPromptMessage = "";
-            let defaultTitle = "";
-            let defaultContent = "";
-
-                
-            const eventDateString = eventData.eventDate; 
-            const formattedDate = new Date(eventDateString + 'T00:00:00Z').toLocaleDateString(undefined, {
-                year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'UTC'
-            });
-            const formattedTime = `${formatTime(eventData.startTime)} - ${formatTime(eventData.endTime)}`;
-            announcementPromptMessage = `The event "${eventName}" has been canceled. Would you like to make an announcement about this cancellation?`;
-            defaultTitle = `Canceled ${eventName}`;
-            defaultContent = `The event "${eventName}" scheduled for ${formattedDate} (${formattedTime}) has been canceled.`;
-
-            const makeAnnouncementConfirm = await showAppConfirm(announcementPromptMessage);
-            if (makeAnnouncementConfirm) {
-                await createAnnouncementPopup({ title: defaultTitle, content: defaultContent });
             }
         }
 
