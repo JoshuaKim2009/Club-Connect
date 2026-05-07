@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 
 const firebaseConfig = {
@@ -26,7 +26,6 @@ const ACCENT = {
 
 let currentUser = null;
 let userDocRef = null;
-let unsubscribeUserDoc = null;
 let cardIndex = 0;
 
 
@@ -36,16 +35,12 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Auth state changed: User is logged in.", user.uid);
         userDocRef = doc(db, "users", currentUser.uid);
-        setupRealtimeClubUpdates();
+        loadAllClubs();
     } else {
         console.log("Auth state changed: No user is logged in.");
         document.getElementById("clubContainer").innerHTML = "";
         document.getElementById("memberClubContainer").innerHTML = "";
 
-        if (unsubscribeUserDoc) {
-            unsubscribeUserDoc();
-            unsubscribeUserDoc = null;
-        }
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 0);
@@ -84,9 +79,7 @@ async function getMemberRoleForClub(clubID, memberUid) {
 }
 
 
-// Builds the inner HTML for a club card.
-// accent is injected as a CSS variable so both the left
-// stripe (border-left) and the role pill share the same color.
+
 function buildCardHTML(clubName, roleLabel, memberCount) {
   return `
     <div class="cc-card-inner">
@@ -129,7 +122,7 @@ async function loadAllClubs() {
     container.innerHTML = '';
     cardIndex = 0;
 
-    // ── Managed clubs ──────────────────────────────────────
+    //Managed clubs
     managedSnaps.forEach((snap, i) => {
         if (!snap.exists()) return;
         const data = snap.data();
@@ -151,7 +144,7 @@ async function loadAllClubs() {
         cardIndex++;
     });
 
-    // ── Member clubs ───────────────────────────────────────
+    //Member clubs
     memberSnaps.forEach((snap, i) => {
         if (!snap.exists()) return;
         const role = roles[i];
@@ -186,21 +179,6 @@ async function loadAllClubs() {
         showNoClubsCard(container);
     }
     document.getElementById("clubs-spinner").style.display = "none";
-}
-
-
-function setupRealtimeClubUpdates() {
-    if (unsubscribeUserDoc) {
-        unsubscribeUserDoc();
-    }
-
-    unsubscribeUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
-        console.log("User document updated in real-time. Refreshing club lists.");
-        loadAllClubs();
-    }, (error) => {
-        console.error("Error listening to user document for club updates:", error);
-        showAppAlert("Real-time club updates failed: " + error.message);
-    });
 }
 
 
