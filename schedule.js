@@ -1,16 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { showAppAlert, showAppConfirm } from './dialog.js'; 
+import { showAppAlert, showAppConfirm } from './dialog.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+    apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+    authDomain: "club-connect-data.firebaseapp.com",
+    projectId: "club-connect-data",
+    storageBucket: "club-connect-data.firebasestorage.app",
+    messagingSenderId: "903230180616",
+    appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+    measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -21,14 +21,16 @@ let currentUser = null;
 let clubId = null;
 let role = null;
 let isEditingEvent = false;
-let eventListenerUnsubscribe = null;
 let rsvpListenerUnsubscribe = null;
+
+// All loaded event docs keyed by eventId — single source of truth
+// { eventId: { id, ...firestoreData } }
+let eventDocsMap = new Map();
 
 const userCache = new Map();
 const memberListCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000;
 
-// const clubScheduleTitle = document.getElementById('clubScheduleTitle');
 const eventsContainer = document.getElementById('eventsContainer');
 const noEventsMessage = document.getElementById('noEventsMessage');
 const addEventButton = document.getElementById('add-event-button');
@@ -36,201 +38,285 @@ const addEventButton = document.getElementById('add-event-button');
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 
-function getUrlParameter(name) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(name) || '';
-}
+// ─── URL / Auth helpers ───────────────────────────────────────────────────────
 
+function getUrlParameter(name) {
+    return new URLSearchParams(window.location.search).get(name) || '';
+}
 
 async function getMemberRoleForClub(clubId, uid) {
     if (!clubId || !uid) return null;
-    
     const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", uid));
     if (memberDoc.exists()) return memberDoc.data().role || 'member';
-    
     const clubDoc = await getDoc(doc(db, "clubs", clubId));
     return clubDoc.data()?.managerUid === uid ? 'manager' : 'member';
 }
 
-window.goToClubPage = function() {
+window.goToClubPage = function () {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo');
-
     if (currentClubId) {
         let redirectUrl = 'your_clubs.html';
-
-        if (returnToPage === 'manager') {
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        } else if (returnToPage === 'member') {
-            redirectUrl = `club_page_member.html?id=${currentClubId}`;
-        } else {
-            console.warn("Invalid or missing 'returnTo' parameter, defaulting to manager page.");
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        }
+        if (returnToPage === 'manager') redirectUrl = `club_page_manager.html?id=${currentClubId}`;
+        else if (returnToPage === 'member') redirectUrl = `club_page_member.html?id=${currentClubId}`;
+        else redirectUrl = `club_page_manager.html?id=${currentClubId}`;
         window.location.href = redirectUrl;
     } else {
         window.location.href = 'your_clubs.html';
     }
-}
+};
+
+
+// ─── Auth state ───────────────────────────────────────────────────────────────
 
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; 
+    currentUser = user;
     clubId = getUrlParameter('clubId');
 
     if (user) {
         if (clubId) {
-            const clubRef = doc(db, "clubs", clubId);
             try {
-                const clubSnap = await getDoc(clubRef);
+                const clubSnap = await getDoc(doc(db, "clubs", clubId));
                 if (clubSnap.exists()) {
-                    // if (clubScheduleTitle) {
-                    //     clubScheduleTitle.textContent = `${clubSnap.data().clubName} Schedule`;
-                    // }
-
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
-                    console.log(role);
 
-                    // await cleanUpEmptyRecurringEvents();
+                    await fetchAndDisplayEvents();
+                    setupRealtimeUserRsvps();
 
-                    //await fetchAndDisplayEvents(); 
-                    setupRealtimeUpdates();
-                    setupRealtimeUserRsvps()
-                    
                     if (addEventButton) {
                         if (role === 'manager' || role === 'admin') {
-                            addEventButton.style.display = 'block'; 
-                            addEventButton.removeEventListener('click', addNewEventEditingCard);
+                            addEventButton.style.display = 'block';
                             addEventButton.addEventListener('click', addNewEventEditingCard);
                         } else {
-                            addEventButton.style.display = 'none'; 
+                            addEventButton.style.display = 'none';
                         }
                     }
-
                 } else {
-                    // if (clubScheduleTitle) clubScheduleTitle.textContent = "Club Schedule (Club Not Found)";
                     if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addEventButton) addEventButton.style.display = 'none';
                 }
             } catch (error) {
-                console.error("Error fetching club details or user role:", error);
-                // if (clubScheduleTitle) clubScheduleTitle.textContent = "Error Loading Schedule";
+                console.error("Error during auth init:", error);
                 if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
-                if (addEventButton) addEventButton.style.display = 'none'; 
+                if (addEventButton) addEventButton.style.display = 'none';
             }
         } else {
-            // if (clubScheduleTitle) clubScheduleTitle.textContent = "Error: No Club ID Provided";
             if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
-            if (addEventButton) addEventButton.style.display = 'none'; 
-            if (eventListenerUnsubscribe) {
-                eventListenerUnsubscribe();
-                eventListenerUnsubscribe = null;
-            }
-            if (rsvpListenerUnsubscribe) {
-                rsvpListenerUnsubscribe();
-                rsvpListenerUnsubscribe = null;
-            }
+            if (addEventButton) addEventButton.style.display = 'none';
         }
     } else {
-        // if (clubScheduleTitle) clubScheduleTitle.textContent = "Not Authenticated";
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
-        if (addEventButton) addEventButton.style.display = 'none'; 
-        if (eventListenerUnsubscribe) {
-            eventListenerUnsubscribe();
-            eventListenerUnsubscribe = null;
-        }
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 2000); 
+        if (addEventButton) addEventButton.style.display = 'none';
+        if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
     }
 });
 
-async function cancelSingleOccurrence(eventId, occurrenceDateString) {
-    const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${formatDate(occurrenceDateString)}? It will no longer appear on the schedule.`);
-    if (!confirmed) {
+
+// ─── Fetch & render all events ────────────────────────────────────────────────
+
+async function fetchAndDisplayEvents() {
+    if (!clubId) return;
+
+    try {
+        const eventsRef = collection(db, "clubs", clubId, "events");
+        const q = query(eventsRef, orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        // Rebuild the in-memory map
+        eventDocsMap.clear();
+        querySnapshot.forEach(docSnap => {
+            eventDocsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+        });
+
+        renderAllEvents();
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Error loading events. Please try again later.</p>`;
+    }
+}
+
+// Pure render from eventDocsMap — touches the DOM once
+function renderAllEvents() {
+    if (!eventsContainer) return;
+    eventsContainer.innerHTML = '';
+
+    const allOccurrences = buildOccurrenceList();
+
+    if (allOccurrences.length === 0) {
+        if (role === 'member') eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
         return;
     }
 
-    try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-        const eventSnap = await getDoc(eventDocRef);
+    if (noEventsMessage) noEventsMessage.style.display = 'none';
 
-        if (!eventSnap.exists()) {
-            await showAppAlert("Error: Event not found.");
-            return;
-        }
+    allOccurrences.forEach((occurrence, index) => {
+        const card = createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
+        eventsContainer.appendChild(card);
+        animateCardIn(card, index);
+    });
+}
 
-        const eventData = eventSnap.data();
-        const existingExceptions = eventData.exceptions || [];
+// Build a flat, sorted, future-only list of occurrences from eventDocsMap
+function buildOccurrenceList() {
+    const now = new Date();
+    const allOccurrences = [];
 
-        const hypotheticalExceptions = [...existingExceptions, occurrenceDateString];
+    eventDocsMap.forEach((eventData, eventId) => {
+        const exceptions = eventData.exceptions || [];
 
-        let activeOccurrencesCount = 0;
         if (eventData.isWeekly) {
             const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
             const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
             const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
-
             let currentDate = new Date(startDate);
+
             while (currentDate.getTime() <= endDate.getTime()) {
-                const currentOccDateString = currentDate.toISOString().split('T')[0];
-                if (daysToMatch.includes(currentDate.getUTCDay()) && !hypotheticalExceptions.includes(currentOccDateString)) {
-                    activeOccurrencesCount++;
+                const dateStr = currentDate.toISOString().split('T')[0];
+                if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(dateStr)) {
+                    const endMoment = new Date(`${dateStr}T${eventData.endTime}`);
+                    if (endMoment.getTime() > now.getTime()) {
+                        allOccurrences.push({ eventData, occurrenceDate: new Date(currentDate), originalEventId: eventId });
+                    }
                 }
                 currentDate.setUTCDate(currentDate.getUTCDate() + 1);
             }
         } else {
-            activeOccurrencesCount = 0;
+            const dateStr = eventData.eventDate;
+            if (!exceptions.includes(dateStr)) {
+                const endMoment = new Date(`${dateStr}T${eventData.endTime}`);
+                if (endMoment.getTime() > now.getTime()) {
+                    allOccurrences.push({ eventData, occurrenceDate: new Date(dateStr + 'T00:00:00Z'), originalEventId: eventId });
+                }
+            }
         }
+    });
 
-        let finalAlertMessage = '';
+    allOccurrences.sort((a, b) => {
+        const dtA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
+        const dtB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
+        return dtA - dtB;
+    });
 
-        if (activeOccurrencesCount === 0) {
-            await deleteEntireEvent(eventId, eventData.isWeekly, true);
-            finalAlertMessage = "That was the last occurrence of this event, so it's been fully removed.";
-
-        } else {
-            await updateDoc(eventDocRef, {
-                exceptions: arrayUnion(occurrenceDateString)
-            });
-            finalAlertMessage = `The event on ${formatDate(occurrenceDateString)} has been canceled.`;
-        }
-
-        await showAppAlert(finalAlertMessage);
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        //await fetchAndDisplayEvents(); 
-    } catch (error) {
-        console.error("Error canceling single event occurrence:", error);
-        await showAppAlert("Failed to cancel event occurrence: " + error.message);
-    }
+    return allOccurrences;
 }
 
-//Don't need to use this anymore since it is too complicated to keep, but keeping in case I need it later for some reason (but it is not actually used for anything)
-async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
-    const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${formatDate(occurrenceDateString)}? It will reappear on the schedule.`);
-    if (!confirmed) {
+
+// ─── Targeted DOM helpers (no full re-render) ─────────────────────────────────
+
+// After saving/updating an event doc, refresh only the cards that belong to that eventId
+function refreshCardsForEvent(eventId) {
+    if (!eventsContainer) return;
+
+    // Remove all existing display cards for this event
+    eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
+
+    const eventData = eventDocsMap.get(eventId);
+    if (!eventData) return; // event was deleted — nothing to re-add
+
+    const now = new Date();
+    const exceptions = eventData.exceptions || [];
+    const newOccurrences = [];
+
+    if (eventData.isWeekly) {
+        const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+        const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+        const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+        let currentDate = new Date(startDate);
+
+        while (currentDate.getTime() <= endDate.getTime()) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            if (daysToMatch.includes(currentDate.getUTCDay()) && !exceptions.includes(dateStr)) {
+                const endMoment = new Date(`${dateStr}T${eventData.endTime}`);
+                if (endMoment.getTime() > now.getTime()) {
+                    newOccurrences.push({ eventData, occurrenceDate: new Date(currentDate), originalEventId: eventId });
+                }
+            }
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+        }
+    } else {
+        const dateStr = eventData.eventDate;
+        if (!exceptions.includes(dateStr)) {
+            const endMoment = new Date(`${dateStr}T${eventData.endTime}`);
+            if (endMoment.getTime() > now.getTime()) {
+                newOccurrences.push({ eventData, occurrenceDate: new Date(dateStr + 'T00:00:00Z'), originalEventId: eventId });
+            }
+        }
+    }
+
+    if (newOccurrences.length === 0) {
+        checkIfEmpty();
         return;
     }
 
-    try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-        await updateDoc(eventDocRef, {
-            exceptions: arrayRemove(occurrenceDateString)
-        });
-        await showAppAlert(`The event on ${formatDate(occurrenceDateString)} has been un-canceled.`);
-    } catch (error) {
-        console.error("Error un-canceling single event occurrence:", error);
-        await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
+    // Insert the new cards in the correct sorted position
+    const allCurrentCards = Array.from(eventsContainer.querySelectorAll('.display-event-card'));
+
+    newOccurrences.forEach(occ => {
+        const newCard = createSingleOccurrenceDisplayCard(occ.eventData, occ.occurrenceDate, occ.originalEventId);
+        const occDateTime = new Date(occ.occurrenceDate.toISOString().split('T')[0] + 'T' + occ.eventData.startTime + ':00Z').getTime();
+
+        // Find insertion point
+        let inserted = false;
+        for (const existingCard of allCurrentCards) {
+            const existingDate = existingCard.dataset.occurrenceDate;
+            const existingEventId = existingCard.dataset.originalEventId;
+            const existingEventData = eventDocsMap.get(existingEventId);
+            if (!existingEventData) continue;
+            const existingDateTime = new Date(existingDate + 'T' + existingEventData.startTime + ':00Z').getTime();
+            if (occDateTime <= existingDateTime) {
+                eventsContainer.insertBefore(newCard, existingCard);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) eventsContainer.appendChild(newCard);
+    });
+
+    if (noEventsMessage) noEventsMessage.style.display = 'none';
+}
+
+// Remove all cards for a given eventId and clean up the map
+function removeCardsForEvent(eventId) {
+    eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
+    eventDocsMap.delete(eventId);
+    checkIfEmpty();
+}
+
+function checkIfEmpty() {
+    if (!eventsContainer) return;
+    const remaining = eventsContainer.querySelectorAll('.display-event-card');
+    if (remaining.length === 0) {
+        if (role === 'member') eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+        if (noEventsMessage) noEventsMessage.style.display = 'block';
     }
 }
+
+
+// ─── Add new event ────────────────────────────────────────────────────────────
+
+async function addNewEventEditingCard() {
+    if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to add events."); return; }
+    if (isEditingEvent) { await showAppAlert("Please finish editing the current event before adding a new one."); return; }
+
+    const newCard = createEditingCardElement({}, true);
+    if (eventsContainer) {
+        if (noEventsMessage) noEventsMessage.style.display = 'none';
+        eventsContainer.prepend(newCard);
+    }
+}
+
+
+// ─── Editing card ─────────────────────────────────────────────────────────────
 
 function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
     isEditingEvent = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card editing-event-card';
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
     const currentEditId = eventIdToUpdate || `new-${Date.now()}`;
+
     cardDiv.dataset.editId = currentEditId;
     cardDiv.dataset.isNewEvent = isNewEvent;
     if (isEditingInstance) {
@@ -239,108 +325,73 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         cardDiv.dataset.originalOccurrenceDate = originalOccurrenceDate;
     }
 
-    const eventNameInputFieldHtml = `
+    const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
+    const selectedDays = initialData.daysOfWeek || [];
+
+    cardDiv.innerHTML = `
         <div>
             <label for="edit-name-${currentEditId}">Event Name:</label>
             <input type="text" id="edit-name-${currentEditId}" value="${initialData.eventName || ''}" required>
         </div>
-    `;
 
-    const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
-    const weeklyEventCheckboxHtml = `
         <div class="weekly-event-checkbox" style="display: ${isNewEvent ? 'block' : 'none'};">
             <label>
                 <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isNewEvent ? '' : 'disabled'}>
                 Repeating Event
             </label>
         </div>
-    `;
 
-    const weeklyStartDateInputFieldHtml = `
-        <div id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
-            <label for="edit-weekly-start-date-${currentEditId}">Start Date:</label>
-            <input type="date" id="edit-weekly-start-date-${currentEditId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
-        </div>
-    `;
-
-    const weeklyEndDateInputFieldHtml = `
-        <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
-            <label for="edit-weekly-end-date-${currentEditId}">End Date:</label>
-            <input type="date" id="edit-weekly-end-date-${currentEditId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
-        </div>
-    `;
-
-    const eventDateInputDisabled = initialData.isWeekly && !isEditingInstance ? 'disabled' : '';
-    const eventDateInputFieldHtml = `
         <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
             <label for="edit-date-${currentEditId}">Event Date:</label>
-            <input type="date" id="edit-date-${currentEditId}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${eventDateInputDisabled} required>
+            <input type="date" id="edit-date-${currentEditId}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${initialData.isWeekly && !isEditingInstance ? 'disabled' : ''} required>
         </div>
-    `;
 
-    const selectedDays = initialData.daysOfWeek || [];
-    const daysOfWeekInputDisabled = !initialData.isWeekly || isEditingInstance ? 'disabled' : '';
-    const daysOfWeekCheckboxesHtml = `
         <div class="days-of-week-selection" id="days-of-week-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
             <label>Days of Week:</label>
             <div class="checkbox-group">
                 ${daysOfWeekOptions.map(day => `
                     <label>
-                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${daysOfWeekInputDisabled}>
+                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''}>
                         ${day}
                     </label>
                 `).join('')}
             </div>
         </div>
-    `;
 
-    const startTimeInputFieldHtml = `
+        <div id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+            <label for="edit-weekly-start-date-${currentEditId}">Start Date:</label>
+            <input type="date" id="edit-weekly-start-date-${currentEditId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
+        </div>
+
+        <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+            <label for="edit-weekly-end-date-${currentEditId}">End Date:</label>
+            <input type="date" id="edit-weekly-end-date-${currentEditId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
+        </div>
+
         <div>
             <label for="edit-start-time-${currentEditId}">Start Time:</label>
-            <input type="time" id="edit-start-time-${currentEditId}" value="${initialData.startTime || ''}"required>
+            <input type="time" id="edit-start-time-${currentEditId}" value="${initialData.startTime || ''}" required>
         </div>
-    `;
 
-    const endTimeInputFieldHtml = `
         <div>
             <label for="edit-end-time-${currentEditId}">End Time:</label>
-            <input type="time" id="edit-end-time-${currentEditId}" value="${initialData.endTime || ''}"required>
+            <input type="time" id="edit-end-time-${currentEditId}" value="${initialData.endTime || ''}" required>
         </div>
-    `;
 
-    const eventAddressInputFieldHtml = `
         <div>
             <label for="edit-address-${currentEditId}">Address:</label>
-            <input type="text" id="edit-address-${currentEditId}" value="${initialData.address || ''}"required>
+            <input type="text" id="edit-address-${currentEditId}" value="${initialData.address || ''}" required>
         </div>
-    `;
-    const eventLocationInputFieldHtml = `
+
         <div>
             <label for="edit-location-${currentEditId}">Location (e.g., Room 132):</label>
-            <input type="text" id="edit-location-${currentEditId}" value="${initialData.location || ''}"required>
+            <input type="text" id="edit-location-${currentEditId}" value="${initialData.location || ''}" required>
         </div>
-    `;
 
-    const eventNotesInputFieldHtml = `
         <div>
             <label for="edit-notes-${currentEditId}">Notes (Optional):</label>
             <input type="text" id="edit-notes-${currentEditId}" value="${initialData.notes || ''}">
         </div>
-    `;
-
-
-    cardDiv.innerHTML = `
-        ${eventNameInputFieldHtml}
-        ${weeklyEventCheckboxHtml}
-        ${eventDateInputFieldHtml}
-        ${daysOfWeekCheckboxesHtml}
-        ${weeklyStartDateInputFieldHtml}
-        ${weeklyEndDateInputFieldHtml}
-        ${startTimeInputFieldHtml}
-        ${endTimeInputFieldHtml}
-        ${eventAddressInputFieldHtml}
-        ${eventLocationInputFieldHtml}
-        ${eventNotesInputFieldHtml}
 
         <div class="event-card-actions">
             <button class="save-btn">SAVE</button>
@@ -348,6 +399,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         </div>
     `;
 
+    // Weekly toggle logic
     const isWeeklyCheckbox = cardDiv.querySelector(`#edit-is-weekly-${currentEditId}`);
     const dateInputGroup = cardDiv.querySelector(`#date-input-group-${currentEditId}`);
     const eventDateInput = cardDiv.querySelector(`#edit-date-${currentEditId}`);
@@ -357,145 +409,86 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
     const weeklyStartDateInput = cardDiv.querySelector(`#edit-weekly-start-date-${currentEditId}`);
     const weeklyEndDateInput = cardDiv.querySelector(`#edit-weekly-end-date-${currentEditId}`);
 
-    if (isWeeklyCheckbox && dateInputGroup && eventDateInput && daysOfWeekGroup && weeklyStartDateGroup && weeklyEndDateGroup && weeklyStartDateInput && weeklyEndDateInput) {
-        const toggleRecurringFields = () => {
-            if (isEditingInstance) return;
+    const toggleRecurringFields = () => {
+        if (isEditingInstance) return;
+        const isChecked = isWeeklyCheckbox ? isWeeklyCheckbox.checked : initialData.isWeekly;
 
-            
-            const isChecked = isWeeklyCheckbox ? isWeeklyCheckbox.checked : initialData.isWeekly;
+        dateInputGroup.style.display = isChecked ? 'none' : 'block';
+        eventDateInput.disabled = isChecked;
+        daysOfWeekGroup.style.display = isChecked ? 'block' : 'none';
+        daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.disabled = !isChecked; });
+        weeklyStartDateGroup.style.display = isChecked ? 'block' : 'none';
+        weeklyStartDateInput.disabled = !isChecked;
+        weeklyEndDateGroup.style.display = isChecked ? 'block' : 'none';
+        weeklyEndDateInput.disabled = !isChecked;
 
-            dateInputGroup.style.display = isChecked ? 'none' : 'block';
-            eventDateInput.disabled = isChecked;
-
-            daysOfWeekGroup.style.display = isChecked ? 'block' : 'none';
-            daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                checkbox.disabled = !isChecked;
-            });
-
-            weeklyStartDateGroup.style.display = isChecked ? 'block' : 'none';
-            weeklyStartDateInput.disabled = !isChecked;
-            weeklyEndDateGroup.style.display = isChecked ? 'block' : 'none';
-            weeklyEndDateInput.disabled = !isChecked;
-
-            if (isChecked) {
-                weeklyStartDateInput.setAttribute('required', 'true');
-                weeklyEndDateInput.setAttribute('required', 'true');
-                eventDateInput.removeAttribute('required');
-            } else {
-                weeklyStartDateInput.removeAttribute('required');
-                weeklyEndDateInput.removeAttribute('required');
-                eventDateInput.setAttribute('required', 'true');
-            }
-
-            if (isChecked) {
-                eventDateInput.value = '';
-            } else {
-                daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                weeklyStartDateInput.value = '';
-                weeklyEndDateInput.value = '';
-            }
-        };
-
-        if (!isEditingInstance) { 
-            isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
+        if (isChecked) {
+            weeklyStartDateInput.setAttribute('required', 'true');
+            weeklyEndDateInput.setAttribute('required', 'true');
+            eventDateInput.removeAttribute('required');
+            eventDateInput.value = '';
+        } else {
+            weeklyStartDateInput.removeAttribute('required');
+            weeklyEndDateInput.removeAttribute('required');
+            eventDateInput.setAttribute('required', 'true');
+            daysOfWeekGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            weeklyStartDateInput.value = '';
+            weeklyEndDateInput.value = '';
         }
+    };
 
-        toggleRecurringFields();
+    if (!isEditingInstance && isWeeklyCheckbox) {
+        isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
     }
+    toggleRecurringFields();
 
+    // Save button
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
-        await saveEvent(cardDiv, eventIdToUpdate); 
-        isEditingEvent = false;
+        await saveEvent(cardDiv, eventIdToUpdate);
     });
+
+    // Cancel button — just swap back, no alert
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         isEditingEvent = false;
         if (!isNewEvent) {
             const fetchId = isEditingInstance ? originalEventIdForInstance : eventIdToUpdate;
-            const eventDocRef = doc(db, "clubs", clubId, "events", fetchId);
-            const eventSnap = await getDoc(eventDocRef);
-            if (eventSnap.exists()) {
-                const eventData = eventSnap.data();
+            const eventData = eventDocsMap.get(fetchId);
+            if (eventData) {
                 const occDateStr = isEditingInstance ? originalOccurrenceDate : (eventData.eventDate || originalOccurrenceDate);
-                const occDate = new Date(occDateStr + 'T00:00:00Z');
-                const displayCard = createSingleOccurrenceDisplayCard(eventData, occDate, fetchId);
+                const displayCard = createSingleOccurrenceDisplayCard(eventData, new Date(occDateStr + 'T00:00:00Z'), fetchId);
                 cardDiv.replaceWith(displayCard);
-                scrollToEditedEvent(fetchId, isEditingInstance ? originalOccurrenceDate : null);
             } else {
                 cardDiv.remove();
             }
         } else {
             cardDiv.remove();
-            if (eventsContainer && eventsContainer.querySelectorAll('.event-card').length === 0 && noEventsMessage) {
-                noEventsMessage.style.display = 'block';
-            }
-            if (addEventButton){
-                addEventButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            checkIfEmpty();
+            if (addEventButton) addEventButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 
     return cardDiv;
 }
 
-async function addNewEventEditingCard() {
-    if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to add events.");
-        return;
-    }
-    if (isEditingEvent) { 
-        await showAppAlert("Please finish editing the current event before adding a new one.");
-        return;
-    }
 
-    const newCardElement = createEditingCardElement({}, true); 
-
-    if (eventsContainer) {
-        if (noEventsMessage) noEventsMessage.style.display = 'none';
-
-        eventsContainer.prepend(newCardElement);
-    }
-}
-
-function formatTime(timeString) {
-    if (!timeString) return 'N/A';
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date(); 
-    date.setHours(hours, minutes);
-    return date.toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
-    return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, options);
-}
+// ─── Save event ───────────────────────────────────────────────────────────────
 
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
     const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
     const isEditingInstance = cardDiv.dataset.isEditingInstance === 'true';
-    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance; 
-    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate; 
+    const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance;
+    const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate;
 
     const eventName = cardDiv.querySelector(`#edit-name-${tempDomId}`).value.trim();
     const isWeekly = isEditingInstance ? false : cardDiv.querySelector(`#edit-is-weekly-${tempDomId}`).checked;
 
-    let eventDate = '';
-    let weeklyStartDate = '';
-    let weeklyEndDate = '';
-    let daysOfWeek = [];
+    let eventDate = '', weeklyStartDate = '', weeklyEndDate = '', daysOfWeek = [];
 
     if (isWeekly) {
         weeklyStartDate = cardDiv.querySelector(`#edit-weekly-start-date-${tempDomId}`).value;
         weeklyEndDate = cardDiv.querySelector(`#edit-weekly-end-date-${tempDomId}`).value;
-        const selectedDaysCheckboxes = cardDiv.querySelectorAll(`#days-of-week-group-${tempDomId} input[type="checkbox"]:checked`);
-        daysOfWeek = Array.from(selectedDaysCheckboxes).map(cb => cb.value);
+        daysOfWeek = Array.from(cardDiv.querySelectorAll(`#days-of-week-group-${tempDomId} input[type="checkbox"]:checked`)).map(cb => cb.value);
     } else {
         eventDate = cardDiv.querySelector(`#edit-date-${tempDomId}`).value;
     }
@@ -506,10 +499,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
     const location = cardDiv.querySelector(`#edit-location-${tempDomId}`).value.trim();
     const notes = cardDiv.querySelector(`#edit-notes-${tempDomId}`).value.trim();
 
-    let savedEventId = null;
-    let savedOccurrenceDate = null;
-
-
+    // Validation
     if (!eventName) { await showAppAlert("Event Name is required!"); return; }
     if (!isWeekly && !eventDate) { await showAppAlert("Please provide an Event Date for one-time events."); return; }
     if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Repeating events require both a start and end date."); return; }
@@ -517,109 +507,107 @@ async function saveEvent(cardDiv, existingEventId = null) {
     if (!startTime || !endTime) { await showAppAlert("Start Time and End Time are required."); return; }
     if (!address) { await showAppAlert("Address is required."); return; }
     if (!location) { await showAppAlert("Specific Location (e.g., Room 132) is required."); return; }
-
-    if (startTime >= endTime) {
-        await showAppAlert("End time cannot be earlier than or the same as the start time!");
-        return; 
-    }
-
-    if (isWeekly && !isEditingInstance) { 
-        const futureOccurrences = calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime);
-        if (futureOccurrences === 0) {
+    if (startTime >= endTime) { await showAppAlert("End time cannot be earlier than or the same as the start time!"); return; }
+    if (isWeekly && !isEditingInstance) {
+        if (calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime) === 0) {
             await showAppAlert("This setup doesn't include any upcoming events. Try adjusting the dates or days of the week.");
-            return; 
+            return;
         }
     }
 
     const eventDataToSave = {
-        eventName,
-        isWeekly,
-        startTime,
-        endTime,
-        address,
-        location,
-        notes,
+        eventName, isWeekly, startTime, endTime, address, location, notes,
         ...(isWeekly ? { weeklyStartDate, weeklyEndDate, daysOfWeek } : { eventDate }),
+        createdAt: serverTimestamp(),
+        createdByUid: currentUser.uid,
+        createdByName: currentUser.displayName || "Anonymous",
     };
-
-    eventDataToSave.createdAt = serverTimestamp(); 
-    eventDataToSave.createdByUid = currentUser.uid;
-    eventDataToSave.createdByName = currentUser.displayName || "Anonymous";
 
     try {
         const eventsRef = collection(db, "clubs", clubId, "events");
+        let savedEventId = null;
+        let savedOccurrenceDate = null;
 
         if (isEditingInstance) {
-            if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
-                const parentEventDocRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
-                await updateDoc(parentEventDocRef, {
-                    exceptions: arrayUnion(originalOccurrenceDateForInstance)
-                });
-            }
+            // Add exception to parent, create override doc
+            const parentRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
+            await updateDoc(parentRef, { exceptions: arrayUnion(originalOccurrenceDateForInstance) });
 
-            const overrideEventData = {
-                ...eventDataToSave,
-                parentRecurringEventId: originalEventIdForInstance 
-            };
-            const newOverrideEventRef = await addDoc(eventsRef, overrideEventData); 
-            savedEventId = newOverrideEventRef.id; 
-            savedOccurrenceDate = eventDataToSave.eventDate;
-            const newOverrideEventId = newOverrideEventRef.id; 
-
-            if (originalEventIdForInstance && originalOccurrenceDateForInstance) {
-                const rsvpsToTransferQuery = query(
-                    collection(db, "clubs", clubId, "occurrenceRsvps"),
-                    where("eventId", "==", originalEventIdForInstance),
-                    where("occurrenceDate", "==", originalOccurrenceDateForInstance)
-                );
-                const rsvpsToTransferSnap = await getDocs(rsvpsToTransferQuery);
-
-                if (!rsvpsToTransferSnap.empty) {
-                    const rsvpBatch = writeBatch(db);
-                    rsvpsToTransferSnap.forEach((rsvpDoc) => {
-                        const newRsvpDocId = `${newOverrideEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
-                        const newRsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", newRsvpDocId);
-
-                        const newRsvpData = { ...rsvpDoc.data(), eventId: newOverrideEventId };
-                        rsvpBatch.set(newRsvpDocRef, newRsvpData); 
-                        rsvpBatch.delete(rsvpDoc.ref);
-                    });
-                    await rsvpBatch.commit();
+            // Update parent in local map
+            const parentData = eventDocsMap.get(originalEventIdForInstance);
+            if (parentData) {
+                const exceptions = parentData.exceptions || [];
+                if (!exceptions.includes(originalOccurrenceDateForInstance)) {
+                    parentData.exceptions = [...exceptions, originalOccurrenceDateForInstance];
                 }
             }
-            await showAppAlert("Event updated successfully!");
+
+            const overrideData = { ...eventDataToSave, parentRecurringEventId: originalEventIdForInstance };
+            const newRef = await addDoc(eventsRef, overrideData);
+            savedEventId = newRef.id;
+            savedOccurrenceDate = eventDate;
+
+            // Store override in local map
+            eventDocsMap.set(savedEventId, { id: savedEventId, ...overrideData });
+
+            // Transfer RSVPs
+            const rsvpsToTransferQuery = query(
+                collection(db, "clubs", clubId, "occurrenceRsvps"),
+                where("eventId", "==", originalEventIdForInstance),
+                where("occurrenceDate", "==", originalOccurrenceDateForInstance)
+            );
+            const rsvpsSnap = await getDocs(rsvpsToTransferQuery);
+            if (!rsvpsSnap.empty) {
+                const batch = writeBatch(db);
+                rsvpsSnap.forEach(rsvpDoc => {
+                    const newId = `${savedEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
+                    const newRef = doc(db, "clubs", clubId, "occurrenceRsvps", newId);
+                    batch.set(newRef, { ...rsvpDoc.data(), eventId: savedEventId });
+                    batch.delete(rsvpDoc.ref);
+                });
+                await batch.commit();
+            }
+
+            // DOM: remove editing card, refresh both parent and override
+            cardDiv.remove();
+            isEditingEvent = false;
+            refreshCardsForEvent(originalEventIdForInstance);
+            refreshCardsForEvent(savedEventId);
 
         } else if (existingEventId) {
             const eventDocRef = doc(eventsRef, existingEventId);
-            const existingDocSnap = await getDoc(eventDocRef);
-            if (existingDocSnap.exists()) {
-                const existingData = existingDocSnap.data();
-                const updatedData = {
-                    ...eventDataToSave,
-                    exceptions: existingData.exceptions || [],
-                };
-                await updateDoc(eventDocRef, updatedData);
-                savedEventId = existingEventId;
-                savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate; 
-                await showAppAlert("Event updated successfully!");
-            } else {
-                console.error("Error: Attempted to update non-existent event document:", existingEventId);
-                await showAppAlert("Failed to update event: Original event not found.");
-            }
-        } else {
-            const newDocRef = await addDoc(eventsRef, eventDataToSave);
-            savedEventId = newDocRef.id; 
-            savedOccurrenceDate = eventDataToSave.isWeekly ? null : eventDataToSave.eventDate;
-            await showAppAlert("New event added successfully!");
-        }
-        
-        cardDiv.remove();
-        isEditingEvent = false;
-        //await fetchAndDisplayEvents(); 
+            const existingData = eventDocsMap.get(existingEventId) || {};
+            const updatedData = { ...eventDataToSave, exceptions: existingData.exceptions || [] };
+            await updateDoc(eventDocRef, updatedData);
+            savedEventId = existingEventId;
+            savedOccurrenceDate = isWeekly ? null : eventDate;
 
-        if (savedEventId) {
-            scrollToEditedEvent(savedEventId, savedOccurrenceDate); 
+            // Update local map
+            eventDocsMap.set(existingEventId, { id: existingEventId, ...updatedData });
+
+            // DOM: remove editing card, refresh cards for this event
+            cardDiv.remove();
+            isEditingEvent = false;
+            refreshCardsForEvent(existingEventId);
+
+        } else {
+            // Brand new event
+            const newRef = await addDoc(eventsRef, eventDataToSave);
+            savedEventId = newRef.id;
+            savedOccurrenceDate = isWeekly ? null : eventDate;
+
+            // Add to local map
+            eventDocsMap.set(savedEventId, { id: savedEventId, ...eventDataToSave });
+
+            // DOM: remove editing card, inject new card(s)
+            cardDiv.remove();
+            isEditingEvent = false;
+            refreshCardsForEvent(savedEventId);
         }
+
+        // Scroll first, then alert
+        scrollToEditedEvent(savedEventId, savedOccurrenceDate);
+        await showAppAlert("Event saved successfully!");
 
     } catch (error) {
         console.error("Error saving event:", error);
@@ -628,110 +616,216 @@ async function saveEvent(cardDiv, existingEventId = null) {
     }
 }
 
-function setupRealtimeUpdates() {
-    if (!clubId) {
-        console.warn("setupRealtimeUpdates called without a clubId.");
-        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
-        if (noEventsMessage) noEventsMessage.style.display = 'block';
+
+// ─── Edit event ───────────────────────────────────────────────────────────────
+
+async function editEvent(eventId, occurrenceDateString = null) {
+    if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to edit events."); return; }
+    if (isEditingEvent) { await showAppAlert("Please finish editing the current event before starting another edit."); return; }
+
+    const eventData = eventDocsMap.get(eventId);
+    if (!eventData) { await showAppAlert("Error: Event not found."); return; }
+
+    let targetDisplayCard;
+    if (eventData.isWeekly && occurrenceDateString) {
+        targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
+    } else {
+        targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
+    }
+
+    if (!targetDisplayCard) {
+        await showAppAlert("Could not find the event card to edit. Please refresh.");
         return;
     }
 
-    const eventsRef = collection(db, "clubs", clubId, "events");
-    const q = query(eventsRef, orderBy("createdAt", "desc"));
+    if (eventData.isWeekly && occurrenceDateString) {
+        // Editing a single instance of a recurring event
+        const dataForCard = {
+            eventName: eventData.eventName,
+            isWeekly: false,
+            eventDate: occurrenceDateString,
+            startTime: eventData.startTime,
+            endTime: eventData.endTime,
+            address: eventData.address,
+            location: eventData.location,
+            notes: eventData.notes,
+        };
+        const editingCard = createEditingCardElement(dataForCard, false, eventId, true, eventId, occurrenceDateString);
+        targetDisplayCard.replaceWith(editingCard);
+    } else {
+        // Editing the whole event (one-time, or entire series)
+        const editingCard = createEditingCardElement(eventData, false, eventId);
+        targetDisplayCard.replaceWith(editingCard);
+    }
+}
 
-    if (eventListenerUnsubscribe) {
-        eventListenerUnsubscribe();
-        eventListenerUnsubscribe = null;
+
+// ─── Delete / cancel occurrences ──────────────────────────────────────────────
+
+async function cancelSingleOccurrence(eventId, occurrenceDateString) {
+    const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${formatDate(occurrenceDateString)}? It will no longer appear on the schedule.`);
+    if (!confirmed) return;
+
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
+        const eventData = eventDocsMap.get(eventId);
+        if (!eventData) { await showAppAlert("Error: Event not found."); return; }
+
+        const existingExceptions = eventData.exceptions || [];
+        const hypotheticalExceptions = [...existingExceptions, occurrenceDateString];
+
+        // Count remaining occurrences after this exception
+        let remaining = 0;
+        if (eventData.isWeekly) {
+            const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
+            const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
+            const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+            let cur = new Date(startDate);
+            while (cur.getTime() <= endDate.getTime()) {
+                const ds = cur.toISOString().split('T')[0];
+                if (daysToMatch.includes(cur.getUTCDay()) && !hypotheticalExceptions.includes(ds)) remaining++;
+                cur.setUTCDate(cur.getUTCDate() + 1);
+            }
+        }
+
+        if (remaining === 0) {
+            await deleteEntireEvent(eventId, eventData.isWeekly, true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            await showAppAlert("That was the last occurrence of this event, so it's been fully removed.");
+        } else {
+            await updateDoc(eventDocRef, { exceptions: arrayUnion(occurrenceDateString) });
+            eventData.exceptions = [...existingExceptions, occurrenceDateString];
+
+            // Remove just this card from DOM
+            const card = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
+            if (card) card.remove();
+            checkIfEmpty();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            await showAppAlert(`The event on ${formatDate(occurrenceDateString)} has been canceled.`);
+        }
+    } catch (error) {
+        console.error("Error canceling occurrence:", error);
+        await showAppAlert("Failed to cancel event occurrence: " + error.message);
+    }
+}
+
+async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) {
+    const eventData = eventDocsMap.get(eventIdToDelete);
+    const eventName = eventData ? eventData.eventName : "Untitled Event";
+
+    if (!skipConfirm) {
+        const msg = isWeeklyEvent
+            ? `Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`
+            : `Are you sure you want to cancel "${eventName}"? This action cannot be undone.`;
+        const confirmed = await showAppConfirm(msg);
+        if (!confirmed) return;
     }
 
-    eventListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
-        if (eventsContainer) {
-            eventsContainer.innerHTML = '';
+    try {
+        const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
+        const batch = writeBatch(db);
+        batch.delete(eventDocRef);
+
+        const rsvpsQuery = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
+        const rsvpsSnap = await getDocs(rsvpsQuery);
+        rsvpsSnap.forEach(d => batch.delete(d.ref));
+
+        if (isWeeklyEvent) {
+            const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", eventIdToDelete));
+            const overridesSnap = await getDocs(overridesQuery);
+            const overrideIds = overridesSnap.docs.map(d => d.id);
+            overridesSnap.forEach(d => batch.delete(d.ref));
+
+            if (overrideIds.length > 0) {
+                const rsvpOverridesQuery = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideIds));
+                const rsvpOverridesSnap = await getDocs(rsvpOverridesQuery);
+                rsvpOverridesSnap.forEach(d => batch.delete(d.ref));
+                overrideIds.forEach(id => eventDocsMap.delete(id));
+            }
         }
 
-        let allEventOccurrences = [];
-        querySnapshot.forEach((doc) => {
-            const eventData = doc.data();
-            const eventId = doc.id;
+        await batch.commit();
 
-            const exceptions = eventData.exceptions || [];
+        removeCardsForEvent(eventIdToDelete);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            if (eventData.isWeekly) {
-                const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
-                const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
-                const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
+        if (!skipConfirm) await showAppAlert("Event deleted successfully!");
 
-                let currentDate = new Date(startDate);
-                while (currentDate.getTime() <= endDate.getTime()) {
-                    const currentOccDateString = currentDate.toISOString().split('T')[0];
-
-                    if (daysToMatch.includes(currentDate.getUTCDay())) {
-                        if (!exceptions.includes(currentOccDateString)) {
-                            allEventOccurrences.push({
-                                eventData: eventData,
-                                occurrenceDate: new Date(currentDate),
-                                originalEventId: eventId
-                            });
-                        }
-                    }
-                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-                }
-            } else {
-                const eventDateString = new Date(eventData.eventDate).toISOString().split('T')[0];
-                if (!exceptions.includes(eventDateString)) {
-                    allEventOccurrences.push({
-                        eventData: eventData,
-                        occurrenceDate: new Date(eventData.eventDate + 'T00:00:00Z'),
-                        originalEventId: eventId
-                    });
-                }
-            }
-        });
-
-        const now = new Date();
-
-        allEventOccurrences = allEventOccurrences.filter(occurrence => {
-            const eventDateStr = occurrence.occurrenceDate.toISOString().split('T')[0];
-            const eventEndTimeStr = occurrence.eventData.endTime;
-            const eventEndMomentLocal = new Date(`${eventDateStr}T${eventEndTimeStr}`);
-            return eventEndMomentLocal.getTime() > now.getTime();
-        });
-
-        allEventOccurrences.sort((a, b) => {
-            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
-            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
-            return dateTimeA - dateTimeB;
-        });
-
-        if (allEventOccurrences.length === 0) {
-            if (role === 'member') {
-                eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
-            }
-            if (noEventsMessage) noEventsMessage.style.display = 'block';
-            return;
-        }
-
-        if (noEventsMessage) noEventsMessage.style.display = 'none';
-
-        allEventOccurrences.forEach((occurrence, index) => {
-            const eventDisplayCard = createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
-            if (eventsContainer) {
-                eventsContainer.appendChild(eventDisplayCard);
-                animateCardIn(eventDisplayCard, index);
-            }
-        });
-    }, (error) => {
-        console.error("Error fetching realtime events:", error);
-        if (eventsContainer) eventsContainer.innerHTML = '<p class="fancy-label">Error loading events. Please try again later.</p>';
-        if (noEventsMessage) noEventsMessage.style.display = 'block';
-    });
+    } catch (error) {
+        console.error("Error deleting event:", error);
+        await showAppAlert("Failed to delete event: " + error.message);
+    }
 }
+
+async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
+    if (!parentEventIdToDelete) { await showAppAlert("Error: No parent series ID provided for deletion."); return; }
+
+    const eventData = eventDocsMap.get(parentEventIdToDelete);
+    if (!eventData) { await showAppAlert("Error: The main event series to delete was not found."); return; }
+
+    const eventName = eventData.eventName || "Untitled Event Series";
+    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`);
+    if (!confirmed) return;
+
+    try {
+        const batch = writeBatch(db);
+        batch.delete(doc(db, "clubs", clubId, "events", parentEventIdToDelete));
+
+        const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", parentEventIdToDelete));
+        const overridesSnap = await getDocs(overridesQuery);
+        const overrideIds = overridesSnap.docs.map(d => d.id);
+        overridesSnap.forEach(d => batch.delete(d.ref));
+
+        const rsvpsMain = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
+        (await getDocs(rsvpsMain)).forEach(d => batch.delete(d.ref));
+
+        if (overrideIds.length > 0) {
+            const rsvpsOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideIds));
+            (await getDocs(rsvpsOverrides)).forEach(d => batch.delete(d.ref));
+            overrideIds.forEach(id => {
+                eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${id}"]`).forEach(c => c.remove());
+                eventDocsMap.delete(id);
+            });
+        }
+
+        await batch.commit();
+
+        removeCardsForEvent(parentEventIdToDelete);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        await showAppAlert("Event deleted successfully!");
+
+    } catch (error) {
+        console.error("Error deleting series:", error);
+        await showAppAlert("Failed to delete the series: " + error.message);
+    }
+}
+
+// Not actively used in UI but kept for potential future use
+async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
+    const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${formatDate(occurrenceDateString)}? It will reappear on the schedule.`);
+    if (!confirmed) return;
+    try {
+        await updateDoc(doc(db, "clubs", clubId, "events", eventId), { exceptions: arrayRemove(occurrenceDateString) });
+        const eventData = eventDocsMap.get(eventId);
+        if (eventData && eventData.exceptions) {
+            eventData.exceptions = eventData.exceptions.filter(e => e !== occurrenceDateString);
+        }
+        refreshCardsForEvent(eventId);
+        await showAppAlert(`The event on ${formatDate(occurrenceDateString)} has been un-canceled.`);
+    } catch (error) {
+        console.error("Error un-canceling occurrence:", error);
+        await showAppAlert("Failed to un-cancel event occurrence: " + error.message);
+    }
+}
+
+
+// ─── Display card ─────────────────────────────────────────────────────────────
 
 function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card display-event-card';
     cardDiv.dataset.originalEventId = originalEventId;
-    const occurrenceDateString = occurrenceDate.toISOString().split('T')[0]; 
+    const occurrenceDateString = occurrenceDate.toISOString().split('T')[0];
     cardDiv.dataset.occurrenceDate = occurrenceDateString;
 
     const formattedDate = occurrenceDate.toLocaleDateString(undefined, {
@@ -739,13 +833,11 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
     });
 
     const isExcepted = eventData.exceptions && eventData.exceptions.includes(occurrenceDateString);
-
     const canEditDelete = (role === 'manager' || role === 'admin');
     let actionButtonsHtml = '';
 
     if (canEditDelete) {
         if (eventData.isWeekly) {
-            
             if (isExcepted) {
                 actionButtonsHtml = `
                     <div class="event-card-actions">
@@ -771,7 +863,6 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
                 `;
             }
         } else {
-            
             actionButtonsHtml = `
                 <div class="event-card-actions">
                     <button class="edit-btn" data-event-id="${originalEventId}" data-occurrence-date="${occurrenceDateString}">
@@ -790,7 +881,6 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
         }
     }
 
-
     cardDiv.innerHTML = `
         <div class="event-card-header">
             <h3 class="event-card-title">${eventData.eventName} ${isExcepted ? '<span class="canceled-tag">(CANCELED)</span>' : ''}</h3>
@@ -805,17 +895,14 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
                 <span class="einfo-icon"><i class="fa-regular fa-clock"></i></span>
                 <span class="einfo-text">${formatTime(eventData.startTime)} – ${formatTime(eventData.endTime)}</span>
             </div>
-
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-solid fa-location-dot"></i></span>
                 <span class="einfo-text">${eventData.address}</span>
             </div>
-
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-solid fa-thumbtack"></i></span>
                 <span class="einfo-text">${eventData.location}</span>
             </div>
-
             ${eventData.notes ? `
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-regular fa-pen-to-square"></i></span>
@@ -837,535 +924,174 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
             </div>
         </div>
 
-
         <div class="event-card-actions">
             ${actionButtonsHtml}
         </div>
     `;
 
-    const rsvpButtons = cardDiv.querySelectorAll('.rsvp-button');
-    rsvpButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const eventId = e.target.dataset.eventId;
-            const occurrenceDate = e.target.dataset.occurrenceDate; 
-            const status = e.target.dataset.status;
-            saveRsvpStatus(eventId, occurrenceDate, status); 
+    // RSVP buttons
+    cardDiv.querySelectorAll('.rsvp-button').forEach(button => {
+        button.addEventListener('click', e => {
+            saveRsvpStatus(e.target.dataset.eventId, e.target.dataset.occurrenceDate, e.target.dataset.status);
         });
     });
 
-    const viewAvailabilityBtn = cardDiv.querySelector('.view-availability-btn');
-    if (viewAvailabilityBtn) {
-        viewAvailabilityBtn.addEventListener('click', (e) => {
+    const viewBtn = cardDiv.querySelector('.view-availability-btn');
+    if (viewBtn) {
+        viewBtn.addEventListener('click', e => {
             document.body.classList.add('no-scroll');
-            const eventId = e.target.dataset.eventId;
-            const occurrenceDate = e.target.dataset.occurrenceDate;
-            showRsvpDetailsModal(eventId, occurrenceDate);
+            showRsvpDetailsModal(e.target.dataset.eventId, e.target.dataset.occurrenceDate);
         });
     }
 
-    
     fetchAndSetUserRsvp(originalEventId, occurrenceDateString);
 
-    
     if (canEditDelete) {
-        
         const editBtn = cardDiv.querySelector('.edit-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', async (e) => {
-                const clickedButton = e.currentTarget; 
-                const eventId = clickedButton.dataset.eventId;
-                const occDate = clickedButton.dataset.occurrenceDate;
-                await editEvent(eventId, occDate);
-            });
-        }
+        if (editBtn) editBtn.addEventListener('click', e => editEvent(e.currentTarget.dataset.eventId, e.currentTarget.dataset.occurrenceDate));
 
-        const deleteEntireBtn = cardDiv.querySelector('.delete-btn') || cardDiv.querySelector('.delete-series-btn');
-        if (deleteEntireBtn) {
-            deleteEntireBtn.addEventListener('click', (e) => {
-                const clickedButton = e.currentTarget; 
-                const eventId = clickedButton.dataset.eventId;
-                deleteEntireEvent(eventId, eventData.isWeekly);
-            });
-        }
+        const deleteBtn = cardDiv.querySelector('.delete-btn');
+        if (deleteBtn) deleteBtn.addEventListener('click', e => deleteEntireEvent(e.currentTarget.dataset.eventId, false));
 
-        
+        const deleteSeriesBtn = cardDiv.querySelector('.delete-series-btn');
+        if (deleteSeriesBtn) deleteSeriesBtn.addEventListener('click', e => deleteEntireEvent(e.currentTarget.dataset.eventId, true));
+
         const cancelInstanceBtn = cardDiv.querySelector('.cancel-instance-btn');
-        if (cancelInstanceBtn) {
-            cancelInstanceBtn.addEventListener('click', (e) => {
-                const clickedButton = e.currentTarget; 
-                const eventId = clickedButton.dataset.eventId;
-                const occDateString = clickedButton.dataset.occurrenceDate;
-                cancelSingleOccurrence(eventId, occDateString);
-            });
-        }
+        if (cancelInstanceBtn) cancelInstanceBtn.addEventListener('click', e => cancelSingleOccurrence(e.currentTarget.dataset.eventId, e.currentTarget.dataset.occurrenceDate));
 
         const uncancelBtn = cardDiv.querySelector('.uncancel-btn');
-        if (uncancelBtn) {
-            uncancelBtn.addEventListener('click', async (e) => {
-                const clickedButton = e.currentTarget; 
-                const eventId = clickedButton.dataset.eventId;
-                const occDateString = clickedButton.dataset.occurrenceDate;
-                uncancelSingleOccurrence(eventId, occDateString);
-            });
-        }
+        if (uncancelBtn) uncancelBtn.addEventListener('click', e => uncancelSingleOccurrence(e.currentTarget.dataset.eventId, e.currentTarget.dataset.occurrenceDate));
     }
 
     const deleteParentSeriesBtn = cardDiv.querySelector('.delete-parent-series-btn');
-    if (deleteParentSeriesBtn) {
-        deleteParentSeriesBtn.addEventListener('click', (e) => {
-            const clickedButton = e.currentTarget; 
-            const parentEventId = clickedButton.dataset.parentEventId;
-            deleteEntireSeriesAndOverrides(parentEventId);
-        });
-    }
+    if (deleteParentSeriesBtn) deleteParentSeriesBtn.addEventListener('click', e => deleteEntireSeriesAndOverrides(e.currentTarget.dataset.parentEventId));
 
     return cardDiv;
 }
 
-async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
-    if (!parentEventIdToDelete) {
-        await showAppAlert("Error: No parent series ID provided for deletion.");
-        return;
-    }
 
-    const mainEventRef = doc(db, "clubs", clubId, "events", parentEventIdToDelete);
-    const mainEventSnap = await getDoc(mainEventRef);
-
-    if (!mainEventSnap.exists()) {
-        await showAppAlert("Error: The main event series to delete was not found.");
-        return;
-    }
-    const mainEventData = mainEventSnap.data();
-    const eventName = mainEventData.eventName || "Untitled Event Series"; 
-
-    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`);
-
-    if (!confirmed) {
-        return;
-    }
-
-    const batch = writeBatch(db);
-    let deletedCount = 0;
-
-    try {
-        const mainEventRef = doc(db, "clubs", clubId, "events", parentEventIdToDelete);
-        batch.delete(mainEventRef);
-        deletedCount++;
-
-        const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", parentEventIdToDelete));
-        const overridesSnap = await getDocs(overridesQuery);
-        overridesSnap.forEach((overrideDoc) => {
-            batch.delete(overrideDoc.ref);
-            deletedCount++;
-        });
-
-        const rsvpsQueryForMainSeries = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", parentEventIdToDelete));
-        const rsvpsSnapForMainSeries = await getDocs(rsvpsQueryForMainSeries);
-        rsvpsSnapForMainSeries.forEach((rsvpDoc) => {
-            batch.delete(rsvpDoc.ref);
-        });
-
-        const overrideEventIds = overridesSnap.docs.map(doc => doc.id);
-        if (overrideEventIds.length > 0) {
-            const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
-            const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
-            rsvpsSnapForOverrides.forEach((rsvpDoc) => {
-                batch.delete(rsvpDoc.ref);
-            });
-        }
-
-
-        await batch.commit();
-        await showAppAlert("Event deleted successfully!");
-        //await showAppAlert(`Successfully deleted the recurring series and ${deletedCount - 1} associated overrides and all their RSVPs!`);
-        //await fetchAndDisplayEvents();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-        console.error("Error deleting entire series and overrides:", error);
-        await showAppAlert("Failed to delete the series and its overrides: " + error.message);
-    }
-}
-
-async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipConfirm = false) {
-    const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
-    const eventSnap = await getDoc(eventDocRef);
-    const eventData = eventSnap.exists() ? eventSnap.data() : null;
-    const eventName = eventData ? eventData.eventName : "Untitled Event";
-
-    if (!skipConfirm) { 
-        let confirmMessage;
-        if (isWeeklyEvent) {
-            confirmMessage = `Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`;
-        } else {
-            confirmMessage = `Are you sure you want to cancel "${eventName}"? This action cannot be undone.`;
-        }
-
-        const confirmed = await showAppConfirm(confirmMessage);
-        if (!confirmed) {
-            return; 
-        }
-    }
-
-    try {
-        const eventDocRef = doc(db, "clubs", clubId, "events", eventIdToDelete);
-        const eventSnap = await getDoc(eventDocRef); 
-        const eventData = eventSnap.exists() ? eventSnap.data() : null;
-
-        const batch = writeBatch(db); 
-        batch.delete(eventDocRef);
-
-        const rsvpsQueryForEvent = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "==", eventIdToDelete));
-        const rsvpsSnapForEvent = await getDocs(rsvpsQueryForEvent);
-        rsvpsSnapForEvent.forEach((rsvpDoc) => {
-            batch.delete(rsvpDoc.ref);
-        });
-
-        if (eventData && eventData.isWeekly) {
-            const overridesQuery = query(collection(db, "clubs", clubId, "events"), where("parentRecurringEventId", "==", eventIdToDelete));
-            const overridesSnap = await getDocs(overridesQuery);
-            const overrideEventIds = overridesSnap.docs.map(doc => doc.id); 
-
-            overridesSnap.forEach((overrideDoc) => {
-                batch.delete(overrideDoc.ref);
-            });
-
-            if (overrideEventIds.length > 0) {
-                const rsvpsQueryForOverrides = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("eventId", "in", overrideEventIds));
-                const rsvpsSnapForOverrides = await getDocs(rsvpsQueryForOverrides);
-                rsvpsSnapForOverrides.forEach((rsvpDoc) => {
-                    batch.delete(rsvpDoc.ref);
-                });
-            }
-        }
-
-        await batch.commit();
-
-        if (!skipConfirm) {
-            await showAppAlert("Event deleted successfully!");
-        }
-        //await fetchAndDisplayEvents(); 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-        console.error("Error deleting event:", error);
-        await showAppAlert("Failed to delete event: " + error.message);
-    }
-}
-
-async function editEvent(eventId, occurrenceDateString = null) {
-    if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to edit events.");
-        return;
-    }
-
-    if (isEditingEvent) {
-        await showAppAlert("Please finish editing the current event before starting another edit.");
-        return;
-    }
-
-    const eventDocRef = doc(db, "clubs", clubId, "events", eventId);
-    const eventSnap = await getDoc(eventDocRef);
-
-    if (!eventSnap.exists()) {
-        await showAppAlert("Error: Event not found.");
-        return;
-    }
-
-    const eventData = eventSnap.data();
-
-    
-    let targetDisplayCard;
-    if (eventData.isWeekly && occurrenceDateString) { 
-            targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
-    } else { 
-            targetDisplayCard = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"]`);
-    }
-
-    if (!targetDisplayCard) {
-        console.error("Could not find the target display card in the DOM for editing.");
-        await showAppAlert("Could not find the event card to edit. Please refresh.");
-        return;
-    }
-
-    if (eventData.isWeekly && !occurrenceDateString) {
-        const editingCard = createEditingCardElement(eventData, false, eventId); 
-        targetDisplayCard.replaceWith(editingCard); 
-        
-        
-        return; 
-    }
-
-    
-    let dataForEditingCard = {};
-    let isEditingInstance = false;
-    let tempOriginalEventId = eventId; 
-
-    if (eventData.isWeekly && occurrenceDateString) {
-        isEditingInstance = true;
-        
-        dataForEditingCard = {
-            eventName: eventData.eventName,
-            isWeekly: false, 
-            eventDate: occurrenceDateString, 
-            startTime: eventData.startTime,
-            endTime: eventData.endTime,
-            address: eventData.address,
-            location: eventData.location,
-            notes: eventData.notes,
-            createdByUid: eventData.createdByUid,
-            createdByName: eventData.createdByName
-            
-        };
-    } else {
-        dataForEditingCard = eventData;
-    }
-
-    const editingCard = createEditingCardElement(dataForEditingCard, false, tempOriginalEventId, isEditingInstance, eventId, occurrenceDateString);
-    targetDisplayCard.replaceWith(editingCard);
-}
-
-function calculateActiveOccurrences(eventData, exceptions) {
-    if (!eventData.isWeekly) {
-        return (exceptions && exceptions.includes(eventData.eventDate)) ? 0 : 1;
-    }
-
-    let activeCount = 0;
-    const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
-    const endDate = new Date(eventData.weeklyEndDate + 'T00:00:00Z');
-    const daysToMatch = eventData.daysOfWeek.map(day => dayNamesMap.indexOf(day));
-
-    let currentDate = new Date(startDate);
-    while (currentDate.getTime() <= endDate.getTime()) {
-        const currentOccDateString = currentDate.toISOString().split('T')[0];
-        if (daysToMatch.includes(currentDate.getUTCDay()) && !(exceptions && exceptions.includes(currentOccDateString))) {
-            activeCount++;
-        }
-        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-    }
-    return activeCount;
-}
-
+// ─── RSVP ─────────────────────────────────────────────────────────────────────
 
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
-    if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in to RSVP.");
-        return;
-    }
+    if (!currentUser || !clubId) { await showAppAlert("You must be logged in to RSVP."); return; }
 
     try {
         const userUid = currentUser.uid;
-        
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
         const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
-
-        
         const rsvpSnap = await getDoc(rsvpDocRef);
-        let currentRsvpStatus = rsvpSnap.exists() ? rsvpSnap.data().status : null;
+        const currentStatus = rsvpSnap.exists() ? rsvpSnap.data().status : null;
 
-        let newRsvpStatus = null; 
-        const rsvpDataToSave = {
-            eventId: originalEventId,
-            occurrenceDate: occurrenceDateString,
-            userId: userUid,
-            userName: currentUser.displayName || "Anonymous User",
-            timestamp: serverTimestamp(),
-            clubId: clubId,
-        };
-
-        if (currentRsvpStatus === status) {
-            
+        let newStatus = null;
+        if (currentStatus === status) {
             await deleteDoc(rsvpDocRef);
-            //await showAppAlert(`Your RSVP has been removed for the event on ${formatDate(occurrenceDateString)}.`);
-            newRsvpStatus = null;
         } else {
-            rsvpDataToSave.status = status;
-            await setDoc(rsvpDocRef, rsvpDataToSave); 
-            //await showAppAlert(`Your RSVP (${status}) has been saved for the event on ${formatDate(occurrenceDateString)}.`);
-            newRsvpStatus = status;
+            await setDoc(rsvpDocRef, {
+                eventId: originalEventId,
+                occurrenceDate: occurrenceDateString,
+                userId: userUid,
+                userName: currentUser.displayName || "Anonymous User",
+                timestamp: serverTimestamp(),
+                clubId,
+                status,
+            });
+            newStatus = status;
         }
-
-        updateRsvpButtonsUI(originalEventId, occurrenceDateString, newRsvpStatus);
-
+        updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
     } catch (error) {
-        console.error("Error saving RSVP status:", error);
+        console.error("Error saving RSVP:", error);
         await showAppAlert("Failed to save your RSVP: " + error.message);
     }
 }
 
-function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) { 
-    
+function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) {
     const card = document.querySelector(`.event-card[data-original-event-id="${originalEventId}"][data-occurrence-date="${occurrenceDateString}"]`);
-    if (!card) {
-        console.warn(`Could not find card for event ${originalEventId} on ${occurrenceDateString} to update RSVP UI.`);
-        return;
-    }
-
-    const rsvpButtons = card.querySelectorAll('.rsvp-button');
-    rsvpButtons.forEach(button => {
-        if (button.dataset.status === currentStatus) {
-            button.classList.add('selected-rsvp');
-        } else {
-            button.classList.remove('selected-rsvp');
-        }
+    if (!card) return;
+    card.querySelectorAll('.rsvp-button').forEach(btn => {
+        btn.classList.toggle('selected-rsvp', btn.dataset.status === currentStatus);
     });
 }
 
-async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) { 
-    if (!currentUser || !clubId) {
-        return;
-    }
-
+async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) {
+    if (!currentUser || !clubId) return;
     try {
-        const userUid = currentUser.uid;
-        const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
-        const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
+        const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", `${originalEventId}_${occurrenceDateString}_${currentUser.uid}`);
         const rsvpSnap = await getDoc(rsvpDocRef);
-
-        let currentRsvpStatus = null;
-
-        if (rsvpSnap.exists()) {
-            currentRsvpStatus = rsvpSnap.data().status;
-        }
-        
-
-        updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentRsvpStatus);
-        
+        updateRsvpButtonsUI(originalEventId, occurrenceDateString, rsvpSnap.exists() ? rsvpSnap.data().status : null);
     } catch (error) {
-        console.error("Error fetching user RSVP status for occurrence:", error);
         updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
     }
 }
 
 function setupRealtimeUserRsvps() {
-    if (!clubId || !currentUser) {
-        console.warn("setupRealtimeUserRsvps called without clubId or currentUser. Skipping setup.");
-        if (rsvpListenerUnsubscribe) {
-            rsvpListenerUnsubscribe();
-            rsvpListenerUnsubscribe = null;
-        }
-        return;
-    }
+    if (!clubId || !currentUser) return;
+    if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
 
-
-    if (rsvpListenerUnsubscribe) {
-        rsvpListenerUnsubscribe();
-        rsvpListenerUnsubscribe = null;
-    }
-
-    const rsvpsRef = collection(db, "clubs", clubId, "occurrenceRsvps");
-    const q = query(rsvpsRef, where("userId", "==", currentUser.uid));
-
-    rsvpListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
-        querySnapshot.docChanges().forEach((change) => {
+    const q = query(collection(db, "clubs", clubId, "occurrenceRsvps"), where("userId", "==", currentUser.uid));
+    rsvpListenerUnsubscribe = onSnapshot(q, snapshot => {
+        snapshot.docChanges().forEach(change => {
             const data = change.doc.data();
-            const originalEventId = data.eventId;
-            const occurrenceDateString = data.occurrenceDate;
-            let newStatus = null; 
-
-            if (change.type === "added" || change.type === "modified") {
-                newStatus = data.status;
-            }
-            // } else if (change.type === "removed") {
-            //     console.log(`RSVP removed`);
-            // }
-            
-            updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
+            const newStatus = (change.type === "added" || change.type === "modified") ? data.status : null;
+            updateRsvpButtonsUI(data.eventId, data.occurrenceDate, newStatus);
         });
-    }, (error) => {
+    }, error => {
         console.error("Error fetching realtime user RSVPs:", error);
     });
 }
 
+
+// ─── RSVP details modal ───────────────────────────────────────────────────────
+
 async function getAllClubMembers(clubID, useCache = true) {
     if (useCache && memberListCache.has(clubID)) {
         const cached = memberListCache.get(clubID);
-        const age = Date.now() - cached.timestamp;
-        
-        if (age < CACHE_DURATION) {
-            console.log("Using cached list");
-            return cached.members;
-        }
+        if (Date.now() - cached.timestamp < CACHE_DURATION) return cached.members;
     }
 
     const members = [];
     try {
-        const clubDocRef = doc(db, "clubs", clubID);
-        const clubDocSnap = await getDoc(clubDocRef);
+        const clubSnap = await getDoc(doc(db, "clubs", clubID));
         let managerUid = null;
-        
-        if (clubDocSnap.exists()) {
-            const clubData = clubDocSnap.data();
-            managerUid = clubData.managerUid;
-            
+
+        if (clubSnap.exists()) {
+            managerUid = clubSnap.data().managerUid;
             if (managerUid) {
                 let managerName;
                 if (userCache.has(managerUid)) {
-                    console.log("Using cached manager data");
                     managerName = userCache.get(managerUid).displayName;
                 } else {
-                    const managerUserDoc = await getDoc(doc(db, "users", managerUid));
-                    managerName = managerUserDoc.exists() ? 
-                        (managerUserDoc.data().displayName || managerUserDoc.data().name) : 
-                        "Unknown Manager";
-                    if (managerUserDoc.exists()) {
-                        userCache.set(managerUid, managerUserDoc.data());
-                    }
+                    const managerDoc = await getDoc(doc(db, "users", managerUid));
+                    managerName = managerDoc.exists() ? (managerDoc.data().displayName || managerDoc.data().name) : "Unknown Manager";
+                    if (managerDoc.exists()) userCache.set(managerUid, managerDoc.data());
                 }
                 members.push({ uid: managerUid, name: managerName, role: 'manager' });
             }
         }
 
-        const membersCollectionRef = collection(db, "clubs", clubID, "members");
-        const membersSnapshot = await getDocs(membersCollectionRef);
-        
-        const uidsToFetch = [];
-        for (const memberDoc of membersSnapshot.docs) {
-            if (memberDoc.id !== managerUid && !userCache.has(memberDoc.id)) {
-                uidsToFetch.push(memberDoc.id);
-            }
-        }
+        const membersSnap = await getDocs(collection(db, "clubs", clubID, "members"));
+        const uidsToFetch = membersSnap.docs.filter(d => d.id !== managerUid && !userCache.has(d.id)).map(d => d.id);
 
-        console.log(`Fetching ${uidsToFetch.length} uncached user documents`);
         for (const uid of uidsToFetch) {
-            const memberUserDoc = await getDoc(doc(db, "users", uid));
-            if (memberUserDoc.exists()) {
-                userCache.set(uid, memberUserDoc.data());
-            }
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (userDoc.exists()) userCache.set(uid, userDoc.data());
         }
 
-        for (const memberDoc of membersSnapshot.docs) {
-            const memberData = memberDoc.data();
+        for (const memberDoc of membersSnap.docs) {
             if (memberDoc.id !== managerUid) {
                 const userData = userCache.get(memberDoc.id);
-                const memberName = userData ? 
-                    (userData.displayName || userData.name) : 
-                    "Unknown User";
-                members.push({ 
-                    uid: memberDoc.id, 
-                    name: memberName, 
-                    role: memberData.role || 'member' 
-                });
+                members.push({ uid: memberDoc.id, name: userData ? (userData.displayName || userData.name) : "Unknown User", role: memberDoc.data().role || 'member' });
             }
         }
 
-        memberListCache.set(clubID, {
-            members,
-            timestamp: Date.now()
-        });
-        
-        console.log("Member list cached");
-
+        memberListCache.set(clubID, { members, timestamp: Date.now() });
     } catch (error) {
-        console.error("Error fetching all club members:", error);
+        console.error("Error fetching club members:", error);
     }
     return members;
 }
 
 async function showRsvpDetailsModal(eventId, occurrenceDateString) {
-    if (!clubId) {
-        await showAppAlert("Error: Club ID not found.");
-        return;
-    }
-
+    if (!clubId) { await showAppAlert("Error: Club ID not found."); return; }
     document.body.classList.add('no-interaction');
 
     let overlay = document.getElementById('rsvp-details-overlay');
@@ -1385,7 +1111,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
     modal.innerHTML = `
         <h2>Responses for ${formatDate(occurrenceDateString)}</h2>
-        <div id="rsvp-lists-container"> 
+        <div id="rsvp-lists-container">
             <div id="rsvp-lists" style="display: none; text-align: left; padding: 0 15px;">
                 <div id="rsvp-sections-content"></div>
                 <button id="close-rsvp-modal" class="fancy-button" disabled>Close</button>
@@ -1403,7 +1129,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         modal.classList.add('rsvp-loading-collapsed');
         modal.classList.remove('rsvp-scroll-active');
         document.body.classList.remove('no-interaction');
-        //if (loadingIndicator) loadingIndicator.style.display = 'block';
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
     });
@@ -1412,134 +1137,64 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     modal.style.display = 'flex';
 
     try {
-        const rsvpsQuery = query(
+        const rsvpsSnap = await getDocs(query(
             collection(db, "clubs", clubId, "occurrenceRsvps"),
             where("eventId", "==", eventId),
             where("occurrenceDate", "==", occurrenceDateString)
-        );
-        const rsvpsSnap = await getDocs(rsvpsQuery);
+        ));
         const rsvpsMap = {};
-        rsvpsSnap.forEach(doc => {
-            const data = doc.data();
-            rsvpsMap[data.userId] = { status: data.status, userName: data.userName };
-        });
+        rsvpsSnap.forEach(d => { rsvpsMap[d.data().userId] = { status: d.data().status, userName: d.data().userName }; });
 
         const allMembers = await getAllClubMembers(clubId);
-
-        const goingNames = [];
-        const maybeNames = [];
-        const notGoingNames = [];
-        const notRespondedNames = [];
+        const going = [], maybe = [], notGoing = [], noResponse = [];
 
         allMembers.forEach(member => {
             const rsvp = rsvpsMap[member.uid];
             if (rsvp) {
-                if (rsvp.status === 'YES') goingNames.push(rsvp.userName);
-                else if (rsvp.status === 'NO') notGoingNames.push(rsvp.userName);
-                else if (rsvp.status === 'MAYBE') maybeNames.push(rsvp.userName);
+                if (rsvp.status === 'YES') going.push(rsvp.userName);
+                else if (rsvp.status === 'NO') notGoing.push(rsvp.userName);
+                else if (rsvp.status === 'MAYBE') maybe.push(rsvp.userName);
             } else {
-                notRespondedNames.push(member.name);
+                noResponse.push(member.name);
             }
         });
 
-        const sectionsContent = document.getElementById('rsvp-sections-content');
-        sectionsContent.innerHTML = '';
+        const buildSection = (label, names) => names.length === 0 ? '' : `
+            <h3>${label} (${names.length})</h3>
+            <ul>${names.map(n => `<li>${n}</li>`).join('')}</ul>
+        `;
 
-        const buildSection = (label, names) => {
-            if (names.length === 0) return '';
-            return `
-                <h3>${label} (${names.length})</h3>
-                <ul>${names.map(n => `<li>${n}</li>`).join('')}</ul>
-            `;
-        };
+        document.getElementById('rsvp-sections-content').innerHTML =
+            buildSection('Going', going) +
+            buildSection('Maybe', maybe) +
+            buildSection('Not Going', notGoing) +
+            buildSection('No Response', noResponse);
 
-        const hasAnyResponse = goingNames.length + maybeNames.length + notGoingNames.length > 0;
-
-        sectionsContent.innerHTML =
-            buildSection('Going', goingNames) +
-            buildSection('Maybe', maybeNames) +
-            buildSection('Not Going', notGoingNames) +
-            (notRespondedNames.length > 0 && (hasAnyResponse || notRespondedNames.length > 0)
-                ? buildSection('No Response', notRespondedNames)
-                : '');
         document.getElementById('rsvp-lists').style.display = 'block';
-
         modal.classList.remove('rsvp-loading-collapsed');
-        modal.addEventListener('transitionend', function handler(event) {
-            if (event.propertyName === 'max-height') {
-                modal.classList.add('rsvp-scroll-active'); 
-                const contentDiv = document.getElementById('rsvp-lists');
-                if (contentDiv) {
-                    contentDiv.style.display = 'block'; 
-                    document.getElementById('close-rsvp-modal').disabled = false;
-                }
+
+        modal.addEventListener('transitionend', function handler(e) {
+            if (e.propertyName === 'max-height') {
+                modal.classList.add('rsvp-scroll-active');
+                document.getElementById('rsvp-lists').style.display = 'block';
+                document.getElementById('close-rsvp-modal').disabled = false;
                 document.body.classList.remove('no-interaction');
-                modal.removeEventListener('transitionend', handler); 
+                modal.removeEventListener('transitionend', handler);
             }
         });
-
     } catch (error) {
         console.error("Error fetching RSVP details:", error);
         await showAppAlert("Failed to load RSVP details: " + error.message);
         overlay.style.display = 'none';
         modal.style.display = 'none';
-        document.body.classList.remove('no-interaction');
-        //if (loadingIndicator) loadingIndicator.style.display = 'none';
-        const contentDiv = document.getElementById('rsvp-lists');
-        if (contentDiv) contentDiv.style.display = 'none';
+        document.body.classList.remove('no-scroll', 'no-interaction');
         modal.classList.add('rsvp-loading-collapsed');
         modal.classList.remove('rsvp-scroll-active');
     }
 }
 
-function scrollToEditedEvent(eventId, occurrenceDateString = null) {
-    let selector;
-    if (occurrenceDateString) {
-        selector = `.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`;
-    } else {
-        selector = `.event-card[data-original-event-id="${eventId}"]`;
-    }
 
-    const targetElement = document.querySelector(selector);
-
-    if (targetElement) {
-        const topPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({
-            top: topPosition - 90, 
-            behavior: 'smooth'
-        });
-    } else {
-        console.warn(`Could not find event card to scroll to for ID: ${eventId}, Date: ${occurrenceDateString || 'N/A'}`);
-    }
-}
-
-function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, exceptions = [], startTime = '00:00', endTime = '23:59') {
-    let futureCount = 0;
-    const now = new Date(); 
-    
-    const startIterDate = new Date(weeklyStartDate + 'T00:00:00Z');
-    const endIterDate = new Date(weeklyEndDate + 'T00:00:00Z');
-    const daysToMatch = daysOfWeek.map(day => dayNamesMap.indexOf(day));
-
-    let currentDate = new Date(startIterDate);
-    while (currentDate.getTime() <= endIterDate.getTime()) {
-        const currentOccDateString = currentDate.toISOString().split('T')[0];
-        
-        if (daysToMatch.includes(currentDate.getUTCDay())) {
-            if (!exceptions.includes(currentOccDateString)) {
-                
-                const eventEndMomentLocal = new Date(`${currentOccDateString}T${endTime}`);
-
-                
-                if (eventEndMomentLocal.getTime() > now.getTime()) {
-                    futureCount++;
-                }
-            }
-        }
-        currentDate.setUTCDate(currentDate.getUTCDate() + 1); 
-    }
-    return futureCount;
-}
+// ─── Announcements ────────────────────────────────────────────────────────────
 
 async function createAnnouncementPopup(initialData = {}) {
     return new Promise((resolve) => {
@@ -1552,7 +1207,6 @@ async function createAnnouncementPopup(initialData = {}) {
             overlay.className = 'announcement-popup-overlay';
             document.body.appendChild(overlay);
         }
-
         if (!modal) {
             modal = document.createElement('div');
             modal.id = 'announcement-popup-modal';
@@ -1583,18 +1237,13 @@ async function createAnnouncementPopup(initialData = {}) {
         document.getElementById('announcement-popup-save-btn').addEventListener('click', async () => {
             const title = document.getElementById('announcement-popup-title').value.trim();
             const content = document.getElementById('announcement-popup-content').value.trim();
-
-            if (!title || !content || title.length === 0 || content.length === 0) {
-                await showAppAlert("Title and Content are required for the announcement.");
-                return; 
-            }
-
-            const saveSuccessful = await saveAnnouncement(title, content);
-            if (saveSuccessful) {
+            if (!title || !content) { await showAppAlert("Title and Content are required for the announcement."); return; }
+            const success = await saveAnnouncement(title, content);
+            if (success) {
                 overlay.style.display = 'none';
                 modal.style.display = 'none';
                 document.body.classList.remove('no-scroll');
-                resolve(true); 
+                resolve(true);
             } else {
                 resolve(false);
             }
@@ -1604,40 +1253,73 @@ async function createAnnouncementPopup(initialData = {}) {
             overlay.style.display = 'none';
             modal.style.display = 'none';
             document.body.classList.remove('no-scroll');
-            resolve(false); 
+            resolve(false);
         });
     });
 }
 
-
 async function saveAnnouncement(title, content) {
-    if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to create announcements.");
-        return false;
-    }
-
+    if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to create announcements."); return false; }
     try {
-        const announcementsRef = collection(db, "clubs", clubId, "announcements");
-        const announcementDataToSave = {
-            title,
-            content,
+        await addDoc(collection(db, "clubs", clubId, "announcements"), {
+            title, content,
             createdByUid: currentUser.uid,
             createdByName: currentUser.displayName || "Anonymous",
-            clubId: clubId,
+            clubId,
             createdAt: serverTimestamp()
-        };
-        const newDocRef = await addDoc(announcementsRef, announcementDataToSave);
-        const newAnnouncementId = newDocRef.id;
-
+        });
         await showAppAlert("Announcement saved!");
         return true;
     } catch (error) {
-        console.error("Error saving announcement from popup:", error);
+        console.error("Error saving announcement:", error);
         await showAppAlert("Failed to save announcement: " + error.message);
         return false;
     }
 }
 
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function formatTime(timeString) {
+    if (!timeString) return 'N/A';
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes);
+    return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+}
+
+function scrollToEditedEvent(eventId, occurrenceDateString = null) {
+    const selector = occurrenceDateString
+        ? `.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`
+        : `.event-card[data-original-event-id="${eventId}"]`;
+    const target = document.querySelector(selector);
+    if (target) {
+        window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset - 90, behavior: 'smooth' });
+    }
+}
+
+function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, exceptions = [], startTime = '00:00', endTime = '23:59') {
+    let count = 0;
+    const now = new Date();
+    const startDate = new Date(weeklyStartDate + 'T00:00:00Z');
+    const endDate = new Date(weeklyEndDate + 'T00:00:00Z');
+    const daysToMatch = daysOfWeek.map(day => dayNamesMap.indexOf(day));
+    let cur = new Date(startDate);
+
+    while (cur.getTime() <= endDate.getTime()) {
+        const ds = cur.toISOString().split('T')[0];
+        if (daysToMatch.includes(cur.getUTCDay()) && !exceptions.includes(ds)) {
+            if (new Date(`${ds}T${endTime}`).getTime() > now.getTime()) count++;
+        }
+        cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+    return count;
+}
 
 function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
