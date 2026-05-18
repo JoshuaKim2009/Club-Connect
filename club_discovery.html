@@ -57,6 +57,16 @@
                 placeholder="Full name of school" autocomplete="off">
         </div>
 
+        <div class="club-form-section">
+          <label for="searchCategory" style="display:flex; align-items:center; gap:8px;">
+            Category
+          </label>
+          <div class="category-dropdown-wrapper">
+            <input class="fancy-input" id="searchCategory" placeholder="All Categories" autocomplete="off" readonly>
+            <div class="category-dropdown-list" id="category-dropdown-list"></div>
+          </div>
+        </div>
+
         <div class="club-form-actions">
           <button type="submit" id="searchButton" class="fancy-button">
             SEARCH
@@ -71,7 +81,7 @@
     
     <script src="theme.js?v=10"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_discovery.js?v=5"></script>
+    <script type="module" src="club_discovery.js?v=6"></script>
 
     
     <script>

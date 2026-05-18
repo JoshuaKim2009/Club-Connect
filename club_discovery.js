@@ -18,6 +18,53 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+const CLUB_CATEGORIES = [
+  'Academic', 'Activism', 'Athletics', 'Business', 'Community Service',
+  'Culture & Identity', 'Fine Arts', 'Health & Wellness', 'Hobbies',
+  'Honor Societies', 'Language', 'Leadership', 'Literature', 'Media',
+  'STEM', 'Social Studies', 'Speech', 'Student Government', 'Other'
+];
+
+const categoryInput = document.getElementById("searchCategory");
+const categoryDropdownList = document.getElementById("category-dropdown-list");
+
+function buildCategoryDropdown() {
+  categoryDropdownList.innerHTML = '';
+  const allDiv = document.createElement('div');
+  allDiv.className = 'state-option';
+  allDiv.textContent = 'All Categories';
+  allDiv.onclick = () => {
+    categoryInput.value = '';
+    categoryInput.placeholder = 'All Categories';
+    categoryDropdownList.classList.remove('show');
+  };
+  categoryDropdownList.appendChild(allDiv);
+
+  CLUB_CATEGORIES.forEach(cat => {
+    const div = document.createElement('div');
+    div.className = 'state-option';
+    div.textContent = cat;
+    div.onclick = () => {
+      categoryInput.value = cat;
+      categoryDropdownList.classList.remove('show');
+    };
+    categoryDropdownList.appendChild(div);
+  });
+}
+
+buildCategoryDropdown();
+
+categoryInput.addEventListener('click', function() {
+  buildCategoryDropdown();
+  categoryDropdownList.classList.toggle('show');
+});
+
+document.addEventListener('click', function(e) {
+  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+    categoryDropdownList.classList.remove('show');
+  }
+});
+
 let currentUser = null;
 
 onAuthStateChanged(auth, (user) => {
@@ -41,6 +88,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const school = normalizeSearchInput(document.getElementById("searchSchool").value);
     const rawState = document.getElementById("searchState").value.trim();
     const state = normalizeState(rawState);
+    const selectedCategory = categoryInput.value;
 
     if (!state) {
         clubsGrid.innerHTML = "";
@@ -100,9 +148,11 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
             const matchesSchool = !school || searchableSchool.includes(school.toLowerCase());
             const matchesState  = !state  || searchableState.includes(state.toLowerCase());
 
+            const matchesCategory = !selectedCategory || (data.categoryLower ?? data.category?.toLowerCase() ?? '') === selectedCategory.toLowerCase();
+
             const isPublic = (data.visibility ?? 'public') !== 'private';
 
-            if (matchesClub && matchesSchool && matchesState && isPublic) {
+            if (matchesClub && matchesSchool && matchesState && isPublic && matchesCategory) {
                 matches.push({ id: docSnap.id, ...data });
             }
         });
@@ -124,15 +174,12 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 });
 
 
-
-
 function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode, pendingMemberUIDs, memberUIDs) {
     const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
     const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
 
     const card = document.createElement("div");
     card.className = "club-card";
-    //for the card that shows the information of the clubs that you searched
     card.innerHTML = `
         <div class="club-card-header">
             <span class="club-card-name">${clubName}</span>
@@ -187,7 +234,6 @@ document.getElementById("clubsGrid").addEventListener("click", async (e) => {
     e.target.textContent = "SENT";
     e.target.disabled = true;
     await updateDoc(clubRef, { pendingMemberUIDs: arrayUnion(currentUser.uid) });
-    // await showAppAlert("Join request sent!");
 });
 
 
@@ -207,7 +253,6 @@ function normalizeSearchInput(input) {
     if (s.endsWith(' elementary')) s = s + ' school';
     return s;
 }
-
 
 
 const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];

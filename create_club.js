@@ -26,6 +26,37 @@ let currentUserEmail = null;
 const JOIN_CODE_LENGTH = 6;
 const JOIN_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
 
+const CLUB_CATEGORIES = [
+  'Academic', 'Activism', 'Athletics', 'Business', 'Community Service',
+  'Culture & Identity', 'Fine Arts', 'Health & Wellness', 'Hobbies',
+  'Honor Societies', 'Language', 'Leadership', 'Literature', 'Media',
+  'STEM', 'Social Studies', 'Speech', 'Student Government', 'Other'
+];
+
+const categoryInput = document.getElementById("category-select");
+const categoryDropdownList = document.getElementById("category-dropdown-list");
+
+CLUB_CATEGORIES.forEach(cat => {
+  const div = document.createElement('div');
+  div.className = 'state-option';
+  div.textContent = cat;
+  div.onclick = () => {
+    categoryInput.value = cat;
+    categoryDropdownList.classList.remove('show');
+  };
+  categoryDropdownList.appendChild(div);
+});
+
+categoryInput.addEventListener('click', function() {
+  categoryDropdownList.classList.toggle('show');
+});
+
+document.addEventListener('click', function(e) {
+  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+    categoryDropdownList.classList.remove('show');
+  }
+});
+
 function setLoading(btn) {
     btn._origHTML = btn.innerHTML;
     btn.disabled = true;
@@ -90,6 +121,7 @@ submitButton.addEventListener("click", async function(event){
     const clubDescription = clubDescriptionInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
     const state = stateInput.value.trim();
+    const clubCategory = categoryInput.value;
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
@@ -107,6 +139,12 @@ submitButton.addEventListener("click", async function(event){
 
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
+        clearLoading(submitButton);
+        return;
+    }
+
+    if (!clubCategory) {
+        await showAppAlert("Please select a category.");
         clearLoading(submitButton);
         return;
     }
@@ -168,7 +206,9 @@ submitButton.addEventListener("click", async function(event){
             pendingMemberUIDs: [],
             managerUid: currentUser.uid,
             createdAt: serverTimestamp(),
-            visibility: clubVisibility
+            visibility: clubVisibility,
+            category: clubCategory,
+            categoryLower: clubCategory.toLowerCase()
         });
         console.log("Club document written with ID: ", newClubId);
 
@@ -202,18 +242,6 @@ submitButton.addEventListener("click", async function(event){
         clearLoading(submitButton);
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function generateRandomCode(length, characters) {
@@ -250,8 +278,6 @@ async function getUniqueJoinCode() {
         }
     }
 }
-
-
 
 
 async function createManagerMemberEntry(clubId, managerUid) {

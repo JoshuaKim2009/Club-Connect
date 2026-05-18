@@ -24,9 +24,38 @@ const auth = getAuth(app);
 let currentUser = null;
 let currentUserEmail = null;
 let currentClubId = null;
-//let currentUserRoles = [];
 let originalClubData = null;
 
+const CLUB_CATEGORIES = [
+  'Academic', 'Activism', 'Athletics', 'Business', 'Community Service',
+  'Culture & Identity', 'Fine Arts', 'Health & Wellness', 'Hobbies',
+  'Honor Societies', 'Language', 'Leadership', 'Literature', 'Media',
+  'STEM', 'Social Studies', 'Speech', 'Student Government', 'Other'
+];
+
+const categoryInput = document.getElementById("category-edit");
+const categoryDropdownList = document.getElementById("category-dropdown-list-edit");
+
+CLUB_CATEGORIES.forEach(cat => {
+  const div = document.createElement('div');
+  div.className = 'state-option';
+  div.textContent = cat;
+  div.onclick = () => {
+    categoryInput.value = cat;
+    categoryDropdownList.classList.remove('show');
+  };
+  categoryDropdownList.appendChild(div);
+});
+
+categoryInput.addEventListener('click', function() {
+  categoryDropdownList.classList.toggle('show');
+});
+
+document.addEventListener('click', function(e) {
+  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+    categoryDropdownList.classList.remove('show');
+  }
+});
 
 function getClubIdFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -59,6 +88,7 @@ schoolNameInput.disabled = true;
 clubNameInput.disabled = true;
 clubActivityInput.disabled = true;
 clubDescriptionInput.disabled = true;
+categoryInput.disabled = true;
 
 
 async function loadClubData(clubId, managerUid) {
@@ -78,7 +108,6 @@ async function loadClubData(clubId, managerUid) {
         const isManager = clubData.managerUid === managerUid;
         let isAdminOfThisClub = false;
 
-        
         if (!isManager && managerUid) {
             const memberRef = doc(db, "clubs", clubId, "members", managerUid);
             const memberDoc = await getDoc(memberRef);
@@ -111,6 +140,8 @@ async function loadClubData(clubId, managerUid) {
         clubDescriptionInput.disabled = false;
         submitButton.disabled = false;
         stateInput.disabled = false;
+        categoryInput.disabled = false;
+        if (clubData.category) categoryInput.value = clubData.category;
 
         originalClubData = {
             schoolName: clubData.schoolName || '',
@@ -118,7 +149,8 @@ async function loadClubData(clubId, managerUid) {
             clubActivity: clubData.clubActivity || '',
             description: clubData.description || '',
             state: clubData.state || '',
-            visibility: clubData.visibility || 'public'
+            visibility: clubData.visibility || 'public',
+            category: clubData.category || ''
         };
     } else {
       await showAppAlert("Club not found.");
@@ -133,14 +165,12 @@ async function loadClubData(clubId, managerUid) {
 }
 
 
-
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     currentUserEmail = user.email;
     console.log("User is logged in. UID:", currentUser.uid, "Email:", currentUserEmail);
 
-    
     if (currentClubId) {
       await loadClubData(currentClubId, currentUser.uid);
     } else {
@@ -196,6 +226,7 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
+    const clubCategory = categoryInput.value;
     const clubVisibility = getSelectedVisibilityEdit();
 
     if (
@@ -205,13 +236,13 @@ submitButton.addEventListener("click", async function(event){
         clubActivity === originalClubData.clubActivity &&
         clubDescription === originalClubData.description &&
         state === originalClubData.state &&
-        clubVisibility === originalClubData.visibility
+        clubVisibility === originalClubData.visibility &&
+        clubCategory === originalClubData.category
     ) {
         await showAppAlert("No changes were made.");
         clearLoading(submitButton);
         return;
     }
-
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
@@ -275,7 +306,9 @@ submitButton.addEventListener("click", async function(event){
             clubActivity: clubActivity,
             lastModifiedBy: currentUser.uid,
             lastModifiedAt: serverTimestamp(),
-            visibility: clubVisibility
+            visibility: clubVisibility,
+            category: clubCategory,
+            categoryLower: clubCategory.toLowerCase()
         });
         console.log("Club document updated with ID: ", currentClubId);
 
@@ -317,8 +350,6 @@ async function deleteClub(clubId) {
         return;
     }
 
-    
-
     try {
         console.log(`Attempting to delete club with ID: ${clubId}`);
 
@@ -346,7 +377,6 @@ async function deleteClub(clubId) {
             console.log("Club deletion cancelled by user.");
             return;
         }
-
 
         console.log(`Fetching members for club ${clubId} to update their user profiles...`);
         const membersCollectionRef = collection(db, "clubs", clubId, "members");
@@ -377,7 +407,6 @@ async function deleteClub(clubId) {
             await Promise.all(updateMemberPromises);
             console.log("All members' 'member_clubs' lists updated.");
         }
-
 
         console.log(`Deleting members subcollection for club ${clubId}...`);
         const deleteMemberSubcollectionPromises = [];
@@ -410,39 +439,33 @@ async function deleteClub(clubId) {
         console.log(`Deleting announcements subcollection for club ${clubId}...`);
         const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
         const announcementDocsSnap = await getDocs(announcementsCollectionRef);
-
         const deleteAnnouncementPromises = [];
         announcementDocsSnap.forEach((announcementDoc) => {
             deleteAnnouncementPromises.push(deleteDoc(announcementDoc.ref));
             console.log(`  Marked announcement doc ${announcementDoc.id} for deletion.`);
         });
-
         await Promise.all(deleteAnnouncementPromises);
         console.log(`All announcements for club ${clubId} deleted.`);
 
         console.log(`Deleting messages subcollection for club ${clubId}...`);
         const messagesCollectionRef = collection(db, "clubs", clubId, "messages");
         const messageDocsSnap = await getDocs(messagesCollectionRef);
-
         const deleteMessagePromises = [];
         messageDocsSnap.forEach((messageDoc) => {
             deleteMessagePromises.push(deleteDoc(messageDoc.ref));
             console.log(`  Marked message doc ${messageDoc.id} for deletion.`);
         });
-
         await Promise.all(deleteMessagePromises);
         console.log(`All messages for club ${clubId} deleted.`);
 
         console.log(`Deleting polls subcollection for club ${clubId}...`);
         const pollsCollectionRef = collection(db, "clubs", clubId, "polls");
         const pollDocsSnap = await getDocs(pollsCollectionRef);
-
         const deletePollPromises = [];
         pollDocsSnap.forEach((pollDoc) => {
             deletePollPromises.push(deleteDoc(pollDoc.ref));
             console.log(`  Marked poll doc ${pollDoc.id} for deletion.`);
         });
-
         await Promise.all(deletePollPromises);
         console.log(`All polls for club ${clubId} deleted.`);
 
@@ -477,18 +500,13 @@ const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Color
 
 function normalizeState(stateInput) {
     const validStates = states;
-    
     const trimmed = stateInput.trim();
-    
-    // Find matching state (case-insensitive)
     const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
-    
     return matchedState || null;
 }
 
 
 const stateDropdownList = document.getElementById('state-dropdown-list-edit');
-
 
 stateInput.addEventListener('input', function() {
   const value = this.value.toLowerCase();
