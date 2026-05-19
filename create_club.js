@@ -27,10 +27,25 @@ const JOIN_CODE_LENGTH = 6;
 const JOIN_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
 
 const CLUB_CATEGORIES = [
-  'Academic', 'Activism', 'Athletics', 'Business', 'Community Service',
-  'Culture & Identity', 'Fine Arts', 'Health & Wellness', 'Hobbies',
-  'Honor Societies', 'Language', 'Leadership', 'Literature', 'Media',
-  'STEM', 'Social Studies', 'Speech', 'Student Government', 'Other'
+  'Academic',
+  'Activism',
+  'Athletics',
+  'Art',
+  'Business',
+  'Community Service',
+  'Culture & Identity',
+  'Health & Wellness',
+  'Hobbies',
+  'Honor Societies',
+  'Humanities',
+  'Language',
+  'Leadership',
+  'Literature',
+  'Media',
+  'Other',
+  'Public Speaking',
+  'STEM',
+  'Student Government'
 ];
 
 const categoryInput = document.getElementById("category-select");
