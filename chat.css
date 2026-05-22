@@ -963,7 +963,7 @@ body.scroll-locked {
     border-color: #3a5fcf;
 }
 
-.message-reactions {
+/* .message-reactions {
     display: flex;
     flex-wrap: nowrap;
     gap: 5px;
@@ -973,6 +973,15 @@ body.scroll-locked {
     z-index: 10;
     white-space: nowrap;
     width: max-content;
+} */
+
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    z-index: 10;
+    max-width: calc(100vw - 60px);
+    margin-top: 4px;
 }
 
 .message-wrapper.sent .message-reactions {
