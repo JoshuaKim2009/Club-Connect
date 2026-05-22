@@ -102,6 +102,7 @@ const schoolNameInput = document.getElementById("school-name-select");
 const clubNameInput = document.getElementById("club-name-select");
 const clubDescriptionInput = document.getElementById("description-input");
 const clubActivityInput = document.getElementById("main-activity-select");
+const clubSponsorInput = document.getElementById("sponsor-select");
 const stateInput = document.getElementById("state-select");
 
 
@@ -136,6 +137,7 @@ submitButton.addEventListener("click", async function(event){
     const clubDescription = clubDescriptionInput.value.trim();
     const clubActivity = clubActivityInput.value.trim();
     const state = stateInput.value.trim();
+    const clubSponsor = clubSponsorInput.value.trim();
     const clubCategory = categoryInput.value;
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
@@ -223,7 +225,8 @@ submitButton.addEventListener("click", async function(event){
             createdAt: serverTimestamp(),
             visibility: clubVisibility,
             category: clubCategory,
-            categoryLower: clubCategory.toLowerCase()
+            categoryLower: clubCategory.toLowerCase(),
+            clubSponsor: clubSponsor
         });
         console.log("Club document written with ID: ", newClubId);
 
@@ -249,6 +252,7 @@ submitButton.addEventListener("click", async function(event){
         clubDescriptionInput.value = '';
         clubActivityInput.value = '';
         stateInput.value = '';
+        clubSponsorInput.value = '';
 
     } catch (error) {
         console.error("Error creating club or updating user profile:", error);

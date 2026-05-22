@@ -180,7 +180,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         }
 
         matches.forEach(data => {
-            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode, data.pendingMemberUIDs || [], data.memberUIDs || []);
+            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode, data.pendingMemberUIDs || [], data.memberUIDs || [], data.clubSponsor || '');
         });
 
     } catch (error) {
@@ -189,7 +189,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 });
 
 
-function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode, pendingMemberUIDs, memberUIDs) {
+function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor) {
     const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
     const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
 
@@ -203,6 +203,7 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
         <div class="club-card-body">
             <span><i class="fa-solid fa-school"></i> ${schoolName}</span>
             <span><i class="fa-solid fa-location-dot"></i> ${state}</span>
+            ${clubSponsor ? `<span class="club-sponsor"><i class="fa-solid fa-user"></i> Sponsor: ${clubSponsor}</span>` : ''}
             <p class="club-description">${description}</p>
         </div>
         <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}" ${isPending || isMember ? "disabled" : ""}>

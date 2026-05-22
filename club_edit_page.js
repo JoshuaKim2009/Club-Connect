@@ -97,6 +97,7 @@ const clubDescriptionInput = document.getElementById("description-edit");
 const deleteButton = document.getElementById("delete-club-button");
 const backButton = document.getElementById("back-button-edit");
 const stateInput = document.getElementById("state-edit");
+const clubSponsorInput = document.getElementById("sponsor-edit");
 
 submitButton.disabled = true;
 schoolNameInput.disabled = true;
@@ -104,6 +105,7 @@ clubNameInput.disabled = true;
 clubActivityInput.disabled = true;
 clubDescriptionInput.disabled = true;
 categoryInput.disabled = true;
+clubSponsorInput.disabled = true;
 
 
 async function loadClubData(clubId, managerUid) {
@@ -143,6 +145,7 @@ async function loadClubData(clubId, managerUid) {
         clubActivityInput.value = clubData.clubActivity || '';
         clubDescriptionInput.value = clubData.description || '';
         stateInput.value = clubData.state || '';
+        clubSponsorInput.value = clubData.clubSponsor || '';
 
         const savedVis = clubData.visibility || 'public';
         editVisStrips.forEach(s => {
@@ -156,6 +159,7 @@ async function loadClubData(clubId, managerUid) {
         submitButton.disabled = false;
         stateInput.disabled = false;
         categoryInput.disabled = false;
+        clubSponsorInput.disabled = false;
         if (clubData.category) categoryInput.value = clubData.category;
 
         originalClubData = {
@@ -165,7 +169,8 @@ async function loadClubData(clubId, managerUid) {
             description: clubData.description || '',
             state: clubData.state || '',
             visibility: clubData.visibility || 'public',
-            category: clubData.category || ''
+            category: clubData.category || '',
+            clubSponsor: clubData.clubSponsor || ''
         };
     } else {
       await showAppAlert("Club not found.");
@@ -241,6 +246,7 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
+    const clubSponsor = clubSponsorInput.value.trim();
     const clubCategory = categoryInput.value;
     const clubVisibility = getSelectedVisibilityEdit();
 
@@ -252,7 +258,8 @@ submitButton.addEventListener("click", async function(event){
         clubDescription === originalClubData.description &&
         state === originalClubData.state &&
         clubVisibility === originalClubData.visibility &&
-        clubCategory === originalClubData.category
+        clubCategory === originalClubData.category && 
+        clubSponsor === originalClubData.clubSponsor
     ) {
         await showAppAlert("No changes were made.");
         clearLoading(submitButton);
@@ -323,7 +330,8 @@ submitButton.addEventListener("click", async function(event){
             lastModifiedAt: serverTimestamp(),
             visibility: clubVisibility,
             category: clubCategory,
-            categoryLower: clubCategory.toLowerCase()
+            categoryLower: clubCategory.toLowerCase(),
+            clubSponsor: clubSponsor
         });
         console.log("Club document updated with ID: ", currentClubId);
 
@@ -483,6 +491,16 @@ async function deleteClub(clubId) {
         });
         await Promise.all(deletePollPromises);
         console.log(`All polls for club ${clubId} deleted.`);
+
+        console.log(`Deleting resourceSections subcollection for club ${clubId}...`);
+        const resourceSectionsCollectionRef = collection(db, "clubs", clubId, "resourceSections");
+        const resourceSectionDocsSnap = await getDocs(resourceSectionsCollectionRef);
+        const deleteResourceSectionPromises = [];
+        resourceSectionDocsSnap.forEach((sectionDoc) => {
+            deleteResourceSectionPromises.push(deleteDoc(sectionDoc.ref));
+        });
+        await Promise.all(deleteResourceSectionPromises);
+        console.log(`All resourceSections for club ${clubId} deleted.`);
 
         console.log(`Deleting club document with ID: ${clubId}...`);
         await deleteDoc(clubRef);
