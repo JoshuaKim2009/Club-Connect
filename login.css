@@ -22,7 +22,7 @@ body {
   padding: 15px;
   border: 2px solid black;
   border-radius: 10px;
-  background: linear-gradient(#cecece, #b4b4b4);
+  background: linear-gradient(#ffffff, #e2e2e2);
   box-shadow: 0px 2px 0px #000000;
   width: 85%;
   max-width: 400px;
@@ -112,7 +112,7 @@ body {
   padding: 15px;
   border: 2px solid black;
   border-radius: 10px;
-  background: linear-gradient(#cecece, #b4b4b4);
+  background: linear-gradient(#ffffff, #e2e2e2);
   box-shadow: 0px 2px 0px #000000;
   width: 85%;
   max-width: 400px;
@@ -155,5 +155,5 @@ body {
 }
 
 #fancy-login-input {
-  background: linear-gradient(#ffffff, #f5f5f5) !important; 
+  background: linear-gradient(#ffffff, #e2e2e2) !important; 
 }
