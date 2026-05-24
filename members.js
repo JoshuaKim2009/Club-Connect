@@ -429,7 +429,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
         const memberUid = memberUids[index];
         const memberRole = memberRoles[index];
 
-        if (managerUid === memberUid){
+        if (managerUid === memberUid) {
             const memberCardDivManager = document.createElement("div");
             memberCardDivManager.className = "member-card";
             const nameDisplayDivManager = document.createElement("div");
@@ -437,7 +437,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             nameDisplayDivManager.className = "member-name-display";
             memberCardDivManager.appendChild(nameDisplayDivManager);
 
-            if (myUid === managerUid && (role === 'manager' || role === 'admin')){
+            if (myUid === managerUid && (role === 'manager' || role === 'admin')) {
                 const actionButtonsDivManager = document.createElement("div");
                 actionButtonsDivManager.className = "member-actions";
                 const optionsBtn = document.createElement("button");
@@ -450,8 +450,8 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                 memberCardDivManager.appendChild(actionButtonsDivManager);
             }
             membersContainer.appendChild(memberCardDivManager);
-            
-        } else { 
+
+        } else {
             const memberCardDiv = document.createElement("div");
             memberCardDiv.className = "member-card";
 
@@ -460,10 +460,14 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             nameDisplayDiv.className = "member-name-display";
             memberCardDiv.appendChild(nameDisplayDiv);
 
-            const actionButtonsDiv = document.createElement("div");
-            actionButtonsDiv.className = "member-actions";
+            const canManageThisMember =
+                role === 'manager' ||
+                (role === 'admin' && memberRole === 'member');
 
-            if(myUid === managerUid && (role === 'manager' || role === 'admin')){
+            if (canManageThisMember) {
+                const actionButtonsDiv = document.createElement("div");
+                actionButtonsDiv.className = "member-actions";
+
                 const optionsBtn = document.createElement("button");
                 optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
                 optionsBtn.className = "options-member-btn";
@@ -473,15 +477,15 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                 optionsBtn.addEventListener("click", () => {
                     openRoleManagementPopup(memberUid, name, memberRole);
                 });
-                actionButtonsDiv.appendChild(optionsBtn);
 
+                actionButtonsDiv.appendChild(optionsBtn);
                 memberCardDiv.appendChild(actionButtonsDiv);
             }
+
             membersContainer.appendChild(memberCardDiv);
         }
     });
 }
-
 
 
 
@@ -491,7 +495,18 @@ function openRoleManagementPopup(memberUid, memberName, currentRole) {
     currentMemberRoleInPopup = currentRole;
 
     memberNameForRoleDisplay.textContent = `Manage ${memberName}`;
-    roleSelect.value = currentRole; 
+    roleSelect.value = currentRole;
+
+    const managerOption = roleSelect.querySelector('option[value="manager"]');
+    const memberOption = roleSelect.querySelector('option[value="member"]');
+
+    if (role === 'admin') {
+        managerOption.style.display = 'none';
+        memberOption.style.display = currentRole === 'admin' ? 'none' : '';
+    } else {
+        managerOption.style.display = '';
+        memberOption.style.display = '';
+    }
 
     popupOverlay.style.display = 'flex';
     roleManagementPopup.style.display = 'flex';
@@ -517,6 +532,14 @@ document.getElementById('remove-member-popup-btn').addEventListener('click', asy
 submitRoleChangeButton.addEventListener('click', async () => {
     const newRole = roleSelect.value;
     const memberName = memberNameForRoleDisplay.textContent.replace('Manage ', '');
+
+    if (role === 'admin') {
+        if (currentMemberRoleInPopup !== 'member' || newRole !== 'admin') {
+            await showAppAlert("Admins can only promote members to admin.");
+            closeRoleManagementPopup();
+            return;
+        }
+    }
 
     if (newRole === currentMemberRoleInPopup) {
         console.log(`Role for ${selectedMemberUid} is already ${newRole}. No change needed.`);
