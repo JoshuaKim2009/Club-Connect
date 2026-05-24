@@ -145,9 +145,16 @@ async function loadAllClubs() {
     });
 
     //Member clubs
-    memberSnaps.forEach((snap, i) => {
+    const memberClubsSorted = memberSnaps
+        .map((snap, i) => ({ snap, role: roles[i], id: memberClubs[i] }))
+        .sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (a.role !== 'admin' && b.role === 'admin') return 1;
+            return 0;
+        });
+
+    memberClubsSorted.forEach(({ snap, role, id }) => {
         if (!snap.exists()) return;
-        const role = roles[i];
         if (!role) return;
 
         const data = snap.data();
@@ -156,7 +163,7 @@ async function loadAllClubs() {
 
         const btn = document.createElement("button");
         btn.className = "club-btn member-club-btn";
-        btn.dataset.clubId = memberClubs[i];
+        btn.dataset.clubId = id;
         btn.dataset.userRole = role;
         btn.style.animationDelay = `${cardIndex * 100}ms`;
         btn.style.setProperty('--accent', accentColor);
@@ -165,9 +172,9 @@ async function loadAllClubs() {
 
         btn.addEventListener("click", async () => {
             if (role === 'manager' || role === 'admin') {
-                window.location.href = `club_page_manager.html?id=${memberClubs[i]}`;
+                window.location.href = `club_page_manager.html?id=${id}`;
             } else {
-                window.location.href = `club_page_member.html?id=${memberClubs[i]}`;
+                window.location.href = `club_page_member.html?id=${id}`;
             }
         });
 
