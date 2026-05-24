@@ -483,7 +483,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                 } else {
                     optionsBtn.className = "options-member-btn options-member-btn--disabled";
                     optionsBtn.addEventListener("click", async () => {
-                        await showAppAlert("You cannot manage another admin or manager.");
+                        await showAppAlert("You cannot manage admins or managers.");
                     });
                 }
 
