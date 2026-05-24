@@ -437,14 +437,18 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             nameDisplayDivManager.className = "member-name-display";
             memberCardDivManager.appendChild(nameDisplayDivManager);
 
-            if (myUid === managerUid && (role === 'manager' || role === 'admin')) {
+            if (role === 'manager' || role === 'admin') {
                 const actionButtonsDivManager = document.createElement("div");
                 actionButtonsDivManager.className = "member-actions";
                 const optionsBtn = document.createElement("button");
                 optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
                 optionsBtn.className = "options-member-btn options-member-btn--disabled";
                 optionsBtn.addEventListener("click", async () => {
-                    await showAppAlert("You cannot manage yourself.");
+                    if (myUid === managerUid) {
+                        await showAppAlert("You cannot manage yourself.");
+                    } else {
+                        await showAppAlert("You cannot manage another admin or manager.");
+                    }
                 });
                 actionButtonsDivManager.appendChild(optionsBtn);
                 memberCardDivManager.appendChild(actionButtonsDivManager);
@@ -460,23 +464,28 @@ function displayMembers(memberNames, memberUids, memberRoles) {
             nameDisplayDiv.className = "member-name-display";
             memberCardDiv.appendChild(nameDisplayDiv);
 
-            const canManageThisMember =
-                role === 'manager' ||
-                (role === 'admin' && memberRole === 'member');
-
-            if (canManageThisMember) {
+            if (role === 'manager' || role === 'admin') {
                 const actionButtonsDiv = document.createElement("div");
                 actionButtonsDiv.className = "member-actions";
 
                 const optionsBtn = document.createElement("button");
                 optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
-                optionsBtn.className = "options-member-btn";
-                optionsBtn.dataset.memberUid = memberUid;
-                optionsBtn.dataset.memberName = name;
-                optionsBtn.dataset.memberRole = memberRole;
-                optionsBtn.addEventListener("click", () => {
-                    openRoleManagementPopup(memberUid, name, memberRole);
-                });
+
+                const canManageThisMember =
+                    role === 'manager' ||
+                    (role === 'admin' && memberRole === 'member');
+
+                if (canManageThisMember) {
+                    optionsBtn.className = "options-member-btn";
+                    optionsBtn.addEventListener("click", () => {
+                        openRoleManagementPopup(memberUid, name, memberRole);
+                    });
+                } else {
+                    optionsBtn.className = "options-member-btn options-member-btn--disabled";
+                    optionsBtn.addEventListener("click", async () => {
+                        await showAppAlert("You cannot manage another admin or manager.");
+                    });
+                }
 
                 actionButtonsDiv.appendChild(optionsBtn);
                 memberCardDiv.appendChild(actionButtonsDiv);
