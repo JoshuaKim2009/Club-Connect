@@ -98,6 +98,11 @@ document.getElementById('dropdown-appearance').onclick = () => {
   buildThemeOptions();
 };
 
+document.getElementById('dropdown-edit-account').onclick = () => {
+  document.getElementById('profile-dropdown').style.display = 'none';
+  window.location.href = 'edit_account.html';
+};
+
 document.getElementById('close-appearance').onclick = closeAppearanceModal;
 document.getElementById('profile-overlay').onclick = () => {
   document.getElementById('profile-dropdown').style.display = 'none';

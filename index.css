@@ -118,7 +118,7 @@
 	-webkit-user-drag: none;
 }
 
-
+#dropdown-edit-account:hover,
 #dropdown-logout:hover,
 #dropdown-appearance:hover {
 	background: rgba(0, 0, 0, 0.07) !important;
@@ -137,6 +137,7 @@
 	font-family: var(--primary-font-family);
 }
 
+#dropdown-edit-account,
 #dropdown-appearance,
 #dropdown-logout {
 	display: block;
@@ -151,10 +152,12 @@
 	color: black;
 }
 
+#dropdown-edit-account,
 #dropdown-appearance {
 	border-bottom: 2px dotted black;
 }
 
+#dropdown-edit-account:hover,
 #dropdown-appearance:hover,
 #dropdown-logout:hover {
 	background: rgba(0, 0, 0, 0.07);
