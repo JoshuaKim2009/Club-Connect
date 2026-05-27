@@ -23,7 +23,7 @@ const auth = getAuth(app);
 const PAGE_SIZE = 5;
 
 let currentUser = null;
-let allAnnouncements = []; // full sorted list
+let allAnnouncements = []; 
 let currentPage = 1;
 
 const announcementsContainer = document.getElementById('announcementsContainer');
@@ -66,18 +66,12 @@ function hidePagination() {
 
 async function getUserClubIds(uid) {
   try {
-    const clubsSnap = await getDocs(collection(db, "clubs"));
-    const ids = [];
-    
-    await Promise.all(clubsSnap.docs.map(async (clubDoc) => {
-      const memberRef = doc(db, "clubs", clubDoc.id, "members", uid);
-      const memberSnap = await getDoc(memberRef);
-      if (memberSnap.exists()) {
-        ids.push(clubDoc.id);
-      }
-    }));
-    
-    return ids;
+    const userSnap = await getDoc(doc(db, "users", uid));
+    if (!userSnap.exists()) return [];
+    const data = userSnap.data();
+    const managed = data.managed_clubs || [];
+    const member = data.member_clubs || [];
+    return [...new Set([...managed, ...member])];
   } catch (e) {
     console.error("Error fetching user club list:", e);
     return [];

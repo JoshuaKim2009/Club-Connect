@@ -133,7 +133,7 @@ function formatTimestamp(timestamp) {
 }
 
 
-function _createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
+function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card editing-announcement-card';
@@ -186,7 +186,7 @@ async function addNewAnnouncementEditingCard() {
         return;
     }
 
-    const newCardElement = _createEditingCardElement({}, true); 
+    const newCardElement = createEditingCardElement({}, true); 
 
     if (announcementsContainer) {
         if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
@@ -300,10 +300,11 @@ function renderPage(page) {
   const pageItems = allAnnouncements.slice(start, end);
 
   pageItems.forEach((announcement, index) => {
-    const card = _createAnnouncementDisplayCard(announcement, announcement.id);
+    const card = createAnnouncementDisplayCard(announcement, announcement.id);
     announcementsContainer.appendChild(card);
     animateCardIn(card, index);
   });
+  updateLastSeenAnnouncements();
 
   if (totalPages > 1) {
     const paginationControls = document.getElementById('pagination-controls');
@@ -335,7 +336,7 @@ document.getElementById('next-page-button').addEventListener('click', () => {
 });
 
 
-function _createAnnouncementDisplayCard(announcementData, announcementId) {
+function createAnnouncementDisplayCard(announcementData, announcementId) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card display-announcement-card';
     cardDiv.dataset.announcementId = announcementId;
@@ -374,9 +375,7 @@ function _createAnnouncementDisplayCard(announcementData, announcementId) {
             deleteBtn.addEventListener('click', () => deleteAnnouncement(announcementId, announcementData.title));
         }
     }
-
-    updateLastSeenAnnouncements();
-
+    
     return cardDiv;
 }
 
@@ -409,7 +408,7 @@ async function editAnnouncement(announcementId) {
             return;
         }
 
-        const editingCard = _createEditingCardElement(announcementData, false, announcementId);
+        const editingCard = createEditingCardElement(announcementData, false, announcementId);
         targetDisplayCard.replaceWith(editingCard);
 
     } catch (error) {

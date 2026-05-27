@@ -23,7 +23,6 @@ let role = null;
 let isEditingEvent = false;
 let rsvpListenerUnsubscribe = null;
 
-// All loaded event docs keyed by eventId — single source of truth
 // { eventId: { id, ...firestoreData } }
 let eventDocsMap = new Map();
 
@@ -38,7 +37,7 @@ const addEventButton = document.getElementById('add-event-button');
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 
-// ─── URL / Auth helpers ───────────────────────────────────────────────────────
+//URL Auth helpers
 
 function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
@@ -67,7 +66,7 @@ window.goToClubPage = function () {
 };
 
 
-// ─── Auth state ───────────────────────────────────────────────────────────────
+//Auth state
 
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
@@ -113,7 +112,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-// ─── Fetch & render all events ────────────────────────────────────────────────
+//Fetch and render all events
 
 async function fetchAndDisplayEvents() {
     if (!clubId) return;
@@ -123,7 +122,6 @@ async function fetchAndDisplayEvents() {
         const q = query(eventsRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
 
-        // Rebuild the in-memory map
         eventDocsMap.clear();
         querySnapshot.forEach(docSnap => {
             eventDocsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
@@ -136,7 +134,6 @@ async function fetchAndDisplayEvents() {
     }
 }
 
-// Pure render from eventDocsMap — touches the DOM once
 function renderAllEvents() {
     if (!eventsContainer) return;
     eventsContainer.innerHTML = '';
@@ -158,7 +155,6 @@ function renderAllEvents() {
     });
 }
 
-// Build a flat, sorted, future-only list of occurrences from eventDocsMap
 function buildOccurrenceList() {
     const now = new Date();
     const allOccurrences = [];
@@ -203,7 +199,6 @@ function buildOccurrenceList() {
 }
 
 
-// ─── Targeted DOM helpers (no full re-render) ─────────────────────────────────
 
 // After saving/updating an event doc, refresh only the cards that belong to that eventId
 function refreshCardsForEvent(eventId) {
@@ -213,7 +208,7 @@ function refreshCardsForEvent(eventId) {
     eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
 
     const eventData = eventDocsMap.get(eventId);
-    if (!eventData) return; // event was deleted — nothing to re-add
+    if (!eventData) return; 
 
     const now = new Date();
     const exceptions = eventData.exceptions || [];
@@ -294,7 +289,7 @@ function checkIfEmpty() {
 }
 
 
-// ─── Add new event ────────────────────────────────────────────────────────────
+//Add new event
 
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to add events."); return; }
@@ -308,7 +303,7 @@ async function addNewEventEditingCard() {
 }
 
 
-// ─── Editing card ─────────────────────────────────────────────────────────────
+// Editing card 
 
 function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
     isEditingEvent = true;
@@ -399,7 +394,6 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         </div>
     `;
 
-    // Weekly toggle logic
     const isWeeklyCheckbox = cardDiv.querySelector(`#edit-is-weekly-${currentEditId}`);
     const dateInputGroup = cardDiv.querySelector(`#date-input-group-${currentEditId}`);
     const eventDateInput = cardDiv.querySelector(`#edit-date-${currentEditId}`);
@@ -442,12 +436,10 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
     }
     toggleRecurringFields();
 
-    // Save button
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         await saveEvent(cardDiv, eventIdToUpdate);
     });
 
-    // Cancel button — just swap back, no alert
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
         isEditingEvent = false;
         if (!isNewEvent) {
@@ -471,7 +463,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 }
 
 
-// ─── Save event ───────────────────────────────────────────────────────────────
+//Save event 
 
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
@@ -499,7 +491,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
     const location = cardDiv.querySelector(`#edit-location-${tempDomId}`).value.trim();
     const notes = cardDiv.querySelector(`#edit-notes-${tempDomId}`).value.trim();
 
-    // Validation
     if (!eventName) { await showAppAlert("Event Name is required!"); return; }
     if (!isWeekly && !eventDate) { await showAppAlert("Please provide an Event Date for one-time events."); return; }
     if (isWeekly && (!weeklyStartDate || !weeklyEndDate)) { await showAppAlert("Repeating events require both a start and end date."); return; }
@@ -529,11 +520,9 @@ async function saveEvent(cardDiv, existingEventId = null) {
         let savedOccurrenceDate = null;
 
         if (isEditingInstance) {
-            // Add exception to parent, create override doc
             const parentRef = doc(db, "clubs", clubId, "events", originalEventIdForInstance);
             await updateDoc(parentRef, { exceptions: arrayUnion(originalOccurrenceDateForInstance) });
 
-            // Update parent in local map
             const parentData = eventDocsMap.get(originalEventIdForInstance);
             if (parentData) {
                 const exceptions = parentData.exceptions || [];
@@ -547,10 +536,8 @@ async function saveEvent(cardDiv, existingEventId = null) {
             savedEventId = newRef.id;
             savedOccurrenceDate = eventDate;
 
-            // Store override in local map
             eventDocsMap.set(savedEventId, { id: savedEventId, ...overrideData });
 
-            // Transfer RSVPs
             const rsvpsToTransferQuery = query(
                 collection(db, "clubs", clubId, "occurrenceRsvps"),
                 where("eventId", "==", originalEventIdForInstance),
@@ -568,7 +555,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
                 await batch.commit();
             }
 
-            // DOM: remove editing card, refresh both parent and override
             cardDiv.remove();
             isEditingEvent = false;
             refreshCardsForEvent(originalEventIdForInstance);
@@ -582,30 +568,24 @@ async function saveEvent(cardDiv, existingEventId = null) {
             savedEventId = existingEventId;
             savedOccurrenceDate = isWeekly ? null : eventDate;
 
-            // Update local map
             eventDocsMap.set(existingEventId, { id: existingEventId, ...updatedData });
 
-            // DOM: remove editing card, refresh cards for this event
             cardDiv.remove();
             isEditingEvent = false;
             refreshCardsForEvent(existingEventId);
 
         } else {
-            // Brand new event
             const newRef = await addDoc(eventsRef, eventDataToSave);
             savedEventId = newRef.id;
             savedOccurrenceDate = isWeekly ? null : eventDate;
 
-            // Add to local map
             eventDocsMap.set(savedEventId, { id: savedEventId, ...eventDataToSave });
 
-            // DOM: remove editing card, inject new card(s)
             cardDiv.remove();
             isEditingEvent = false;
             refreshCardsForEvent(savedEventId);
         }
 
-        // Scroll first, then alert
         scrollToEditedEvent(savedEventId, savedOccurrenceDate);
         await showAppAlert("Event saved successfully!");
 
@@ -617,7 +597,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
 }
 
 
-// ─── Edit event ───────────────────────────────────────────────────────────────
+//Edit event
 
 async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to edit events."); return; }
@@ -653,14 +633,14 @@ async function editEvent(eventId, occurrenceDateString = null) {
         const editingCard = createEditingCardElement(dataForCard, false, eventId, true, eventId, occurrenceDateString);
         targetDisplayCard.replaceWith(editingCard);
     } else {
-        // Editing the whole event (one-time, or entire series)
+        // Editing the whole event 
         const editingCard = createEditingCardElement(eventData, false, eventId);
         targetDisplayCard.replaceWith(editingCard);
     }
 }
 
 
-// ─── Delete / cancel occurrences ──────────────────────────────────────────────
+//Delete /cancel occurrences
 
 async function cancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${formatDate(occurrenceDateString)}? It will no longer appear on the schedule.`);
@@ -696,7 +676,6 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
             await updateDoc(eventDocRef, { exceptions: arrayUnion(occurrenceDateString) });
             eventData.exceptions = [...existingExceptions, occurrenceDateString];
 
-            // Remove just this card from DOM
             const card = eventsContainer.querySelector(`.event-card[data-original-event-id="${eventId}"][data-occurrence-date="${occurrenceDateString}"]`);
             if (card) card.remove();
             checkIfEmpty();
@@ -819,7 +798,7 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
 }
 
 
-// ─── Display card ─────────────────────────────────────────────────────────────
+//Display card
 
 function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
@@ -970,7 +949,7 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
 }
 
 
-// ─── RSVP ─────────────────────────────────────────────────────────────────────
+//RSVP
 
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in to RSVP."); return; }
@@ -1040,7 +1019,7 @@ function setupRealtimeUserRsvps() {
 }
 
 
-// ─── RSVP details modal ───────────────────────────────────────────────────────
+//RSVP details modal
 
 async function getAllClubMembers(clubID, useCache = true) {
     if (useCache && memberListCache.has(clubID)) {
@@ -1194,7 +1173,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 }
 
 
-// ─── Announcements ────────────────────────────────────────────────────────────
+//Announcements
 
 async function createAnnouncementPopup(initialData = {}) {
     return new Promise((resolve) => {
@@ -1278,7 +1257,7 @@ async function saveAnnouncement(title, content) {
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// Utilities 
 
 function formatTime(timeString) {
     if (!timeString) return 'N/A';
