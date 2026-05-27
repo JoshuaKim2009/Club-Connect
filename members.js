@@ -429,6 +429,39 @@ function displayMembers(memberNames, memberUids, memberRoles) {
         const memberUid = memberUids[index];
         const memberRole = memberRoles[index];
 
+        // Handle your own card universally
+        if (memberUid === myUid) {
+            const memberCardDiv = document.createElement("div");
+            memberCardDiv.className = "member-card";
+
+            const nameDisplayDiv = document.createElement("div");
+            nameDisplayDiv.innerHTML = `${name} ${(memberRole === 'admin' || memberRole === 'manager') ? `<span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>` : ''}`;
+            nameDisplayDiv.className = "member-name-display";
+            memberCardDiv.appendChild(nameDisplayDiv);
+
+            const actionButtonsDiv = document.createElement("div");
+            actionButtonsDiv.className = "member-actions";
+
+            const leaveBtn = document.createElement("button");
+            leaveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
+            leaveBtn.className = "options-member-btn";
+            leaveBtn.addEventListener("click", async () => {
+                if (memberRole === 'manager') {
+                    await showAppAlert("Transfer management before leaving the club.");
+                    return;
+                }
+                if (await showAppConfirm("Are you sure you want to leave this club?")) {
+                    await removeMember(clubId, myUid);
+                    window.location.href = 'your_clubs.html';
+                }
+            });
+
+            actionButtonsDiv.appendChild(leaveBtn);
+            memberCardDiv.appendChild(actionButtonsDiv);
+            membersContainer.appendChild(memberCardDiv);
+            return;
+        }
+
         if (managerUid === memberUid) {
             const memberCardDivManager = document.createElement("div");
             memberCardDivManager.className = "member-card";
@@ -444,11 +477,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
                 optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
                 optionsBtn.className = "options-member-btn options-member-btn--disabled";
                 optionsBtn.addEventListener("click", async () => {
-                    if (myUid === managerUid) {
-                        await showAppAlert("You cannot manage yourself.");
-                    } else {
-                        await showAppAlert("You cannot manage another admin or manager.");
-                    }
+                    await showAppAlert("You cannot manage another admin or manager.");
                 });
                 actionButtonsDivManager.appendChild(optionsBtn);
                 memberCardDivManager.appendChild(actionButtonsDivManager);
@@ -495,7 +524,6 @@ function displayMembers(memberNames, memberUids, memberRoles) {
         }
     });
 }
-
 
 
 function openRoleManagementPopup(memberUid, memberName, currentRole) {
