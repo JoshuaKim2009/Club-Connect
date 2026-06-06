@@ -429,17 +429,22 @@ function saveSearch(state, county, school, category) {
 	localStorage.setItem('discoverySearch', JSON.stringify({ state, county, school, category }));
 }
 
+function fadeText(el, value, delay = 0) {
+    setTimeout(() => {
+        el.value = value;
+        el.classList.remove('text-fade');
+        void el.offsetWidth;
+        el.classList.add('text-fade');
+    }, delay);
+}
+
 function restoreSavedSearch() {
-	const saved = localStorage.getItem('discoverySearch');
-	if (!saved) return;
-	const { state, county, school, category } = JSON.parse(saved);
-	if (state) {
-		stateInput.value = state;
-		updateCountySearchVisibility(state);
-	}
-	if (county) countySearchInput.value = county;
-	if (school) document.getElementById('searchSchool').value = school;
-	if (category) {
-		categoryInput.value = category;
-	}
+    const saved = localStorage.getItem('discoverySearch');
+    if (!saved) return;
+    const { state, county, school, category } = JSON.parse(saved);
+
+    if (state)    { updateCountySearchVisibility(state); fadeText(stateInput, state, 0); }
+    if (county)   fadeText(countySearchInput, county, 100);
+    if (school)   fadeText(document.getElementById('searchSchool'), school, 200);
+    if (category) fadeText(categoryInput, category, 300);
 }
