@@ -53,11 +53,20 @@
         </div>
 
         <div class="club-form-section">
-          <label for="state-edit">State</label>
+          <label for="state-edit">State/Territory</label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="state-edit"
                   placeholder="State name" required autocomplete="off">
             <div class="state-dropdown-list" id="state-dropdown-list-edit"></div>
+          </div>
+        </div>
+
+        <div class="club-form-section">
+          <label for="county-edit">County</label>
+          <div class="state-dropdown-wrapper">
+            <input class="fancy-input" id="county-edit"
+                  placeholder="County name" autocomplete="off">
+            <div class="state-dropdown-list" id="county-dropdown-list-edit"></div>
           </div>
         </div>
 
@@ -132,7 +141,7 @@
     <script src="theme.js?v=10"></script>
     <script type="module" src="loading_instant.js"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_edit_page.js?v=7"></script>
+    <script type="module" src="club_edit_page.js?v=8"></script>
 
     
 

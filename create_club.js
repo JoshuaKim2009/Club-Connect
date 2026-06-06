@@ -26,6 +26,31 @@ let currentUserEmail = null;
 const JOIN_CODE_LENGTH = 6;
 const JOIN_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
 
+const STATE_ABBREVS = {
+    'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California',
+    'CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia',
+    'HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa',
+    'KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland',
+    'MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi',
+    'MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire',
+    'NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina',
+    'ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania',
+    'RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee',
+    'TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington',
+    'WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming',
+    'DC': 'District of Columbia',
+    'D.C.': 'District of Columbia',
+};
+
+let COUNTIES = [];
+
+fetch('counties.json')
+  .then(res => res.json())
+  .then(data => {
+    COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
+  });
+
+
 const CLUB_CATEGORIES = [
   'Academic',
   'Activism',
@@ -104,6 +129,13 @@ const clubDescriptionInput = document.getElementById("description-input");
 const clubActivityInput = document.getElementById("main-activity-select");
 const clubSponsorInput = document.getElementById("sponsor-select");
 const stateInput = document.getElementById("state-select");
+const countyInput = document.getElementById("county-select");
+const countyDropdownList = document.getElementById("county-dropdown-list");
+
+countyInput.closest('.club-form-section').style.display = 'none';
+
+
+let selectedCountyFips = null;
 
 
 const createVisStrips = document.querySelectorAll('#visibility-strip-group-create .club-vis-strip');
@@ -127,9 +159,10 @@ submitButton.addEventListener("click", async function(event){
     setLoading(submitButton);
 
     if (!currentUser || !currentUser.uid) {
-      await showAppAlert("You must be logged in to create a club.");
-      console.warn("Attempted club creation by unauthenticated user. Aborting.");
-      return; 
+        await showAppAlert("You must be logged in to create a club.");
+        console.warn("Attempted club creation by unauthenticated user. Aborting.");
+        clearLoading(submitButton);
+        return; 
     }
 
     const rawSchoolName = schoolNameInput.value.trim();
@@ -138,6 +171,8 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const state = stateInput.value.trim();
     const clubSponsor = clubSponsorInput.value.trim();
+    const countyName = countyInput.value.trim();
+    const countyFips = selectedCountyFips;
     const clubCategory = categoryInput.value;
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
@@ -226,7 +261,9 @@ submitButton.addEventListener("click", async function(event){
             visibility: clubVisibility,
             category: clubCategory,
             categoryLower: clubCategory.toLowerCase(),
-            clubSponsor: clubSponsor
+            clubSponsor: clubSponsor,
+            countyName: countyName,
+            countyFips: countyFips || null
         });
         console.log("Club document written with ID: ", newClubId);
 
@@ -379,17 +416,67 @@ function normalizeSchoolName(schoolName) {
     return { valid: true, normalized: normalized, error: '' };
 }
 
-const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming', 'Puerto Rico', 'Guam', 'U.S. Virgin Islands', 'American Samoa', 'Northern Mariana Islands'];
 
-function normalizeState(stateInput) {
-    const validStates = states;
+
+const NO_COUNTY_STATES = {
+  'District of Columbia': { fips: '11001', name: 'District of Columbia' },
+  'Puerto Rico': { fips: null, name: 'Puerto Rico' },
+  'Guam': { fips: null, name: 'Guam' },
+  'U.S. Virgin Islands': { fips: null, name: 'U.S. Virgin Islands' },
+  'American Samoa': { fips: null, name: 'American Samoa' },
+  'Northern Mariana Islands': { fips: null, name: 'Northern Mariana Islands' },
+};
+
+function handleCountyVisibility(stateName) {
+  const noCounty = NO_COUNTY_STATES[stateName];
+  if (!stateName) {
+    countyInput.closest('.club-form-section').style.display = 'none';
+    countyInput.value = '';
+    selectedCountyFips = null;
+  } else if (noCounty) {
+    countyInput.value = noCounty.name;
+    selectedCountyFips = noCounty.fips;
+    countyInput.disabled = true;
+    countyInput.closest('.club-form-section').style.display = 'none';
+  } else {
+    countyInput.value = '';
+    selectedCountyFips = null;
+    countyInput.disabled = false;
+    countyInput.closest('.club-form-section').style.display = '';
+  }
+}
+
+
+// function normalizeState(stateInput) {
+//     const validStates = states;
     
-    const trimmed = stateInput.trim();
+//     const trimmed = stateInput.trim();
     
-    // Find matching state (case-insensitive)
-    const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
+//     const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
     
-    return matchedState || null;
+//     return matchedState || null;
+// }
+
+function normalizeState(input) {
+  const trimmed = input.trim();
+  const upper = trimmed.toUpperCase();
+
+  const abbrevKey = upper.replace(/\./g, ''); 
+  if (STATE_ABBREVS[abbrevKey]) return STATE_ABBREVS[abbrevKey];
+  if (STATE_ABBREVS[upper]) return STATE_ABBREVS[upper];
+
+  const stripped = trimmed.toLowerCase().replace(/[,\.]/g, '').replace(/\s+/g, ' ').trim();
+  if (
+    stripped === 'washington dc' ||
+    stripped === 'washington d c' ||
+    stripped === 'washington district of columbia' ||
+    stripped === 'district of columbia'
+  ) {
+    return 'District of Columbia';
+  }
+
+  return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
 }
 
 
@@ -398,39 +485,27 @@ const stateDropdownList = document.getElementById('state-dropdown-list');
 stateInput.addEventListener('input', function() {
   const value = this.value.toLowerCase();
   stateDropdownList.innerHTML = '';
-  
-  if (value) {
-    const filtered = states.filter(state => state.toLowerCase().includes(value));
-    filtered.forEach(state => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = state;
-      div.onclick = () => {
-        stateInput.value = state;
-        stateDropdownList.classList.remove('show');
-      };
-      stateDropdownList.appendChild(div);
-    });
-    stateDropdownList.classList.add('show');
-  } else {
-    stateDropdownList.classList.remove('show');
-  }
-});
 
-stateInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  stateDropdownList.innerHTML = '';
-  
+  const fullNameMatch = states.find(s => s.toLowerCase() === value.trim());
+  handleCountyVisibility(fullNameMatch || '');
+
   if (value) {
-    const filtered = states.filter(state => state.toLowerCase().includes(value));
+    const normalized = normalizeState(this.value.trim());
+    const filtered = states.filter(state =>
+      state.toLowerCase().includes(value) ||
+      (normalized && state === normalized)
+    );
     if (filtered.length > 0) {
       filtered.forEach(state => {
         const div = document.createElement('div');
         div.className = 'state-option';
         div.textContent = state;
         div.onclick = () => {
-          stateInput.value = state;
-          stateDropdownList.classList.remove('show');
+            stateInput.value = state;
+            stateDropdownList.classList.remove('show');
+            countyDropdownList.innerHTML = '';
+            countyDropdownList.classList.remove('show');
+            handleCountyVisibility(state);
         };
         stateDropdownList.appendChild(div);
       });
@@ -440,11 +515,50 @@ stateInput.addEventListener('input', function() {
     }
   } else {
     stateDropdownList.classList.remove('show');
+    handleCountyVisibility('');
   }
 });
 
 document.addEventListener('click', function(e) {
   if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
     stateDropdownList.classList.remove('show');
+  }
+});
+
+
+countyInput.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  const currentState = normalizeState(stateInput.value.trim());
+  countyDropdownList.innerHTML = '';
+
+  let pool = currentState
+    ? COUNTIES.filter(c => c.state === currentState)
+    : COUNTIES;
+
+  if (value) {
+    pool = pool.filter(c => c.name.toLowerCase().includes(value));
+  }
+
+  if (pool.length > 0) {
+    pool.forEach(county => {
+      const div = document.createElement('div');
+      div.className = 'state-option';
+      div.textContent = county.name;
+      div.onclick = () => {
+        countyInput.value = county.name;
+        selectedCountyFips = county.fips;
+        countyDropdownList.classList.remove('show');
+      };
+      countyDropdownList.appendChild(div);
+    });
+    countyDropdownList.classList.add('show');
+  } else {
+    countyDropdownList.classList.remove('show');
+  }
+});
+
+document.addEventListener('click', function(e) {
+  if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
+    countyDropdownList.classList.remove('show');
   }
 });

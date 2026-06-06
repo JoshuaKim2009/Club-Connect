@@ -104,6 +104,9 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const rawState = document.getElementById("searchState").value.trim();
     const state = normalizeState(rawState);
     const selectedCategory = categoryInput.value;
+    const selectedCounty = countySearchInput.value.trim().toLowerCase();
+
+    saveSearch(stateInput.value.trim(), countySearchInput.value.trim(), document.getElementById("searchSchool").value.trim(), selectedCategory);
 
     if (!state) {
         clubsGrid.innerHTML = "";
@@ -164,10 +167,11 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
             const matchesState  = !state  || searchableState.includes(state.toLowerCase());
 
             const matchesCategory = !selectedCategory || (data.categoryLower ?? data.category?.toLowerCase() ?? '') === selectedCategory.toLowerCase();
+            const matchesCounty = !selectedCounty || (data.countyName ?? '').toLowerCase().includes(selectedCounty);
 
             const isPublic = (data.visibility ?? 'public') !== 'private';
 
-            if (matchesClub && matchesSchool && matchesState && isPublic && matchesCategory) {
+            if (matchesClub && matchesSchool && matchesState && isPublic && matchesCategory && matchesCounty) {
                 matches.push({ id: docSnap.id, ...data });
             }
         });
@@ -180,7 +184,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         }
 
         matches.forEach(data => {
-            createClubCard(data.id, data.clubName, data.schoolName, data.state, data.clubActivity, data.description, data.joinCode, data.pendingMemberUIDs || [], data.memberUIDs || [], data.clubSponsor || '');
+            createClubCard(data.id, data.clubName || 'Unnamed Club', data.schoolName || 'Unknown School', data.state || '', data.countyName || '', data.clubActivity || '', data.description || '', data.joinCode || '', data.pendingMemberUIDs || [], data.memberUIDs || [], data.clubSponsor || '');
         });
 
     } catch (error) {
@@ -189,9 +193,10 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 });
 
 
-function createClubCard(clubId, clubName, schoolName, state, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor) {
+function createClubCard(clubId, clubName, schoolName, state, countyName, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor) {
     const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
     const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
+    const stateAbbrev = Object.keys(STATE_ABBREVS).find(k => STATE_ABBREVS[k] === state) || state;
 
     const card = document.createElement("div");
     card.className = "club-card";
@@ -202,7 +207,7 @@ function createClubCard(clubId, clubName, schoolName, state, activity, descripti
         </div>
         <div class="club-card-body">
             <span><i class="fa-solid fa-school"></i> ${schoolName}</span>
-            <span><i class="fa-solid fa-location-dot"></i> ${state}</span>
+            <span><i class="fa-solid fa-location-dot"></i> ${NO_COUNTY_STATES[state] ? state : countyName ? `${countyName}, ${stateAbbrev}` : state}</span>
             ${clubSponsor ? `<span class="club-sponsor"><i class="fa-solid fa-user"></i> Sponsor: ${clubSponsor}</span>` : ''}
             <p class="club-description">${description}</p>
         </div>
@@ -271,35 +276,52 @@ function normalizeSearchInput(input) {
 }
 
 
-const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming','Puerto Rico','Guam','U.S. Virgin Islands','American Samoa','Northern Mariana Islands'];
 
+const NO_COUNTY_STATES = {
+	'District of Columbia': true,
+	'Puerto Rico': true,
+	'Guam': true,
+	'U.S. Virgin Islands': true,
+	'American Samoa': true,
+	'Northern Mariana Islands': true,
+};
 const stateInput = document.getElementById('searchState');
 const stateDropdownList = document.getElementById('state-dropdown-list');
+const countySearchInput = document.getElementById('searchCounty');
+const countySearchDropdown = document.getElementById('county-dropdown-list-search');
+const countySearchSection = document.getElementById('county-search-section');
 
-stateInput.addEventListener('input', function () {
-    const value = this.value.toLowerCase();
-    stateDropdownList.innerHTML = '';
+stateInput.addEventListener('input', function() {
+	const value = this.value.toLowerCase();
+	stateDropdownList.innerHTML = '';
 
-    if (value) {
-        const filtered = states.filter(state => state.toLowerCase().includes(value));
-        if (filtered.length > 0) {
-            filtered.forEach(state => {
-                const div = document.createElement('div');
-                div.className = 'state-option';
-                div.textContent = state;
-                div.onclick = () => {
-                    stateInput.value = state;
-                    stateDropdownList.classList.remove('show');
-                };
-                stateDropdownList.appendChild(div);
-            });
-            stateDropdownList.classList.add('show');
-        } else {
-            stateDropdownList.classList.remove('show');
-        }
-    } else {
-        stateDropdownList.classList.remove('show');
-    }
+	const fullNameMatch = states.find(s => s.toLowerCase() === this.value.trim().toLowerCase());
+	updateCountySearchVisibility(fullNameMatch || null);
+	if (!fullNameMatch) countySearchInput.value = '';
+
+	if (value) {
+		const filtered = states.filter(state => state.toLowerCase().includes(value));
+		if (filtered.length > 0) {
+			filtered.forEach(state => {
+				const div = document.createElement('div');
+				div.className = 'state-option';
+				div.textContent = state;
+				div.onclick = () => {
+					stateInput.value = state;
+					stateDropdownList.classList.remove('show');
+					countySearchInput.value = '';
+					updateCountySearchVisibility(state);
+				};
+				stateDropdownList.appendChild(div);
+			});
+			stateDropdownList.classList.add('show');
+		} else {
+			stateDropdownList.classList.remove('show');
+		}
+	} else {
+		stateDropdownList.classList.remove('show');
+	}
 });
 
 document.addEventListener('click', function (e) {
@@ -308,29 +330,116 @@ document.addEventListener('click', function (e) {
     }
 });
 
+const STATE_ABBREVS = {
+    'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California',
+    'CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia',
+    'HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa',
+    'KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland',
+    'MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi',
+    'MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire',
+    'NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina',
+    'ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania',
+    'RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee',
+    'TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington',
+    'WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming',
+    'DC':'District of Columbia','D.C.':'District of Columbia',
+};
 
 function normalizeState(input) {
-    const trimmed = input.trim();
+	const trimmed = input.trim();
+	if (!trimmed) return null;
 
-    const abbreviations = {
-        'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
-        'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
-        'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
-        'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
-        'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
-        'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
-        'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
-        'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
-        'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
-        'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
-        'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
-        'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
-        'WI': 'Wisconsin', 'WY': 'Wyoming'
-    };
+	const upper = trimmed.toUpperCase();
 
-    const fromAbbr = abbreviations[trimmed.toUpperCase()];
-    if (fromAbbr) return fromAbbr;
+	if (trimmed.length === 2) {
+		const abbrev = STATE_ABBREVS[upper];
+		if (abbrev) return abbrev;
+	}
+	if (upper === 'D.C.') return 'District of Columbia';
 
-    const matched = states.find(s => s.toLowerCase() === trimmed.toLowerCase());
-    return matched || null;
+	const stripped = trimmed.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim();
+	if (
+		stripped === 'washington dc' ||
+		stripped === 'washington d c' ||
+		stripped === 'washington district of columbia' ||
+		stripped === 'district of columbia'
+	) return 'District of Columbia';
+
+	return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
+}
+
+
+
+
+let SEARCH_COUNTIES = [];
+fetch('counties.json')
+	.then(res => res.json())
+	.then(data => {
+		SEARCH_COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
+		restoreSavedSearch();
+	})
+	.catch(() => {
+		restoreSavedSearch();
+	});
+
+function updateCountySearchVisibility(stateName) {
+	if (!stateName || NO_COUNTY_STATES[stateName]) {
+		countySearchSection.style.display = 'none';
+		countySearchInput.value = '';
+	} else {
+		countySearchSection.style.display = '';
+	}
+}
+
+countySearchInput.addEventListener('input', function() {
+	const value = this.value.toLowerCase();
+	const currentState = normalizeState(stateInput.value.trim());
+	countySearchDropdown.innerHTML = '';
+
+	let pool = currentState
+		? SEARCH_COUNTIES.filter(c => c.state === currentState)
+		: SEARCH_COUNTIES;
+
+	if (value) pool = pool.filter(c => c.name.toLowerCase().includes(value));
+
+	if (pool.length > 0) {
+		pool.forEach(county => {
+			const div = document.createElement('div');
+			div.className = 'state-option';
+			div.textContent = county.name;
+			div.onclick = () => {
+				countySearchInput.value = county.name;
+				countySearchDropdown.classList.remove('show');
+			};
+			countySearchDropdown.appendChild(div);
+		});
+		countySearchDropdown.classList.add('show');
+	} else {
+		countySearchDropdown.classList.remove('show');
+	}
+});
+
+document.addEventListener('click', function(e) {
+	if (!countySearchInput.contains(e.target) && !countySearchDropdown.contains(e.target)) {
+		countySearchDropdown.classList.remove('show');
+	}
+});
+
+function saveSearch(state, county, school, category) {
+	localStorage.setItem('discoverySearch', JSON.stringify({ state, county, school, category }));
+}
+
+function restoreSavedSearch() {
+	const saved = localStorage.getItem('discoverySearch');
+	if (!saved) return;
+	const { state, county, school, category } = JSON.parse(saved);
+	if (state) {
+		stateInput.value = state;
+		updateCountySearchVisibility(state);
+	}
+	if (county) countySearchInput.value = county;
+	if (school) document.getElementById('searchSchool').value = school;
+	if (category) {
+		categoryInput.value = category;
+	}
 }
