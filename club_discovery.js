@@ -443,8 +443,8 @@ function restoreSavedSearch() {
     if (!saved) return;
     const { state, county, school, category } = JSON.parse(saved);
 
-    if (state)    { updateCountySearchVisibility(state); fadeText(stateInput, state, 0); }
-    if (county)   fadeText(countySearchInput, county, 100);
-    if (school)   fadeText(document.getElementById('searchSchool'), school, 200);
+    if (state) { updateCountySearchVisibility(state); fadeText(stateInput, state, 0); }
+    if (county) fadeText(countySearchInput, county, 100);
+    if (school) fadeText(document.getElementById('searchSchool'), school, 200);
     if (category) fadeText(categoryInput, category, 300);
 }

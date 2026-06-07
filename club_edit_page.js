@@ -164,9 +164,9 @@ async function loadClubData(clubId, managerUid) {
         clubDescriptionInput.value = clubData.description || '';
         stateInput.value = clubData.state || '';
         clubSponsorInput.value = clubData.clubSponsor || '';
+        handleCountyVisibility(clubData.state || '');
         countyInput.value = clubData.countyName || '';
         selectedCountyFips = clubData.countyFips || null;
-        handleCountyVisibility(clubData.state || '');
         const savedVis = clubData.visibility || 'public';
         editVisStrips.forEach(s => {
             s.classList.toggle('club-vis-strip-selected', s.dataset.value === savedVis);
