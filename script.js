@@ -39,6 +39,14 @@ function setLoggedOutUI() {
   cta.innerHTML = 'CREATE ACCOUNT &nbsp;<i class="fa-solid fa-arrow-right-to-bracket"></i>';
 }
 
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    const fresh = JSON.parse(localStorage.getItem('cc-user') || 'null');
+    if (fresh) setLoggedInUI(fresh.displayName);
+    else setLoggedOutUI();
+  }
+});
+
 // Paint correct UI immediately on first frame using cached data
 const cached = JSON.parse(sessionStorage.getItem('cc-user') || localStorage.getItem('cc-user') || 'null');
 if (cached) {
