@@ -207,7 +207,7 @@ async function denyMember(clubID, memberID) {
         });
         console.log(`Successfully denied membership for user ${memberID} from club ${clubID}.`);
 
-        await showAppAlert("Member request denied successfully!");
+        // await showAppAlert("Member request denied successfully!");
 
     } catch (error) {
         console.error("Error denying member:", error);
@@ -382,7 +382,7 @@ function displayPendingMembers(memberNames, memberUids) {
             actionButtonsDiv.className = "pending-member-actions"; 
 
             const approveBtn = document.createElement("button");
-            approveBtn.textContent = "ACCEPT";
+            approveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
             approveBtn.className = "approve-member-btn";
             approveBtn.dataset.memberUid = memberUid; 
             approveBtn.dataset.memberName = name; 
@@ -390,11 +390,12 @@ function displayPendingMembers(memberNames, memberUids) {
             approveBtn.addEventListener("click", async () => {
                 console.log(`Approving member: ${name} (UID: ${memberUid})`);
                 await approveMember(clubId, memberUid);
+                await fetchAndDisplayMembers();
             });
             actionButtonsDiv.appendChild(approveBtn);
 
             const denyBtn = document.createElement("button"); 
-            denyBtn.textContent = "DENY";
+            denyBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
             denyBtn.className = "deny-member-btn"; 
             denyBtn.dataset.memberUid = memberUid; 
             denyBtn.dataset.memberName = name; 
@@ -402,6 +403,7 @@ function displayPendingMembers(memberNames, memberUids) {
             denyBtn.addEventListener("click", async () => {
                 console.log(`Denying member: ${name} (UID: ${memberUid})`);
                 await denyMember(clubId, memberUid);
+                await fetchAndDisplayMembers();
             });
             actionButtonsDiv.appendChild(denyBtn);
 
@@ -626,7 +628,7 @@ async function fetchAndDisplayMembers() {
     }
     try {
         const clubRef = doc(db, "clubs", clubId);
-        const clubSnap = await getDoc(clubRef, { source: 'server' });
+        const clubSnap = await getDoc(clubRef);
 
         if (!clubSnap.exists()) {
             membersContainer.innerHTML = "<p class='fancy-label'>Club not found.</p>";
@@ -639,7 +641,7 @@ async function fetchAndDisplayMembers() {
 
         if (actualManagerUid) {
             const managerUserRef = doc(db, "users", actualManagerUid);
-            const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });
+            const managerUserSnap = await getDoc(managerUserRef);
             if (managerUserSnap.exists() && managerUserSnap.data().name) {
                 actualManagerName = managerUserSnap.data().name;
             }
@@ -654,26 +656,25 @@ async function fetchAndDisplayMembers() {
             const memberNames = [];
             const memberIds = [];
 
-            for (const memberUid of pendingMemberUids) {
+            await Promise.all(pendingMemberUids.map(async (memberUid) => {
                 const userRef = doc(db, "users", memberUid);
-                const userSnap = await getDoc(userRef, { source: 'server' });
+                const userSnap = await getDoc(userRef);
 
                 if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    memberNames.push(userData.name || `User (${memberUid})`);
+                    memberNames.push(userSnap.data().name || `User (${memberUid})`);
                     memberIds.push(memberUid);
                 } else {
                     console.warn(`User document not found for pending member UID: ${memberUid}`);
                     memberNames.push(`Unknown User (${memberUid})`);
                     memberIds.push(memberUid);
                 }
-            }
+            }));
 
             const sortedPending = sortMembersAlphabetically(memberNames, memberIds);
             displayPendingMembers(sortedPending.names, sortedPending.uids);
 
             if (pendingMemberUids.length > 0) {
-                pendingRequestsContainer.style.order = -1; 
+                pendingRequestsContainer.style.order = -1;
                 membersContainer.style.order = 0;
                 pendingRequestsContainer.style.display = '';
             } else {
@@ -682,31 +683,30 @@ async function fetchAndDisplayMembers() {
                 pendingRequestsContainer.style.display = 'none';
             }
         } else {
-            // Hide pending requests for regular members
             pendingRequestsContainer.style.display = 'none';
         }
 
         // Handle approved members
-        const approvedMemberUids = clubData.memberUIDs || []; 
+        const approvedMemberUids = clubData.memberUIDs || [];
         const approvedMemberNames = [];
         const approvedMemberIds = [];
         const approvedMemberRoles = [];
 
-        for (const memberUid of approvedMemberUids) {
+        await Promise.all(approvedMemberUids.map(async (memberUid) => {
             const userRef = doc(db, "users", memberUid);
-            const userSnap = await getDoc(userRef, { source: 'server' });
-
             const memberRoleRef = doc(db, "clubs", clubId, "members", memberUid);
-            const memberRoleSnap = await getDoc(memberRoleRef, { source: 'server' });
-            let memberRole = 'member'; 
 
-            if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-                memberRole = memberRoleSnap.data().role;
-            }
+            const [userSnap, memberRoleSnap] = await Promise.all([
+                getDoc(userRef),
+                getDoc(memberRoleRef)
+            ]);
+
+            const memberRole = (memberRoleSnap.exists() && memberRoleSnap.data().role)
+                ? memberRoleSnap.data().role
+                : 'member';
 
             if (userSnap.exists()) {
-                const userData = userSnap.data();
-                approvedMemberNames.push(userData.name || `User (${memberUid})`);
+                approvedMemberNames.push(userSnap.data().name || `User (${memberUid})`);
                 approvedMemberIds.push(memberUid);
                 approvedMemberRoles.push(memberRole);
             } else {
@@ -715,7 +715,7 @@ async function fetchAndDisplayMembers() {
                 approvedMemberIds.push(memberUid);
                 approvedMemberRoles.push(memberRole);
             }
-        }
+        }));
 
         const sortedApproved = sortMembersAlphabetically(approvedMemberNames, approvedMemberIds, approvedMemberRoles);
         displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
