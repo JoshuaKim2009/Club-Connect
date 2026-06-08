@@ -370,17 +370,14 @@ function normalizeState(input) {
 
 
 
+restoreSavedSearch();
 
 let SEARCH_COUNTIES = [];
 fetch('counties.json')
 	.then(res => res.json())
 	.then(data => {
 		SEARCH_COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
-		restoreSavedSearch();
 	})
-	.catch(() => {
-		restoreSavedSearch();
-	});
 
 function updateCountySearchVisibility(stateName) {
 	if (!stateName || NO_COUNTY_STATES[stateName]) {
