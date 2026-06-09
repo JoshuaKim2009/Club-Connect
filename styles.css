@@ -1145,10 +1145,10 @@ button {
   margin-bottom: 15px; 
 }
 
-.member-card:hover {
+/* .member-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 3px 0px #000000; /* 6→3 */
-}
+  box-shadow: 0px 3px 0px #000000; 
+} */
 
 .options-member-btn {
   background: linear-gradient(#cecece, #afafaf);
