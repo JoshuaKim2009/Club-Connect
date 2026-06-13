@@ -133,7 +133,6 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const constraints = [];
 
     if (state)  constraints.push(where("stateLower", "==", state.toLowerCase()));
-    // if (school) constraints.push(where("schoolNameLower", "==", school.toLowerCase()));
     if (club)   constraints.push(where("clubNameLower", "==", club.toLowerCase()));
 
     if (constraints.length === 0) {
@@ -184,7 +183,23 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
         }
 
         matches.forEach(data => {
-            createClubCard(data.id, data.clubName || 'Unnamed Club', data.schoolName || 'Unknown School', data.state || '', data.countyName || '', data.clubActivity || '', data.description || '', data.joinCode || '', data.pendingMemberUIDs || [], data.memberUIDs || [], data.clubSponsor || '');
+            createClubCard(
+                data.id,
+                data.clubName || 'Unnamed Club',
+                data.schoolName || 'Unknown School',
+                data.state || '',
+                data.countyName || '',
+                data.clubActivity || '',
+                data.description || '',
+                data.joinCode || '',
+                data.pendingMemberUIDs || [],
+                data.memberUIDs || [],
+                data.clubSponsor || '',
+                data.clubLeader || '',
+                data.schoolEmail || '',
+                data.roomNumber || '',
+                data.meetingSchedule || ''
+            );
         });
 
     } catch (error) {
@@ -193,10 +208,14 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
 });
 
 
-function createClubCard(clubId, clubName, schoolName, state, countyName, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor) {
+function createClubCard(clubId, clubName, schoolName, state, countyName, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor, clubLeader, schoolEmail, roomNumber, meetingSchedule) {
     const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
     const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
     const stateAbbrev = Object.keys(STATE_ABBREVS).find(k => STATE_ABBREVS[k] === state) || state;
+    const location = NO_COUNTY_STATES[state] ? state : countyName ? `${countyName}, ${stateAbbrev}` : state;
+
+    const hasMoreInfo = clubSponsor || clubLeader || schoolEmail || roomNumber || meetingSchedule;
+    const footerClass = hasMoreInfo ? 'club-join-wrapper' : 'club-card-footer';
 
     const card = document.createElement("div");
     card.className = "club-card";
@@ -207,20 +226,45 @@ function createClubCard(clubId, clubName, schoolName, state, countyName, activit
         </div>
         <div class="club-card-body">
             <span><i class="fa-solid fa-school"></i> ${schoolName}</span>
-            <span><i class="fa-solid fa-location-dot"></i> ${NO_COUNTY_STATES[state] ? state : countyName ? `${countyName}, ${stateAbbrev}` : state}</span>
-            ${clubSponsor ? `<span class="club-sponsor"><i class="fa-solid fa-user"></i> Sponsor: ${clubSponsor}</span>` : ''}
+            <span><i class="fa-solid fa-location-dot"></i> ${location}</span>
             <p class="club-description">${description}</p>
         </div>
-        <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}" ${isPending || isMember ? "disabled" : ""}>
-            ${isMember ? "JOINED" : isPending ? "SENT" : "REQUEST TO JOIN"}
+        ${hasMoreInfo ? `
+        <button class="club-more-btn">
+            <i class="fa-solid fa-chevron-down"></i><span class="more-btn-text"> More Info</span>
         </button>
+        <div class="club-more-drawer">
+            ${clubSponsor     ? `<span><span class="field-label">Faculty Sponsor:</span> ${clubSponsor}</span>` : ''}
+            ${clubLeader      ? `<span><span class="field-label">Student Leader:</span> ${clubLeader}</span>` : ''}
+            ${schoolEmail     ? `<span><span class="field-label">Contact Email:</span> ${schoolEmail}</span>` : ''}
+            ${roomNumber      ? `<span><span class="field-label">Meeting Location:</span> ${roomNumber}</span>` : ''}
+            ${meetingSchedule ? `<span><span class="field-label">Meeting Schedule:</span> ${meetingSchedule}</span>` : ''}
+        </div>` : ''}
+        <div class="${footerClass}">
+            <button class="club-join-btn fancy-button" data-club-id="${clubId}" data-join-code="${joinCode}" ${isPending || isMember ? "disabled" : ""}>
+                ${isMember ? "JOINED" : isPending ? "SENT" : "REQUEST TO JOIN"}
+            </button>
+        </div>
     `;
     document.getElementById("clubsGrid").appendChild(card);
 }
 
-
 document.getElementById("clubsGrid").addEventListener("click", async (e) => {
     e.preventDefault();
+
+    // More Info drawer toggle
+    const moreBtn = e.target.closest(".club-more-btn");
+    if (moreBtn) {
+        const drawer = moreBtn.nextElementSibling;
+        const icon = moreBtn.querySelector('i');
+        const label = moreBtn.querySelector('.more-btn-text');
+        const isOpen = drawer.classList.toggle('open');
+        icon.style.transform = isOpen ? 'rotate(180deg)' : '';
+        label.textContent = isOpen ? ' Less Info' : ' More Info';
+        return;
+    }
+
+    // Join button
     if (!e.target.classList.contains("club-join-btn")) return;
 
     if (!currentUser) {

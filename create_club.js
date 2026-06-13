@@ -128,6 +128,10 @@ const clubNameInput = document.getElementById("club-name-select");
 const clubDescriptionInput = document.getElementById("description-input");
 const clubActivityInput = document.getElementById("main-activity-select");
 const clubSponsorInput = document.getElementById("sponsor-select");
+const clubLeaderInput = document.getElementById("club-leader-select");
+const schoolEmailInput = document.getElementById("school-email-select");
+const roomNumberInput = document.getElementById("room-number-select");
+const meetingScheduleInput = document.getElementById("meeting-schedule-select");
 const stateInput = document.getElementById("state-select");
 const countyInput = document.getElementById("county-select");
 const countyDropdownList = document.getElementById("county-dropdown-list");
@@ -171,6 +175,10 @@ submitButton.addEventListener("click", async function(event){
     const clubActivity = clubActivityInput.value.trim();
     const state = stateInput.value.trim();
     const clubSponsor = clubSponsorInput.value.trim();
+    const clubLeader = clubLeaderInput.value.trim();
+    const schoolEmail = schoolEmailInput.value.trim();
+    const roomNumber = roomNumberInput.value.trim();
+    const meetingSchedule = meetingScheduleInput.value.trim();
     const countyName = countyInput.value.trim();
     const countyFips = selectedCountyFips;
     const clubCategory = categoryInput.value;
@@ -215,8 +223,6 @@ submitButton.addEventListener("click", async function(event){
         if (schoolNameResult.normalized !== rawSchoolName) {
             const confirmed = await showAppConfirm(`We recommend changing "${rawSchoolName}" to "${schoolNameResult.normalized}". Would you like to use the recommended version?`);
             if (!confirmed) {
-                // submitButton.disabled = false;
-                // return;
                 schoolName = rawSchoolName;
             } else {
                 schoolName = schoolNameResult.normalized;
@@ -262,6 +268,10 @@ submitButton.addEventListener("click", async function(event){
             category: clubCategory,
             categoryLower: clubCategory.toLowerCase(),
             clubSponsor: clubSponsor,
+            clubLeader: clubLeader,
+            schoolEmail: schoolEmail,
+            roomNumber: roomNumber,
+            meetingSchedule: meetingSchedule,
             countyName: countyName,
             countyFips: countyFips || null
         });
@@ -290,6 +300,10 @@ submitButton.addEventListener("click", async function(event){
         clubActivityInput.value = '';
         stateInput.value = '';
         clubSponsorInput.value = '';
+        clubLeaderInput.value = '';
+        schoolEmailInput.value = '';
+        roomNumberInput.value = '';
+        meetingScheduleInput.value = '';
 
     } catch (error) {
         console.error("Error creating club or updating user profile:", error);
@@ -446,17 +460,6 @@ function handleCountyVisibility(stateName) {
     countyInput.closest('.club-form-section').style.display = '';
   }
 }
-
-
-// function normalizeState(stateInput) {
-//     const validStates = states;
-    
-//     const trimmed = stateInput.trim();
-    
-//     const matchedState = validStates.find(state => state.toLowerCase() === trimmed.toLowerCase());
-    
-//     return matchedState || null;
-// }
 
 function normalizeState(input) {
   const trimmed = input.trim();

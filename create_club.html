@@ -37,10 +37,16 @@
       <span class="chat-title">CREATE</span>
     </div>
     <form id="createClubForm">
-      <!-- <h1 class="pageTitle">CREATE A CLUB</h1> -->
 
       <div class="club-form-card">
         <h2>CREATE CLUB</h2>
+
+        <div class="club-form-section">
+          <label for="club-name-select">Club Name</label>
+          <input class="fancy-input" id="club-name-select"
+                placeholder="Club name" required
+                name="club-name-select" autocomplete="off">
+        </div>
 
         <div class="club-form-section">
           <label for="school-name-select">School Name</label>
@@ -59,7 +65,7 @@
           </div>
         </div>
 
-        <div class="club-form-section">
+        <div class="club-form-section" style="display:none">
           <label for="county-select">County</label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="county-select"
@@ -67,13 +73,6 @@
                   name="county-select" value="" autocomplete="off">
             <div class="state-dropdown-list" id="county-dropdown-list"></div>
           </div>
-        </div>
-
-        <div class="club-form-section">
-          <label for="club-name-select">Club Name</label>
-          <input class="fancy-input" id="club-name-select"
-                placeholder="Club name" required
-                name="club-name-select" autocomplete="off">
         </div>
 
         <div class="club-form-section">
@@ -94,8 +93,36 @@
         <div class="club-form-section">
           <label for="sponsor-select">Club Sponsor</label>
           <input class="fancy-input" id="sponsor-select"
-                placeholder="Faculty or staff name" 
+                placeholder="Faculty or staff name (optional)" 
                 name="sponsor-select" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="club-leader-select">Club Leader</label>
+          <input class="fancy-input" id="club-leader-select"
+                placeholder="Club leader name (optional)"
+                name="club-leader-select" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="school-email-select">Student Contact Email</label>
+          <input class="fancy-input" id="school-email-select"
+                placeholder="School email address (optional)"
+                name="school-email-select" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="room-number-select">Meeting Location</label>
+          <input class="fancy-input" id="room-number-select"
+                placeholder="Meeting room or location (optional)"
+                name="room-number-select" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="meeting-schedule-select">Typical Meeting Days/Schedule</label>
+          <input class="fancy-input" id="meeting-schedule-select"
+                placeholder="e.g. Every Tuesday during lunch (optional)"
+                name="meeting-schedule-select" autocomplete="off">
         </div>
 
         <div class="club-form-section">
@@ -137,7 +164,7 @@
           
     <script src="theme.js?v=10"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="create_club.js?v=6"></script>
+    <script type="module" src="create_club.js?v=10"></script>
 
     
     <script>

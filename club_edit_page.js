@@ -107,6 +107,10 @@ const deleteButton = document.getElementById("delete-club-button");
 const backButton = document.getElementById("back-button-edit");
 const stateInput = document.getElementById("state-edit");
 const clubSponsorInput = document.getElementById("sponsor-edit");
+const clubLeaderInput = document.getElementById("club-leader-edit");
+const schoolEmailInput = document.getElementById("school-email-edit");
+const roomNumberInput = document.getElementById("room-number-edit");
+const meetingScheduleInput = document.getElementById("meeting-schedule-edit");
 const countyInput = document.getElementById("county-edit");
 const countyDropdownList = document.getElementById("county-dropdown-list-edit");
 
@@ -122,6 +126,10 @@ clubActivityInput.disabled = true;
 clubDescriptionInput.disabled = true;
 categoryInput.disabled = true;
 clubSponsorInput.disabled = true;
+clubLeaderInput.disabled = true;
+schoolEmailInput.disabled = true;
+roomNumberInput.disabled = true;
+meetingScheduleInput.disabled = true;
 countyInput.disabled = true;
 
 
@@ -164,6 +172,10 @@ async function loadClubData(clubId, managerUid) {
         clubDescriptionInput.value = clubData.description || '';
         stateInput.value = clubData.state || '';
         clubSponsorInput.value = clubData.clubSponsor || '';
+        clubLeaderInput.value = clubData.clubLeader || '';
+        schoolEmailInput.value = clubData.schoolEmail || '';
+        roomNumberInput.value = clubData.roomNumber || '';
+        meetingScheduleInput.value = clubData.meetingSchedule || '';
         handleCountyVisibility(clubData.state || '');
         countyInput.value = clubData.countyName || '';
         selectedCountyFips = clubData.countyFips || null;
@@ -180,6 +192,10 @@ async function loadClubData(clubId, managerUid) {
         stateInput.disabled = false;
         categoryInput.disabled = false;
         clubSponsorInput.disabled = false;
+        clubLeaderInput.disabled = false;
+        schoolEmailInput.disabled = false;
+        roomNumberInput.disabled = false;
+        meetingScheduleInput.disabled = false;
         if (!NO_COUNTY_STATES[clubData.state]) {
             countyInput.disabled = false;
         }
@@ -194,6 +210,10 @@ async function loadClubData(clubId, managerUid) {
             visibility: clubData.visibility || 'public',
             category: clubData.category || '',
             clubSponsor: clubData.clubSponsor || '',
+            clubLeader: clubData.clubLeader || '',
+            schoolEmail: clubData.schoolEmail || '',
+            roomNumber: clubData.roomNumber || '',
+            meetingSchedule: clubData.meetingSchedule || '',
             countyName: clubData.countyName || '',
             countyFips: clubData.countyFips || null,
         };
@@ -272,6 +292,10 @@ submitButton.addEventListener("click", async function(event){
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
     const clubSponsor = clubSponsorInput.value.trim();
+    const clubLeader = clubLeaderInput.value.trim();
+    const schoolEmail = schoolEmailInput.value.trim();
+    const roomNumber = roomNumberInput.value.trim();
+    const meetingSchedule = meetingScheduleInput.value.trim();
     const countyName = countyInput.value.trim();
     const countyFips = selectedCountyFips;
     const clubCategory = categoryInput.value;
@@ -287,6 +311,10 @@ submitButton.addEventListener("click", async function(event){
         clubVisibility === originalClubData.visibility &&
         clubCategory === originalClubData.category && 
         clubSponsor === originalClubData.clubSponsor &&
+        clubLeader === originalClubData.clubLeader &&
+        schoolEmail === originalClubData.schoolEmail &&
+        roomNumber === originalClubData.roomNumber &&
+        meetingSchedule === originalClubData.meetingSchedule &&
         countyInput.value.trim() === originalClubData.countyName &&
         (selectedCountyFips ?? null) === (originalClubData.countyFips ?? null)
     ) {
@@ -361,6 +389,10 @@ submitButton.addEventListener("click", async function(event){
             category: clubCategory,
             categoryLower: clubCategory.toLowerCase(),
             clubSponsor: clubSponsor,
+            clubLeader: clubLeader,
+            schoolEmail: schoolEmail,
+            roomNumber: roomNumber,
+            meetingSchedule: meetingSchedule,
             countyName: countyName,
             countyFips: countyFips || null
         });

@@ -69,14 +69,6 @@
 }
 
 
-
-
-
-
-
-
-
-
 .clubs-grid {
     display: flex;
     flex-direction: column;
@@ -140,38 +132,43 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 1.15em;
+    font-size: 18px;
     color: #555;
-    padding: 6px 0 10px 0;
+    padding: 6px 0 0 0;
 }
 
 .club-card-body span {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: baseline;
+    gap: 6px;
     color: #555;
 }
 
-.club-card-body span i {
-    width: 1.2em;
-    text-align: center;
-    flex-shrink: 0;
-    color: #555;
-}
 
 .club-description {
     margin-top: 6px;
-    font-size: 0.95em;
+    font-size: 18px;
     color: #555;
     line-height: 1.4;
+    margin-bottom: 0;
 }
 
 .club-card-footer {
     display: flex;
     justify-content: center;
     padding: 8px 0 2px 0;
+    margin: 10px -12px 0 -12px;
+    width: calc(100% + 24px);
     border-top: 2px dotted black;
-    margin-top: 4px;
+}
+
+
+.club-join-wrapper {
+    background: #eaeaea;
+    margin: 0 -12px -12px -12px;
+    padding: 10px 14px 12px 14px;
+    display: flex;
+    justify-content: center;
 }
 
 .club-join-btn {
@@ -196,8 +193,6 @@
     margin-top: 30px;
 }
 
-
-
 @keyframes textFadeIn {
   from { color: transparent; }
   to   { color: inherit; }
@@ -205,4 +200,81 @@
 
 .text-fade {
   animation: textFadeIn 0.5s ease forwards;
+}
+
+.club-more-btn {
+    /* background: #e0e0e0; */
+    background: transparent;
+    border: none;
+    width: calc(100% + 24px);
+    margin: 10px -12px 0 -12px;
+    padding: 8px;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--primary-font-family);
+    /* border-top: 1px solid rgba(0, 0, 0, 0.5); */
+    border-bottom: 2px dotted rgba(0, 0, 0);
+}
+
+.club-more-btn i {
+    transition: transform 0.2s;
+}
+
+.more-btn-text {
+    font-family: var(--primary-font-family);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #555;
+}
+
+
+.club-more-drawer {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    background: #eaeaea;
+    padding: 10px 12px 10px 12px;
+    margin: 0 -12px;
+}
+
+.club-more-drawer.open {
+    display: flex;
+}
+
+.club-more-drawer span {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: #555;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+.club-more-drawer > span::before {
+    content: '•';
+    flex-shrink: 0;
+    color: #555;
+}
+
+.field-label {
+    font-weight: 600;
+    color: #444;
+    flex-shrink: 0;
+}
+
+.club-card-body span i {
+    width: 1.2em;
+    text-align: center;
+    flex-shrink: 0;
+    color: #555;
 }

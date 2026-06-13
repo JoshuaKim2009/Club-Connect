@@ -47,6 +47,12 @@
         <h2>Edit Details</h2>
 
         <div class="club-form-section">
+          <label for="club-name-edit">Club Name</label>
+          <input class="fancy-input" id="club-name-edit"
+                placeholder="Club name" required autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
           <label for="school-name-edit">School Name</label>
           <input class="fancy-input" id="school-name-edit"
                 placeholder="School name" required value="" autocomplete="off">
@@ -71,12 +77,6 @@
         </div>
 
         <div class="club-form-section">
-          <label for="club-name-edit">Club Name</label>
-          <input class="fancy-input" id="club-name-edit"
-                placeholder="Club name" required autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
           <label for="category-edit">Category</label>
           <div class="category-dropdown-wrapper">
             <input class="fancy-input" id="category-edit" placeholder="Select a category" autocomplete="off" readonly>
@@ -93,7 +93,31 @@
         <div class="club-form-section">
           <label for="sponsor-edit">Club Sponsor</label>
           <input class="fancy-input" id="sponsor-edit"
-                placeholder="Faculty or staff name" autocomplete="off">
+                placeholder="Faculty or staff name (optional)" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="club-leader-edit">Club Leader</label>
+          <input class="fancy-input" id="club-leader-edit"
+                placeholder="Club leader name (optional)" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="school-email-edit">Student Contact Email</label>
+          <input class="fancy-input" id="school-email-edit"
+                placeholder="School email address (optional)" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="room-number-edit">Meeting Location</label>
+          <input class="fancy-input" id="room-number-edit"
+                placeholder="Meeting room or location (optional)" autocomplete="off">
+        </div>
+
+        <div class="club-form-section">
+          <label for="meeting-schedule-edit">Typical Meeting Days/Schedule</label>
+          <input class="fancy-input" id="meeting-schedule-edit"
+                placeholder="e.g. Every Tuesday during lunch (optional)" autocomplete="off">
         </div>
 
         <div class="club-form-section">
@@ -103,7 +127,6 @@
                     required maxlength="500"></textarea>
         </div>
 
-        <!-- ── Visibility ───────────────────────────────── -->
         <div class="club-form-section">
           <label>Club Visibility</label>
           <div class="club-vis-strip-group" id="visibility-strip-group-edit">
@@ -126,7 +149,6 @@
 
           </div>
         </div>
-        <!-- ─────────────────────────────────────────────── -->
 
         <div class="club-form-actions">
           <button id="update-club-button" type="submit" class="fancy-button">UPDATE</button>
@@ -141,7 +163,7 @@
     <script src="theme.js?v=10"></script>
     <script type="module" src="loading_instant.js"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_edit_page.js?v=9"></script>
+    <script type="module" src="club_edit_page.js?v=10"></script>
 
     
 
