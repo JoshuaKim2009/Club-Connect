@@ -235,8 +235,8 @@ function createClubCard(clubId, clubName, schoolName, state, countyName, activit
         </button>
         <div class="club-more-drawer">
             ${clubSponsor     ? `<span><span class="field-label">Faculty Sponsor:</span> ${clubSponsor}</span>` : ''}
-            ${clubLeader      ? `<span><span class="field-label">Student Leader:</span> ${clubLeader}</span>` : ''}
-            ${schoolEmail     ? `<span><span class="field-label">Contact Email:</span> ${schoolEmail}</span>` : ''}
+            ${clubLeader      ? `<span><span class="field-label">Club Leader:</span> ${clubLeader}</span>` : ''}
+            ${schoolEmail ? `<span><span class="field-label">Contact Email:</span> <a href="mailto:${schoolEmail}" style="color:inherit">${schoolEmail}</a></span>` : ''}
             ${roomNumber      ? `<span><span class="field-label">Meeting Location:</span> ${roomNumber}</span>` : ''}
             ${meetingSchedule ? `<span><span class="field-label">Meeting Schedule:</span> ${meetingSchedule}</span>` : ''}
         </div>` : ''}
