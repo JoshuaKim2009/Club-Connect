@@ -156,8 +156,8 @@
 .club-card-footer {
     display: flex;
     justify-content: center;
-    padding: 11px 0 2px 0;
-    margin: 10px -12px 0 -12px;
+    padding: 10px 0 12px 0;
+    margin: 10px -12px -12px -12px;
     width: calc(100% + 24px);
     border-top: 2px dotted black;
 }
@@ -222,6 +222,7 @@
     font-family: var(--primary-font-family);
     /* border-top: 1px solid rgba(0, 0, 0, 0.5); */
     border-bottom: 2px dotted rgba(0, 0, 0);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .club-more-btn i {
