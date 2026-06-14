@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=47" rel="stylesheet" />
+    <link href="styles.css?v=48" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Clubs</title>
@@ -19,7 +19,6 @@
         padding-bottom: 100px;
       }
 
-      /* ── ACTION BAR ─────────────────────────────────────── */
       .yc-action-bar {
         display: flex;
         gap: 10px;
@@ -88,7 +87,7 @@
       .action-create  { background: linear-gradient(#ffbd80 0%, #ff8349 110%); color: #000000; }
       .action-join    { background: linear-gradient(#75c571 0%, #508b50 140%);  color: #000000; }
       .action-discover{ background: linear-gradient(#b1a5ee 0%, #8074ce 115%);  color: #000000; }
-      /* ── SECTION ────────────────────────────────────────── */
+
       .yc-section {
         width: 90%;
         max-width: 580px;
@@ -112,7 +111,6 @@
         gap: 10px;
       }
 
-      /* ── CARD ANIMATION ──────────────────────────────────────
          KEY FIX: uses the separate CSS `translate` property
          (not `transform`), so the forwards fill mode that keeps
          opacity:1 / translate:0 never fights with :hover or
@@ -124,7 +122,6 @@
         to   { opacity: 1; translate: 0 0px;  }
       }
 
-      /* ── CARD ───────────────────────────────────────────── */
       .club-btn {
         display: block;
         width: 100%;
@@ -192,7 +189,7 @@
         gap: 8px;
       }
 
-      /* Role pill — background color comes from --accent var */
+      /* Role pill - background color comes from --accent var */
       .club-role-pill {
         display: inline-flex;
         align-items: center;
@@ -224,14 +221,12 @@
 
       .cc-card-arrow { display: none; }
 
-      /* ── SPINNER ─────────────────────────────────────── */
       #clubs-spinner {
         display: flex;
         justify-content: center;
         margin-top: 60px;
       }
 
-      /* ── EMPTY STATE ─────────────────────────────────── */
       .no-clubs-card {
         width: 100%;
         box-sizing: border-box;
