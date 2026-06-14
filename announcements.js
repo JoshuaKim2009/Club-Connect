@@ -162,13 +162,21 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
         isEditingAnnouncement = false;
     });
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
-        console.log('CANCEL button clicked for editing card:', cardDiv.dataset.editId);
-        cardDiv.remove();
         isEditingAnnouncement = false;
         if (!isNewAnnouncement) {
-            await fetchAndDisplayAnnouncements(); 
-        } else if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
-            noAnnouncementsMessage.style.display = 'block';
+            const cached = allAnnouncements.find(a => a.id === announcementIdToUpdate);
+            if (cached) {
+                const restoredCard = createAnnouncementDisplayCard(cached, cached.id);
+                cardDiv.replaceWith(restoredCard); // replaceWith handles removal itself
+            } else {
+                cardDiv.remove();
+                await fetchAndDisplayAnnouncements(true);
+            }
+        } else {
+            cardDiv.remove();
+            if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
+                noAnnouncementsMessage.style.display = 'block';
+            }
         }
     });
 
@@ -247,7 +255,7 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
 
 let allAnnouncements = [];
 
-async function fetchAndDisplayAnnouncements() {
+async function fetchAndDisplayAnnouncements(skipAnimation = false) {
   if (!clubId) {
     if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
     return;
@@ -281,7 +289,9 @@ async function fetchAndDisplayAnnouncements() {
       allAnnouncements.push({ id: doc.id, ...doc.data() });
     });
 
-    renderPage(currentPage);
+    updateLastSeenAnnouncements();
+
+    renderPage(currentPage, skipAnimation);
 
   } catch (error) {
     console.error("Error fetching announcements:", error);
@@ -289,7 +299,7 @@ async function fetchAndDisplayAnnouncements() {
   }
 }
 
-function renderPage(page) {
+function renderPage(page, skipAnimation = false) {
   announcementsContainer.innerHTML = '';
 
   const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
@@ -302,9 +312,8 @@ function renderPage(page) {
   pageItems.forEach((announcement, index) => {
     const card = createAnnouncementDisplayCard(announcement, announcement.id);
     announcementsContainer.appendChild(card);
-    animateCardIn(card, index);
+    if (!skipAnimation) animateCardIn(card, index);
   });
-  updateLastSeenAnnouncements();
 
   if (totalPages > 1) {
     const paginationControls = document.getElementById('pagination-controls');
@@ -390,33 +399,18 @@ async function editAnnouncement(announcementId) {
         return;
     }
 
-    try {
-        const announcementDocRef = doc(db, "clubs", clubId, "announcements", announcementId);
-        const announcementSnap = await getDoc(announcementDocRef);
+    const announcementData = allAnnouncements.find(a => a.id === announcementId);
+    if (!announcementData) { await showAppAlert("Error: Announcement not found."); return; }
 
-        if (!announcementSnap.exists()) {
-            await showAppAlert("Error: Announcement not found.");
-            return;
-        }
-
-        const announcementData = announcementSnap.data();
-
-        const targetDisplayCard = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
-        if (!targetDisplayCard) {
-            console.error("Could not find the target display card in the DOM for editing.");
-            await showAppAlert("Could not find the announcement card to edit. Please refresh.");
-            return;
-        }
-
-        const editingCard = createEditingCardElement(announcementData, false, announcementId);
-        targetDisplayCard.replaceWith(editingCard);
-
-    } catch (error) {
-        console.error("Error initiating announcement edit:", error);
-        await showAppAlert("Failed to start announcement edit: " + error.message);
+    const targetDisplayCard = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
+    if (!targetDisplayCard) {
+        await showAppAlert("Could not find the announcement card to edit. Please refresh.");
+        return;
     }
-}
 
+    const editingCard = createEditingCardElement(announcementData, false, announcementId);
+    targetDisplayCard.replaceWith(editingCard);
+}
 
 async function deleteAnnouncement(announcementId, announcementTitle) {
     if (!currentUser || !clubId) {

@@ -30,7 +30,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(#ffffff, #e2e2e2);
+    background: linear-gradient(#ffffff, #f3f3f3);
     border: 2px solid black;
     border-radius: 10px;
     padding: 25px;

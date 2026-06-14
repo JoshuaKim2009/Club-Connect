@@ -235,8 +235,8 @@
 }
 
 .edit-card-section {
-    background: #ffffff;
-    border: 2px solid #cccccc;
+    background: rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(0, 0, 0, 0.25);
     border-radius: 8px;
     padding: 12px;
     display: flex;
@@ -399,8 +399,8 @@
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
-    background: #ffffff;
-    border: 2px solid #cccccc;
+    background: rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(0, 0, 0, 0.25);
     border-radius: 8px;
     padding: 12px;
 }
