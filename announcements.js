@@ -31,6 +31,7 @@ const announcementsContainer = document.getElementById('announcementsContainer')
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); 
 const addAnnouncementButton = document.getElementById('add-announcement-button'); 
 
+document.body.classList.add('no-scroll');
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -83,37 +84,43 @@ onAuthStateChanged(auth, async (user) => {
                 if (clubSnap.exists()) {
 
                     currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
-                    console.log(`User ${currentUser.uid} role for club ${clubId}: ${currentUserRole}`);
 
-                    await fetchAndDisplayAnnouncements();
-                    
+                    await fetchAnnouncementData();
+
                     if (addAnnouncementButton) {
                         if (currentUserRole === 'manager' || currentUserRole === 'admin') {
-                            addAnnouncementButton.style.display = 'block'; 
-                            addAnnouncementButton.removeEventListener('click', addNewAnnouncementEditingCard); 
+                            addAnnouncementButton.style.display = 'block';
+                            addAnnouncementButton.removeEventListener('click', addNewAnnouncementEditingCard);
                             addAnnouncementButton.addEventListener('click', addNewAnnouncementEditingCard);
                         } else {
-                            addAnnouncementButton.style.display = 'none'; 
+                            addAnnouncementButton.style.display = 'none';
                         }
                     }
 
+                    hideLoadingScreen();
+                    requestAnimationFrame(() => requestAnimationFrame(() => renderAnnouncementPage()));
+
                 } else {
+                    hideLoadingScreen();
                     // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Club Announcements (Club Not Found)";
                     if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
                 }
             } catch (error) {
+                hideLoadingScreen();
                 console.error("Error fetching club details or user role:", error);
                 // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error Loading Announcements";
                 if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
                 if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
             }
         } else {
+            hideLoadingScreen();
             // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error: No Club ID Provided";
             if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its announcements.</p>`;
             if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         }
     } else {
+        hideLoadingScreen();
         console.log("No user authenticated on announcements page. Redirecting to login.");
         // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Not Authenticated";
         if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club announcements. Redirecting...</p>`;
@@ -254,6 +261,60 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
 
 
 let allAnnouncements = [];
+
+async function fetchAnnouncementData() {
+    if (!clubId) return;
+    try {
+        const querySnapshot = await getDocs(query(collection(db, "clubs", clubId, "announcements"), orderBy("createdAt", "desc")));
+        allAnnouncements = [];
+        querySnapshot.forEach((doc) => { allAnnouncements.push({ id: doc.id, ...doc.data() }); });
+        updateLastSeenAnnouncements();
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">Error loading announcements.</p>';
+    }
+}
+
+function renderAnnouncementPage() {
+    announcementsContainer.innerHTML = '';
+    currentPage = 1;
+    if (allAnnouncements.length === 0) {
+        if (currentUserRole === 'member') {
+            announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
+        } else {
+            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+        }
+        hidePagination();
+        return;
+    }
+    if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+    renderPage(currentPage, false);
+}
+
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
+            if (item === announcementsContainer || item === addAnnouncementButton) {
+                item.classList.add('revealed-child');
+            } else {
+                setTimeout(() => item.classList.add('revealed-child'), i * 200);
+            }
+        });
+    }
+}
 
 async function fetchAndDisplayAnnouncements(skipAnimation = false) {
   if (!clubId) {

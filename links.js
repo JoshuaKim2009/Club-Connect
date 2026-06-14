@@ -43,7 +43,7 @@ const addCategoryButton     = document.getElementById('add-category-button');
 const categoryCreationModal = document.getElementById('category-creation-modal');
 const categoryOverlay       = document.getElementById('popup-overlay');
 
-
+document.body.classList.add('no-scroll');
 
 function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
@@ -91,9 +91,16 @@ onAuthStateChanged(auth, async (user) => {
                 addCategoryButton.style.display = 'block';
                 addCategoryButton.addEventListener('click', handleAddCategory);
             }
-            await fetchAndDisplayCategories();
+            await fetchCategoryData();
+            hideLoadingScreen();
+            requestAnimationFrame(() => requestAnimationFrame(() => renderAllCategories()));
+        } else {
+            hideLoadingScreen();
         }
-    } else if (!user) {
+    } else if (user && !clubId) {
+        hideLoadingScreen();
+    } else {
+        hideLoadingScreen();
         setTimeout(() => { window.location.href = 'login.html'; }, 2000);
     }
 });
@@ -134,7 +141,7 @@ document.getElementById('post-category-button').addEventListener('click', async 
 
 
 
-async function fetchAndDisplayCategories() {
+async function fetchCategoryData() {
     const snap = await getDocs(
         query(collection(db, "clubs", clubId, "resourceSections"), orderBy("createdAt", "asc"))
     );
@@ -144,25 +151,54 @@ async function fetchAndDisplayCategories() {
         categoriesCache.push({ id: d.id, title: data.title, links: data.links || [], order: data.order ?? i });
     });
     categoriesCache.sort((a, b) => a.order - b.order);
+}
 
+function renderAllCategories() {
     resourcesContainer.innerHTML = '';
-
     if (categoriesCache.length === 0) {
         noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
         return;
     }
     noResourcesMessage.style.display = 'none';
-
     categoriesCache.forEach((cat, i) => {
         const el = createCategoryElement(cat);
         el.dataset.id = cat.id;
         resourcesContainer.appendChild(el);
         animateCardIn(el, i);
     });
-
     if (isAdmin()) setupReorder();
 }
 
+async function fetchAndDisplayCategories() {
+    await fetchCategoryData();
+    renderAllCategories();
+}
+
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
+            const reorderButton = document.getElementById('reorder-button');
+
+            if (item === resourcesContainer || item === addCategoryButton || item === reorderButton) {
+                item.classList.add('revealed-child');
+            } else {
+                setTimeout(() => item.classList.add('revealed-child'), i * 200);
+            }
+        });
+    }
+}
 function createCategoryElement(category) {
     const div = document.createElement('div');
     div.className = 'category';

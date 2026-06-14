@@ -278,10 +278,15 @@ newDmOverlay.addEventListener('click', closeNewDmModal);
 
 function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
-    card.style.translate = '0 16px';
-    card.style.transition = 'opacity 0.4s ease-out, translate 0.4s ease-out';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
     setTimeout(() => {
         card.style.opacity = '1';
-        card.style.translate = '0 0px';
+        card.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            card.style.opacity = '';
+            card.style.transform = '';
+            card.style.transition = '';
+        }, 400); 
     }, index * 80);
 }

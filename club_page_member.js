@@ -30,6 +30,8 @@ function getUrlParameter(name) {
 }
 
 const clubId = getUrlParameter('id');
+document.body.classList.add('no-scroll');
+let loadingScreenHidden = false;
 
 const clubPageTitle = document.getElementById('clubPageTitle');
 const clubDetailsDiv = document.getElementById('clubDetails');
@@ -41,6 +43,37 @@ var myUid = "";
 var myCurrentRoleInClub = "";
 let lastKnownCurrentUserRole = null;
 
+function hideLoadingScreen(delay = 0) {
+    if (loadingScreenHidden) return;
+    loadingScreenHidden = true;
+
+    const doHide = () => {
+        const overlay = document.getElementById('loading-overlay');
+        const content = document.getElementById('content');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            document.body.classList.remove('no-scroll');
+            overlay.addEventListener('transitionend', () => {
+                if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+            }, { once: true });
+        } else {
+            document.body.classList.remove('no-scroll');
+        }
+        if (content) {
+            content.style.display = 'block';
+            Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
+                setTimeout(() => item.classList.add('revealed-child'), i * 150);
+            });
+        }
+    };
+
+    if (delay > 0) {
+        setTimeout(doHide, delay);
+    } else {
+        doHide();
+    }
+}
+
 onAuthStateChanged(auth, async (user) => {
     currentUser = user; 
     if (user) {
@@ -51,23 +84,21 @@ onAuthStateChanged(auth, async (user) => {
         if (clubId) {
             clubPageTitle.textContent = ""; 
             const memberData = await fetchMemberData(clubId, currentUser.uid);
-            
-            const unreadCount = await getUnreadAnnouncementCount(clubId, myUid, memberData);
+
+            const [unreadCount, unreadMessagesCount, unreadPollsCount] = await Promise.all([
+                getUnreadAnnouncementCount(clubId, myUid, memberData),
+                getUnreadMessageCount(clubId, myUid, memberData),
+                getUnreadPollCount(clubId, myUid, memberData)
+            ]);
+
             updateUnreadBadge(unreadCount);
-            setupAnnouncementListeners(clubId, myUid);
-
-            setupClubMemberPageListeners(clubId, myUid, myName);
-
-            const unreadMessagesCount = await getUnreadMessageCount(clubId, myUid, memberData);
             updateUnreadMessagesBadge(unreadMessagesCount);
-
-            setupMessageListeners(clubId, myUid);
-
-            const unreadPollsCount = await getUnreadPollCount(clubId, myUid, memberData);
             updateUnreadPollsBadge(unreadPollsCount);
 
+            setupClubMemberPageListeners(clubId, myUid, myName);
+            setupAnnouncementListeners(clubId, myUid);
+            setupMessageListeners(clubId, myUid);
             setupPollListeners(clubId, myUid);
-
             setupDirectMessageListeners(currentUser.uid);
 
         } else {
@@ -92,29 +123,28 @@ function capitalizeFirstLetter(str) {
 async function fetchClubDetails(id, currentUserId, currentUserName, animateCardEntry = true) {
     try {
         const clubRef = doc(db, "clubs", id);
-        const clubSnap = await getDoc(clubRef, { source: 'server' });
+        const [clubSnap, currentUserRole] = await Promise.all([
+            getDoc(clubRef, { source: 'server' }),
+            getMemberRoleForClub(id, currentUserId)
+        ]);
+        myCurrentRoleInClub = currentUserRole;
 
-        myCurrentRoleInClub = await getMemberRoleForClub(id, currentUserId);
         if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== myCurrentRoleInClub) {
             await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(myCurrentRoleInClub)}!`);
         }
-        lastKnownCurrentUserRole = myCurrentRoleInClub; 
+        lastKnownCurrentUserRole = myCurrentRoleInClub;
 
         if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin') {
-            console.log(`User ${currentUserId} is a ${myCurrentRoleInClub} for club ${id}. Redirecting to manager page.`);
             window.location.href = `club_page_manager.html?id=${id}`;
             return; 
         }
 
         if (clubSnap.exists()) {
             const clubData = clubSnap.data();
-            console.log("Fetched club data:", clubData);
 
             if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin' || myCurrentRoleInClub === 'member') {
-                
                 const actualManagerUid = clubData.managerUid;
                 let actualManagerName = 'Unknown Manager';
-
                 if (actualManagerUid) {
                     const managerUserRef = doc(db, "users", actualManagerUid);
                     const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });
@@ -124,15 +154,11 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 }
 
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
-
-                // <p>Manager | ${actualManagerName}</p>
-                // <p>Your Role | ${capitalizeFirstLetter(myCurrentRoleInClub)}</p>
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">
                         <p>Join Code <button id="copyJoinCodeButton" class="copy-button">${clubData.joinCode || 'N/A'}</button></p>
                     </div>
                 `;
-
                 const copyButton = document.getElementById('copyJoinCodeButton');
                 if (copyButton && clubData.joinCode) {
                     copyButton.addEventListener('click', () => {
@@ -140,27 +166,23 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                     });
                 }
 
-                await fetchAndDisplayUpcomingEvent(id, animateCardEntry); 
+                await fetchAndDisplayUpcomingEvent(id, animateCardEntry);
 
             } else {
+                hideLoadingScreen();
                 clubPageTitle.textContent = "Access Denied";
                 clubDetailsDiv.innerHTML = "<p>You do not have permission to view this club.</p>";
-                console.warn(`User ${currentUserId} attempted to view club ${id} but is not a member.`);
-                setTimeout(() => {
-                    window.location.href = 'your_clubs.html';
-                }, 2000);
+                setTimeout(() => { window.location.href = 'your_clubs.html'; }, 2000);
             }
 
-
         } else {
+            hideLoadingScreen();
             clubPageTitle.textContent = "Club Not Found";
             clubDetailsDiv.innerHTML = "<p>Sorry, this club does not exist.</p>";
-            console.warn(`Club document with ID ${id} not found.`);
-            setTimeout(() => {
-                window.location.href = 'your_clubs.html';
-            }, 2000);
+            setTimeout(() => { window.location.href = 'your_clubs.html'; }, 2000);
         }
     } catch (error) {
+        hideLoadingScreen();
         console.error("Error fetching club details:", error);
         clubPageTitle.textContent = "Error Loading Club";
         clubDetailsDiv.innerHTML = "<p>An error occurred while loading club details. Please try again.</p>";
@@ -291,7 +313,8 @@ function createNoEventsCardHtml(message = "No upcoming events scheduled.") {
 
 async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = true) {
     const closestEventDisplay = document.getElementById('closestEventDisplay');
-    closestEventDisplay.style.display = '';
+    closestEventDisplay.innerHTML = '';
+    closestEventDisplay.style.display = 'none';
 
     const eventsRef = collection(db, "clubs", currentClubId, "events");
 
@@ -432,11 +455,15 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
                     </div>` : ''}
                 </div>
             `;
+
+            closestEventDisplay.style.display = '';
             closestEventDisplay.appendChild(finalCardElement);
+            hideLoadingScreen();
 
         } else {
             console.log("No events found at all.");
             closestEventDisplay.style.display = 'none';
+            hideLoadingScreen();
             return;
         }
 
@@ -456,6 +483,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
         console.error("Error fetching event:", error);
         closestEventDisplay.innerHTML = ''; 
         closestEventDisplay.style.display = 'none';
+        hideLoadingScreen();
         const errorCard = createNoEventsCardHtml("Error loading event. Please try again.");
         closestEventDisplay.appendChild(errorCard);
         if (animateCardEntry) { 

@@ -25,6 +25,8 @@ let role = null;
 let currentUser = null;
 
 const addPollButton = document.getElementById('add-poll-button');
+document.body.classList.add('no-scroll');
+
 const visMessages = {
     Before: "Everyone can see the results at any time, even before they vote. The creator of the poll and manager can always see results.",
     After:  "Results are hidden until a member votes, after which they can see them. The creator of the poll and manager can always see results.",
@@ -69,6 +71,31 @@ window.goToClubPage = function() {
     }
 }
 
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    const pollsContainer = document.getElementById('polls-container');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
+            if (item === pollsContainer || item === addPollButton) {
+                item.classList.add('revealed-child');
+            } else {
+                setTimeout(() => item.classList.add('revealed-child'), i * 200);
+            }
+        });
+    }
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -96,6 +123,7 @@ onAuthStateChanged(auth, async (user) => {
             window.location.href = 'your_clubs.html';
         }
     } else {
+        hideLoadingScreen();
         window.location.href = 'login.html';
     }
 });
@@ -279,10 +307,12 @@ function setupRealtimePollsListener() {
     const pollsRef = collection(db, "clubs", clubId, "polls");
     const q = query(pollsRef, orderBy("createdAt", "desc"));
 
-    let isInitialSnapshot = true; // <-- ADD THIS
+    let isInitialSnapshot = true;
 
     pollsListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
         const pollsContainer = document.getElementById('polls-container');
+        
+        if (isInitialSnapshot) hideLoadingScreen();
 
         querySnapshot.docChanges().forEach((change) => {
             const pollData = change.doc.data();

@@ -29,10 +29,13 @@ let eventDocsMap = new Map();
 const userCache = new Map();
 const memberListCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000;
+const userRsvpMap = new Map(); // keyed by `eventId_occurrenceDate`
 
 const eventsContainer = document.getElementById('eventsContainer');
 const noEventsMessage = document.getElementById('noEventsMessage');
 const addEventButton = document.getElementById('add-event-button');
+
+document.body.classList.add('no-scroll');
 
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -80,7 +83,10 @@ onAuthStateChanged(auth, async (user) => {
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
 
                     await fetchAndDisplayEvents();
+                    await prefetchUserRsvps();
                     setupRealtimeUserRsvps();
+                    hideLoadingScreen();
+                    requestAnimationFrame(() => requestAnimationFrame(() => renderAllEvents()));
 
                     if (addEventButton) {
                         if (role === 'manager' || role === 'admin') {
@@ -91,19 +97,23 @@ onAuthStateChanged(auth, async (user) => {
                         }
                     }
                 } else {
+                    hideLoadingScreen();
                     if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
                     if (addEventButton) addEventButton.style.display = 'none';
                 }
             } catch (error) {
+                hideLoadingScreen();
                 console.error("Error during auth init:", error);
                 if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
                 if (addEventButton) addEventButton.style.display = 'none';
             }
         } else {
+            hideLoadingScreen();
             if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
             if (addEventButton) addEventButton.style.display = 'none';
         }
     } else {
+        hideLoadingScreen();
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
         if (addEventButton) addEventButton.style.display = 'none';
         if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
@@ -127,7 +137,6 @@ async function fetchAndDisplayEvents() {
             eventDocsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
         });
 
-        renderAllEvents();
     } catch (error) {
         console.error("Error fetching events:", error);
         if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Error loading events. Please try again later.</p>`;
@@ -933,6 +942,12 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
         </div>
     `;
 
+    // Apply cached RSVP status immediately — no async fetch needed
+    const cachedStatus = userRsvpMap.get(`${originalEventId}_${occurrenceDateString}`) || null;
+    cardDiv.querySelectorAll('.rsvp-button').forEach(btn => {
+        btn.classList.toggle('selected-rsvp', btn.dataset.status === cachedStatus);
+    });
+
     // RSVP buttons
     cardDiv.querySelectorAll('.rsvp-button').forEach(button => {
         button.addEventListener('click', e => {
@@ -947,8 +962,6 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
             showRsvpDetailsModal(e.target.dataset.eventId, e.target.dataset.occurrenceDate);
         });
     }
-
-    fetchAndSetUserRsvp(originalEventId, occurrenceDateString);
 
     if (canEditDelete) {
         const editBtn = cardDiv.querySelector('.edit-btn');
@@ -976,6 +989,23 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
 
 //RSVP
 
+async function prefetchUserRsvps() {
+    if (!currentUser || !clubId) return;
+    try {
+        const snap = await getDocs(query(
+            collection(db, "clubs", clubId, "occurrenceRsvps"),
+            where("userId", "==", currentUser.uid)
+        ));
+        userRsvpMap.clear();
+        snap.forEach(d => {
+            const data = d.data();
+            userRsvpMap.set(`${data.eventId}_${data.occurrenceDate}`, data.status);
+        });
+    } catch (error) {
+        console.error("Error prefetching RSVPs:", error);
+    }
+}
+
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in to RSVP."); return; }
 
@@ -983,13 +1013,16 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
         const userUid = currentUser.uid;
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
         const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
-        const rsvpSnap = await getDoc(rsvpDocRef);
-        const currentStatus = rsvpSnap.exists() ? rsvpSnap.data().status : null;
+        const key = `${originalEventId}_${occurrenceDateString}`;
+        const currentStatus = userRsvpMap.get(key) || null;
 
-        let newStatus = null;
         if (currentStatus === status) {
+            userRsvpMap.delete(key);
+            updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
             await deleteDoc(rsvpDocRef);
         } else {
+            userRsvpMap.set(key, status);
+            updateRsvpButtonsUI(originalEventId, occurrenceDateString, status);
             await setDoc(rsvpDocRef, {
                 eventId: originalEventId,
                 occurrenceDate: occurrenceDateString,
@@ -999,9 +1032,7 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
                 clubId,
                 status,
             });
-            newStatus = status;
         }
-        updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
     } catch (error) {
         console.error("Error saving RSVP:", error);
         await showAppAlert("Failed to save your RSVP: " + error.message);
@@ -1016,17 +1047,6 @@ function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatu
     });
 }
 
-async function fetchAndSetUserRsvp(originalEventId, occurrenceDateString) {
-    if (!currentUser || !clubId) return;
-    try {
-        const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", `${originalEventId}_${occurrenceDateString}_${currentUser.uid}`);
-        const rsvpSnap = await getDoc(rsvpDocRef);
-        updateRsvpButtonsUI(originalEventId, occurrenceDateString, rsvpSnap.exists() ? rsvpSnap.data().status : null);
-    } catch (error) {
-        updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
-    }
-}
-
 function setupRealtimeUserRsvps() {
     if (!clubId || !currentUser) return;
     if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
@@ -1035,6 +1055,12 @@ function setupRealtimeUserRsvps() {
     rsvpListenerUnsubscribe = onSnapshot(q, snapshot => {
         snapshot.docChanges().forEach(change => {
             const data = change.doc.data();
+            const key = `${data.eventId}_${data.occurrenceDate}`;
+            if (change.type === 'removed') {
+                userRsvpMap.delete(key);
+            } else {
+                userRsvpMap.set(key, data.status);
+            }
             const newStatus = (change.type === "added" || change.type === "modified") ? data.status : null;
             updateRsvpButtonsUI(data.eventId, data.occurrenceDate, newStatus);
         });
@@ -1323,6 +1349,32 @@ function calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, 
         cur.setUTCDate(cur.getUTCDate() + 1);
     }
     return count;
+}
+
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
+            if (item === eventsContainer || item === addEventButton) {
+                item.classList.add('revealed-child');
+            } else {
+                setTimeout(() => item.classList.add('revealed-child'), i * 200);
+            }
+        });
+    }
 }
 
 function animateCardIn(card, index = 0) {

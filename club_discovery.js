@@ -43,6 +43,9 @@ const CLUB_CATEGORIES = [
 const categoryInput = document.getElementById("searchCategory");
 const categoryDropdownList = document.getElementById("category-dropdown-list");
 
+document.body.classList.add('no-scroll');
+
+
 function buildCategoryDropdown() {
   categoryDropdownList.innerHTML = '';
   const allDiv = document.createElement('div');
@@ -82,12 +85,32 @@ document.addEventListener('click', function(e) {
 
 let currentUser = null;
 
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        console.log("User authenticated:", currentUser.uid);
+        hideLoadingScreen();
     } else {
-        console.log("No user authenticated. Redirecting to login.");
+        hideLoadingScreen();
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 2000);

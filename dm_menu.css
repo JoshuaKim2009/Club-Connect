@@ -21,11 +21,10 @@
     align-items: center;
     gap: 14px;
     cursor: pointer;
-    transition: all 0.05s ease-in-out;
+    transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out; /* ← explicit like fancy-button */
     -webkit-user-select: none;
     user-select: none;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
+    will-change: transform; 
 }
 
 .dm-card:hover {

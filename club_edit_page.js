@@ -26,6 +26,8 @@ let currentUserEmail = null;
 let currentClubId = null;
 let originalClubData = null;
 
+document.body.classList.add('no-scroll');
+
 let COUNTIES = [];
 
 fetch('counties.json')
@@ -132,7 +134,25 @@ roomNumberInput.disabled = true;
 meetingScheduleInput.disabled = true;
 countyInput.disabled = true;
 
-
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
 
 async function loadClubData(clubId, managerUid) {
   if (!clubId) {
@@ -217,14 +237,18 @@ async function loadClubData(clubId, managerUid) {
             countyName: clubData.countyName || '',
             countyFips: clubData.countyFips || null,
         };
+
+        hideLoadingScreen();
     } else {
       await showAppAlert("Club not found.");
+      hideLoadingScreen();
       console.error("Club document not found:", clubId);
       window.location.href = `club_page_manager.html?id=${clubId}`;
     }
   } catch (error) {
     console.error("Error loading club data:", error);
     await showAppAlert("Failed to load club data: " + error.message);
+    hideLoadingScreen();
     window.location.href = `club_page_manager.html?id=${clubId}`;
   }
 }
@@ -244,6 +268,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
   } else {
+    hideLoadingScreen();
     currentUser = null;
     currentUserEmail = null;
     console.warn("No user is logged in. Redirecting to login.");
