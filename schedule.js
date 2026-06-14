@@ -329,11 +329,17 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
             <input type="text" id="edit-name-${currentEditId}" value="${initialData.eventName || ''}" required>
         </div>
 
-        <div class="weekly-event-checkbox" style="display: ${isNewEvent ? 'block' : 'none'};">
-            <label>
-                <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} ${isNewEvent ? '' : 'disabled'}>
-                Repeating Event
-            </label>
+        <div class="event-type-toggle" style="display: ${isNewEvent ? 'block' : 'none'};">
+            <label>Event Type:</label>
+            <div class="event-type-strip-group">
+                <div class="club-vis-strip event-type-strip ${!initialData.isWeekly ? 'club-vis-strip-selected' : ''}" id="toggle-once-${currentEditId}">
+                    <span class="club-vis-strip-title">One Time</span>
+                </div>
+                <div class="club-vis-strip event-type-strip ${initialData.isWeekly ? 'club-vis-strip-selected' : ''}" id="toggle-repeating-${currentEditId}">
+                    <span class="club-vis-strip-title">Repeating</span>
+                </div>
+            </div>
+            <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} style="display: none;">
         </div>
 
         <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
@@ -435,6 +441,25 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         isWeeklyCheckbox.addEventListener('change', toggleRecurringFields);
     }
     toggleRecurringFields();
+
+
+    const onceStrip = cardDiv.querySelector(`#toggle-once-${currentEditId}`);
+    const repeatingStrip = cardDiv.querySelector(`#toggle-repeating-${currentEditId}`);
+
+    if (onceStrip && repeatingStrip && isWeeklyCheckbox && !isEditingInstance) {
+        onceStrip.addEventListener('click', () => {
+            onceStrip.classList.add('club-vis-strip-selected');
+            repeatingStrip.classList.remove('club-vis-strip-selected');
+            isWeeklyCheckbox.checked = false;
+            isWeeklyCheckbox.dispatchEvent(new Event('change'));
+        });
+        repeatingStrip.addEventListener('click', () => {
+            repeatingStrip.classList.add('club-vis-strip-selected');
+            onceStrip.classList.remove('club-vis-strip-selected');
+            isWeeklyCheckbox.checked = true;
+            isWeeklyCheckbox.dispatchEvent(new Event('change'));
+        });
+    }
 
     cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
         await saveEvent(cardDiv, eventIdToUpdate);

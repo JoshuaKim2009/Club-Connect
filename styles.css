@@ -1445,7 +1445,7 @@ button {
 .editing-event-card {
   border: 2px solid #000000; /* 3→2 */
   box-shadow: 0px 2px 0px #000000; /* 6→2 */
-  background: linear-gradient(#ffffff, #e2e2e2);
+  background: linear-gradient(#ffffff, #f3f3f3);
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -1479,17 +1479,54 @@ input[type="checkbox"]:checked {
 }
 
 .weekly-event-checkbox {
-  margin-top: 10px;
-  margin-bottom: 15px;
+  margin: 0;
 }
 
-.weekly-event-checkbox label {
+.weekly-event-checkbox > label[for] {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--primary-font-family, sans-serif);
+  font-size: 0.9em;
+  color: black;
+  font-weight: normal;
+}
+
+.checkbox-row-label {
   display: flex;
   align-items: center;
-  font-weight: normal;
-  color: black;
+  gap: 10px;
+  width: calc(100% - 20px);
+  padding: 8px;
+  border: 2px solid black;
+  border-radius: 5px;
+  background-color: #ffffff;
   cursor: pointer;
   font-family: var(--primary-font-family, sans-serif);
+  font-size: 0.9em;
+  color: black;
+  user-select: none;
+}
+
+.event-type-toggle > label {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--primary-font-family, sans-serif);
+    font-size: 0.9em;
+    color: black;
+    font-weight: normal;
+}
+
+.event-type-strip-group {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.event-type-strip {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .days-of-week-selection {
