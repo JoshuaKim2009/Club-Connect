@@ -399,28 +399,50 @@ function createMessageElement(messageId, messageData, showSenderName) {
     }
 
     let pressTimer;
+    let touchStartY = 0;
 
-    messageContent.addEventListener('mousedown', (e) => {
+    messageWrapper.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
-            messageWrapper.classList.add('pressing');
+            messageContent.classList.add('pressing');
             pressTimer = setTimeout(() => {
-                messageWrapper.classList.remove('pressing');
+                messageContent.classList.remove('pressing');
                 showMessageOptions(messageId, messageData, messageWrapper);
             }, 250);
         }
     });
-    messageContent.addEventListener('mouseup', () => { messageWrapper.classList.remove('pressing'); clearTimeout(pressTimer); });
-    messageContent.addEventListener('mouseleave', () => { messageWrapper.classList.remove('pressing'); clearTimeout(pressTimer); });
-    messageContent.addEventListener('touchstart', (e) => {
-        messageWrapper.classList.add('pressing');
+
+    messageWrapper.addEventListener('mouseup', () => {
+        messageContent.classList.remove('pressing');
+        clearTimeout(pressTimer);
+    });
+
+    messageWrapper.addEventListener('mouseleave', () => {
+        messageContent.classList.remove('pressing');
+        clearTimeout(pressTimer);
+    });
+
+    messageWrapper.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        messageContent.classList.add('pressing');
         pressTimer = setTimeout(() => {
-            messageWrapper.classList.remove('pressing');
+            messageContent.classList.remove('pressing');
             navigator.vibrate && navigator.vibrate(50);
             showMessageOptions(messageId, messageData, messageWrapper);
         }, 250);
     });
-    messageContent.addEventListener('touchend', () => { messageWrapper.classList.remove('pressing'); clearTimeout(pressTimer); });
-    messageContent.addEventListener('touchmove', () => { messageWrapper.classList.remove('pressing'); clearTimeout(pressTimer); });
+
+    messageWrapper.addEventListener('touchend', () => {
+        messageContent.classList.remove('pressing');
+        clearTimeout(pressTimer);
+    });
+
+    messageWrapper.addEventListener('touchmove', (e) => {
+        const dy = Math.abs(e.touches[0].clientY - touchStartY);
+        if (dy > 10) {
+            messageContent.classList.remove('pressing');
+            clearTimeout(pressTimer);
+        }
+    });
 
     renderReactions(messageWrapper, messageData.reactions || []);
 
@@ -941,6 +963,10 @@ function renderReactions(messageWrapper, reactions) {
     }
 
     messageWrapper.appendChild(row);
+    const distFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+    if (distFromBottom < 150) {
+        scrollToBottom();
+    }
 }
 
 function showEmojiPickerOverlay(messageId) {

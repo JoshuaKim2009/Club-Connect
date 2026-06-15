@@ -848,24 +848,11 @@ body.scroll-locked {
 
 
 
-.message-wrapper.pressing {
-    animation: shrink-hold 0.25s ease-out forwards;
-    transform-origin: left center;
+.message.pressing {
+    transform: translateY(2px);
+    box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
-
-.message-wrapper.sent.pressing {
-    transform-origin: right center;
-}
-
-@keyframes shrink-hold {
-    0% {
-        transform: scale(1);
-    }
-    100% {
-        transform: scale(0.95);
-    }
-}
-
 
 .message-link {
     color: #0066cc;
