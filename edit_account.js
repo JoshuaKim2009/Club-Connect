@@ -17,13 +17,37 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+document.body.classList.add('no-scroll');
+
 const displayNameInput = document.getElementById('displayName');
 const saveBtn = document.getElementById('save-submit');
+
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         displayNameInput.value = user.displayName || '';
+        hideLoadingScreen();
     } else {
+        hideLoadingScreen();
         window.location.href = 'login.html';
     }
 });

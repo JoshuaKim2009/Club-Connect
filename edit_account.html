@@ -17,8 +17,15 @@
             align-self: center !important;
         }
     </style>
-</head>
+  </head>
   <body>
+    <div id="loading-overlay">
+      <div id="loading-overlay-inner">
+        <div class="loading-spinner"></div>
+        <p>LOADING...</p>
+      </div>
+    </div>
+
     <div class="chat-header">
       <button type="button" id="back-button" class="fancy-button" onclick="history.length > 1 ? history.back() : window.location.href='index.html'">
         <i class="fa-solid fa-circle-left"></i>
@@ -26,17 +33,19 @@
       <span class="chat-title">EDIT ACCOUNT</span>
     </div>
 
-    <div class="auth-page-wrapper">
-      <div class="auth-box">
-        <h1 class="auth-box-title">EDIT ACCOUNT</h1>
-        <input type="text" class="fancy-login-input" placeholder="Display Name" id="displayName" />
-        <hr class="auth-divider">
-        <button id="save-submit" type="button" class="fancy-button">SAVE</button>
+    <div id="content">
+      <div class="auth-page-wrapper">
+        <div class="auth-box">
+          <h1 class="auth-box-title">EDIT ACCOUNT</h1>
+          <input type="text" class="fancy-login-input" placeholder="Display Name" id="displayName" />
+          <hr class="auth-divider">
+          <button id="save-submit" type="button" class="fancy-button">SAVE</button>
+        </div>
       </div>
     </div>
 
     <script src="theme.js?v=10"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="edit_account.js"></script>
+    <script type="module" src="edit_account.js?v=2"></script>
   </body>
 </html>
