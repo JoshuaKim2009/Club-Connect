@@ -489,7 +489,7 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCard) {
                     </div>
 
                     <div class="einfo-row">
-                        <span class="einfo-icon"><i class="fa-solid fa-map-pin"></i></span>
+                        <span class="einfo-icon"><i class="fa-solid fa-thumbtack"></i></span>
                         <span class="einfo-text">${nextEvent.eventData.location}</span>
                     </div>
 
