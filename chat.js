@@ -1245,8 +1245,7 @@ function renderReactions(messageWrapper, reactions) {
         row.appendChild(chip);
     }
 
-    const bubble = messageWrapper.querySelector('.message');
-    (bubble || messageWrapper).appendChild(row);
+    messageWrapper.appendChild(row);
 }
 
 function showEmojiPickerOverlay(messageId) {

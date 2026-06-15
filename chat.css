@@ -214,8 +214,6 @@ body {
     flex-direction: column;
     align-items: flex-start;
     position: relative;
-}
-.message-wrapper {
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 0.25s ease-out, transform 0.25s ease-out;
@@ -963,30 +961,19 @@ body.scroll-locked {
     border-color: #3a5fcf;
 }
 
-/* .message-reactions {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 5px;
-    position: absolute;
-    bottom: -20px;
-    left: 8px;
-    z-index: 10;
-    white-space: nowrap;
-    width: max-content;
-} */
-
 .message-reactions {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    z-index: 10;
-    max-width: calc(100vw - 60px);
-    margin-top: 4px;
+    margin-top: -6px; 
+    margin-bottom: 4px;
+    width: max-content;
+    max-width: calc(100vw - 70px);
 }
 
 .message-wrapper.sent .message-reactions {
     left: auto;
-    right: 8px;
+    right: 0; 
 }
 
 .reaction-chip {
