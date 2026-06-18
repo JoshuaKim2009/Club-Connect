@@ -2,6 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
+
+document.querySelector('#role-select option[value="member"]').textContent = ROLE_LABELS.member;
+document.querySelector('#role-select option[value="admin"]').textContent = ROLE_LABELS.admin;
+document.querySelector('#role-select option[value="manager"]').textContent = ROLE_LABELS.manager;
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -225,7 +230,7 @@ async function transferClubManagement(clubID, newManagerUid) {
             console.log(`Management of club ${clubID} successfully transferred from ${previousManagerUid} to ${newManagerUid}.`);
         });
 
-        await showAppAlert("Club management transferred successfully!");
+        await showAppAlert(`${ROLE_LABELS.manager} role transferred successfully!`);
         window.location.href = 'your_clubs.html';
     } catch (error) {
         console.error("Error during club management transfer transaction:", error);
@@ -305,7 +310,7 @@ function buildMemberActions(memberUid, memberName, memberRole) {
         leaveBtn.className = "options-member-btn";
         leaveBtn.addEventListener("click", async () => {
             if (memberRole === 'manager') {
-                await showAppAlert("Transfer management before leaving the club.");
+                await showAppAlert(`Transfer the ${ROLE_LABELS.manager.toLowerCase()} role before leaving the club.`);
                 return;
             }
             if (await showAppConfirm("Are you sure you want to leave this club?")) {
@@ -330,7 +335,7 @@ function buildMemberActions(memberUid, memberName, memberRole) {
         } else {
             optionsBtn.className = "options-member-btn options-member-btn--disabled";
             optionsBtn.addEventListener("click", async () => {
-                await showAppAlert("You cannot manage admins or managers.");
+                await showAppAlert(`You cannot manage ${ROLE_LABELS.admin.toLowerCase()}s or ${ROLE_LABELS.manager.toLowerCase()}s.`);
             });
         }
 
@@ -359,7 +364,7 @@ function displayMembers(memberNames, memberUids, memberRoles) {
 
         const nameDisplayDiv = document.createElement("div");
         nameDisplayDiv.className = "member-name-display";
-        nameDisplayDiv.innerHTML = `${name} ${(memberRole === 'admin' || memberRole === 'manager') ? `<span class="member-role-text">${capitalizeFirstLetter(memberRole)}</span>` : ''}`;
+        nameDisplayDiv.innerHTML = `${name} ${(memberRole === 'admin' || memberRole === 'manager') ? `<span class="member-role-text">${getRoleLabel(memberRole)}</span>` : ''}`;
         memberCardDiv.appendChild(nameDisplayDiv);
 
         const actions = buildMemberActions(memberUid, name, memberRole);
@@ -416,7 +421,7 @@ submitRoleChangeButton.addEventListener('click', async () => {
 
     if (role === 'admin') {
         if (currentMemberRoleInPopup !== 'member' || newRole !== 'admin') {
-            await showAppAlert("Admins can only promote members to admin.");
+            await showAppAlert(`${ROLE_LABELS.admin}s can only promote ${ROLE_LABELS.member.toLowerCase()}s to ${ROLE_LABELS.admin.toLowerCase()}.`);
             closeRoleManagementPopup();
             return;
         }
@@ -432,13 +437,13 @@ submitRoleChangeButton.addEventListener('click', async () => {
             await updateMemberRole(clubId, selectedMemberUid, newRole);
             closeRoleManagementPopup();
         } else if (newRole === "manager") {
-            if (await showAppConfirm(`Are you absolutely sure you want to transfer management of this club to ${memberName}?`)) {
+            if (await showAppConfirm(`Are you absolutely sure you want to transfer the ${ROLE_LABELS.manager.toLowerCase()} role to ${memberName}?`)) {
                 await transferClubManagement(clubId, selectedMemberUid);
                 // transferClubManagement redirects on success, no need to close popup
             }
         } else {
             console.warn(`Attempted to set an unknown role: ${newRole}`);
-            await showAppAlert(`Invalid role selected: ${newRole}. No update performed.`);
+            await showAppAlert(`Invalid role selected: ${getRoleLabel(newRole)}. No update performed.`);
             closeRoleManagementPopup();
         }
     } catch (error) {
@@ -463,7 +468,7 @@ async function fetchAndDisplayMembers() {
 
         const clubData = clubSnap.data();
         const actualManagerUid = clubData.managerUid;
-        let actualManagerName = 'Unknown Manager';
+        let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
 
         if (actualManagerUid) {
             const managerUserSnap = await getDoc(doc(db, "users", actualManagerUid));

@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { ROLE_LABELS } from './roleLabels.js';
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -1091,7 +1093,7 @@ async function getAllClubMembers(clubID, useCache = true) {
                     managerName = userCache.get(managerUid).displayName;
                 } else {
                     const managerDoc = await getDoc(doc(db, "users", managerUid));
-                    managerName = managerDoc.exists() ? (managerDoc.data().displayName || managerDoc.data().name) : "Unknown Manager";
+                    managerName = managerDoc.exists() ? (managerDoc.data().displayName || managerDoc.data().name) : `Unknown ${ROLE_LABELS.manager}`;
                     if (managerDoc.exists()) userCache.set(managerUid, managerDoc.data());
                 }
                 members.push({ uid: managerUid, name: managerName, role: 'manager' });

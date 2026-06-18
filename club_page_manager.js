@@ -6,6 +6,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
 
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { ROLE_LABELS } from './roleLabels.js';
+
 
 
 const firebaseConfig = {
@@ -141,7 +143,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
 
                 const actualManagerUid = clubData.managerUid;
-                let actualManagerName = 'Unknown Manager';
+                let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
                 if (actualManagerUid) {
                     const managerUserRef = doc(db, "users", actualManagerUid);
                     const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });

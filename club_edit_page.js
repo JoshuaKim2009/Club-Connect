@@ -4,6 +4,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, deleteDoc, query, collection, getDocs, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { ROLE_LABELS } from './roleLabels.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -478,7 +479,7 @@ async function deleteClub(clubId) {
         const joinCode = clubData.joinCode;
 
         if (managerUid !== currentUser.uid) {
-            await showAppAlert("You are not authorized to delete this club. Only the club manager can perform this action.");
+            await showAppAlert(`You are not authorized to delete this club. Only the club ${ROLE_LABELS.manager.toLowerCase()} can perform this action.`);
             console.warn(`User ${currentUser.uid} attempted to delete club ${clubId} but is not the manager.`);
             return;
         }

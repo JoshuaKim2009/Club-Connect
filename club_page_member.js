@@ -4,6 +4,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, doc, getDoc, collection, query, orderBy, where, getDocs, onSnapshot, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
 
 
 const firebaseConfig = {
@@ -130,7 +131,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
         myCurrentRoleInClub = currentUserRole;
 
         if (lastKnownCurrentUserRole !== null && lastKnownCurrentUserRole !== myCurrentRoleInClub) {
-            await showAppAlert(`Your role for this club has been updated to ${capitalizeFirstLetter(myCurrentRoleInClub)}!`);
+            await showAppAlert(`Your role for this club has been updated to ${getRoleLabel(myCurrentRoleInClub)}!`);
         }
         lastKnownCurrentUserRole = myCurrentRoleInClub;
 
@@ -144,7 +145,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
             if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin' || myCurrentRoleInClub === 'member') {
                 const actualManagerUid = clubData.managerUid;
-                let actualManagerName = 'Unknown Manager';
+                let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
                 if (actualManagerUid) {
                     const managerUserRef = doc(db, "users", actualManagerUid);
                     const managerUserSnap = await getDoc(managerUserRef, { source: 'server' });

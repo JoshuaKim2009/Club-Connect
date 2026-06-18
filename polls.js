@@ -3,6 +3,10 @@ import { getFirestore, doc, getDoc, collection, addDoc, updateDoc, deleteDoc, se
 import { runTransaction } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
+import { ROLE_LABELS } from './roleLabels.js';
+
+const editTypeInfo = document.getElementById('poll-edit-type-info');
+if (editTypeInfo) editTypeInfo.textContent = `Users will always see poll percentages. The creator of the poll and ${ROLE_LABELS.manager.toLowerCase()} can always see results.`;
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -28,9 +32,9 @@ const addPollButton = document.getElementById('add-poll-button');
 document.body.classList.add('no-scroll');
 
 const visMessages = {
-    Before: "Everyone can see the results at any time, even before they vote. The creator of the poll and manager can always see results.",
-    After:  "Results are hidden until a member votes, after which they can see them. The creator of the poll and manager can always see results.",
-    Never:  "Results are always hidden from members no matter what they do. The creator of the poll and manager can always see results."
+    Before: `Everyone can see the results at any time, even before they vote. The creator of the poll and ${ROLE_LABELS.manager.toLowerCase()} can always see results.`,
+    After:  `Results are hidden until a member votes, after which they can see them. The creator of the poll and ${ROLE_LABELS.manager.toLowerCase()} can always see results.`,
+    Never:  `Results are always hidden from members no matter what they do. The creator of the poll and ${ROLE_LABELS.manager.toLowerCase()} can always see results.`
 };
 
 const clubId = getUrlParameter('clubId');

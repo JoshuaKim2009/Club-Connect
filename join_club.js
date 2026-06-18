@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs, updateDoc, arrayUnion, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { ROLE_LABELS } from './roleLabels.js';
 
 
 const firebaseConfig = {
@@ -77,7 +78,7 @@ if (submitButton) {
             const clubManagerUid = clubData.managerUid; 
 
             if (clubManagerUid === currentUserUid) {
-                await showAppAlert("You are already the manager of this club. You cannot join your own club.", "Already a Member");
+                await showAppAlert(`You are already the ${ROLE_LABELS.manager.toLowerCase()} of this club. You cannot join your own club.`, "Already a Member");
                 return; 
             }
 

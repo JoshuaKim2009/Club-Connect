@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -134,7 +135,7 @@ async function loadAllClubs() {
         btn.style.animationDelay = `${cardIndex * 100}ms`;
         btn.style.setProperty('--accent', ACCENT.manager);
 
-        btn.innerHTML = buildCardHTML(data.clubName, 'Manager', memberCount);
+        btn.innerHTML = buildCardHTML(data.clubName, ROLE_LABELS.manager, memberCount);
 
         btn.addEventListener("click", () => {
             window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
@@ -168,7 +169,7 @@ async function loadAllClubs() {
         btn.style.animationDelay = `${cardIndex * 100}ms`;
         btn.style.setProperty('--accent', accentColor);
 
-        btn.innerHTML = buildCardHTML(data.clubName, capitalizeFirstLetter(role), memberCount);
+        btn.innerHTML = buildCardHTML(data.clubName, getRoleLabel(role), memberCount);
 
         btn.addEventListener("click", async () => {
             if (role === 'manager' || role === 'admin') {

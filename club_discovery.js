@@ -3,6 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert } from './dialog.js';
+import { ROLE_LABELS } from './roleLabels.js';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -307,7 +309,7 @@ document.getElementById("clubsGrid").addEventListener("click", async (e) => {
     const clubData = clubSnap.data();
 
     if (clubData.managerUid === currentUser.uid) {
-        await showAppAlert("You are the manager of this club.");
+        await showAppAlert(`You are the ${ROLE_LABELS.manager.toLowerCase()} of this club.`);
         return;
     }
     if ((clubData.memberUIDs || []).includes(currentUser.uid)) {
