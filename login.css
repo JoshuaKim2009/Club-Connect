@@ -154,10 +154,16 @@ body {
   margin: -4px 0;
 }
 
-#fancy-login-input {
-  background: linear-gradient(#ffffff, #e2e2e2) !important;
-}
-
-.auth-box .fancy-input {
+.fancy-login-input {
+    background: linear-gradient(#ffffff, #f5f5f5);
+    font-family: var(--primary-font-family);
     font-size: 20px;
+    color: black;
+    border: 2px solid black;
+    padding: 4px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 1px 0px #000000;
+    width: 100%;
+    box-sizing: border-box;
 }
