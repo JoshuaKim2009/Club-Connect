@@ -2703,8 +2703,9 @@ input[type="checkbox"]:checked {
 .comm-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
+
 .comm-grid #chatButton,
 .comm-grid #directMessagesButton,
 .comm-grid #announcementsButton,
@@ -2743,6 +2744,8 @@ input[type="checkbox"]:checked {
   margin-bottom: 0;
 }
 
+.comm-grid #announcementsButton,
+.comm-grid #pollsButton,
 #adminActionsSection > #links-button {
   margin-top: 2px;
 }
