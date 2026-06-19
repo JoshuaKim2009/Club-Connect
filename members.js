@@ -247,7 +247,7 @@ function displayPendingMembers(memberNames, memberUids) {
     container.innerHTML = "";
 
     const title = document.createElement("h3");
-    title.textContent = "MEMBERSHIP REQUESTS";
+    title.textContent = "REQUESTS";
     container.appendChild(title);
 
     if (memberNames.length === 0) {

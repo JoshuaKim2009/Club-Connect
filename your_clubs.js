@@ -26,7 +26,6 @@ const ACCENT = {
 };
 
 let currentUser = null;
-let userDocRef = null;
 let cardIndex = 0;
 
 
@@ -35,7 +34,6 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     if (user) {
         console.log("Auth state changed: User is logged in.", user.uid);
-        userDocRef = doc(db, "users", currentUser.uid);
         loadAllClubs();
     } else {
         console.log("Auth state changed: No user is logged in.");
@@ -111,14 +109,11 @@ async function loadAllClubs() {
     const managedClubs = userData.managed_clubs || [];
     const memberClubs  = userData.member_clubs  || [];
 
-    const [managedSnaps, memberSnaps] = await Promise.all([
+    const [managedSnaps, memberSnaps, roles] = await Promise.all([
         Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
-        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
-    ]);
-
-    const roles = await Promise.all(
-        memberClubs.map(id => getMemberRoleForClub(id, currentUser.uid))
-    );
+        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id)))),
+        Promise.all(memberClubs.map(id => getMemberRoleForClub(id, currentUser.uid)))
+    ]); 
 
     container.innerHTML = '';
     cardIndex = 0;

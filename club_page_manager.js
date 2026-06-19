@@ -80,15 +80,16 @@ onAuthStateChanged(auth, async (user) => {
             clubPageTitle.textContent = "";
             myName = user.displayName;
             myUid = user.uid;
-            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true);
-
-            const memberData = await fetchMemberData(clubId, currentUser.uid);
+            const [, memberData] = await Promise.all([
+                fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true),
+                fetchMemberData(clubId, currentUser.uid)
+            ]);
 
             const [unreadCount, unreadMessagesCount, unreadPollsCount, pendingCount] = await Promise.all([
                 getUnreadAnnouncementCount(clubId, currentUser.uid, memberData),
                 getUnreadMessageCount(clubId, currentUser.uid, memberData),
                 getUnreadPollCount(clubId, currentUser.uid, memberData),
-                getPendingRequestsCount(clubId)
+                Promise.resolve((window._pendingMemberUIDs || []).length)
             ]);
 
             updateUnreadBadge(unreadCount);
@@ -138,19 +139,11 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
         if (clubSnap.exists()) {
             const clubData = clubSnap.data();
+            window._pendingMemberUIDs = clubData.pendingMemberUIDs || [];
+
 
             if (clubData.managerUid === currentUserId || currentUserRole === 'manager' || currentUserRole === 'admin') {
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
-
-                const actualManagerUid = clubData.managerUid;
-                let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
-                if (actualManagerUid) {
-                    const managerUserRef = doc(db, "users", actualManagerUid);
-                    const managerUserSnap = await getDoc(managerUserRef);
-                    if (managerUserSnap.exists() && managerUserSnap.data().name) {
-                        actualManagerName = managerUserSnap.data().name;
-                    }
-                }
 
                 clubDetailsDiv.innerHTML = `
                     <div class="club-info-container">

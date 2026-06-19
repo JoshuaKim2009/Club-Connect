@@ -84,6 +84,8 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
         if (clubId) {
             clubPageTitle.textContent = ""; 
+            setupClubMemberPageListeners(clubId, myUid, myName);
+
             const memberData = await fetchMemberData(clubId, currentUser.uid);
 
             const [unreadCount, unreadMessagesCount, unreadPollsCount] = await Promise.all([
@@ -95,8 +97,6 @@ onAuthStateChanged(auth, async (user) => {
             updateUnreadBadge(unreadCount);
             updateUnreadMessagesBadge(unreadMessagesCount);
             updateUnreadPollsBadge(unreadPollsCount);
-
-            setupClubMemberPageListeners(clubId, myUid, myName);
             setupAnnouncementListeners(clubId, myUid);
             setupMessageListeners(clubId, myUid);
             setupPollListeners(clubId, myUid);
@@ -144,15 +144,6 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
             const clubData = clubSnap.data();
 
             if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin' || myCurrentRoleInClub === 'member') {
-                const actualManagerUid = clubData.managerUid;
-                let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
-                if (actualManagerUid) {
-                    const managerUserRef = doc(db, "users", actualManagerUid);
-                    const managerUserSnap = await getDoc(managerUserRef);
-                    if (managerUserSnap.exists() && managerUserSnap.data().name) {
-                        actualManagerName = managerUserSnap.data().name;
-                    }
-                }
 
                 clubPageTitle.textContent = (clubData.clubName || 'Unnamed Club');
                 clubDetailsDiv.innerHTML = `
