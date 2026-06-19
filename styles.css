@@ -1606,7 +1606,7 @@ input[type="checkbox"]:checked {
 
 .event-card-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 10px;
   margin-top: 15px;
 }
@@ -2332,7 +2332,7 @@ input[type="checkbox"]:checked {
 
 .event-card-header {
   position: relative;
-  padding-bottom: 10px;
+  padding-bottom: 5px;
   border-bottom: 2px dotted black;
   margin: 0 -8px;
   padding-left: 8px;
@@ -2358,7 +2358,7 @@ input[type="checkbox"]:checked {
   align-items: flex-start;
   align-items: center;
   gap: 9px;
-  font-size: 1.1em;
+  font-size: 0.9em;
   line-height: 1.25;
 }
 .einfo-icon {
@@ -2366,16 +2366,16 @@ input[type="checkbox"]:checked {
   flex-shrink: 0;
   text-align: center;
   font-size: 16px;
-  
   margin-top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #222;
+  color: #000000;
 }
+
 .einfo-text {
   flex: 1;
-  color: #222;
+  color: #000000;
 }
 
 .event-date-strip {
@@ -2682,4 +2682,107 @@ input[type="checkbox"]:checked {
 #searchCategory::placeholder {
   color: black;
   opacity: 1;
+}
+
+
+
+.button-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.button-row-2 #edit-club-button,
+.button-row-2 #view-members-button,
+.button-row-2 #links-button {
+  width: 100%;
+  max-width: none;
+  margin-bottom: 0;
+  font-size: 24px;
+}
+
+.comm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.comm-grid #chatButton,
+.comm-grid #directMessagesButton,
+.comm-grid #announcementsButton,
+.comm-grid #pollsButton {
+  width: 100%;
+  max-width: none;
+  min-height: 84px;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px 10px;
+  gap: 4px;
+}
+.comm-grid i {
+  font-size: 20px;
+  color: #222;
+  pointer-events: none;
+}
+.comm-lbl {
+  font-family: var(--primary-font-family);
+  font-size: 20px;
+  line-height: 1.1;
+  text-align: center;
+  pointer-events: none;
+}
+
+
+#adminActionsSection > #links-button,
+#scheduleSection > #viewScheduleButton {
+  width: 100%;
+  max-width: none;
+  font-size: 24px;
+  box-sizing: border-box;
+  margin-bottom: 0;
+}
+
+#adminActionsSection > #links-button {
+  margin-top: 2px;
+}
+
+#closestEventDisplay .event-card,
+#closestEventDisplay .event-card-loading {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+
+#closestEventDisplay {
+  margin-bottom: 10px;
+}
+
+#closestEventDisplay .event-card {
+  font-size: 16px;
+  margin-bottom: 0;
+}
+
+#closestEventDisplay .event-card-header {
+  padding-bottom: 5px;
+}
+
+#closestEventDisplay .event-date-strip {
+  font-size: 1.2em;
+}
+
+#closestEventDisplay .einfo-row {
+  font-size: 1.2em;
+}
+
+#closestEventDisplay .event-card-title {
+  font-size: 1.7em;
+}
+
+.button-row-2:last-child {
+  margin-bottom: 0;
 }
