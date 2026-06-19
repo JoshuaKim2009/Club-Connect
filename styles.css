@@ -45,7 +45,7 @@ body {
   background: linear-gradient(
     to bottom,
     var(--bg-dark) 8%,
-    color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 150%
+    color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 200%
   );
   color: rgb(0, 0, 0);
   padding: 15px;
@@ -187,10 +187,9 @@ body::before {
 }
 
 body.no-scroll {
-  overflow: hidden !important;
-  touch-action: none;
-  -webkit-overflow-scrolling: none;
-  overscroll-behavior-y: contain;
+    overflow: hidden !important;
+    overscroll-behavior-y: contain;
+    touch-action: none;
 }
 
 ::-webkit-scrollbar {

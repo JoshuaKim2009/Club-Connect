@@ -2,9 +2,9 @@
     const saved = localStorage.getItem('cc-theme');
     const map = {
         default: ['#1c375f','#4066a0','#3498db'],
-        forest:  ['#18422b','#2d6a4f','#52b788'],
-        crimson: ['#6b1b1b','#a53131','#f85c69'],
-        slate:   ['#0f0f0f','#21213f','#9b9bc4']
+        forest:  ['#2a644a','#45866a','#52b788'],
+        crimson: ['#9e3030','#c24848','#f85c69'],
+        slate:   ['#1c1c2b','#2e2e44','#686880']
     };
     const c = map[saved] || map.default;
     const r = document.documentElement;
@@ -25,21 +25,21 @@ const THEMES = {
     },
     forest: {
         name: 'Forest',
-        dark: '#18422b',
-        accent: '#2d6a4f',
+        dark: '#2a644a',
+        accent: '#45866a',
         light: '#52b788'
     },
     crimson: {
         name: 'Crimson',
-        dark: '#6b1b1b',
-        accent: '#a53131',
+        dark: '#9e3030',
+        accent: '#c24848',
         light: '#f85c69'
     },
     slate: {
         name: 'Slate',
-        dark: '#080813',
-        accent: '#232342',
-        light: '#9b9bc4'
+        dark: '#1c1c2b',
+        accent: '#2e2e44',
+        light: '#686880'
     }
 };
 

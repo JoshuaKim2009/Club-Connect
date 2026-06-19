@@ -74,8 +74,20 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById("club-button").onclick = async () => {
-  const user = await authReady;
-  window.location.href = user ? 'your_clubs.html' : 'login.html';
+    const cached = JSON.parse(
+        sessionStorage.getItem('cc-user') || 
+        localStorage.getItem('cc-user') || 
+        'null'
+    );
+    if (cached) {
+        window.location.href = 'your_clubs.html';
+        return;
+    }
+    const user = await Promise.race([
+        authReady,
+        new Promise(resolve => setTimeout(() => resolve(null), 4000))
+    ]);
+    window.location.href = user ? 'your_clubs.html' : 'login.html';
 };
 
 logoutButton.onclick = () => {
@@ -152,8 +164,20 @@ function buildThemeOptions() {
 
 // Announcements badge on home page
 document.getElementById('announcements-home-button').addEventListener('click', async () => {
-  const user = await authReady;
-  window.location.href = user ? 'global_announcements.html' : 'login.html';
+    const cached = JSON.parse(
+        sessionStorage.getItem('cc-user') || 
+        localStorage.getItem('cc-user') || 
+        'null'
+    );
+    if (cached) {
+        window.location.href = 'global_announcements.html';
+        return;
+    }
+    const user = await Promise.race([
+        authReady,
+        new Promise(resolve => setTimeout(() => resolve(null), 4000))
+    ]);
+    window.location.href = user ? 'global_announcements.html' : 'login.html';
 });
 
 async function getTotalUnreadAnnouncementsAcrossClubs(userId) {

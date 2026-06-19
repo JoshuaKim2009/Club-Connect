@@ -89,7 +89,7 @@ body {
     background: linear-gradient(
         to top,
         var(--bg-dark) 8%,
-        color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 150%
+        color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 200%
     );
     border-top: 2px solid black;
 
