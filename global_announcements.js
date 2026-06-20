@@ -194,7 +194,7 @@ function createAnnouncementCard(data) {
     </h3>
     <p>${linkifyText(data.content)}</p>
     <p class="announcement-meta">
-      Posted by: ${data.createdByName} on ${formatTimestamp(data.createdAt)}
+      Posted by ${data.createdByName} on ${formatTimestamp(data.createdAt)}
     </p>
   `;
 

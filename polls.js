@@ -37,6 +37,8 @@ const visMessages = {
     Never:  `Results are always hidden from members no matter what they do. The creator of the poll and ${ROLE_LABELS.manager.toLowerCase()} can always see results.`
 };
 
+const pollDataCache = new Map(); 
+
 const clubId = getUrlParameter('clubId');
 
 function getUrlParameter(name) {
@@ -106,8 +108,6 @@ onAuthStateChanged(auth, async (user) => {
         isLoggedIn = true;
         userName = user.displayName || "";
         userEmail = user.email || "";
-
-        console.log(userEmail);
 
         if (clubId) {
             role = await getMemberRoleForClub(clubId, currentUser.uid);
@@ -322,6 +322,12 @@ function setupRealtimePollsListener() {
             const pollData = change.doc.data();
             const pollId = change.doc.id;
 
+            if (change.type === "added" || change.type === "modified") {
+                pollDataCache.set(pollId, pollData);
+            } else if (change.type === "removed") {
+                pollDataCache.delete(pollId);
+            }
+
             if (change.type === "added") {
                 const pollCard = createPollCard(pollData, pollId);
                 if (isInitialSnapshot) {
@@ -340,8 +346,6 @@ function setupRealtimePollsListener() {
             }
         });
 
-        isInitialSnapshot = false; // <-- flip after first batch
-
         const noPollsMessage = document.getElementById('no-polls-message');
         if (pollsContainer.children.length === 0) {
             if (role === 'member' && noPollsMessage) {
@@ -352,8 +356,34 @@ function setupRealtimePollsListener() {
             noPollsMessage.style.display = 'none';
         }
 
-        updateLastSeenPolls();
+        if (isInitialSnapshot) updateLastSeenPolls();
+        isInitialSnapshot = false;
     }, (error) => { console.error("Error fetching realtime polls:", error); });
+}
+
+
+
+function applyOptimisticVote(card, pollData, optionIndex, userUid) {
+    const options = pollData.options.map(opt => ({
+        ...opt,
+        votes: [...opt.votes]
+    }));
+
+    let previousVoteIndex = -1;
+    options.forEach((opt, i) => {
+        if (opt.votes.includes(userUid)) previousVoteIndex = i;
+    });
+
+    if (previousVoteIndex === optionIndex) {
+        options[optionIndex].votes = options[optionIndex].votes.filter(uid => uid !== userUid);
+    } else {
+        if (previousVoteIndex !== -1) {
+            options[previousVoteIndex].votes = options[previousVoteIndex].votes.filter(uid => uid !== userUid);
+        }
+        options[optionIndex].votes.push(userUid);
+    }
+
+    updatePollCard(card, { ...pollData, options }, card.dataset.pollId);
 }
 
 function createPollCard(pollData, pollId) {
@@ -432,16 +462,19 @@ function createPollCard(pollData, pollId) {
             const clickedRadio = e.currentTarget;
             const pollId = clickedRadio.dataset.pollId;
             const optionIndex = parseInt(clickedRadio.dataset.optionIndex);
-            
+            const currentPollData = pollDataCache.get(pollId);
+
             if (clickedRadio.dataset.wasChecked === 'true') {
                 clickedRadio.checked = false;
                 clickedRadio.dataset.wasChecked = 'false';
+                if (currentPollData) applyOptimisticVote(card, currentPollData, optionIndex, currentUser.uid);
                 handleVote(pollId, optionIndex);
             } else {
                 card.querySelectorAll('.poll-radio').forEach(r => {
                     r.dataset.wasChecked = 'false';
                 });
                 clickedRadio.dataset.wasChecked = 'true';
+                if (currentPollData) applyOptimisticVote(card, currentPollData, optionIndex, currentUser.uid);
                 handleVote(pollId, optionIndex);
             }
         });
@@ -627,11 +660,6 @@ async function deletePoll(pollId) {
 }
 
 async function editPoll(pollId, pollData) {
-    const pollRef = doc(db, "clubs", clubId, "polls", pollId);
-    const pollSnap = await getDoc(pollRef);
-    if (!pollSnap.exists()) { await showAppAlert("Poll not found."); return; }
-    pollData = pollSnap.data();
-
     const existingCard = document.querySelector(`[data-poll-id="${pollId}"]`);
     if (!existingCard) return;
 

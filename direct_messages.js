@@ -41,6 +41,7 @@ let loadedMessageIds = new Set();
 let selectedMessageForOptions = null;
 let replyingToMessage = null;
 let unsubscribeMessages = null;
+let unsubscribeEdits = null;
 let pendingImages = [];
 let isDropdownOpen = false;
 let updateLastSeenTimeout = null;
@@ -245,7 +246,25 @@ async function loadOlderMessages() {
         console.error(error);
     } finally {
         isLoadingOlder = false;
+        startEditsListener();
     }
+}
+
+function startEditsListener() {
+    if (unsubscribeEdits) {
+        unsubscribeEdits();
+        unsubscribeEdits = null;
+    }
+    if (!oldestDoc) return;
+    unsubscribeEdits = onSnapshot(
+        query(getMessagesRef(), orderBy("createdAt", "asc"), startAt(oldestDoc)),
+        (snapshot) => {
+            for (const change of snapshot.docChanges()) {
+                if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
+                if (change.type === "removed") { removeMessage(change.doc.id); loadedMessageIds.delete(change.doc.id); }
+            }
+        }
+    );
 }
 
 function startRealtimeListener() {
@@ -287,17 +306,7 @@ function startRealtimeListener() {
         }
     }, (error) => { console.error("Error:", error); });
 
-    if (oldestDoc && newestDoc) {
-        onSnapshot(
-            query(messagesRef, orderBy("createdAt", "asc"), startAt(oldestDoc)),
-            (snapshot) => {
-                for (const change of snapshot.docChanges()) {
-                    if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
-                    if (change.type === "removed") { removeMessage(change.doc.id); loadedMessageIds.delete(change.doc.id); }
-                }
-            }
-        );
-    }
+    startEditsListener();
 }
 
 function createMessageElement(messageId, messageData, showSenderName) {
@@ -755,6 +764,8 @@ document.getElementById('replyOptionButton')?.addEventListener('click', () => {
 document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
     if (!selectedMessageForOptions) return;
 
+    const messageToDelete = selectedMessageForOptions;
+
     document.getElementById('messageOptionsModal').style.opacity = '0';
     document.getElementById('messageOptionsModal').style.pointerEvents = 'none';
 
@@ -767,11 +778,11 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
     }
 
     const messagesRef = getMessagesRef();
-    const msgRef = doc(messagesRef, selectedMessageForOptions.id);
+    const msgRef = doc(messagesRef, messageToDelete.id);
     const batch = writeBatch(db);
     batch.update(msgRef, { deleted: true, message: "This message was deleted", type: "text", reactions: [] });
 
-    const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", selectedMessageForOptions.id));
+    const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", messageToDelete.id));
     const repliesSnap = await getDocs(repliesQuery);
     repliesSnap.forEach(replyDoc => {
         batch.update(replyDoc.ref, { "replyTo.text": "This message was deleted" });
@@ -859,7 +870,11 @@ function adjustChatMessagesHeight() {
 }
 
 window.addEventListener('load', adjustChatMessagesHeight);
-window.addEventListener('resize', adjustChatMessagesHeight);
+let resizeTimeout = null;
+window.addEventListener('resize', () => {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(adjustChatMessagesHeight, 100);
+});
 
 if (inputContainer) {
     inputContainer.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
@@ -980,6 +995,61 @@ function showEmojiPickerOverlay(messageId) {
 
     const picker = document.createElement('emoji-picker');
     overlay.appendChild(picker);
+
+    if (picker.shadowRoot) {
+        const style = document.createElement('style');
+        style.textContent = `
+            ::-webkit-scrollbar { display: none; }
+            * { scrollbar-width: none; -ms-overflow-style: none; }
+
+            .search-row, .search-wrapper, .search, #search, .pad-top {
+                background: transparent !important;
+                border-bottom: none !important;
+            }
+
+            .search-row {
+                padding: 4px 10px 8px 10px !important;
+                box-sizing: border-box !important;
+            }
+
+            input[type="search"] {
+                background: linear-gradient(#ffffff, #f5f5f5) !important;
+                font-family: "Teko", sans-serif !important;
+                font-size: 20px !important;
+                color: black !important;
+                border: 2px solid black !important;
+                border-radius: 10px !important;
+                box-shadow: 0px 1px 0px #000000 !important;
+                padding: 2px 10px !important;
+                outline: none !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+
+            input[type="search"]:focus {
+                outline: none !important;
+                box-shadow: 0px 1px 0px #000000 !important;
+            }
+
+            input[type="search"]::-webkit-search-cancel-button {
+                -webkit-appearance: none;
+                appearance: none;
+                height: 12px;
+                width: 12px;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
+                background-size: contain;
+                background-repeat: no-repeat;
+                cursor: pointer;
+                opacity: 0.6;
+            }
+
+            .skintone-button, .skintone-button-wrapper {
+                display: none !important;
+            }
+        `;
+        picker.shadowRoot.appendChild(style);
+    }
     document.body.appendChild(overlay);
 
     requestAnimationFrame(() => {

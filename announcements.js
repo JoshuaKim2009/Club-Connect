@@ -430,7 +430,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
     cardDiv.innerHTML = `
         <h3>${announcementData.title}</h3>
         <p>${linkifyText(announcementData.content)}</p>
-        <p class="announcement-meta">Posted by: ${announcementData.createdByName} on ${formatTimestamp(announcementData.createdAt)}</p>
+        <p class="announcement-meta">Posted by ${announcementData.createdByName} on ${formatTimestamp(announcementData.createdAt)}</p>
         ${actionButtonsHtml}
     `;
 

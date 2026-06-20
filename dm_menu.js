@@ -23,7 +23,6 @@ const newDmButton = document.getElementById('newDmButton');
 const newDmModal = document.getElementById('new-dm-modal');
 const newDmOverlay = document.getElementById('new-dm-overlay');
 const cancelNewDmButton = document.getElementById('cancel-new-dm-button');
-let isInitialDmLoad = true;
 let cachedMembers = null;
 
 function getUrlParameter(name) {
@@ -186,15 +185,17 @@ async function loadMembers() {
     try {
         const membersRef = collection(db, 'clubs', clubId, 'members');
         const snap = await getDocs(membersRef);
-        const members = [];
 
-        for (const d of snap.docs) {
-            if (d.id === currentUser.uid) continue;
-            const userRef = doc(db, 'users', d.id);
-            const userSnap = await getDoc(userRef);
-            const name = userSnap.exists() ? (userSnap.data().name || 'Unknown') : 'Unknown';
-            members.push({ uid: d.id, name });
-        }
+        const memberDocs = snap.docs.filter(d => d.id !== currentUser.uid);
+
+        const userSnaps = await Promise.all(
+            memberDocs.map(d => getDoc(doc(db, 'users', d.id)))
+        );
+
+        const members = memberDocs.map((d, i) => ({
+            uid: d.id,
+            name: userSnaps[i].exists() ? (userSnaps[i].data().name || 'Unknown') : 'Unknown'
+        }));
 
         cachedMembers = members;
         document.getElementById('new-dm-loading').style.display = 'none';

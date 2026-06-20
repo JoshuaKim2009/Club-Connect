@@ -84,8 +84,10 @@ onAuthStateChanged(auth, async (user) => {
                 if (clubSnap.exists()) {
                     role = await getMemberRoleForClub(clubId, currentUser.uid);
 
-                    await fetchAndDisplayEvents();
-                    await prefetchUserRsvps();
+                    await Promise.all([
+                        fetchAndDisplayEvents(),
+                        prefetchUserRsvps()
+                    ]);
                     setupRealtimeUserRsvps();
                     hideLoadingScreen();
                     requestAnimationFrame(() => requestAnimationFrame(() => renderAllEvents()));
@@ -1082,38 +1084,43 @@ async function getAllClubMembers(clubID, useCache = true) {
 
     const members = [];
     try {
-        const clubSnap = await getDoc(doc(db, "clubs", clubID));
-        let managerUid = null;
+        const [clubSnap, membersSnap] = await Promise.all([
+            getDoc(doc(db, "clubs", clubID)),
+            getDocs(collection(db, "clubs", clubID, "members"))
+        ]);
 
-        if (clubSnap.exists()) {
-            managerUid = clubSnap.data().managerUid;
-            if (managerUid) {
-                let managerName;
-                if (userCache.has(managerUid)) {
-                    managerName = userCache.get(managerUid).displayName;
-                } else {
-                    const managerDoc = await getDoc(doc(db, "users", managerUid));
-                    managerName = managerDoc.exists() ? (managerDoc.data().displayName || managerDoc.data().name) : `Unknown ${ROLE_LABELS.manager}`;
-                    if (managerDoc.exists()) userCache.set(managerUid, managerDoc.data());
-                }
-                members.push({ uid: managerUid, name: managerName, role: 'manager' });
-            }
+        const managerUid = clubSnap.exists() ? clubSnap.data().managerUid : null;
+
+        const uidsToFetch = [];
+        if (managerUid && !userCache.has(managerUid)) uidsToFetch.push(managerUid);
+        membersSnap.docs.forEach(d => {
+            if (d.id !== managerUid && !userCache.has(d.id)) uidsToFetch.push(d.id);
+        });
+
+        if (uidsToFetch.length > 0) {
+            const userSnaps = await Promise.all(
+                uidsToFetch.map(uid => getDoc(doc(db, "users", uid)))
+            );
+            userSnaps.forEach((snap, i) => {
+                if (snap.exists()) userCache.set(uidsToFetch[i], snap.data());
+            });
         }
 
-        const membersSnap = await getDocs(collection(db, "clubs", clubID, "members"));
-        const uidsToFetch = membersSnap.docs.filter(d => d.id !== managerUid && !userCache.has(d.id)).map(d => d.id);
-
-        for (const uid of uidsToFetch) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            if (userDoc.exists()) userCache.set(uid, userDoc.data());
+        if (managerUid) {
+            const d = userCache.get(managerUid);
+            const name = d ? (d.displayName || d.name || `Unknown ${ROLE_LABELS.manager}`) : `Unknown ${ROLE_LABELS.manager}`;
+            members.push({ uid: managerUid, name, role: 'manager' });
         }
 
-        for (const memberDoc of membersSnap.docs) {
-            if (memberDoc.id !== managerUid) {
-                const userData = userCache.get(memberDoc.id);
-                members.push({ uid: memberDoc.id, name: userData ? (userData.displayName || userData.name) : "Unknown User", role: memberDoc.data().role || 'member' });
-            }
-        }
+        membersSnap.docs.forEach(memberDoc => {
+            if (memberDoc.id === managerUid) return;
+            const d = userCache.get(memberDoc.id);
+            members.push({
+                uid: memberDoc.id,
+                name: d ? (d.displayName || d.name) : "Unknown User",
+                role: memberDoc.data().role || 'member'
+            });
+        });
 
         memberListCache.set(clubID, { members, timestamp: Date.now() });
     } catch (error) {
@@ -1169,15 +1176,16 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     modal.style.display = 'flex';
 
     try {
-        const rsvpsSnap = await getDocs(query(
-            collection(db, "clubs", clubId, "occurrenceRsvps"),
-            where("eventId", "==", eventId),
-            where("occurrenceDate", "==", occurrenceDateString)
-        ));
+        const [rsvpsSnap, allMembers] = await Promise.all([
+            getDocs(query(
+                collection(db, "clubs", clubId, "occurrenceRsvps"),
+                where("eventId", "==", eventId),
+                where("occurrenceDate", "==", occurrenceDateString)
+            )),
+            getAllClubMembers(clubId)
+        ]);
         const rsvpsMap = {};
         rsvpsSnap.forEach(d => { rsvpsMap[d.data().userId] = { status: d.data().status, userName: d.data().userName }; });
-
-        const allMembers = await getAllClubMembers(clubId);
         const going = [], maybe = [], notGoing = [], noResponse = [];
 
         allMembers.forEach(member => {

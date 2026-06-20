@@ -171,7 +171,7 @@ body {
     cursor: pointer;
     font-size: 22px;
     flex-shrink: 0;
-    background: radial-gradient(circle at center, #ffffff, #b3b3b3);
+    background: radial-gradient(circle at center, #ffffff, #e2e2e2);
     border: 2px solid black;
     border-radius: 10px;
     color: rgb(0, 0, 0);
@@ -210,7 +210,7 @@ body {
 
 .message-wrapper {
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 4px;
     flex-direction: column;
     align-items: flex-start;
     position: relative;
@@ -218,6 +218,10 @@ body {
     transform: translateY(12px);
     transition: opacity 0.25s ease-out, transform 0.25s ease-out;
     will-change: opacity, transform;
+}
+
+.message-wrapper:has(.sender-name) {
+    margin-top: 14px;
 }
 
 .message-wrapper.show {
@@ -693,6 +697,12 @@ body {
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    margin-left: 1px;
+}
+
+.reply-preview-container.sent .reply-bubble {
+    margin-right: 1px;
+    margin-left: 0;
 }
 
 .reply-bubble:active {
@@ -706,6 +716,11 @@ body {
     font-weight: normal;
     margin-bottom: 2px;
     margin-left: 5px;
+}
+
+.reply-preview-container.sent .reply-name {
+    margin-right: 5px;
+    margin-left: 0;
 }
 
 .reply-text {
@@ -895,11 +910,12 @@ body.scroll-locked {
     content: '';
     flex: 1;
     border-bottom: 1px solid rgba(200, 200, 200, 0.6);
-    margin: 0 15px;
+    margin: 0;
 }
 
 .date-separator-text {
     white-space: nowrap;
+    padding: 0 10px;
 }
 
 .message.deleted-message {
@@ -931,7 +947,7 @@ body.scroll-locked {
 
 .reaction-pick-btn {
     font-size: 22px;
-    background: radial-gradient(circle at center, #ffffff, #e0e0e0);
+    background: radial-gradient(circle at center, #ffffff, #e2e2e2);
     border: 2px solid black;
     border-radius: 10px;
     height: 46px;
@@ -971,7 +987,7 @@ body.scroll-locked {
     display: flex;
     align-items: center;
     gap: 4px;
-    background: radial-gradient(circle at center, #ffffff, #e0e0e0);
+    background: radial-gradient(circle at center, #ffffff, #e2e2e2);
     border: 2px solid black;
     border-radius: 20px;
     padding: 2px 8px;
@@ -1010,6 +1026,16 @@ body.scroll-locked {
 .emoji-picker-overlay emoji-picker {
     --border-radius: 15px;
     --border-color: black;
+    --background: linear-gradient(#ffffff, #e2e2e2);
+    --input-border-radius: 10px;
+    --input-border-color: black;
+    --input-border-size: 1px;
+    --input-font-size: 18px;
+    --indicator-color: #486a9e;
+    
     width: min(380px, 92vw);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid black;
     box-shadow: 0px 8px 30px rgba(0,0,0,0.4);
 }
