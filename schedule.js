@@ -259,9 +259,8 @@ function refreshCardsForEvent(eventId) {
     }
 
     // Insert the new cards in the correct sorted position
-    const allCurrentCards = Array.from(eventsContainer.querySelectorAll('.display-event-card'));
-
     newOccurrences.forEach(occ => {
+        const allCurrentCards = Array.from(eventsContainer.querySelectorAll('.display-event-card'));
         const newCard = createSingleOccurrenceDisplayCard(occ.eventData, occ.occurrenceDate, occ.originalEventId);
         const occDateTime = new Date(occ.occurrenceDate.toISOString().split('T')[0] + 'T' + occ.eventData.startTime + ':00Z').getTime();
 
@@ -357,7 +356,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 
         <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
             <label for="edit-date-${currentEditId}">Event Date:</label>
-            <input type="date" id="edit-date-${currentEditId}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${initialData.isWeekly && !isEditingInstance ? 'disabled' : ''} required>
+            <input type="date" id="edit-date-${currentEditId}" min="${new Date().toISOString().split('T')[0]}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${initialData.isWeekly && !isEditingInstance ? 'disabled' : ''} required>
         </div>
 
         <div class="days-of-week-selection" id="days-of-week-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
@@ -379,7 +378,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 
         <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
             <label for="edit-weekly-end-date-${currentEditId}">End Date:</label>
-            <input type="date" id="edit-weekly-end-date-${currentEditId}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
+            <input type="date" id="edit-weekly-end-date-${currentEditId}" min="${new Date().toISOString().split('T')[0]}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
 
         <div>
@@ -484,9 +483,12 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
             const fetchId = isEditingInstance ? originalEventIdForInstance : eventIdToUpdate;
             const eventData = eventDocsMap.get(fetchId);
             if (eventData) {
-                const occDateStr = isEditingInstance ? originalOccurrenceDate : (eventData.eventDate || originalOccurrenceDate);
-                const displayCard = createSingleOccurrenceDisplayCard(eventData, new Date(occDateStr + 'T00:00:00Z'), fetchId);
+                const occDateStr = isEditingInstance ? originalOccurrenceDate : (eventData.eventDate || null);
+                const displayCard = createSingleOccurrenceDisplayCard(eventData, new Date((occDateStr || eventData.weeklyStartDate) + 'T00:00:00Z'), fetchId);
                 cardDiv.replaceWith(displayCard);
+                requestAnimationFrame(() => {
+                    scrollToEditedEvent(fetchId, occDateStr);
+                });
             } else {
                 cardDiv.remove();
             }
@@ -537,9 +539,30 @@ async function saveEvent(cardDiv, existingEventId = null) {
     if (!address) { await showAppAlert("Address is required."); return; }
     if (!location) { await showAppAlert("Specific Location (e.g., Room 132) is required."); return; }
     if (startTime >= endTime) { await showAppAlert("End time cannot be earlier than or the same as the start time!"); return; }
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!isWeekly && eventDate < today) {
+        await showAppAlert("Event date cannot be in the past.");
+        return;
+    }
+
+    if (isWeekly && weeklyEndDate < today) {
+        await showAppAlert("The end date of a repeating event cannot be in the past.");
+        return;
+    }
+
     if (isWeekly && !isEditingInstance) {
         if (calculateFutureOccurrences(weeklyStartDate, weeklyEndDate, daysOfWeek, [], startTime, endTime) === 0) {
             await showAppAlert("This setup doesn't include any upcoming events. Try adjusting the dates or days of the week.");
+            return;
+        }
+    }
+
+    if (!isWeekly && eventDate === today) {
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        if (endTime <= currentTime) {
+            await showAppAlert("The event end time has already passed today.");
             return;
         }
     }
@@ -1161,16 +1184,24 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     modal.classList.remove('rsvp-scroll-active');
     document.body.classList.add('no-scroll');
 
-    document.getElementById('close-rsvp-modal').addEventListener('click', () => {
+    let safetyTimer = null;
+
+    function closeRsvpModal() {
+        clearTimeout(safetyTimer);
         overlay.style.display = 'none';
         modal.style.display = 'none';
-        document.body.classList.remove('no-scroll');
+        document.body.classList.remove('no-scroll', 'no-interaction');
         modal.classList.add('rsvp-loading-collapsed');
         modal.classList.remove('rsvp-scroll-active');
-        document.body.classList.remove('no-interaction');
         const contentDiv = document.getElementById('rsvp-lists');
         if (contentDiv) contentDiv.style.display = 'none';
-    });
+    }
+
+    document.getElementById('close-rsvp-modal').addEventListener('click', closeRsvpModal);
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeRsvpModal();
+    };
 
     overlay.style.display = 'flex';
     modal.style.display = 'flex';
@@ -1213,8 +1244,16 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         document.getElementById('rsvp-lists').style.display = 'block';
         modal.classList.remove('rsvp-loading-collapsed');
 
+        safetyTimer = setTimeout(() => {
+            modal.classList.add('rsvp-scroll-active');
+            document.getElementById('rsvp-lists').style.display = 'block';
+            document.getElementById('close-rsvp-modal').disabled = false;
+            document.body.classList.remove('no-interaction');
+        }, 600);
+
         modal.addEventListener('transitionend', function handler(e) {
             if (e.propertyName === 'max-height') {
+                clearTimeout(safetyTimer);
                 modal.classList.add('rsvp-scroll-active');
                 document.getElementById('rsvp-lists').style.display = 'block';
                 document.getElementById('close-rsvp-modal').disabled = false;
@@ -1225,11 +1264,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     } catch (error) {
         console.error("Error fetching RSVP details:", error);
         await showAppAlert("Failed to load RSVP details: " + error.message);
-        overlay.style.display = 'none';
-        modal.style.display = 'none';
-        document.body.classList.remove('no-scroll', 'no-interaction');
-        modal.classList.add('rsvp-loading-collapsed');
-        modal.classList.remove('rsvp-scroll-active');
+        closeRsvpModal();
     }
 }
 
