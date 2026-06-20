@@ -194,7 +194,10 @@ function showNoClubsCard(container) {
         <div class="cc-card-body">
         <span class="club-card-name">No Clubs Yet</span>
         <div class="cc-card-meta-row">
-            <span class="club-role-pill" style="--accent:#5f6b78;">Join or create one</span>
+            <div style="display:flex; gap:8px;">
+              <span class="club-role-pill" id="joinPill" style="--accent:#5f6b78; cursor:pointer;">Join one</span>
+              <span class="club-role-pill" id="createPill" style="--accent:#5f6b78; cursor:pointer;">Create one</span>
+            </div>
         </div>
         </div>
     </div>
@@ -202,4 +205,12 @@ function showNoClubsCard(container) {
 
   container.appendChild(card);
   document.getElementById("managed-section").style.display = "block";
+
+  card.querySelector("#joinPill").addEventListener("click", () => {
+    window.location.href = "join_club.html";
+  });
+
+  card.querySelector("#createPill").addEventListener("click", () => {
+    window.location.href = "create_club.html";
+  });
 }
