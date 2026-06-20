@@ -1293,7 +1293,7 @@ function showEmojiPickerOverlay(messageId) {
             ::-webkit-scrollbar { display: none; }
             * { scrollbar-width: none; -ms-overflow-style: none; }
 
-            .search-row, .search-wrapper, .search, #search, .pad-top {
+            .search-row, .search-wrapper, .pad-top {
                 background: transparent !important;
                 border-bottom: none !important;
             }
@@ -1310,7 +1310,6 @@ function showEmojiPickerOverlay(messageId) {
                 color: black !important;
                 border: 2px solid black !important;
                 border-radius: 10px !important;
-                box-shadow: 0px 1px 0px #000000 !important;
                 padding: 2px 10px !important;
                 outline: none !important;
                 width: 100% !important;
@@ -1320,7 +1319,6 @@ function showEmojiPickerOverlay(messageId) {
 
             input[type="search"]:focus {
                 outline: none !important;
-                box-shadow: 0px 1px 0px #000000 !important;
             }
 
             input[type="search"]::-webkit-search-cancel-button {
