@@ -41,13 +41,34 @@ function getUrlParameter(name) {
 }
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) return null;
-    
-    const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", uid));
-    if (memberDoc.exists()) return memberDoc.data().role || 'member';
-    
-    const clubDoc = await getDoc(doc(db, "clubs", clubId));
-    return clubDoc.data()?.managerUid === uid ? 'manager' : 'member';
+    if (!clubId || !uid) {
+        console.warn("getMemberRoleForClub: clubId or uid is missing.");
+        return null;
+    }
+
+    const cacheKey = `role_${clubId}_${uid}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) return cached;
+
+    try {
+        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
+        const memberRoleSnap = await getDoc(memberRoleRef);
+
+        let role;
+        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
+            role = memberRoleSnap.data().role;
+        } else {
+            const clubRef = doc(db, "clubs", clubId);
+            const clubSnap = await getDoc(clubRef);
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+        }
+
+        sessionStorage.setItem(cacheKey, role);
+        return role;
+    } catch (error) {
+        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
+        return null;
+    }
 }
 
 window.goToClubPage = function() {

@@ -185,31 +185,36 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 }
 
 
-async function getMemberRoleForClub(clubID, memberUid) {
-  if (!clubID || !memberUid) {
-    console.warn("getMemberRoleForClub: clubID or memberUid is missing.");
-    return null;
-  }
-  try {
-    const memberRoleRef = doc(db, "clubs", clubID, "members", memberUid);
-    const memberRoleSnap = await getDoc(memberRoleRef);
-    if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-      return memberRoleSnap.data().role;
-    } else {
-      const clubRef = doc(db, "clubs", clubID);
-      const clubSnap = await getDoc(clubRef);
-      if (clubSnap.exists() && clubSnap.data().managerUid === memberUid) {
-          return 'manager'; 
-      }
-      console.warn(`Role document not found for user ${memberUid} in club ${clubID}. Defaulting to 'member'.`);
-      return 'member'; 
+async function getMemberRoleForClub(clubId, uid) {
+    if (!clubId || !uid) {
+        console.warn("getMemberRoleForClub: clubId or uid is missing.");
+        return null;
     }
-  } catch (error) {
-    console.error(`Error fetching role for user ${memberUid} in club ${clubID}:`, error);
-    return null; 
-  }
-}
 
+    const cacheKey = `role_${clubId}_${uid}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) return cached;
+
+    try {
+        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
+        const memberRoleSnap = await getDoc(memberRoleRef);
+
+        let role;
+        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
+            role = memberRoleSnap.data().role;
+        } else {
+            const clubRef = doc(db, "clubs", clubId);
+            const clubSnap = await getDoc(clubRef);
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+        }
+
+        sessionStorage.setItem(cacheKey, role);
+        return role;
+    } catch (error) {
+        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
+        return null;
+    }
+}
 
 
 async function copyToClipboard(originalCode, buttonElement) {
@@ -561,16 +566,12 @@ onSnapshot(membersRef, async (snapshot) => {
         isInitialSnapshot = false; 
         return;
     }
-
-
+    sessionStorage.removeItem(`role_${clubId}_${currentUser.uid}`);
     console.log("Role update detected! Updating the Member List UI...");
-    
     if (currentUser && clubId) {
-        
         await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, false, true);
     }
 });
-
 
 
 function updateUnreadBadge(count) {
