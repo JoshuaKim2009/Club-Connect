@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, where, getCountFromServer, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection, query, where, getCountFromServer, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert } from './dialog.js';
 
 const firebaseConfig = {
@@ -15,7 +15,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 
 
 const logoutButton = document.getElementById("logoutButton");
@@ -183,13 +185,22 @@ document.getElementById('announcements-home-button').addEventListener('click', a
 async function getTotalUnreadAnnouncementsAcrossClubs(userId) {
   if (!userId) return 0;
   try {
-    // Get all clubs
-    const clubsSnap = await getDocs(collection(db, "clubs"));
+    // Get only the clubs this user actually belongs to
+    const userSnap = await getDoc(doc(db, "users", userId));
+    if (!userSnap.exists()) return 0;
+
+    const userData = userSnap.data();
+    const clubIds = [
+      ...new Set([
+        ...(userData.managed_clubs || []),
+        ...(userData.member_clubs || [])
+      ])
+    ];
+
     let total = 0;
 
-    await Promise.all(clubsSnap.docs.map(async (clubDoc) => {
+    await Promise.all(clubIds.map(async (clubId) => {
       try {
-        const clubId = clubDoc.id;
         const memberDocRef = doc(db, "clubs", clubId, "members", userId);
         const memberSnap = await getDoc(memberDocRef);
         if (!memberSnap.exists()) return;
@@ -207,7 +218,7 @@ async function getTotalUnreadAnnouncementsAcrossClubs(userId) {
         const snap = await getCountFromServer(q);
         total += snap.data().count;
       } catch (e) {
-        console.warn(`Skipping club for unread count:`, e);
+        console.warn(`Skipping club ${clubId} for unread count:`, e);
       }
     }));
 

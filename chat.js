@@ -23,7 +23,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '😂', '💀', '😭'];
 
 
 const db = initializeFirestore(app, {
-    cache: persistentLocalCache({
+    localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager()
     })
 });
