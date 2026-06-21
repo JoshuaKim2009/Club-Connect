@@ -72,88 +72,97 @@ function buildCardHTML(clubName, roleLabel, memberCount) {
   `;
 }
 
-
 async function loadAllClubs() {
     const container = document.getElementById("clubContainer");
+    try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-    const userDocRef = doc(db, "users", currentUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+            showNoClubsCard(container);
+            return;
+        }
 
-    if (!userDocSnap.exists()) return;
+        const userData = userDocSnap.data();
+        const managedClubs = userData.managed_clubs || [];
+        const memberClubs  = userData.member_clubs  || [];
+        const adminClubs   = new Set(userData.admin_clubs || []);
 
-    const userData = userDocSnap.data();
-    const managedClubs = userData.managed_clubs || [];
-    const memberClubs  = userData.member_clubs  || [];
-    const adminClubs   = new Set(userData.admin_clubs || []);
+        const [managedSnaps, memberSnaps] = await Promise.all([
+            Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
+            Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
+        ]);
 
-    const [managedSnaps, memberSnaps] = await Promise.all([
-        Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
-        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
-    ]);
+        container.innerHTML = '';
+        cardIndex = 0;
 
-    container.innerHTML = '';
-    cardIndex = 0;
+        managedSnaps.forEach((snap, i) => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            const memberCount = (data.memberUIDs || []).length;
 
-    managedSnaps.forEach((snap, i) => {
-        if (!snap.exists()) return;
-        const data = snap.data();
-        const memberCount = (data.memberUIDs || []).length;
+            const btn = document.createElement("button");
+            btn.className = "club-btn";
+            btn.dataset.clubId = managedClubs[i];
+            btn.style.animationDelay = `${cardIndex * 100}ms`;
+            btn.style.setProperty('--accent', ACCENT.manager);
+            btn.innerHTML = buildCardHTML(data.clubName, ROLE_LABELS.manager, memberCount);
+            btn.addEventListener("click", () => {
+                window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
+            });
 
-        const btn = document.createElement("button");
-        btn.className = "club-btn";
-        btn.dataset.clubId = managedClubs[i];
-        btn.style.animationDelay = `${cardIndex * 100}ms`;
-        btn.style.setProperty('--accent', ACCENT.manager);
-        btn.innerHTML = buildCardHTML(data.clubName, ROLE_LABELS.manager, memberCount);
-        btn.addEventListener("click", () => {
-            window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
+            container.appendChild(btn);
+            cardIndex++;
         });
 
-        container.appendChild(btn);
-        cardIndex++;
-    });
+        const memberClubsWithRoles = memberSnaps
+            .map((snap, i) => ({
+                snap,
+                role: adminClubs.has(memberClubs[i]) ? 'admin' : 'member',
+                id: memberClubs[i]
+            }))
+            .sort((a, b) => {
+                if (a.role === 'admin' && b.role !== 'admin') return -1;
+                if (a.role !== 'admin' && b.role === 'admin') return 1;
+                return 0;
+            });
 
-    const memberClubsWithRoles = memberSnaps
-        .map((snap, i) => ({
-            snap,
-            role: adminClubs.has(memberClubs[i]) ? 'admin' : 'member',
-            id: memberClubs[i]
-        }))
-        .sort((a, b) => {
-            if (a.role === 'admin' && b.role !== 'admin') return -1;
-            if (a.role !== 'admin' && b.role === 'admin') return 1;
-            return 0;
+        memberClubsWithRoles.forEach(({ snap, role, id }) => {
+            if (!snap.exists()) return;
+
+            const data = snap.data();
+            const memberCount = (data.memberUIDs || []).length;
+            const accentColor = ACCENT[role] || ACCENT.member;
+
+            const btn = document.createElement("button");
+            btn.className = "club-btn member-club-btn";
+            btn.dataset.clubId = id;
+            btn.dataset.userRole = role;
+            btn.style.animationDelay = `${cardIndex * 100}ms`;
+            btn.style.setProperty('--accent', accentColor);
+            btn.innerHTML = buildCardHTML(data.clubName, getRoleLabel(role), memberCount);
+            btn.addEventListener("click", async () => {
+                if (role === 'manager' || role === 'admin') {
+                    window.location.href = `club_page_manager.html?id=${id}`;
+                } else {
+                    window.location.href = `club_page_member.html?id=${id}`;
+                }
+            });
+
+            container.appendChild(btn);
+            cardIndex++;
         });
 
-    memberClubsWithRoles.forEach(({ snap, role, id }) => {
-        if (!snap.exists()) return;
+        if (container.children.length === 0) showNoClubsCard(container);
 
-        const data = snap.data();
-        const memberCount = (data.memberUIDs || []).length;
-        const accentColor = ACCENT[role] || ACCENT.member;
-
-        const btn = document.createElement("button");
-        btn.className = "club-btn member-club-btn";
-        btn.dataset.clubId = id;
-        btn.dataset.userRole = role;
-        btn.style.animationDelay = `${cardIndex * 100}ms`;
-        btn.style.setProperty('--accent', accentColor);
-        btn.innerHTML = buildCardHTML(data.clubName, getRoleLabel(role), memberCount);
-        btn.addEventListener("click", async () => {
-            if (role === 'manager' || role === 'admin') {
-                window.location.href = `club_page_manager.html?id=${id}`;
-            } else {
-                window.location.href = `club_page_member.html?id=${id}`;
-            }
-        });
-
-        container.appendChild(btn);
-        cardIndex++;
-    });
-
-    if (container.children.length === 0) showNoClubsCard(container);
-    document.getElementById("clubs-spinner").style.display = "none";
+    } catch (error) {
+        console.error("Error loading clubs:", error);
+        container.innerHTML = '<p class="fancy-label">Failed to load clubs. Please refresh.</p>';
+    } finally {
+        document.getElementById("clubs-spinner").style.display = "none";
+    }
 }
+
 
 function showNoClubsCard(container) {
   const card = document.createElement("div");
