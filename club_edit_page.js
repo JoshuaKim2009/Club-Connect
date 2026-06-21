@@ -504,16 +504,13 @@ async function deleteClub(clubId) {
         if (memberUIDsToUpdate.length > 0) {
             console.log(`Removing club ID ${clubId} from all members' 'member_clubs' lists...`);
             const updateMemberPromises = memberUIDsToUpdate.map(async (memberUid) => {
-                if (memberUid === managerUid) {
-                    console.log(`Skipping member_clubs update for manager UID ${memberUid}.`);
-                    return Promise.resolve(); 
-                }
+                if (memberUid === managerUid) return Promise.resolve();
                 const memberUserDocRef = doc(db, "users", memberUid);
                 try {
                     await updateDoc(memberUserDocRef, {
-                        member_clubs: arrayRemove(clubId) 
+                        member_clubs: arrayRemove(clubId),
+                        admin_clubs: arrayRemove(clubId)  // safe even if they weren't admin
                     });
-                    console.log(`Club ID ${clubId} removed from member ${memberUid}'s 'member_clubs' list.`);
                 } catch (memberUpdateError) {
                     console.error(`Error removing club ID from member ${memberUid}'s profile:`, memberUpdateError);
                 }

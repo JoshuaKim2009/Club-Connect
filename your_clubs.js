@@ -54,38 +54,6 @@ function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
-
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
-        } else {
-            const clubRef = doc(db, "clubs", clubId);
-            const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
-        }
-
-        sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
-    }
-}
-
-
 
 function buildCardHTML(clubName, roleLabel, memberCount) {
   return `
@@ -116,17 +84,16 @@ async function loadAllClubs() {
     const userData = userDocSnap.data();
     const managedClubs = userData.managed_clubs || [];
     const memberClubs  = userData.member_clubs  || [];
+    const adminClubs   = new Set(userData.admin_clubs || []);
 
-    const [managedSnaps, memberSnaps, roles] = await Promise.all([
+    const [managedSnaps, memberSnaps] = await Promise.all([
         Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
-        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id)))),
-        Promise.all(memberClubs.map(id => getMemberRoleForClub(id, currentUser.uid)))
-    ]); 
+        Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
+    ]);
 
     container.innerHTML = '';
     cardIndex = 0;
 
-    //Managed clubs
     managedSnaps.forEach((snap, i) => {
         if (!snap.exists()) return;
         const data = snap.data();
@@ -137,9 +104,7 @@ async function loadAllClubs() {
         btn.dataset.clubId = managedClubs[i];
         btn.style.animationDelay = `${cardIndex * 100}ms`;
         btn.style.setProperty('--accent', ACCENT.manager);
-
         btn.innerHTML = buildCardHTML(data.clubName, ROLE_LABELS.manager, memberCount);
-
         btn.addEventListener("click", () => {
             window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
         });
@@ -148,18 +113,20 @@ async function loadAllClubs() {
         cardIndex++;
     });
 
-    //Member clubs
-    const memberClubsSorted = memberSnaps
-        .map((snap, i) => ({ snap, role: roles[i], id: memberClubs[i] }))
+    const memberClubsWithRoles = memberSnaps
+        .map((snap, i) => ({
+            snap,
+            role: adminClubs.has(memberClubs[i]) ? 'admin' : 'member',
+            id: memberClubs[i]
+        }))
         .sort((a, b) => {
             if (a.role === 'admin' && b.role !== 'admin') return -1;
             if (a.role !== 'admin' && b.role === 'admin') return 1;
             return 0;
         });
 
-    memberClubsSorted.forEach(({ snap, role, id }) => {
+    memberClubsWithRoles.forEach(({ snap, role, id }) => {
         if (!snap.exists()) return;
-        if (!role) return;
 
         const data = snap.data();
         const memberCount = (data.memberUIDs || []).length;
@@ -171,9 +138,7 @@ async function loadAllClubs() {
         btn.dataset.userRole = role;
         btn.style.animationDelay = `${cardIndex * 100}ms`;
         btn.style.setProperty('--accent', accentColor);
-
         btn.innerHTML = buildCardHTML(data.clubName, getRoleLabel(role), memberCount);
-
         btn.addEventListener("click", async () => {
             if (role === 'manager' || role === 'admin') {
                 window.location.href = `club_page_manager.html?id=${id}`;
@@ -186,12 +151,9 @@ async function loadAllClubs() {
         cardIndex++;
     });
 
-    if (container.children.length === 0) {
-        showNoClubsCard(container);
-    }
+    if (container.children.length === 0) showNoClubsCard(container);
     document.getElementById("clubs-spinner").style.display = "none";
 }
-
 
 function showNoClubsCard(container) {
   const card = document.createElement("div");

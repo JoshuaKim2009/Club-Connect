@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
@@ -132,40 +132,21 @@ function sortMembersAlphabetically(names, uids, roles = null) {
     };
 }
 
-async function createMemberRoleDocument(clubId, memberUid) {
-    if (!clubId || !memberUid) { console.error("createMemberRoleDocument: missing args."); return; }
-    try {
-        await setDoc(doc(db, "clubs", clubId, "members", memberUid), {
-            role: "member",
-            joinedAt: serverTimestamp()
-        });
-        console.log(`User ${memberUid} added to members subcollection with role 'member' for club ${clubId}.`);
-    } catch (error) {
-        console.error("Error creating member role document:", error);
-        throw new Error("Failed to create member role document: " + error.message);
-    }
-}
-
-async function deleteMemberRoleDocument(clubId, memberUid) {
-    if (!clubId || !memberUid) { console.error("deleteMemberRoleDocument: missing args."); return; }
-    try {
-        await deleteDoc(doc(db, "clubs", clubId, "members", memberUid));
-        console.log(`User ${memberUid} removed from members subcollection for club ${clubId}.`);
-    } catch (error) {
-        console.error("Error deleting member role document:", error);
-        throw new Error("Failed to delete member role document: " + error.message);
-    }
-}
 
 async function approveMember(clubID, memberID) {
     if (!clubID || !memberID) { console.error("approveMember: missing args."); return; }
     try {
-        await updateDoc(doc(db, "clubs", clubID), {
+        const batch = writeBatch(db);
+        batch.update(doc(db, "clubs", clubID), {
             memberUIDs: arrayUnion(memberID),
             pendingMemberUIDs: arrayRemove(memberID)
         });
-        await updateDoc(doc(db, "users", memberID), { member_clubs: arrayUnion(clubID) });
-        await createMemberRoleDocument(clubID, memberID);
+        batch.update(doc(db, "users", memberID), { member_clubs: arrayUnion(clubID) });
+        batch.set(doc(db, "clubs", clubID, "members", memberID), {
+            role: "member",
+            joinedAt: serverTimestamp()
+        });
+        await batch.commit();
         console.log(`Successfully moved user ${memberID} from pending to members for club ${clubID}.`);
     } catch (error) {
         console.error("Error approving member:", error);
@@ -187,9 +168,14 @@ async function denyMember(clubID, memberID) {
 async function removeMember(clubID, memberID) {
     if (!clubID || !memberID) { console.error("removeMember: missing args."); return; }
     try {
-        await updateDoc(doc(db, "clubs", clubID), { memberUIDs: arrayRemove(memberID) });
-        await updateDoc(doc(db, "users", memberID), { member_clubs: arrayRemove(clubID) });
-        await deleteMemberRoleDocument(clubID, memberID);
+        const batch = writeBatch(db);
+        batch.update(doc(db, "clubs", clubID), { memberUIDs: arrayRemove(memberID) });
+        batch.update(doc(db, "users", memberID), {
+            member_clubs: arrayRemove(clubID),
+            admin_clubs: arrayRemove(clubID)
+        });
+        batch.delete(doc(db, "clubs", clubID, "members", memberID));
+        await batch.commit();
         console.log(`Successfully removed user ${memberID} from club ${clubID}.`);
     } catch (error) {
         console.error("Error removing member:", error);
@@ -197,10 +183,16 @@ async function removeMember(clubID, memberID) {
     }
 }
 
+
 async function updateMemberRole(clubID, memberUid, newRole) {
     if (!clubID || !memberUid) { console.error("updateMemberRole: missing args."); return; }
     try {
-        await updateDoc(doc(db, "clubs", clubID, "members", memberUid), { role: newRole });
+        const batch = writeBatch(db);
+        batch.update(doc(db, "clubs", clubID, "members", memberUid), { role: newRole });
+        batch.update(doc(db, "users", memberUid), {
+            admin_clubs: newRole === 'admin' ? arrayUnion(clubID) : arrayRemove(clubID)
+        });
+        await batch.commit();
         console.log(`User ${memberUid}'s role updated to '${newRole}' for club ${clubID}.`);
     } catch (error) {
         console.error(`Error updating member role to ${newRole}:`, error);
@@ -227,15 +219,21 @@ async function transferClubManagement(clubID, newManagerUid) {
 
             const newManagerEmail = newManagerUserDoc.data().email || null;
             const previousManagerUserRef = doc(db, "users", previousManagerUid);
-            await transaction.get(previousManagerUserRef); // read required before write in transaction
+            await transaction.get(previousManagerUserRef);
 
             transaction.update(clubRef, { managerUid: newManagerUid, managerEmail: newManagerEmail });
-            transaction.update(previousManagerUserRef, { managed_clubs: arrayRemove(clubID), member_clubs: arrayUnion(clubID) });
-            transaction.update(newManagerUserRef, { managed_clubs: arrayUnion(clubID), member_clubs: arrayRemove(clubID) });
+            transaction.update(previousManagerUserRef, {
+                managed_clubs: arrayRemove(clubID),
+                member_clubs: arrayUnion(clubID),
+                admin_clubs: arrayUnion(clubID)
+            });
+            transaction.update(newManagerUserRef, {
+                managed_clubs: arrayUnion(clubID),
+                member_clubs: arrayRemove(clubID),
+                admin_clubs: arrayRemove(clubID)
+            });
             transaction.update(doc(db, "clubs", clubID, "members", previousManagerUid), { role: "admin" });
             transaction.update(doc(db, "clubs", clubID, "members", newManagerUid), { role: "manager" });
-
-            console.log(`Management of club ${clubID} successfully transferred from ${previousManagerUid} to ${newManagerUid}.`);
         });
 
         await showAppAlert(`${ROLE_LABELS.manager} role transferred successfully!`);
@@ -246,6 +244,7 @@ async function transferClubManagement(clubID, newManagerUid) {
         throw error;
     }
 }
+
 
 
 function displayPendingMembers(memberNames, memberUids) {

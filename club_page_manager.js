@@ -82,10 +82,8 @@ onAuthStateChanged(auth, async (user) => {
             clubPageTitle.textContent = "";
             myName = user.displayName;
             myUid = user.uid;
-            const [, memberData] = await Promise.all([
-                fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true),
-                fetchMemberData(clubId, currentUser.uid)
-            ]);
+            const memberData = await fetchMemberData(clubId, currentUser.uid);
+            await fetchClubDetails(clubId, currentUser.uid, currentUser.displayName, true);
 
             const [unreadCount, unreadMessagesCount, unreadPollsCount, pendingCount] = await Promise.all([
                 getUnreadAnnouncementCount(clubId, currentUser.uid, memberData),
@@ -728,32 +726,6 @@ function setupMessageListeners(clubId, userId) {
 }
 
 
-async function getPendingRequestsCount(clubId) {
-    if (!clubId) {
-        console.warn("Cannot get pending requests count: clubId missing.");
-        return 0;
-    }
-
-    try {
-        const clubRef = doc(db, "clubs", clubId);
-        const clubSnap = await getDoc(clubRef);
-        
-        if (!clubSnap.exists()) {
-            console.warn(`Club document not found for club ${clubId}`);
-            return 0;
-        }
-        
-        const clubData = clubSnap.data();
-        const pendingMemberUIDs = clubData.pendingMemberUIDs || [];
-        
-        console.log(`Club ${clubId} has ${pendingMemberUIDs.length} pending requests.`);
-        return pendingMemberUIDs.length;
-    } catch (error) {
-        console.error("Error getting pending requests count:", error);
-        return 0;
-    }
-}
-
 function updatePendingRequestsBadge(count) {
     const badgeElement = document.getElementById('pendingRequestsBadge');
     if (badgeElement) {
@@ -776,10 +748,9 @@ function setupPendingRequestsListeners(clubId) {
 
     const clubRef = doc(db, "clubs", clubId);
 
-    onSnapshot(clubRef, async (docSnap) => {
+    onSnapshot(clubRef, (docSnap) => {
         if (docSnap.exists()) {
-            console.log("Club document changed, recalculating pending requests count.");
-            const pendingCount = await getPendingRequestsCount(clubId);
+            const pendingCount = (docSnap.data().pendingMemberUIDs || []).length;
             updatePendingRequestsBadge(pendingCount);
         }
     }, (error) => {
@@ -872,7 +843,11 @@ async function fetchMemberData(clubId, userId) {
             return null;
         }
         
-        return memberDocSnap.data();
+        const data = memberDocSnap.data();
+        if (data.role) {
+            sessionStorage.setItem(`role_${clubId}_${userId}`, data.role);
+        }
+        return data;
     } catch (error) {
         console.error("Error fetching member data:", error);
         return null;

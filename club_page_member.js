@@ -86,9 +86,8 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
         if (clubId) {
             clubPageTitle.textContent = ""; 
-            setupClubMemberPageListeners(clubId, myUid, myName);
-
             const memberData = await fetchMemberData(clubId, currentUser.uid);
+            setupClubMemberPageListeners(clubId, myUid, myName);
 
             const [unreadCount, unreadMessagesCount, unreadPollsCount] = await Promise.all([
                 getUnreadAnnouncementCount(clubId, myUid, memberData),
@@ -840,7 +839,11 @@ async function fetchMemberData(clubId, userId) {
             return null;
         }
         
-        return memberDocSnap.data();
+        const data = memberDocSnap.data();
+        if (data.role) {
+            sessionStorage.setItem(`role_${clubId}_${userId}`, data.role);
+        }
+        return data;
     } catch (error) {
         console.error("Error fetching member data:", error);
         return null;
