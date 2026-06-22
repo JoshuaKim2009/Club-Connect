@@ -1,10 +1,7 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
-
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -17,68 +14,58 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-
 const auth = getAuth(app);
 
 
-//submit
+
+function getLoginErrorMessage(code) {
+  switch (code) {
+    case 'auth/invalid-email':
+      return "That doesn't look like a valid email address. Please double-check it.";
+    case 'auth/user-disabled':
+      return "This account has been disabled. Please contact support for help.";
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return "Incorrect email or password. Please check your details and try again.";
+    case 'auth/too-many-requests':
+      return "Too many failed attempts. Please wait a moment before trying again.";
+    case 'auth/network-request-failed':
+      return "Couldn't reach the server. Please check your internet connection and try again.";
+    default:
+      return "Something went wrong during login. Please try again.";
+  }
+}
+
+
+
 const submit = document.getElementById("login-submit");
 
-submit.addEventListener("click", async function(event){
-  
-  event.preventDefault()
-  submit.style.width = submit.offsetWidth + 'px';
+function resetSubmit() {
+  submit.disabled = false;
+  submit.innerHTML = 'Login';
+}
+
+submit.addEventListener("click", async function(event) {
+  event.preventDefault();
+
+  submit.style.width  = submit.offsetWidth  + 'px';
   submit.style.height = submit.offsetHeight + 'px';
   submit.disabled = true;
   submit.innerHTML = '<span class="spinner"></span>';
 
-  
-  const email = document.getElementById("username").value;
+  const email    = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value;
-  
 
-  signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      const data = { displayName: user.displayName, email: user.email, uid: user.uid };
-      localStorage.setItem('cc-user', JSON.stringify(data));
-      sessionStorage.setItem('cc-user', JSON.stringify(data));
-      window.location.href = "index.html";
-    })
-    .catch(async (error) => {
-      const errorCode = error.code;
-      let userFriendlyMessage = "An unexpected error occurred during login. Please try again.";
-
-      switch (errorCode) {
-        case 'auth/invalid-email': 
-          userFriendlyMessage = "The email address you entered is not valid.";
-          break;
-        case 'auth/user-disabled': 
-          userFriendlyMessage = "This account has been disabled. Please contact support.";
-          break;
-        case 'auth/user-not-found': 
-          userFriendlyMessage = "No user found with this email. Please check your email or register.";
-          break;
-        case 'auth/wrong-password': 
-          userFriendlyMessage = "Incorrect password. Please try again.";
-          break;
-        case 'auth/invalid-credential': 
-          userFriendlyMessage = "Invalid login credentials. Please check your email and password.";
-          break;
-        default:
-          userFriendlyMessage = `Error: ${error.message}`;
-          break;
-      }
-      submit.disabled = false;
-      submit.innerHTML = 'Login';
-
-      await showAppAlert(userFriendlyMessage);
-    });
-
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    const data = { displayName: user.displayName, email: user.email, uid: user.uid };
+    localStorage.setItem('cc-user', JSON.stringify(data));
+    sessionStorage.setItem('cc-user', JSON.stringify(data));
+    window.location.href = "index.html";
+  } catch (error) {
+    resetSubmit();
+    await showAppAlert(getLoginErrorMessage(error.code));
+  }
 });
-
-
-
-

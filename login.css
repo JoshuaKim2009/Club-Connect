@@ -11,21 +11,14 @@ body {
   align-items: center;
 }
 
-#login-submit,
-#register-submit {
-  align-self: center !important;
-  width: 150px !important;
-}
-
 .auth-box {
   margin: 0 auto;
-  padding: 15px;
   border: 2px solid black;
   border-radius: 10px;
   background: linear-gradient(#ffffff, #e2e2e2);
   box-shadow: 0px 2px 0px #000000;
   width: 85%;
-  max-width: 400px;
+  max-width: 600px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -34,9 +27,9 @@ body {
 }
 
 .auth-box-title {
-  -webkit-text-stroke: 0px black;
   font-size: 50px;
-  font-family: "New Amsterdam", sans-serif;
+  /* font-family: "New Amsterdam", sans-serif; */
+  font-family: var(--primary-font-family);
   font-weight: 400;
   font-style: normal;
   text-align: center;
@@ -46,7 +39,7 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  letter-spacing: 0.05em;
+  /* letter-spacing: 0.05em; */
   margin: 0 -15px 0 -15px;
   padding: 0 15px 4px 15px;
   border-bottom: 2px dotted black;
@@ -68,7 +61,22 @@ body {
   width: auto;
 }
 
-.auth-box input {
+.auth-box input[type="text"],
+.auth-box input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fancy-login-input {
+  background: linear-gradient(#ffffff, #f5f5f5);
+  font-family: var(--primary-font-family);
+  font-size: 20px;
+  color: black;
+  border: 2px solid black;
+  padding: 4px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 1px 0px #000000;
   width: 100%;
   box-sizing: border-box;
 }
@@ -77,23 +85,17 @@ body {
   background-color: transparent;
   height: 3px;
   border: none;
-  margin: 0;
+  margin: -4px 0;
 }
 
-.auth-switch-button {
-  display: block;
-  margin: 12px auto 0 auto;
-  width: 85%;
-  max-width: 400px;
-  text-align: center;
-  text-decoration: none;
-  box-sizing: border-box;
+#login-submit,
+#register-submit {
+  align-self: center !important;
+  width: 150px !important;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .spinner {
@@ -109,13 +111,12 @@ body {
 
 .auth-register-card {
   margin: 12px auto 20px auto;
-  padding: 15px;
   border: 2px solid black;
   border-radius: 10px;
   background: linear-gradient(#ffffff, #e2e2e2);
   box-shadow: 0px 2px 0px #000000;
   width: 85%;
-  max-width: 400px;
+  max-width: 600px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -123,16 +124,6 @@ body {
   gap: 6px;
   text-align: center;
   padding: 6px 15px 15px 15px;
-}
-
-.auth-register-card-title {
-  font-family: var(--primary-font-family);
-  font-size: 55px;
-  font-weight: normal;
-  color: black;
-  margin: 0 0 2px 0;
-  -webkit-text-fill-color: black;
-  background: none;
 }
 
 .auth-register-card-subtitle {
@@ -148,22 +139,4 @@ body {
   box-sizing: border-box;
   text-align: center;
   align-self: center;
-}
-
-.auth-box .auth-divider {
-  margin: -4px 0;
-}
-
-.fancy-login-input {
-    background: linear-gradient(#ffffff, #f5f5f5);
-    font-family: var(--primary-font-family);
-    font-size: 20px;
-    color: black;
-    border: 2px solid black;
-    padding: 4px 8px;
-    border-radius: 10px;
-    cursor: pointer;
-    box-shadow: 0px 1px 0px #000000;
-    width: 100%;
-    box-sizing: border-box;
 }

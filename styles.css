@@ -1730,7 +1730,9 @@ input[type="checkbox"]:checked {
 
   box-sizing: border-box;
   font-family: var(--primary-font-family, sans-serif);
-  background: linear-gradient(#868686, #747474);
+  /* background: linear-gradient(#868686, #747474); */
+  /* background: linear-gradient(#ffffff, #e2e2e2); */
+  background: #f0f0f0;
   border: 2px solid #000000; /* 3→2 */
   padding: 6px 10px;
   margin: 0;
@@ -1739,7 +1741,7 @@ input[type="checkbox"]:checked {
   font-size: 0.9em;
   text-align: center;
 
-  color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -1751,12 +1753,14 @@ input[type="checkbox"]:checked {
 }
 
 .view-availability-btn:hover {
-  background: linear-gradient(#5f5f5f, #646464);
+  /* background: linear-gradient(#5f5f5f, #646464); */
+  filter: brightness(1.1);
+  background: #e2e2e2;
 }
 
-.view-availability-btn:active {
+/* .view-availability-btn:active {
   background: linear-gradient(#5f5f5f, #646464);
-}
+} */
 
 #rsvp-details-overlay {
   position: fixed;
@@ -1958,7 +1962,7 @@ input[type="checkbox"]:checked {
 #announcementsContainer {
 
   width: 85%;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto; 
   padding: 10px 0; 
 }
@@ -1979,11 +1983,12 @@ input[type="checkbox"]:checked {
   padding: 8px; 
   margin: 8px auto; 
   width: 85%; 
-  max-width: 600px; 
-  text-align: center;
+  max-width: 800px; 
+  text-align: left;
   font-family: var(--primary-font-family, sans-serif);
   color: black; 
   line-height: 1.4; 
+  font-size: 24px;
 }
 
 .announcement-card-actions .delete-btn .button-icon,
@@ -2022,12 +2027,12 @@ input[type="checkbox"]:checked {
 .announcement-card p {
   margin-top: 4px; 
   margin-bottom: 4px; 
-  font-size: 1em; 
+  font-size: 0.9em; 
 }
 
 .announcement-card .announcement-meta {
   display: block; 
-  text-align: center;
+  text-align: left;
   font-size: 0.8em; 
   color: #666; 
   margin-top: 10px; 
@@ -2073,7 +2078,7 @@ input[type="checkbox"]:checked {
   flex-direction: column;
   gap: 10px;
   width: 85%; 
-  max-width: 600px; 
+  max-width: 800px; 
   margin: 8px auto; 
 }
 
@@ -2147,7 +2152,7 @@ input[type="checkbox"]:checked {
     font-size: 1.5em;
   }
   .announcement-card p {
-    font-size: 1em;
+    font-size: 0.9em;
   }
 }
 
