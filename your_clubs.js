@@ -3,6 +3,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
+import { handleUserSwitch } from './auth-guard.js';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -20,7 +22,6 @@ const db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 
-// Role accent colors — left stripe + pill background
 const ACCENT = {
   manager: '#1c375f',
   admin:   '#5480c4',
@@ -30,22 +31,55 @@ const ACCENT = {
 let currentUser = null;
 let cardIndex = 0;
 
+document.body.classList.add('no-scroll');
+let loadingScreenHidden = false;
+
+function hideLoadingScreen() {
+    if (loadingScreenHidden) return;
+    loadingScreenHidden = true;
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
+
+function showContainerError(message, showRetry = false, topMargin = '165px') {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.innerHTML = `
+        <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button type="button" class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
+}
 
 
 onAuthStateChanged(auth, (user) => {
-    currentUser = user;
-    if (user) {
-        console.log("Auth state changed: User is logged in.", user.uid);
-        loadAllClubs();
-    } else {
-        console.log("Auth state changed: No user is logged in.");
-        document.getElementById("clubContainer").innerHTML = "";
-        document.getElementById("memberClubContainer").innerHTML = "";
-
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 0);
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
+    currentUser = user;
+    loadAllClubs();
 });
 
 
@@ -154,14 +188,14 @@ async function loadAllClubs() {
         });
 
         if (container.children.length === 0) showNoClubsCard(container);
-
+        hideLoadingScreen();
     } catch (error) {
         console.error("Error loading clubs:", error);
-        container.innerHTML = '<p class="fancy-label">Failed to load clubs. Please refresh.</p>';
-    } finally {
-        document.getElementById("clubs-spinner").style.display = "none";
+        showContainerError("Oops! Something went wrong.", true);
+        hideLoadingScreen();
     }
 }
+
 
 
 function showNoClubsCard(container) {

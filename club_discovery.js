@@ -4,6 +4,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 
 const firebaseConfig = {
@@ -48,6 +49,7 @@ const categoryInput = document.getElementById("searchCategory");
 const categoryDropdownList = document.getElementById("category-dropdown-list");
 
 document.body.classList.add('no-scroll');
+let loadingScreenHidden = false;
 
 
 function buildCategoryDropdown() {
@@ -90,6 +92,8 @@ document.addEventListener('click', function(e) {
 let currentUser = null;
 
 function hideLoadingScreen() {
+    if (loadingScreenHidden) return;
+    loadingScreenHidden = true;
     const overlay = document.getElementById('loading-overlay');
     const content = document.getElementById('content');
     if (overlay) {
@@ -109,16 +113,14 @@ function hideLoadingScreen() {
     }
 }
 
+
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        hideLoadingScreen();
-    } else {
-        hideLoadingScreen();
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 2000);
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
+    currentUser = user;
+    hideLoadingScreen();
 });
 
 

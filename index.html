@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=57" rel="stylesheet" />
+    <link href="styles.css?v=58" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <link href="index.css?v=33" rel="stylesheet" />
+    <link href="index.css?v=34" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +32,7 @@
         display: inline-block;
         white-space: nowrap;
         letter-spacing: 0.05em;
-        background: linear-gradient(to bottom, #ffffff 0%, #ebebeb 100%);
+        background: linear-gradient(to bottom, #ffffff 0%, #f7f7f7 100%);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -90,11 +90,11 @@
       </div>
 
       <div id="appearance-modal">
+        <button id="close-appearance-x"><i class="fa-solid fa-xmark"></i></button>
         <h3>APPEARANCE</h3>
         <div id="theme-options"></div>
         <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
           <button id="save-theme-button" class="fancy-button">SAVE</button>
-          <button id="close-appearance" class="fancy-button">CLOSE</button>
         </div>
       </div>
     </div>
@@ -107,7 +107,7 @@
           <defs>
             <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#cccccc"/>
+              <stop offset="100%" stop-color="#e2e2e2"/>
             </linearGradient>
           </defs>
           <text x="0" y="100" font-family="'New Amsterdam', sans-serif" font-size="150"
@@ -215,6 +215,6 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="script.js?v=29"></script>
+    <script type="module" src="script.js?v=30"></script>
   </body>
 </html>

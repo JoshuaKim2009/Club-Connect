@@ -21,7 +21,7 @@
 }
 
 .header-button {
-	background: linear-gradient(#ffffff, #e2e2e2);
+	background: linear-gradient(#ffffff, #f7f7f7);
 	font-family: var(--primary-font-family);
 	font-size: 20px;
   font-size: min(20px, 5.5vw) !important;
@@ -75,7 +75,7 @@
   padding: 10px;
   border: 2px solid black;
   border-radius: 10px;
-  background: linear-gradient(#f0f0f0, #e0e0e0);
+  background: linear-gradient(#ffffff, #f7f7f7);
   box-shadow: 0px 2px 0px #000000;
   width: 85%;
   max-width: 600px;
@@ -108,7 +108,7 @@
 	right: 0;
 	bottom: -20px;
 	height: 20px;
-	background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+	background: linear-gradient(to bottom, rgba(128, 128, 128, 0.1), transparent);
 	pointer-events: none;
 }
 
@@ -129,7 +129,7 @@
 	position: fixed;
 	top: 85px;
 	right: 10px;
-	background: linear-gradient(#f0f0f0, #e0e0e0);
+	background: linear-gradient(#ffffff, #f7f7f7);
 	border: 2px solid black;
 	border-radius: 10px;
 	z-index: 10001;
@@ -177,7 +177,7 @@
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	background: linear-gradient(#f0f0f0, #e0e0e0);
+	background: linear-gradient(#ffffff, #f7f7f7);
 	border: 2px solid black;
 	border-radius: 10px;
 	box-shadow: 0px 2px 0px #000;
@@ -196,35 +196,28 @@
 	padding-bottom: 8px;
 	padding-left: 15px;
 	padding-right: 15px;
-	border-bottom: 2px dotted black;
+	/* border-bottom: 2px dotted black; */
 	color: black;
 	position: relative;
 }
 
-#appearance-modal h3::after {
+/* #appearance-modal h3::after {
 	content: '';
 	position: absolute;
 	left: 0;
 	right: 0;
 	bottom: -10px;
 	height: 10px;
-	background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+	background: linear-gradient(to bottom, rgba(128, 128, 128, 0.1), transparent);
 	pointer-events: none;
-}
-
-#theme-options {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	margin-top: 20px;
-}
+} */
 
 
 #theme-options {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 8px;
 }
 
 .theme-swatch {
@@ -268,7 +261,7 @@
   right: 0;
   bottom: -20px;
   height: 20px;
-  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.1), transparent);
   pointer-events: none;
 }
 
@@ -279,7 +272,7 @@
   right: 0;
   bottom: -20px;
   height: 20px;
-  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.1), transparent);
   pointer-events: none;
 }
 
@@ -300,7 +293,7 @@
 }
 
 .intro-step {
-  background: linear-gradient(#f0f0f0, #e0e0e0);
+  background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
   box-shadow: 0px 2px 0px #000000;
@@ -538,7 +531,7 @@
 }
 
 .feat-card {
-  background: linear-gradient(#ffffff, #e8e8e8);
+  background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
   box-shadow: 0px 2px 0px #000000;
@@ -620,7 +613,7 @@
 
 .step {
   width: 100%;
-  background: linear-gradient(#ffffff, #e0e0e0);
+  background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
   box-shadow: 0px 2px 0px #000000;
@@ -657,7 +650,7 @@
   position: absolute;
   left: 0; right: 0; bottom: -18px;
   height: 18px;
-  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.3), transparent);
+  background: linear-gradient(to bottom, rgba(128, 128, 128, 0.1), transparent);
   pointer-events: none;
 }
 
@@ -687,7 +680,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  background: linear-gradient(#ffffff, #e2e2e2);
+  background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
   box-shadow: 0px 2px 0px #000000;
@@ -746,7 +739,7 @@
 }
 
 .cta-card {
-  background: linear-gradient(#ffffff, #e8e8e8);
+  background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
   box-shadow: 0px 2px 0px #000000;
@@ -806,4 +799,25 @@
 @media (max-width: 400px) {
   .cta-btns { flex-direction: column; align-items: center; }
   .cta-anchor { width: 100%; box-sizing: border-box; }
+}
+
+
+
+#close-appearance-x {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 20px;
+  padding: 10px 12px;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 10;
+}
+
+#close-appearance-x:hover {
+  color: #000;
 }

@@ -17,6 +17,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 
 const firebaseConfig = {
@@ -35,18 +36,20 @@ const db   = initializeFirestore(app, {
 });
 const auth = getAuth(app);
 
-let currentUser     = null;
-let clubId          = null;
+let currentUser = null;
+let clubId=null;
 let currentUserRole = null;
 let categoriesCache = [];
 let sortableInstance = null;
-let reorderMode     = false;
+let reorderMode = false;
 
-const resourcesContainer    = document.getElementById('resourcesContainer');
-const noResourcesMessage    = document.getElementById('noResourcesMessage');
-const addCategoryButton     = document.getElementById('add-category-button');
+const resourcesContainer = document.getElementById('resourcesContainer');
+const noResourcesMessage = document.getElementById('noResourcesMessage');
+const addCategoryButton = document.getElementById('add-category-button');
 const categoryCreationModal = document.getElementById('category-creation-modal');
-const categoryOverlay       = document.getElementById('popup-overlay');
+const categoryOverlay= document.getElementById('popup-overlay');
+const buttonRow = document.getElementById('button-row');
+
 
 document.body.classList.add('no-scroll');
 
@@ -54,12 +57,32 @@ function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
 }
 
-async function getMemberRoleForClub(cid, uid) {
-    if (!cid || !uid) return null;
-    const memberSnap = await getDoc(doc(db, "clubs", cid, "members", uid));
-    if (memberSnap.exists()) return memberSnap.data().role || 'member';
-    const clubSnap = await getDoc(doc(db, "clubs", cid));
-    return clubSnap.data()?.managerUid === uid ? 'manager' : 'member';
+async function getMemberRoleForClub(clubId, uid) {
+    if (!clubId || !uid) return null;
+
+    const cacheKey = `role_${clubId}_${uid}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) return cached;
+
+    try {
+        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
+        const memberRoleSnap = await getDoc(memberRoleRef);
+
+        let role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
+        } else {
+            const clubRef = doc(db, "clubs", clubId);
+            const clubSnap = await getDoc(clubRef);
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
+        }
+
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
+        return role;
+    } catch (error) {
+        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
+        return null;
+    }
 }
 
 function isAdmin() {
@@ -85,32 +108,49 @@ window.goToClubPage = function () {
 
 
 onAuthStateChanged(auth, async (user) => {
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
     currentUser = user;
     clubId = getUrlParameter('clubId');
 
-    if (user && clubId) {
+    if (!clubId) {
+        window.location.href = 'your_clubs.html';
+        return;
+    }
+
+    try {
         const clubSnap = await getDoc(doc(db, "clubs", clubId));
-        if (clubSnap.exists()) {
-            currentUserRole = await getMemberRoleForClub(clubId, user.uid);
-            if (isAdmin()) {
-                addCategoryButton.style.display = 'block';
-                addCategoryButton.addEventListener('click', handleAddCategory);
-            }
-            await fetchCategoryData();
+        if (!clubSnap.exists()) {
             hideLoadingScreen();
-            requestAnimationFrame(() => requestAnimationFrame(() => renderAllCategories()));
-        } else {
-            hideLoadingScreen();
+            noResourcesMessage.style.display = 'none';
+            showContainerError(resourcesContainer, "This club doesn't exist.");
+            return;
         }
-    } else if (user && !clubId) {
+        currentUserRole = await getMemberRoleForClub(clubId, user.uid);
+        if (currentUserRole === null) {
+            hideLoadingScreen();
+            noResourcesMessage.style.display = 'none';
+            showContainerError(resourcesContainer, "You're not a member of this club.");
+            return;
+        }
+        await fetchCategoryData();
+        if (isAdmin()) {
+            addCategoryButton.style.display = 'block';
+            addCategoryButton.addEventListener('click', handleAddCategory);
+            const reorderButton = document.getElementById('reorder-button');
+            reorderButton.style.display = categoriesCache.length >= 2 ? 'block' : 'none';
+        }
         hideLoadingScreen();
-    } else {
+        renderAllCategories();
+    } catch (error) {
         hideLoadingScreen();
-        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+        console.error("Error:", error);
+        noResourcesMessage.style.display = 'none';
+        showContainerError(resourcesContainer, "Oops! Something went wrong.", true);
     }
 });
-
-
 
 function handleAddCategory() {
     if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
@@ -158,25 +198,30 @@ async function fetchCategoryData() {
     categoriesCache.sort((a, b) => a.order - b.order);
 }
 
-function renderAllCategories() {
+function renderAllCategories(skipAnimation = false) {
     resourcesContainer.innerHTML = '';
     if (categoriesCache.length === 0) {
         noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
+        resourcesContainer.style.marginTop = '0px';
         return;
     }
     noResourcesMessage.style.display = 'none';
+    resourcesContainer.style.marginTop = isAdmin() ? '0px' : '-73px';
     categoriesCache.forEach((cat, i) => {
         const el = createCategoryElement(cat);
         el.dataset.id = cat.id;
         resourcesContainer.appendChild(el);
-        animateCardIn(el, i);
+        if (!skipAnimation) animateCardIn(el, i);
     });
-    if (isAdmin()) setupReorder();
+    if (isAdmin()) {
+        setupReorder();
+        document.getElementById('reorder-button').style.display = categoriesCache.length >= 2 ? 'block' : 'none';
+    }
 }
 
 async function fetchAndDisplayCategories() {
     await fetchCategoryData();
-    renderAllCategories();
+    renderAllCategories(true);
 }
 
 function hideLoadingScreen() {
@@ -194,9 +239,7 @@ function hideLoadingScreen() {
     if (content) {
         content.style.display = 'block';
         Array.from(content.querySelectorAll(':scope > *')).forEach((item, i) => {
-            const reorderButton = document.getElementById('reorder-button');
-
-            if (item === resourcesContainer || item === addCategoryButton || item === reorderButton) {
+            if (item === resourcesContainer || item === buttonRow) {
                 item.classList.add('revealed-child');
             } else {
                 setTimeout(() => item.classList.add('revealed-child'), i * 200);
@@ -216,13 +259,26 @@ function createCategoryElement(category) {
         <div class="links-container" id="links-${category.id}">
             ${category.links.map(link => {
                 const url = link.url.startsWith('http') ? link.url : 'https://' + link.url;
-                return `<div class="link-item"><a href="${url}" target="_blank">${link.title}</a></div>`;
+                return `<div class="link-item"><i class="fa-solid fa-link link-item-icon"></i><a href="${url}" target="_blank">${link.title}</a></div>`;
             }).join('')}
             ${isAdmin() ? `<button class="add-link-button" data-category-id="${category.id}">+ Add Link</button>` : ''}
         </div>
     `;
     if (isAdmin()) {
-        div.querySelector('.edit-category-button').addEventListener('click', () => {
+        div.querySelector('.edit-category-button').addEventListener('click', async () => {
+            if (reorderMode) {
+                reorderMode = false;
+                sortableInstance.option('disabled', true);
+                const reorderButton = document.getElementById('reorder-button');
+                reorderButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>';
+                reorderButton.classList.remove('save-mode');
+                resourcesContainer.classList.remove('reorder-mode');
+                const updates = [];
+                resourcesContainer.querySelectorAll('.category, .editing-category-card').forEach((el, i) => {
+                    updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", el.dataset.id), { order: i }));
+                });
+                await Promise.all(updates);
+            }
             openEditingCard(category, div);
         });
         div.querySelector('.add-link-button').addEventListener('click', () => openAddLinkModal(category));
@@ -238,29 +294,43 @@ function openEditingCard(category, existingCard) {
     const editCard = document.createElement('div');
     editCard.className = 'editing-category-card';
     editCard.dataset.id = category.id;
+    editCard.innerHTML = `
+        <div class="edit-card-section" id="title-section-${category.id}">
+            <span class="edit-card-section-label">Category Name</span>
+            <textarea class="edit-card-title-input" rows="1">${category.title}</textarea>
+        </div>
+    `;
 
-    const titleSection = document.createElement('div');
-    titleSection.className = 'edit-card-section';
+    const titleSection = editCard.querySelector(`#title-section-${category.id}`);
+    const titleInput = editCard.querySelector('.edit-card-title-input');
 
-    const titleLabel = document.createElement('span');
-    titleLabel.className = 'edit-card-section-label';
-    titleLabel.textContent = 'Category Name';
-
-    const titleInput = document.createElement('textarea');
-    titleInput.className = 'edit-card-title-input';
-    titleInput.rows = 1;
-    titleInput.value = category.title;
-
-    titleSection.appendChild(titleLabel);
-    titleSection.appendChild(titleInput);
-    editCard.appendChild(titleSection);
-
-    /* ── Links section (only if there are links) ── */
     let linksSection = null;
 
     function buildLinksSection() {
         if (linksSection) linksSection.remove();
-        if (editingCategory.links.length === 0) { linksSection = null; return; }
+
+        if (editingCategory.links.length === 0) {
+            linksSection = null;
+            const existingAddBtn = titleSection.querySelector('.add-link-inline-btn');
+            if (!existingAddBtn) {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-link-inline-btn';
+                addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+                addBtn.title = 'Add link';
+                addBtn.addEventListener('click', () => {
+                    editingCategory.links.push({ title: '', url: '' });
+                    buildLinksSection();
+                    const rows = linksSection.querySelectorAll('.edit-link-row');
+                    const lastRow = rows[rows.length - 1];
+                    if (lastRow) lastRow.querySelector('.edit-link-title-input')?.focus();
+                });
+                titleSection.appendChild(addBtn);
+            }
+            return;
+        }
+
+        const existingAddBtn = titleSection.querySelector('.add-link-inline-btn');
+        if (existingAddBtn) existingAddBtn.remove();
 
         linksSection = document.createElement('div');
         linksSection.className = 'edit-card-section';
@@ -271,28 +341,42 @@ function openEditingCard(category, existingCard) {
         linksSection.appendChild(linksLabel);
 
         editingCategory.links.forEach((link, index) => {
-            linksSection.appendChild(buildLinkRow(link, index, editingCategory, buildLinksSection, editCard, actionsRow));
+            linksSection.appendChild(buildLinkRow(link, index, editingCategory, buildLinksSection));
         });
 
-        // Insert before actionsRow
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-link-inline-btn';
+        addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        addBtn.title = 'Add link';
+        addBtn.addEventListener('click', () => {
+            editingCategory.links.push({ title: '', url: '' });
+            buildLinksSection();
+            const rows = linksSection.querySelectorAll('.edit-link-row');
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) lastRow.querySelector('.edit-link-title-input')?.focus();
+        });
+        linksSection.appendChild(addBtn);
+
         editCard.insertBefore(linksSection, actionsRow);
     }
 
-    /* ── Bottom action row ── */
     const actionsRow = document.createElement('div');
     actionsRow.className = 'edit-card-actions';
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'fancy-button';
-    saveBtn.textContent = 'SAVE';
+    saveBtn.className = 'fancy-button edit-card-save-btn';
+    saveBtn.innerHTML = 'SAVE';
+    // saveBtn.innerHTML = 'SAVE <i class="action-icon fa-solid fa-check"></i>';
+    // cancelBtn.innerHTML = 'CANCEL <i class="action-icon fa-solid fa-xmark"></i>';
+    // deleteBtn.innerHTML = 'DELETE <i class="action-icon fa-regular fa-trash-can"></i>';
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'fancy-button';
-    cancelBtn.textContent = 'CANCEL';
+    cancelBtn.className = 'fancy-button edit-card-cancel-btn';
+    cancelBtn.innerHTML = 'CANCEL';
 
     const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'edit-card-delete-btn';
-    deleteBtn.textContent = 'DELETE';
+    deleteBtn.className = 'fancy-button edit-card-delete-btn';
+    deleteBtn.innerHTML = 'DELETE';
 
     actionsRow.appendChild(saveBtn);
     actionsRow.appendChild(cancelBtn);
@@ -305,20 +389,18 @@ function openEditingCard(category, existingCard) {
         const newTitle = titleInput.value.trim();
         if (!newTitle) { await showAppAlert("Title can't be empty!"); return; }
 
-        // Commit any open panel before saving
-        const openPanel = editCard.querySelector('.edit-link-panel[style*="flex"]');
-        if (openPanel) {
-            const idx = parseInt(openPanel.dataset.index);
-            const t = openPanel.querySelector('input[data-field="title"]').value.trim();
-            const u = openPanel.querySelector('input[data-field="url"]').value.trim();
-            if (t) editingCategory.links[idx].title = t;
-            if (u) editingCategory.links[idx].url   = u;
-        }
+        const rows = linksSection ? linksSection.querySelectorAll('.edit-link-row') : [];
+        const updatedLinks = [];
+        rows.forEach((row) => {
+            const t = row.querySelector('.edit-link-title-input').value.trim();
+            const u = row.querySelector('.edit-link-url-input').value.trim();
+            if (t && u) updatedLinks.push({ title: t, url: u });
+        });
 
         try {
             await updateDoc(doc(db, "clubs", clubId, "resourceSections", category.id), {
                 title: newTitle,
-                links: editingCategory.links
+                links: updatedLinks
             });
             await fetchAndDisplayCategories();
         } catch (e) {
@@ -328,10 +410,13 @@ function openEditingCard(category, existingCard) {
 
     cancelBtn.addEventListener('click', () => {
         editCard.replaceWith(existingCard);
+        const reorderButton = document.getElementById('reorder-button');
+        reorderButton.style.pointerEvents = '';
+        reorderButton.style.opacity = '';
     });
 
     deleteBtn.addEventListener('click', async () => {
-        const confirmed = await showAppConfirm(`Delete the entire "${category.title}" category?`);
+        const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" category?`);
         if (!confirmed) return;
         try {
             await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
@@ -341,94 +426,51 @@ function openEditingCard(category, existingCard) {
         }
     });
 
-    // Swap in
     existingCard.replaceWith(editCard);
+    const reorderButton = document.getElementById('reorder-button');
+    reorderButton.style.pointerEvents = 'none';
+    reorderButton.style.opacity = '0.4';
 }
 
 
 
-function buildLinkRow(link, index, editingCategory, rebuildLinks, editCard, actionsRow) {
+function buildLinkRow(link, index, editingCategory, rebuildLinks) {
     const row = document.createElement('div');
     row.className = 'edit-link-row';
 
-    /* Top: name + buttons */
-    const top = document.createElement('div');
-    top.className = 'edit-link-row-top';
+    const inner = document.createElement('div');
+    inner.className = 'edit-link-row-top';
 
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'edit-link-name';
-    nameSpan.textContent = link.title;
+    const linkIcon = document.createElement('i');
+    linkIcon.className = 'fa-solid fa-link edit-link-row-icon';
 
-    const actions = document.createElement('div');
-    actions.className = 'edit-link-actions';
+    const fields = document.createElement('div');
+    fields.className = 'edit-link-row-fields';
 
-    const pencilBtn = document.createElement('button');
-    pencilBtn.className = 'edit-link-icon-btn';
-    pencilBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-    pencilBtn.title = 'Edit';
+    const tInput = document.createElement('input');
+    tInput.type = 'text';
+    tInput.className = 'edit-link-title-input';
+    tInput.value = link.title;
+    tInput.placeholder = 'Link title';
+
+    const uInput = document.createElement('input');
+    uInput.type = 'text';
+    uInput.className = 'edit-link-url-input';
+    uInput.value = link.url;
+    uInput.placeholder = 'Paste link here';
+
+    fields.appendChild(tInput);
+    fields.appendChild(uInput);
 
     const trashBtn = document.createElement('button');
     trashBtn.className = 'edit-link-icon-btn';
     trashBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-    trashBtn.title = 'Delete';
+    trashBtn.title = 'Remove link';
 
-    actions.appendChild(pencilBtn);
-    actions.appendChild(trashBtn);
-    top.appendChild(nameSpan);
-    top.appendChild(actions);
-    row.appendChild(top);
-
-    /* Inline edit panel */
-    const panel = document.createElement('div');
-    panel.className = 'edit-link-panel';
-    panel.dataset.index = index;
-    panel.style.display = 'none';
-
-    const tLabel = document.createElement('label');
-    tLabel.textContent = 'Title';
-    const tInput = document.createElement('input');
-    tInput.type = 'text';
-    tInput.value = link.title;
-    tInput.dataset.field = 'title';
-
-    const uLabel = document.createElement('label');
-    uLabel.textContent = 'URL';
-    const uInput = document.createElement('input');
-    uInput.type = 'text';
-    uInput.value = link.url;
-    uInput.dataset.field = 'url';
-
-    const panelSave = document.createElement('button');
-    panelSave.className = 'edit-link-panel-save';
-    panelSave.textContent = 'SAVE';
-
-    panel.appendChild(tLabel);
-    panel.appendChild(tInput);
-    panel.appendChild(uLabel);
-    panel.appendChild(uInput);
-    panel.appendChild(panelSave);
-    row.appendChild(panel);
-
-    pencilBtn.addEventListener('click', () => {
-        const isOpen = panel.style.display !== 'none';
-        if (isOpen) {
-            panel.style.display = 'none';
-        } else {
-            editCard.querySelectorAll('.edit-link-panel').forEach(p => { p.style.display = 'none'; });
-            panel.style.display = 'flex';
-            tInput.focus();
-        }
-    });
-
-    panelSave.addEventListener('click', () => {
-        const newTitle = tInput.value.trim();
-        const newUrl   = uInput.value.trim();
-        if (!newTitle || !newUrl) { showAppAlert("Both title and URL are required!"); return; }
-        editingCategory.links[index].title = newTitle;
-        editingCategory.links[index].url   = newUrl;
-        nameSpan.textContent = newTitle;
-        panel.style.display = 'none';
-    });
+    inner.appendChild(linkIcon);
+    inner.appendChild(fields);
+    inner.appendChild(trashBtn);
+    row.appendChild(inner);
 
     trashBtn.addEventListener('click', () => {
         editingCategory.links.splice(index, 1);
@@ -442,11 +484,19 @@ function buildLinkRow(link, index, editingCategory, rebuildLinks, editCard, acti
 
 function setupReorder() {
     const reorderButton = document.getElementById('reorder-button');
-    reorderButton.style.display = categoriesCache.length >= 2 ? 'block' : 'none';
-    reorderButton.textContent = 'REORDER CATEGORIES';
+    reorderButton.style.pointerEvents = '';
+    reorderButton.style.opacity = '';
+    reorderButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>';
+    const h = addCategoryButton.offsetHeight;
+    reorderButton.style.height = h + 'px';
+    reorderButton.style.width  = h + 'px';
     reorderButton.classList.remove('save-mode');
     reorderMode = false;
-    reorderButton.style.width = reorderButton.offsetWidth + 'px';
+
+    if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+    }
 
     sortableInstance = window.Sortable.create(resourcesContainer, {
         animation: 150, forceFallback: true,
@@ -458,7 +508,14 @@ function setupReorder() {
             s.innerHTML = '* { cursor: grabbing !important; }';
             document.head.appendChild(s);
             const w = evt.item.offsetWidth;
-            document.querySelector('.sortable-fallback')?.style.setProperty('width', w + 'px', 'important');
+            setTimeout(() => {
+                const fallback = document.querySelector('.sortable-fallback');
+                if (fallback) {
+                    fallback.style.setProperty('width', w + 'px', 'important');
+                    fallback.style.setProperty('max-width', w + 'px', 'important');
+                    fallback.style.setProperty('box-sizing', 'border-box', 'important');
+                }
+            }, 10);
         },
         onEnd: () => document.getElementById('drag-cursor-style')?.remove()
     });
@@ -467,13 +524,13 @@ function setupReorder() {
         if (!reorderMode) {
             reorderMode = true;
             sortableInstance.option('disabled', false);
-            reorderButton.textContent = 'SAVE ORDER';
+            reorderButton.innerHTML = '<i class="fa-solid fa-check"></i>';
             reorderButton.classList.add('save-mode');
             resourcesContainer.classList.add('reorder-mode');
         } else {
             reorderMode = false;
             sortableInstance.option('disabled', true);
-            reorderButton.textContent = 'REORDER CATEGORIES';
+            reorderButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>';
             reorderButton.classList.remove('save-mode');
             resourcesContainer.classList.remove('reorder-mode');
             const updates = [];
@@ -484,7 +541,6 @@ function setupReorder() {
         }
     };
 }
-
 
 const addLinkModal = document.getElementById('add-link-modal');
 let activeLinkCategoryId = null;
@@ -531,4 +587,20 @@ function animateCardIn(card, index = 0) {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
     }, index * 80);
+}
+
+
+function showContainerError(container, message, showRetry = false, topMargin = '-20px') {
+    if (!container) return;
+    container.innerHTML = `
+        <div style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

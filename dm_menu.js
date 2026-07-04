@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, serverTimestamp, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -34,22 +35,40 @@ function getUrlParameter(name) {
 
 const clubId = getUrlParameter('clubId');
 const returnTo = getUrlParameter('returnTo');
+document.body.classList.add('no-scroll');
+let loadingScreenHidden = false;
+const contentEl = document.getElementById('content');
+if (contentEl) contentEl.style.display = 'none';
+
 
 const backButton = document.getElementById('back-button');
 
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        if (!clubId) {
-            window.location.href = 'your_clubs.html';
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
+    currentUser = user;
+    if (!clubId) {
+        window.location.href = 'your_clubs.html';
+        return;
+    }
+
+    try {
+        const clubSnap = await getDoc(doc(db, 'clubs', clubId));
+        if (!clubSnap.exists()) {
+            showContainerError("This club doesn't exist.");
+            hideLoadingScreen();
             return;
         }
+        hideLoadingScreen();
         loadDms();
-    } else {
-        window.location.href = 'login.html';
+    } catch (error) {
+        console.error(error);
+        showContainerError("Oops! Something went wrong.", true);
+        hideLoadingScreen();
     }
 });
-
 
 if (backButton) {
     backButton.addEventListener('click', () => {
@@ -107,8 +126,15 @@ function getColorFromLetter(letter) {
 }
 
 
-function loadDms() {
+async function loadDms() {
     const list = document.getElementById('dm-list');
+
+    const memberUIDsPromise = getDoc(doc(db, 'clubs', clubId))
+        .then(snap => snap.exists() ? new Set(snap.data().memberUIDs || []) : null)
+        .catch(err => {
+            console.warn('Could not fetch club members for DM filtering, showing all:', err);
+            return null;
+        });
 
     const q = query(
         collection(db, 'directMessages'),
@@ -118,15 +144,19 @@ function loadDms() {
 
     let isInitialDmLoad = true;
 
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(q, async (snapshot) => {
+        const memberUIDsSet = await memberUIDsPromise; 
         list.querySelectorAll('.dm-card').forEach(c => c.remove());
 
         let cardIndex = 0;
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             if (!data.lastMessageText) return;
-            const convId = docSnap.id;
+
             const otherUid = data.participants.find(uid => uid !== currentUser.uid);
+            if (memberUIDsSet && !memberUIDsSet.has(otherUid)) return;
+
+            const convId = docSnap.id;
             const otherName = data.participantNames?.[otherUid] || 'Unknown';
             const unreadCount = data.unreadCounts?.[currentUser.uid] || 0;
             const lastMessage = data.lastMessageText || '';
@@ -159,9 +189,11 @@ function loadDms() {
         });
 
         isInitialDmLoad = false;
+    }, (error) => {
+        console.error('Error loading DMs:', error);
+        showContainerError("Oops! Something went wrong.", true);
     });
 }
-
 
 function closeNewDmModal() {
     newDmOverlay.style.display = 'none';
@@ -282,7 +314,7 @@ newDmOverlay.addEventListener('click', closeNewDmModal);
 function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
     card.style.transform = 'translateY(16px)';
-    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+    card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
     setTimeout(() => {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
@@ -290,6 +322,47 @@ function animateCardIn(card, index = 0) {
             card.style.opacity = '';
             card.style.transform = '';
             card.style.transition = '';
-        }, 400); 
-    }, index * 80);
+        }, 300);
+    }, index * 50);
+}
+
+
+
+function hideLoadingScreen() {
+    if (loadingScreenHidden) return;
+    loadingScreenHidden = true;
+
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
+
+function showContainerError(message, showRetry = false, topMargin = '142px') {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.innerHTML = `
+        <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button type="button" class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

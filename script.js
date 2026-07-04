@@ -49,7 +49,6 @@ window.addEventListener('pageshow', (e) => {
   }
 });
 
-// Paint correct UI immediately on first frame using cached data
 const cached = JSON.parse(sessionStorage.getItem('cc-user') || localStorage.getItem('cc-user') || 'null');
 if (cached) {
   setLoggedInUI(cached.displayName);
@@ -57,7 +56,6 @@ if (cached) {
   setLoggedOutUI();
 }
 
-// Firebase confirms truth — updates UI if cache was wrong
 let resolveAuth;
 const authReady = new Promise(resolve => resolveAuth = resolve);
 
@@ -69,6 +67,7 @@ onAuthStateChanged(auth, (user) => {
     sessionStorage.setItem('cc-user', JSON.stringify(data));
     setLoggedInUI(user.displayName);
   } else {
+    sessionStorage.clear();
     localStorage.removeItem('cc-user');
     sessionStorage.removeItem('cc-user');
     setLoggedOutUI();
@@ -125,7 +124,7 @@ document.getElementById('dropdown-edit-account').onclick = () => {
   window.location.href = 'edit_account.html';
 };
 
-document.getElementById('close-appearance').onclick = closeAppearanceModal;
+document.getElementById('close-appearance-x').onclick = closeAppearanceModal;
 document.getElementById('profile-overlay').onclick = () => {
   document.getElementById('profile-dropdown').style.display = 'none';
   closeAppearanceModal();

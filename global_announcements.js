@@ -5,6 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -30,38 +31,112 @@ let currentPage = 1;
 
 const announcementsContainer = document.getElementById('announcementsContainer');
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage');
-const paginationControls = document.getElementById('pagination-controls');
-const prevButton = document.getElementById('prev-page-button');
-const nextButton = document.getElementById('next-page-button');
-const pageIndicator = document.getElementById('page-indicator');
 
+document.body.classList.add('no-scroll');
+let loadingScreenHidden = false;
+
+function hideLoadingScreen() {
+    if (loadingScreenHidden) return;
+    loadingScreenHidden = true;
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      document.body.classList.remove('no-scroll');
+      overlay.addEventListener('transitionend', () => {
+        if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+      }, { once: true });
+    } else {
+      document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+      content.style.display = 'block';
+      Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+        item.classList.add('revealed-child');
+      });
+    }
+}
+
+function showContainerError(message, showRetry = false, topMargin = '165px') {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.innerHTML = `
+      <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+        <p class="fancy-label">${message}</p>
+        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          ${showRetry
+            ? `<button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+            : `<button type="button" class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+          }
+        </div>
+      </div>
+    `;
+}
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = 'login.html';
+  if (!handleUserSwitch(user)) {
+    if (!user) window.location.href = 'login.html';
     return;
   }
-
   currentUser = user;
 
-  const clubIds = await getUserClubIds(user.uid);
+  try {
+    const clubIds = await getUserClubIds(user.uid);
+    await fetchAllAnnouncements(clubIds, user.uid);
 
-  await fetchAllAnnouncements(clubIds, user.uid);
+    if (allAnnouncements.length === 0) {
+      showEmpty("NO UPDATES YET");
+      hidePagination();
+      hideLoadingScreen();
+      return;
+    }
 
-  if (allAnnouncements.length === 0) {
-    showEmpty("NO ANNOUNCEMENTS YET");
-    hidePagination();
-    return;
+    renderPage(currentPage);
+    hideLoadingScreen();
+    await markAllSeen(clubIds, user.uid);
+  } catch (error) {
+    console.error("Error loading announcements:", error);
+    showContainerError("Oops! Something went wrong.", true);
+    hideLoadingScreen();
   }
-
-renderPage(currentPage);
-  await markAllSeen(clubIds, user.uid);
 });
 
-function hidePagination() {
-  if (paginationControls) {
-    paginationControls.style.display = 'none';
+function renderPaginationButtons(page, totalPages) {
+  const controls = document.getElementById('pagination-controls');
+  const inner = document.getElementById('pagination-inner');
+  controls.style.display = 'flex';
+  inner.innerHTML = '';
+
+  let pagesToShow = [];
+  if (totalPages === 2) {
+    pagesToShow = [1, 2];
+  } else if (page === 1) {
+    pagesToShow = [1, 2, 3];
+  } else if (page === totalPages) {
+    pagesToShow = [totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    pagesToShow = [page - 1, page, page + 1];
   }
+
+  pagesToShow.forEach(p => {
+    const btn = document.createElement('button');
+    btn.textContent = p;
+    btn.className = 'pagination-btn' + (p === page ? ' active-page' : '');
+    if (p !== page) {
+      btn.addEventListener('click', () => {
+        renderPage(p);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+    }
+    inner.appendChild(btn);
+  });
+}
+
+function hidePagination() {
+  const paginationControls = document.getElementById('pagination-controls');
+  if (paginationControls) paginationControls.style.display = 'none';
+  const inner = document.getElementById('pagination-inner');
+  if (inner) inner.innerHTML = '';
 }
 
 
@@ -138,7 +213,7 @@ function renderPage(page) {
   announcementsContainer.innerHTML = '';
 
   if (allAnnouncements.length === 0) {
-    showEmpty("NO ANNOUNCEMENTS YET");
+    showEmpty("NO UPDATES YET");
     return;
   }
 
@@ -165,23 +240,11 @@ function renderPage(page) {
   });
 
   if (totalPages > 1) {
-    paginationControls.style.display = 'flex';
-    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
-    prevButton.disabled = currentPage === 1;
-    nextButton.disabled = currentPage === totalPages;
+    renderPaginationButtons(currentPage, totalPages);
   } else {
-    paginationControls.style.display = 'none';
+    hidePagination();
   }
 }
-
-prevButton.addEventListener('click', () => {
-  if (currentPage > 1) renderPage(currentPage - 1);
-});
-
-nextButton.addEventListener('click', () => {
-  const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
-  if (currentPage < totalPages) renderPage(currentPage + 1);
-});
 
 
 function createAnnouncementCard(data) {
@@ -196,7 +259,7 @@ function createAnnouncementCard(data) {
     </h3>
     <p>${linkifyText(data.content)}</p>
     <p class="announcement-meta">
-      Posted by ${data.createdByName} on ${formatTimestamp(data.createdAt)}
+      ${data.createdByName} · ${formatTimestamp(data.createdAt)}
     </p>
   `;
 
@@ -235,7 +298,7 @@ function formatTimestamp(timestamp) {
   if (!timestamp || !timestamp.toDate) return 'N/A';
   const date = timestamp.toDate();
   return date.toLocaleDateString(undefined, {
-    year: 'numeric', month: 'long', day: 'numeric',
+    year: 'numeric', month: 'short', day: 'numeric',
     hour: 'numeric', minute: '2-digit'
   });
 }

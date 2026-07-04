@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -74,35 +75,39 @@ function getConvRef() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (chatMessages) chatMessages.classList.add('loading');
+    const titleEl = document.getElementById('dmChatTitle');
+    if (titleEl) titleEl.textContent = getUrlParameter('otherName') || 'DIRECT MESSAGE';
 });
 
+const titleEl = document.getElementById('dmChatTitle');
+if (titleEl) {
+    titleEl.textContent = getUrlParameter('otherName') || 'DIRECT MESSAGE';
+}
+
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-
-        convId = getUrlParameter('convId');
-        otherUid = getUrlParameter('otherUid');
-        otherName = getUrlParameter('otherName');
-        returnTo = getUrlParameter('returnTo');
-        clubId = getUrlParameter('clubId');
-
-        if (!convId) {
-            window.location.href = 'your_clubs.html';
-            return;
-        }
-
-        const titleEl = document.getElementById('dmChatTitle');
-        if (titleEl) titleEl.textContent = otherName || 'DIRECT MESSAGE';
-
-        if (chatMessages) chatMessages.classList.remove('loading');
-
-        await loadInitialMessages();
-        startRealtimeListener();
-
-    } else {
-        window.location.href = 'login.html';
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
+    currentUser = user;
+
+    convId = getUrlParameter('convId');
+    otherUid = getUrlParameter('otherUid');
+    otherName = getUrlParameter('otherName');
+    returnTo = getUrlParameter('returnTo');
+    clubId = getUrlParameter('clubId');
+
+    if (!convId) {
+        window.location.href = 'your_clubs.html';
+        return;
+    }
+
+    const titleEl = document.getElementById('dmChatTitle');
+    if (titleEl) titleEl.textContent = otherName || 'DIRECT MESSAGE';
+
+
+    await loadInitialMessages();
+    startRealtimeListener();
 });
 
 if (backButton) {
@@ -119,6 +124,8 @@ async function loadInitialMessages() {
     const q = query(messagesRef, orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1));
 
     try {
+        showChatState('loading');
+
         const snapshot = await getDocs(q);
         const docs = snapshot.docs;
 
@@ -165,12 +172,18 @@ async function loadInitialMessages() {
             previousDateKey = currentDateKey;
         }
 
+        if (chatMessages.querySelectorAll('.message-wrapper').length === 0) {
+            showChatState('empty');
+        } else {
+            showChatState('none');
+        }
+
         requestAnimationFrame(() => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
 
     } catch (error) {
-        console.error(error);
+        showChatState('error');
     } finally {
         requestAnimationFrame(() => {
             const allMessages = chatMessages.querySelectorAll('.message-wrapper');
@@ -298,6 +311,7 @@ function startRealtimeListener() {
                 }
 
                 const showSenderName = previousSenderId !== messageData.createdByUid;
+                document.querySelector('.chat-state-overlay')?.remove();
                 await displayMessage(messageId, messageData, showSenderName);
                 previousSenderId = messageData.createdByUid;
                 if (messageData.createdAt) newestDoc = change.doc;
@@ -1080,4 +1094,39 @@ function closeEmojiPickerOverlay(restoreModal) {
         modal.style.opacity = '1';
         modal.style.pointerEvents = 'all';
     }
+}
+
+
+
+function showChatState(type) {
+    const existing = document.querySelector('.chat-state-overlay');
+
+    if (type === 'loading' && existing?.querySelector('.chat-loading-bubble')) {
+        return;
+    }
+
+    existing?.remove();
+    if (type === 'none') return;
+
+    const div = document.createElement('div');
+    div.className = 'chat-state-overlay' + (type !== 'loading' ? ' chat-state-text' : '');
+
+    if (type === 'loading') {
+        div.innerHTML = `
+            <div class="chat-loading-bubble">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        `;
+    } else if (type === 'empty') {
+        div.innerHTML = `<p class="fancy-label">NO MESSAGES YET</p>`;
+    } else if (type === 'error') {
+        div.innerHTML = `
+            <p class="fancy-label">Oops! Something went wrong.</p>
+            <button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size:24px;">TRY AGAIN</button>
+        `;
+    }
+
+    document.querySelector('.chat-container').appendChild(div);
 }

@@ -5,6 +5,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 
 const firebaseConfig = {
@@ -45,6 +46,8 @@ var myName = "";
 var myUid = "";
 var myCurrentRoleInClub = "";
 let lastKnownCurrentUserRole = null;
+let clubMemberUIDsSet = null;
+
 
 function hideLoadingScreen(delay = 0) {
     if (loadingScreenHidden) return;
@@ -78,45 +81,57 @@ function hideLoadingScreen(delay = 0) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; 
-    if (user) {
-        myUid = user.uid;
-        myName = user.displayName || user.email; 
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
+    currentUser = user;
+    myUid = user.uid;
+    myName = user.displayName || user.email;
 
-        console.log("User is authenticated on club member page. UID:", myUid, "Name:", myName);
-        if (clubId) {
-            clubPageTitle.textContent = ""; 
-            const memberData = await fetchMemberData(clubId, currentUser.uid);
-            setupClubMemberPageListeners(clubId, myUid, myName);
+    if (clubId) {
+        clubPageTitle.textContent = '';
 
-            const [unreadCount, unreadMessagesCount, unreadPollsCount] = await Promise.all([
-                getUnreadAnnouncementCount(clubId, myUid, memberData),
-                getUnreadMessageCount(clubId, myUid, memberData),
-                getUnreadPollCount(clubId, myUid, memberData)
-            ]);
+        const [memberData, clubSnap] = await Promise.all([
+            fetchMemberData(clubId, currentUser.uid),
+            getDoc(doc(db, 'clubs', clubId))
+        ]);
 
-            updateUnreadBadge(unreadCount);
-            updateUnreadMessagesBadge(unreadMessagesCount);
-            updateUnreadPollsBadge(unreadPollsCount);
-            setupAnnouncementListeners(clubId, myUid);
-            setupMessageListeners(clubId, myUid);
-            setupPollListeners(clubId, myUid);
-            setupDirectMessageListeners(currentUser.uid);
-
-        } else {
-            clubPageTitle.textContent = "Error: No Club ID provided";
-            clubDetailsDiv.innerHTML = "<p>Please return to your clubs page and select a club.</p>";
+        if (!clubSnap.exists()) {
+            hideLoadingScreen();
+            showContainerError("This club doesn't exist.");
+            return;
         }
+
+        clubMemberUIDsSet = new Set(clubSnap.data().memberUIDs || []);
+
+        const memberRole = await getMemberRoleForClub(clubId, currentUser.uid);
+        if (memberRole === null) {
+            hideLoadingScreen();
+            showContainerError("You're not a member of this club.");
+            return;
+        }
+
+        setupClubMemberPageListeners(clubId, myUid, myName);
+
+        const [unreadCount, unreadMessagesCount, unreadPollsCount] = await Promise.all([
+            getUnreadAnnouncementCount(clubId, myUid, memberData),
+            getUnreadMessageCount(clubId, myUid, memberData),
+            getUnreadPollCount(clubId, myUid, memberData)
+        ]);
+
+        updateUnreadBadge(unreadCount);
+        updateUnreadMessagesBadge(unreadMessagesCount);
+        updateUnreadPollsBadge(unreadPollsCount);
+        setupAnnouncementListeners(clubId, myUid);
+        setupMessageListeners(clubId, myUid);
+        setupPollListeners(clubId, myUid);
+        setupDirectMessageListeners(currentUser.uid);
     } else {
-        console.log("No user authenticated on club member page. Redirecting to login.");
-        clubPageTitle.textContent = "Not Authenticated";
-        clubDetailsDiv.innerHTML = "<p>You must be logged in to view club details. Redirecting...</p>";
-        setTimeout(() => {
-            window.location.href = 'login.html'; 
-        }, 2000);
+        hideLoadingScreen();
+        showContainerError("No club ID provided.");
     }
 });
-
 
 function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -143,6 +158,7 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
         if (clubSnap.exists()) {
             const clubData = clubSnap.data();
+            clubMemberUIDsSet = new Set(clubData.memberUIDs || []);
 
             if (myCurrentRoleInClub === 'manager' || myCurrentRoleInClub === 'admin' || myCurrentRoleInClub === 'member') {
 
@@ -163,32 +179,25 @@ async function fetchClubDetails(id, currentUserId, currentUserName, animateCardE
 
             } else {
                 hideLoadingScreen();
-                clubPageTitle.textContent = "Access Denied";
-                clubDetailsDiv.innerHTML = "<p>You do not have permission to view this club.</p>";
-                setTimeout(() => { window.location.href = 'your_clubs.html'; }, 2000);
+                showContainerError("You don't have permission to view this club.");
+                return;
             }
 
         } else {
             hideLoadingScreen();
-            clubPageTitle.textContent = "Club Not Found";
-            clubDetailsDiv.innerHTML = "<p>Sorry, this club does not exist.</p>";
-            setTimeout(() => { window.location.href = 'your_clubs.html'; }, 2000);
+            showContainerError("This club doesn't exist.");
         }
     } catch (error) {
         hideLoadingScreen();
         console.error("Error fetching club details:", error);
-        clubPageTitle.textContent = "Error Loading Club";
-        clubDetailsDiv.innerHTML = "<p>An error occurred while loading club details. Please try again.</p>";
+        showContainerError("Oops! Something went wrong.", true);
     }
 }
 
 
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
+    if (!clubId || !uid) return null;
 
     const cacheKey = `role_${clubId}_${uid}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -199,15 +208,15 @@ async function getMemberRoleForClub(clubId, uid) {
         const memberRoleSnap = await getDoc(memberRoleRef);
 
         let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
         } else {
             const clubRef = doc(db, "clubs", clubId);
             const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
         }
 
-        sessionStorage.setItem(cacheKey, role);
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
         return role;
     } catch (error) {
         console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
@@ -558,12 +567,9 @@ async function setupClubMemberPageListeners(id, currentUserId, currentUserName) 
         }
         
         if (!docSnap.exists()) {
-            clubPageTitle.textContent = "Club Not Found";
-            clubDetailsDiv.innerHTML = "<p>Sorry, this club does not exist.</p>";
             console.warn(`Club document with ID ${id} not found.`);
-            setTimeout(() => {
-                window.location.href = 'your_clubs.html';
-            }, 2000);
+            hideLoadingScreen();
+            showContainerError("This club doesn't exist.");
             return;
         }
 
@@ -575,8 +581,8 @@ async function setupClubMemberPageListeners(id, currentUserId, currentUserName) 
         }
     }, (error) => {
         console.error("Error listening to club document on member page:", error);
-        clubPageTitle.textContent = "Error Loading Club";
-        clubDetailsDiv.innerHTML = "<p>An error occurred while loading club details. Please try again.</p>";
+        hideLoadingScreen();
+        showContainerError("Oops! Something went wrong.", true);
     });
 
     
@@ -876,8 +882,27 @@ function setupDirectMessageListeners(userId) {
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             if (!data.lastMessageText) return;
+            const otherUid = data.participants.find(uid => uid !== userId);
+            if (clubMemberUIDsSet && !clubMemberUIDsSet.has(otherUid)) return;
             totalUnread += data.unreadCounts?.[userId] || 0;
         });
         updateUnreadDirectMessagesBadge(totalUnread);
     });
+}
+
+
+function showContainerError(message, showRetry = false, topMargin = '165px') {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.innerHTML = `
+        <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

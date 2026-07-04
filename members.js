@@ -3,6 +3,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 document.querySelector('#role-select option[value="member"]').textContent = ROLE_LABELS.member;
 document.querySelector('#role-select option[value="admin"]').textContent = ROLE_LABELS.admin;
@@ -65,24 +66,45 @@ window.goToClubPage = function() {
 }
 
 onAuthStateChanged(auth, async (user) => {
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
     currentUser = user;
     clubId = getUrlParameter('clubId');
+    myUid = user.uid;
+    myName = user.displayName || user.email;
 
-    if (user) {
-        myUid = user.uid;
-        myName = user.displayName || user.email;
+    if (!clubId) {
+        document.body.classList.remove('no-scroll');
+        showContainerError(dynamicWrapper, "No club ID provided.");
+        return;
+    }
 
-        if (clubId) {
-            role = await getMemberRoleForClub(clubId, currentUser.uid);
-            console.log(`User ${currentUser.uid} role for club ${clubId}: ${role}`);
-            await fetchAndDisplayMembers();
-            setupRealtimeListeners();
-        } else {
-            membersContainer.innerHTML = "<p class='fancy-label'>No club ID provided.</p>";
+    try {
+        const clubSnap = await getDoc(doc(db, "clubs", clubId));
+
+        if (!clubSnap.exists()) {
+            document.body.classList.remove('no-scroll');
+            showContainerError(dynamicWrapper, "This club doesn't exist.", false, '75px');
+            return;
         }
-    } else {
-        membersContainer.innerHTML = "<p class='fancy-label'>You must be logged in. Redirecting...</p>";
-        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
+        role = await getMemberRoleForClub(clubId, currentUser.uid);
+
+        if (role === null) {
+            document.body.classList.remove('no-scroll');
+            showContainerError(dynamicWrapper, "You're not a member of this club.", false, '75px');
+            return;
+        }
+
+        await fetchAndDisplayMembers();
+        setupRealtimeListeners();
+
+    } catch (error) {
+        console.error("Error:", error);
+        document.body.classList.remove('no-scroll');
+        showContainerError(dynamicWrapper, "Oops! Something went wrong.", true, '75px');
     }
 });
 
@@ -92,10 +114,7 @@ function capitalizeFirstLetter(str) {
 }
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
+    if (!clubId || !uid) return null;
 
     const cacheKey = `role_${clubId}_${uid}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -106,15 +125,15 @@ async function getMemberRoleForClub(clubId, uid) {
         const memberRoleSnap = await getDoc(memberRoleRef);
 
         let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
         } else {
             const clubRef = doc(db, "clubs", clubId);
             const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
         }
 
-        sessionStorage.setItem(cacheKey, role);
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
         return role;
     } catch (error) {
         console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
@@ -574,4 +593,20 @@ function setupRealtimeListeners() {
             await fetchAndDisplayMembers();
         }
     });
+}
+
+
+function showContainerError(container, message, showRetry = false, topPadding = '75px') {
+    if (!container) return;
+    container.innerHTML = `
+        <div style="text-align: center; padding: 20px; padding-top: ${topPadding};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

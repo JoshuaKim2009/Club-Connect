@@ -5,6 +5,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, serverTimestamp, deleteDoc, query, collection, getDocs, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
+import { handleUserSwitch } from './auth-guard.js';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -158,126 +160,114 @@ function hideLoadingScreen() {
 }
 
 async function loadClubData(clubId, managerUid) {
-  if (!clubId) {
-    await showAppAlert("No club ID provided for editing.");
-    console.error("No club ID found in URL.");
-    window.location.href = `club_page_manager.html?id=${clubId}`;
-    return;
-  }
-
-  const clubRef = doc(db, "clubs", clubId);
-  try {
-    const clubDoc = await getDoc(clubRef);
-    if (clubDoc.exists()) {
-        const clubData = clubDoc.data();
-        
-        const isManager = clubData.managerUid === managerUid;
-        let isAdminOfThisClub = false;
-
-        if (!isManager && managerUid) {
-            const memberRef = doc(db, "clubs", clubId, "members", managerUid);
-            const memberDoc = await getDoc(memberRef);
-            if (memberDoc.exists() && memberDoc.data().role === 'admin') {
-                isAdminOfThisClub = true;
-            }
-        }
-
-        if (!isManager && !isAdminOfThisClub) {
-            await showAppAlert("You are not authorized to edit this club.");
-            console.warn("Unauthorized attempt to edit club:", clubId, "by user:", managerUid);
-            window.location.href = `club_page_manager.html?id=${clubId}`;
-            return;
-        }
-
-        schoolNameInput.value = clubData.schoolName || '';
-        clubNameInput.value = clubData.clubName || '';
-        clubActivityInput.value = clubData.clubActivity || '';
-        clubDescriptionInput.value = clubData.description || '';
-        stateInput.value = clubData.state || '';
-        clubSponsorInput.value = clubData.clubSponsor || '';
-        clubLeaderInput.value = clubData.clubLeader || '';
-        schoolEmailInput.value = clubData.schoolEmail || '';
-        roomNumberInput.value = clubData.roomNumber || '';
-        meetingScheduleInput.value = clubData.meetingSchedule || '';
-        handleCountyVisibility(clubData.state || '');
-        countyInput.value = clubData.countyName || '';
-        selectedCountyFips = clubData.countyFips || null;
-        const savedVis = clubData.visibility || 'public';
-        editVisStrips.forEach(s => {
-            s.classList.toggle('club-vis-strip-selected', s.dataset.value === savedVis);
-        });
-
-        schoolNameInput.disabled = false;
-        clubNameInput.disabled = false;
-        clubActivityInput.disabled = false;
-        clubDescriptionInput.disabled = false;
-        submitButton.disabled = false;
-        stateInput.disabled = false;
-        categoryInput.disabled = false;
-        clubSponsorInput.disabled = false;
-        clubLeaderInput.disabled = false;
-        schoolEmailInput.disabled = false;
-        roomNumberInput.disabled = false;
-        meetingScheduleInput.disabled = false;
-        if (!NO_COUNTY_STATES[clubData.state]) {
-            countyInput.disabled = false;
-        }
-        if (clubData.category) categoryInput.value = clubData.category;
-
-        originalClubData = {
-            schoolName: clubData.schoolName || '',
-            clubName: clubData.clubName || '',
-            clubActivity: clubData.clubActivity || '',
-            description: clubData.description || '',
-            state: clubData.state || '',
-            visibility: clubData.visibility || 'public',
-            category: clubData.category || '',
-            clubSponsor: clubData.clubSponsor || '',
-            clubLeader: clubData.clubLeader || '',
-            schoolEmail: clubData.schoolEmail || '',
-            roomNumber: clubData.roomNumber || '',
-            meetingSchedule: clubData.meetingSchedule || '',
-            countyName: clubData.countyName || '',
-            countyFips: clubData.countyFips || null,
-        };
-
-        hideLoadingScreen();
-    } else {
-      await showAppAlert("Club not found.");
-      hideLoadingScreen();
-      console.error("Club document not found:", clubId);
-      window.location.href = `club_page_manager.html?id=${clubId}`;
+    if (!clubId) {
+        window.location.href = `club_page_manager.html?id=${clubId}`;
+        return;
     }
-  } catch (error) {
-    console.error("Error loading club data:", error);
-    await showAppAlert("Failed to load club data: " + error.message);
-    hideLoadingScreen();
-    window.location.href = `club_page_manager.html?id=${clubId}`;
-  }
+
+    const clubRef = doc(db, "clubs", clubId);
+    try {
+        const clubDoc = await getDoc(clubRef);
+        if (clubDoc.exists()) {
+            const clubData = clubDoc.data();
+
+            const isManager = clubData.managerUid === managerUid;
+            let isAdminOfThisClub = false;
+
+            if (!isManager && managerUid) {
+                const memberRef = doc(db, "clubs", clubId, "members", managerUid);
+                const memberDoc = await getDoc(memberRef);
+                if (memberDoc.exists() && memberDoc.data().role === 'admin') {
+                    isAdminOfThisClub = true;
+                }
+            }
+
+            if (!isManager && !isAdminOfThisClub) {
+                hideLoadingScreen();
+                showContainerError("You don't have permission to edit this club.");
+                return;
+            }
+
+            schoolNameInput.value = clubData.schoolName || '';
+            clubNameInput.value = clubData.clubName || '';
+            clubActivityInput.value = clubData.clubActivity || '';
+            clubDescriptionInput.value = clubData.description || '';
+            stateInput.value = clubData.state || '';
+            clubSponsorInput.value = clubData.clubSponsor || '';
+            clubLeaderInput.value = clubData.clubLeader || '';
+            schoolEmailInput.value = clubData.schoolEmail || '';
+            roomNumberInput.value = clubData.roomNumber || '';
+            meetingScheduleInput.value = clubData.meetingSchedule || '';
+            handleCountyVisibility(clubData.state || '');
+            countyInput.value = clubData.countyName || '';
+            selectedCountyFips = clubData.countyFips || null;
+            const savedVis = clubData.visibility || 'public';
+            editVisStrips.forEach(s => {
+                s.classList.toggle('club-vis-strip-selected', s.dataset.value === savedVis);
+            });
+
+            schoolNameInput.disabled = false;
+            clubNameInput.disabled = false;
+            clubActivityInput.disabled = false;
+            clubDescriptionInput.disabled = false;
+            submitButton.disabled = false;
+            stateInput.disabled = false;
+            categoryInput.disabled = false;
+            clubSponsorInput.disabled = false;
+            clubLeaderInput.disabled = false;
+            schoolEmailInput.disabled = false;
+            roomNumberInput.disabled = false;
+            meetingScheduleInput.disabled = false;
+            if (!NO_COUNTY_STATES[clubData.state]) {
+                countyInput.disabled = false;
+            }
+            if (clubData.category) categoryInput.value = clubData.category;
+
+            originalClubData = {
+                schoolName: clubData.schoolName || '',
+                clubName: clubData.clubName || '',
+                clubActivity: clubData.clubActivity || '',
+                description: clubData.description || '',
+                state: clubData.state || '',
+                visibility: clubData.visibility || 'public',
+                category: clubData.category || '',
+                clubSponsor: clubData.clubSponsor || '',
+                clubLeader: clubData.clubLeader || '',
+                schoolEmail: clubData.schoolEmail || '',
+                roomNumber: clubData.roomNumber || '',
+                meetingSchedule: clubData.meetingSchedule || '',
+                countyName: clubData.countyName || '',
+                countyFips: clubData.countyFips || null,
+            };
+
+            hideLoadingScreen();
+        } else {
+            hideLoadingScreen();
+            showContainerError("This club doesn't exist.");
+        }
+    } catch (error) {
+        console.error("Error loading club data:", error);
+        hideLoadingScreen();
+        showContainerError("Oops! Something went wrong.", true);
+    }
 }
 
 
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    currentUser = user;
-    currentUserEmail = user.email;
-    console.log("User is logged in. UID:", currentUser.uid, "Email:", currentUserEmail);
-
-    if (currentClubId) {
-      await loadClubData(currentClubId, currentUser.uid);
-    } else {
-        await showAppAlert("No club ID specified for editing.");
-        window.location.href = `club_page_manager.html?id=${currentClubId}`;
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
 
-  } else {
-    hideLoadingScreen();
-    currentUser = null;
-    currentUserEmail = null;
-    console.warn("No user is logged in. Redirecting to login.");
-    await showAppAlert("You must be logged in to edit a club.");
-    window.location.href = "login.html";
-  }
+    currentUser = user;
+    currentUserEmail = user.email;
+
+    if (currentClubId) {
+        await loadClubData(currentClubId, currentUser.uid);
+    } else {
+        hideLoadingScreen();
+        showContainerError("No club ID provided.");
+    }
 });
 
 
@@ -838,4 +828,22 @@ function normalizeSchoolName(schoolName) {
     normalized = normalized.trim();
     
     return { valid: true, normalized: normalized, error: '' };
+}
+
+
+
+function showContainerError(message, showRetry = false, topMargin = '165px') {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.innerHTML = `
+        <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button type="button" class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

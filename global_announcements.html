@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=57" rel="stylesheet" />
+    <link href="styles.css?v=58" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Announcements</title>
@@ -17,7 +17,7 @@
             font-family: var(--primary-font-family);
             padding-top: env(safe-area-inset-top);
             background: var(--bg-dark);
-            padding-bottom: 100px;
+            padding-bottom: 50px;
         }
 
         .message-link {
@@ -30,39 +30,15 @@
 
         .club-label {
             display: inline-block;
-            font-size: 0.7em;
+            font-size: 0.8em;
             background: #222;
             color: #fff;
             border-radius: 5px;
-            padding: 1px 7px;
+            padding: 3px 7px;
             margin-bottom: 4px;
             font-family: var(--primary-font-family);
         }
 
-        #pagination-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin: 20px auto;
-            font-family: var(--primary-font-family);
-            font-size: 22px;
-            color: white;
-        }
-
-        #pagination-controls .fancy-button.pagination-btn {
-            font-size: 20px;
-            padding: 8px 16px;
-            transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-        }
-
-        #pagination-controls .fancy-button.pagination-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            pointer-events: none;
-            box-shadow: none;
-            transform: none;
-        }
         #clubAnnouncementsTitle {
             visibility: hidden;
         }
@@ -91,7 +67,7 @@
       <span class="chat-title">ALL UPDATES</span>
     </div>
 
-    <div id="content">
+    <div id="content" style="display:none;">
       <h1 id="clubAnnouncementsTitle">ALL ANNOUNCEMENTS</h1>
 
       <div id="announcementsContainer" class="fancy-black-label">
@@ -99,15 +75,12 @@
       </div>
 
       <div id="pagination-controls" style="display: none;">
-        <button id="prev-page-button" class="fancy-button pagination-btn"><i class="fa-solid fa-chevron-left"></i></button>
-        <span id="page-indicator"></span>
-        <button id="next-page-button" class="fancy-button pagination-btn"><i class="fa-solid fa-chevron-right"></i></button>
+        <div id="pagination-inner"></div>
       </div>
     </div>
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="global_announcements.js?v=5"></script>
-    <script type="module" src="loading.js?v=2"></script>
+    <script type="module" src="global_announcements.js?v=7"></script>
   </body>
 </html>

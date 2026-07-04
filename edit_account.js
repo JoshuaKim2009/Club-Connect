@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -45,13 +46,12 @@ function hideLoadingScreen() {
 }
 
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        displayNameInput.value = user.displayName || '';
-        hideLoadingScreen();
-    } else {
-        hideLoadingScreen();
-        window.location.href = 'login.html';
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
+    displayNameInput.value = user.displayName || '';
+    hideLoadingScreen();
 });
 
 saveBtn.addEventListener('click', async () => {

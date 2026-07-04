@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=57" rel="stylesheet" />
+    <link href="styles.css?v=58" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Clubs</title>
@@ -22,9 +22,10 @@
       .yc-action-bar {
         display: flex;
         gap: 10px;
-        width: 90%;
-        max-width: 580px;
-        margin: 100px auto 28px auto;
+        width: calc(85% + 20px);
+        max-width: 620px;
+        margin: 118px auto 28px auto;
+        margin-bottom: 30px;
         box-sizing: border-box;
       }
 
@@ -84,13 +85,13 @@
         color: #fff;
       } */
 
-      .action-create  { background: linear-gradient(#ffbd80 0%, #ff8349 110%); color: #000000; }
-      .action-join    { background: linear-gradient(#84c581 0%, #588858 140%);  color: #000000; }
-      .action-discover{ background: linear-gradient(#b1a5ee 0%, #847bbd 115%);  color: #000000; }
+      .action-create  { background: linear-gradient(#ffc084 0%, #f0b176 110%); color: #000000; }
+      .action-join    { background: linear-gradient(#8dcf8a 0%, #76b373 140%);  color: #000000; }
+      .action-discover{ background: linear-gradient(#bbaff7 0%, #a79be2 115%);  color: #000000; }
 
       .yc-section {
-        width: 90%;
-        max-width: 580px;
+        width: calc(85% + 20px);
+        max-width: 620px;
         margin: 0 auto 28px auto;
       }
 
@@ -125,7 +126,7 @@
         border: 2px solid black;
         border-radius: 10px;
         box-shadow: 0px 2px 0px #000000;
-        background: linear-gradient(#ffffff, #efefef);
+        background: linear-gradient(#ffffff, #f7f7f7);
         cursor: pointer;
         overflow: hidden;
         font-family: var(--primary-font-family);
@@ -226,7 +227,7 @@
         border: 2px solid black;
         border-radius: 10px;
         box-shadow: 0px 2px 0px #000000;
-        background: linear-gradient(#ffffff, #efefef);
+        background: linear-gradient(#ffffff, #f7f7f7);
         overflow: hidden;
         font-family: var(--primary-font-family);
       }
@@ -292,6 +293,12 @@
     </style>
   </head>
   <body>
+    <div id="loading-overlay">
+      <div id="loading-overlay-inner">
+        <div class="loading-spinner"></div>
+        <p>LOADING...</p>
+      </div>
+    </div>
 
     <div class="chat-header">
       <button id="back-button" class="fancy-button" onclick="goToHome()">
@@ -300,26 +307,25 @@
       <span class="chat-title">MY CLUBS</span>
     </div>
 
-    <div class="yc-action-bar">
-      <button id="create-club-button" class="action-pill action-create">
-        <i class="fa-solid fa-plus"></i>
-        <span>Create</span>
-      </button>
-      <button id="join-club-button" class="action-pill action-join">
-        <i class="fa-solid fa-arrow-right-to-bracket"></i>
-        <span>Join</span>
-      </button>
-      <button id="discover-club-button-main" class="action-pill action-discover"
-              onclick="window.location.href='club_discovery.html?from=your_clubs'">
-        <i class="fa-solid fa-compass"></i>
-        <span>Discover</span>
-      </button>
+    <div id="content" style="display:none;">
+      <div class="yc-action-bar">
+        <button id="create-club-button" class="action-pill action-create">
+          <i class="fa-solid fa-plus"></i>
+          <span>Create</span>
+        </button>
+        <button id="join-club-button" class="action-pill action-join">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>Join</span>
+        </button>
+        <button id="discover-club-button-main" class="action-pill action-discover"
+                onclick="window.location.href='club_discovery.html?from=your_clubs'">
+          <i class="fa-solid fa-compass"></i>
+          <span>Discover</span>
+        </button>
+      </div>
     </div>
 
     <div id="clubs-wrapper">
-      <div id="clubs-spinner">
-        <div class="loading-spinner"></div>
-      </div>
 
       <div class="yc-section" id="managed-section" style="display:none;">
         <div class="yc-card-list" id="clubContainer"></div>
@@ -381,7 +387,7 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="your_clubs.js?v=27"></script>
+    <script type="module" src="your_clubs.js?v=28"></script>
 
   </body>
 </html>

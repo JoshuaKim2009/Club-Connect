@@ -3,7 +3,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, collection, addDoc, updateDoc, arrayUnion, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
-
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -111,18 +111,15 @@ function clearLoading(btn) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
     currentUser = user;
     currentUserEmail = user.email;
     submitButton.disabled = false;
-    console.log(currentUser.uid);
-    console.log(currentUserEmail);
-  } else {
-    currentUser = null;
-    currentUserEmail = null;
-    console.warn("No user is logged in. Club creation will not have an manager and cannot link to user profile.");
-  }
 });
+
 
 const submitButton = document.getElementById("submit-club-button");
 const schoolNameInput = document.getElementById("school-name-select");

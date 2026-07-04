@@ -3,7 +3,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, where, getDocs, updateDoc, arrayUnion, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
-
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -25,13 +25,11 @@ const auth = getAuth(app);
 let currentUserUid = null; 
 
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUserUid = user.uid; 
-        console.log("Current User UID:", currentUserUid);
-    } else {
-        currentUserUid = null;
-        console.log("No user is signed in.");
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
+    currentUserUid = user.uid;
 });
 
 

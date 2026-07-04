@@ -1,17 +1,18 @@
-//announcements.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { showAppAlert, showAppConfirm } from './dialog.js'; 
+import { showAppAlert, showAppConfirm } from './dialog.js';
+import { handleUserSwitch } from './auth-guard.js';
+
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+    apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+    authDomain: "club-connect-data.firebaseapp.com",
+    projectId: "club-connect-data",
+    storageBucket: "club-connect-data.firebasestorage.app",
+    messagingSenderId: "903230180616",
+    appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+    measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -20,18 +21,18 @@ const db = initializeFirestore(app, {
 });
 const auth = getAuth(app);
 
-let currentUser = null; 
+let currentUser = null;
 let clubId = null;
-let currentUserRole = null; 
-let isEditingAnnouncement = false; 
+let currentUserRole = null;
+let isEditingAnnouncement = false;
 
 let currentPage = 1;
 const PAGE_SIZE = 5;
 
 // const clubAnnouncementsTitle = document.getElementById('clubAnnouncementsTitle');
-const announcementsContainer = document.getElementById('announcementsContainer'); 
-const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage'); 
-const addAnnouncementButton = document.getElementById('add-announcement-button'); 
+const announcementsContainer = document.getElementById('announcementsContainer');
+const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage');
+const addAnnouncementButton = document.getElementById('add-announcement-button');
 
 document.body.classList.add('no-scroll');
 
@@ -41,10 +42,7 @@ function getUrlParameter(name) {
 }
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
+    if (!clubId || !uid) return null;
 
     const cacheKey = `role_${clubId}_${uid}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -55,15 +53,15 @@ async function getMemberRoleForClub(clubId, uid) {
         const memberRoleSnap = await getDoc(memberRoleRef);
 
         let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
         } else {
             const clubRef = doc(db, "clubs", clubId);
             const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
         }
 
-        sessionStorage.setItem(cacheKey, role);
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
         return role;
     } catch (error) {
         console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
@@ -71,7 +69,7 @@ async function getMemberRoleForClub(clubId, uid) {
     }
 }
 
-window.goToClubPage = function() {
+window.goToClubPage = function () {
     const currentClubId = getUrlParameter('clubId');
     const returnToPage = getUrlParameter('returnTo');
 
@@ -79,7 +77,7 @@ window.goToClubPage = function() {
     console.log("goToClubPage: returnToPage = ", returnToPage);
 
     if (currentClubId) {
-        let redirectUrl = 'your_clubs.html'; 
+        let redirectUrl = 'your_clubs.html';
 
         if (returnToPage === 'manager') {
             redirectUrl = `club_page_manager.html?id=${currentClubId}`;
@@ -93,126 +91,121 @@ window.goToClubPage = function() {
     } else {
         window.location.href = 'your_clubs.html';
     }
-}
+};
 
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user; 
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
+
+    currentUser = user;
     clubId = getUrlParameter('clubId');
 
-    if (user) {
-        if (clubId) {
-            const clubRef = doc(db, "clubs", clubId);
-            try {
-                const clubSnap = await getDoc(clubRef);
-                if (clubSnap.exists()) {
+    if (!clubId) {
+        window.location.href = 'your_clubs.html';
+        return;
+    }
 
-                    currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
+    try {
+        const clubSnap = await getDoc(doc(db, "clubs", clubId));
 
-                    await fetchAnnouncementData();
-
-                    if (addAnnouncementButton) {
-                        if (currentUserRole === 'manager' || currentUserRole === 'admin') {
-                            addAnnouncementButton.style.display = 'block';
-                            addAnnouncementButton.removeEventListener('click', addNewAnnouncementEditingCard);
-                            addAnnouncementButton.addEventListener('click', addNewAnnouncementEditingCard);
-                        } else {
-                            addAnnouncementButton.style.display = 'none';
-                        }
-                    }
-
-                    hideLoadingScreen();
-                    requestAnimationFrame(() => requestAnimationFrame(() => renderAnnouncementPage()));
-
-                } else {
-                    hideLoadingScreen();
-                    // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Club Announcements (Club Not Found)";
-                    if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
-                    if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
-                }
-            } catch (error) {
-                hideLoadingScreen();
-                console.error("Error fetching club details or user role:", error);
-                // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error Loading Announcements";
-                if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
-                if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
-            }
-        } else {
+        if (!clubSnap.exists()) {
             hideLoadingScreen();
-            // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Error: No Club ID Provided";
-            if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its announcements.</p>`;
+            showContainerError(announcementsContainer, "This club doesn't exist.");
             if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
+            return;
         }
-    } else {
+
+        currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
+
+        if (currentUserRole === null) {
+            hideLoadingScreen();
+            showContainerError(announcementsContainer, "You're not a member of this club.");
+            if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
+            return;
+        }
+
+        await fetchAnnouncementData();
+
+        if (addAnnouncementButton) {
+            addAnnouncementButton.onclick = addNewAnnouncementEditingCard;
+        }
+
         hideLoadingScreen();
-        console.log("No user authenticated on announcements page. Redirecting to login.");
-        // if (clubAnnouncementsTitle) clubAnnouncementsTitle.textContent = "Not Authenticated";
-        if (announcementsContainer) announcementsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club announcements. Redirecting...</p>`;
+        renderAnnouncementPage();
+
+    } catch (error) {
+        hideLoadingScreen();
+        console.error("Error fetching club details or user role:", error);
+        showContainerError(announcementsContainer, "Oops! Something went wrong.", true);
         if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 2000); 
     }
 });
-
 
 function formatTimestamp(timestamp) {
     if (!timestamp || !timestamp.toDate) return 'N/A';
     const date = timestamp.toDate();
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
     return date.toLocaleDateString(undefined, options);
 }
 
+function scrollToAnnouncement(announcementId) {
+    const card = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
+    if (card) {
+        window.scrollTo({ top: card.getBoundingClientRect().top + window.pageYOffset - 100, behavior: 'smooth' });
+    }
+}
 
 function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card editing-announcement-card';
-    cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`; 
+    cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`;
     cardDiv.dataset.isNewAnnouncement = isNewAnnouncement;
 
-    cardDiv.innerHTML = `
-        <div>
-            <label for="edit-title-${cardDiv.dataset.editId}">Title:</label>
-            <input type="text" id="edit-title-${cardDiv.dataset.editId}" value="${initialData.title || ''}" required>
-        </div>
-        <div>
-            <label for="edit-content-${cardDiv.dataset.editId}">Content:</label>
-            <textarea id="edit-content-${cardDiv.dataset.editId}" rows="5" required>${initialData.content || ''}</textarea>
-        </div>
+    const id = cardDiv.dataset.editId;
 
+    cardDiv.innerHTML = `
+        <h3>${isNewAnnouncement ? 'CREATE ANNOUNCEMENT' : 'EDIT ANNOUNCEMENT'}</h3>
+        <div class="field-section">
+            <label for="edit-title-${id}">Title</label>
+            <input type="text" id="edit-title-${id}" value="${initialData.title || ''}" required>
+        </div>
+        <div class="field-section">
+            <label for="edit-content-${id}">Content</label>
+            <textarea id="edit-content-${id}" rows="5" required>${initialData.content || ''}</textarea>
+        </div>
         <div class="announcement-card-actions">
             <button class="save-btn">SAVE</button>
             <button class="cancel-btn">CANCEL</button>
         </div>
     `;
 
-    cardDiv.querySelector('.save-btn').addEventListener('click', async () => {
-        console.log('SAVE button clicked for editing card:', cardDiv.dataset.editId);
-        await saveAnnouncement(cardDiv, announcementIdToUpdate);
-        isEditingAnnouncement = false;
-    });
-    cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
+    cardDiv.querySelector('.save-btn').addEventListener('click', () => saveAnnouncement(cardDiv, announcementIdToUpdate));
+
+    cardDiv.querySelector('.cancel-btn').addEventListener('click', () => {
         isEditingAnnouncement = false;
         if (!isNewAnnouncement) {
             const cached = allAnnouncements.find(a => a.id === announcementIdToUpdate);
             if (cached) {
                 const restoredCard = createAnnouncementDisplayCard(cached, cached.id);
-                cardDiv.replaceWith(restoredCard); // replaceWith handles removal itself
+                cardDiv.replaceWith(restoredCard);
+                requestAnimationFrame(() => scrollToAnnouncement(announcementIdToUpdate));
             } else {
                 cardDiv.remove();
-                await fetchAndDisplayAnnouncements(true);
             }
         } else {
             cardDiv.remove();
             if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
                 noAnnouncementsMessage.style.display = 'block';
             }
+            if (addAnnouncementButton) addAnnouncementButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 
     return cardDiv;
 }
-
 
 async function addNewAnnouncementEditingCard() {
     if (!currentUser || !clubId) {
@@ -224,7 +217,7 @@ async function addNewAnnouncementEditingCard() {
         return;
     }
 
-    const newCardElement = createEditingCardElement({}, true); 
+    const newCardElement = createEditingCardElement({}, true);
 
     if (announcementsContainer) {
         if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
@@ -232,56 +225,60 @@ async function addNewAnnouncementEditingCard() {
     }
 }
 
-
 async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     const tempDomId = cardDiv.dataset.editId;
-    const isNewAnnouncement = cardDiv.dataset.isNewAnnouncement === 'true';
 
     const title = cardDiv.querySelector(`#edit-title-${tempDomId}`).value.trim();
     const content = cardDiv.querySelector(`#edit-content-${tempDomId}`).value.trim();
 
     if (!title) { await showAppAlert("Announcement Title is required!"); return; }
     if (!content) { await showAppAlert("Announcement Content is required!"); return; }
-    if (title.length === 0) { await showAppAlert("Announcement Title cannot be empty!"); return; }
-    if (content.length === 0) { await showAppAlert("Announcement Content cannot be empty!"); return; }
 
     const announcementDataToSave = {
         title,
         content,
         createdByUid: currentUser.uid,
         createdByName: currentUser.displayName || "Anonymous",
-        clubId: clubId 
+        clubId
     };
 
     try {
         const announcementsRef = collection(db, "clubs", clubId, "announcements");
 
         if (existingAnnouncementId) {
-            const announcementDocRef = doc(announcementsRef, existingAnnouncementId);
-            await updateDoc(announcementDocRef, announcementDataToSave); 
-            await showAppAlert("Announcement updated successfully!");
+            await updateDoc(doc(announcementsRef, existingAnnouncementId), announcementDataToSave);
+            const updatedSnap = await getDoc(doc(announcementsRef, existingAnnouncementId));
+            const updatedData = { id: existingAnnouncementId, ...updatedSnap.data() };
+
+            const index = allAnnouncements.findIndex(a => a.id === existingAnnouncementId);
+            if (index !== -1) allAnnouncements[index] = updatedData;
+
+            isEditingAnnouncement = false;
+            const restoredCard = createAnnouncementDisplayCard(updatedData, existingAnnouncementId);
+            cardDiv.replaceWith(restoredCard);
+            showAppAlert("Announcement updated successfully!");
+            requestAnimationFrame(() => scrollToAnnouncement(existingAnnouncementId));
         } else {
-            announcementDataToSave.createdAt = serverTimestamp(); 
-            const newDocRef = await addDoc(announcementsRef, announcementDataToSave); 
-            const newAnnouncementId = newDocRef.id; 
+            announcementDataToSave.createdAt = serverTimestamp();
+            const newRef = await addDoc(announcementsRef, announcementDataToSave);
+            const newSnap = await getDoc(newRef);
+            const newAnnouncement = { id: newRef.id, ...newSnap.data() };
 
-            await updateLastSeenAnnouncements();
-            console.log(`Creator ${currentUser.displayName} (${currentUser.uid}) updated lastSeenAnnouncements after creating announcement ${newAnnouncementId}.`);
-
-            await showAppAlert("New announcement added successfully!");
+            allAnnouncements.unshift(newAnnouncement);
+            isEditingAnnouncement = false;
+            cardDiv.remove();
+            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+            renderPage(1, true);
+            showAppAlert("New announcement added successfully!");
+            requestAnimationFrame(() => scrollToAnnouncement(newRef.id));
+            updateLastSeenAnnouncements();
         }
-        
-        cardDiv.remove(); 
-        isEditingAnnouncement = false;
-        await fetchAndDisplayAnnouncements(); 
-
     } catch (error) {
         console.error("Error saving announcement:", error);
         isEditingAnnouncement = false;
         await showAppAlert("Failed to save announcement: " + error.message);
     }
 }
-
 
 let allAnnouncements = [];
 
@@ -294,7 +291,7 @@ async function fetchAnnouncementData() {
         updateLastSeenAnnouncements();
     } catch (error) {
         console.error("Error fetching announcements:", error);
-        if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">Error loading announcements.</p>';
+        throw error;
     }
 }
 
@@ -304,6 +301,7 @@ function renderAnnouncementPage() {
     if (allAnnouncements.length === 0) {
         if (currentUserRole === 'member') {
             announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+            announcementsContainer.style.marginTop = '0px';
             if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
         } else {
             if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
@@ -339,94 +337,83 @@ function hideLoadingScreen() {
     }
 }
 
-async function fetchAndDisplayAnnouncements(skipAnimation = false) {
-  if (!clubId) {
-    if (announcementsContainer) announcementsContainer.innerHTML = '<p class="fancy-label">No club selected.</p>';
-    return;
-  }
+function renderPage(page, skipAnimation = false) {
+    announcementsContainer.innerHTML = '';
 
-  announcementsContainer.innerHTML = '';
-  currentPage = 1;
+    const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
+    currentPage = Math.max(1, Math.min(page, totalPages));
 
-  const announcementsRef = collection(db, "clubs", clubId, "announcements");
-  const q = query(announcementsRef, orderBy("createdAt", "desc"));
+    if (addAnnouncementButton) {
+        const isAdmin = currentUserRole === 'manager' || currentUserRole === 'admin';
 
-  try {
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      if (currentUserRole === 'member') {
-        announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
-      } else {
-        announcementsContainer.innerHTML = '';
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
-      }
-      hidePagination();
-      return;
+        if (!isAdmin) {
+            addAnnouncementButton.style.display = 'none';
+            announcementsContainer.style.marginTop = '-45px';
+        } else {
+            if (currentPage === 1) {
+                addAnnouncementButton.style.display = 'block';
+                announcementsContainer.style.marginTop = '0px';
+            } else {
+                addAnnouncementButton.style.display = 'none';
+                announcementsContainer.style.marginTop = '-45px';
+            }
+        }
     }
 
-    if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const pageItems = allAnnouncements.slice(start, end);
 
-    allAnnouncements = [];
-    querySnapshot.forEach((doc) => {
-      allAnnouncements.push({ id: doc.id, ...doc.data() });
+    pageItems.forEach((announcement, index) => {
+        const card = createAnnouncementDisplayCard(announcement, announcement.id);
+        announcementsContainer.appendChild(card);
+        if (!skipAnimation) animateCardIn(card, index);
     });
 
-    // updateLastSeenAnnouncements();
-
-    renderPage(currentPage, skipAnimation);
-
-  } catch (error) {
-    console.error("Error fetching announcements:", error);
-    announcementsContainer.innerHTML = '<p class="fancy-label">Error loading announcements.</p>';
-  }
+    if (totalPages > 1) {
+        renderPaginationButtons(currentPage, totalPages);
+    } else {
+        hidePagination();
+    }
 }
 
-function renderPage(page, skipAnimation = false) {
-  announcementsContainer.innerHTML = '';
+function renderPaginationButtons(page, totalPages) {
+    const controls = document.getElementById('pagination-controls');
+    const inner = document.getElementById('pagination-inner');
+    controls.style.display = 'flex';
+    inner.innerHTML = '';
 
-  const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
-  currentPage = Math.max(1, Math.min(page, totalPages));
+    let pagesToShow = [];
+    if (totalPages === 2) {
+        pagesToShow = [1, 2];
+    } else if (page === 1) {
+        pagesToShow = [1, 2, 3];
+    } else if (page === totalPages) {
+        pagesToShow = [totalPages - 2, totalPages - 1, totalPages];
+    } else {
+        pagesToShow = [page - 1, page, page + 1];
+    }
 
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
-  const pageItems = allAnnouncements.slice(start, end);
-
-  pageItems.forEach((announcement, index) => {
-    const card = createAnnouncementDisplayCard(announcement, announcement.id);
-    announcementsContainer.appendChild(card);
-    if (!skipAnimation) animateCardIn(card, index);
-  });
-
-  if (totalPages > 1) {
-    const paginationControls = document.getElementById('pagination-controls');
-    const pageIndicator = document.getElementById('page-indicator');
-    const prevButton = document.getElementById('prev-page-button');
-    const nextButton = document.getElementById('next-page-button');
-
-    paginationControls.style.display = 'flex';
-    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
-    prevButton.disabled = currentPage === 1;
-    nextButton.disabled = currentPage === totalPages;
-  } else {
-    hidePagination();
-  }
+    pagesToShow.forEach(p => {
+        const btn = document.createElement('button');
+        btn.textContent = p;
+        btn.className = 'pagination-btn' + (p === page ? ' active-page' : '');
+        if (p !== page) {
+            btn.addEventListener('click', () => {
+                renderPage(p);
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            });
+        }
+        inner.appendChild(btn);
+    });
 }
 
 function hidePagination() {
-  const paginationControls = document.getElementById('pagination-controls');
-  if (paginationControls) paginationControls.style.display = 'none';
+    const paginationControls = document.getElementById('pagination-controls');
+    if (paginationControls) paginationControls.style.display = 'none';
+    const inner = document.getElementById('pagination-inner');
+    if (inner) inner.innerHTML = '';
 }
-
-document.getElementById('prev-page-button').addEventListener('click', () => {
-  if (currentPage > 1) renderPage(currentPage - 1);
-});
-
-document.getElementById('next-page-button').addEventListener('click', () => {
-  const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
-  if (currentPage < totalPages) renderPage(currentPage + 1);
-});
 
 
 function createAnnouncementDisplayCard(announcementData, announcementId) {
@@ -434,44 +421,43 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
     cardDiv.className = 'announcement-card display-announcement-card';
     cardDiv.dataset.announcementId = announcementId;
 
-    const canEditDelete = ((currentUserRole === 'manager' || currentUserRole === 'admin') && announcementData.createdByUid === currentUser.uid);
+    const canEditDelete = (currentUserRole === 'manager' || currentUserRole === 'admin') && announcementData.createdByUid === currentUser.uid;
     let actionButtonsHtml = '';
 
     if (canEditDelete) {
         actionButtonsHtml = `
-            <div class="announcement-card-actions">
-                <button class="edit-btn" data-announcement-id="${announcementId}">
-                    <span class="button-text">EDIT</span><span class="button-icon"><i class="fa-solid fa-pencil"></i></span>
-                </button>
-                <button class="delete-btn" data-announcement-id="${announcementId}">
-                    <span class="button-text">DELETE</span><span class="button-icon"><i class="fa-solid fa-trash"></i></span>
-                </button>
+            <div class="announcement-meta-row">
+                <span class="announcement-meta-text">${announcementData.createdByName} · ${formatTimestamp(announcementData.createdAt)}</span>
+                <div class="announcement-meta-btns">
+                    <button class="edit-btn" data-announcement-id="${announcementId}">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button class="delete-btn" data-announcement-id="${announcementId}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
+    } else {
+        actionButtonsHtml = `<p class="announcement-meta">${announcementData.createdByName} · ${formatTimestamp(announcementData.createdAt)}</p>`;
     }
 
     cardDiv.innerHTML = `
         <h3>${announcementData.title}</h3>
         <p>${linkifyText(announcementData.content)}</p>
-        <p class="announcement-meta">Posted by ${announcementData.createdByName} on ${formatTimestamp(announcementData.createdAt)}</p>
         ${actionButtonsHtml}
     `;
 
     if (canEditDelete) {
         const editBtn = cardDiv.querySelector('.edit-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => editAnnouncement(announcementId));
-        }
+        if (editBtn) editBtn.addEventListener('click', () => editAnnouncement(announcementId));
 
         const deleteBtn = cardDiv.querySelector('.delete-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', () => deleteAnnouncement(announcementId, announcementData.title));
-        }
+        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAnnouncement(announcementId, announcementData.title));
     }
-    
+
     return cardDiv;
 }
-
 
 async function editAnnouncement(announcementId) {
     if (!currentUser || !clubId) {
@@ -503,22 +489,34 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
     }
 
     const confirmed = await showAppConfirm(`Are you sure you want to delete the announcement "${announcementTitle}"? This action cannot be undone.`);
-    if (!confirmed) {
-        console.log("Announcement deletion cancelled by user.");
-        return;
-    }
+    if (!confirmed) return;
 
     try {
-        const announcementDocRef = doc(db, "clubs", clubId, "announcements", announcementId);
-        await deleteDoc(announcementDocRef);
-        await showAppAlert("Announcement deleted successfully!");
-        await fetchAndDisplayAnnouncements(); 
+        await deleteDoc(doc(db, "clubs", clubId, "announcements", announcementId));
+        allAnnouncements = allAnnouncements.filter(a => a.id !== announcementId);
+
+        const card = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
+        if (card) card.remove();
+
+        const totalPages = Math.ceil(allAnnouncements.length / PAGE_SIZE);
+        if (currentPage > totalPages && currentPage > 1) currentPage = totalPages;
+
+        if (allAnnouncements.length === 0) {
+            if (currentUserRole === 'member') {
+                announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+            }
+            hidePagination();
+        } else {
+            totalPages > 1 ? renderPaginationButtons(currentPage, totalPages) : hidePagination();
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showAppAlert("Announcement deleted successfully!");
     } catch (error) {
         console.error("Error deleting announcement:", error);
         await showAppAlert("Failed to delete announcement: " + error.message);
     }
 }
-
 
 async function updateLastSeenAnnouncements() {
     if (!currentUser || !clubId) return;
@@ -535,8 +533,6 @@ async function updateLastSeenAnnouncements() {
     }
 }
 
-
-
 function linkifyText(text) {
     const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
     return text.replace(urlPattern, (url) => {
@@ -544,7 +540,6 @@ function linkifyText(text) {
         return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
 }
-
 
 function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
@@ -555,4 +550,21 @@ function animateCardIn(card, index = 0) {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
     }, index * 80);
+}
+
+
+
+function showContainerError(container, message, showRetry = false) {
+    if (!container) return;
+    container.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

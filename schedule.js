@@ -27,13 +27,12 @@ let role = null;
 let isEditingEvent = false;
 let rsvpListenerUnsubscribe = null;
 
-// { eventId: { id, ...firestoreData } }
 let eventDocsMap = new Map();
 
 const userCache = new Map();
 const memberListCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000;
-const userRsvpMap = new Map(); // keyed by `eventId_occurrenceDate`
+const userRsvpMap = new Map(); 
 
 const eventsContainer = document.getElementById('eventsContainer');
 const noEventsMessage = document.getElementById('noEventsMessage');
@@ -44,17 +43,13 @@ document.body.classList.add('no-scroll');
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 
-//URL Auth helpers
 
 function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
 }
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
+    if (!clubId || !uid) return null;
 
     const cacheKey = `role_${clubId}_${uid}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -65,15 +60,15 @@ async function getMemberRoleForClub(clubId, uid) {
         const memberRoleSnap = await getDoc(memberRoleRef);
 
         let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
         } else {
             const clubRef = doc(db, "clubs", clubId);
             const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
         }
 
-        sessionStorage.setItem(cacheKey, role);
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
         return role;
     } catch (error) {
         console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
@@ -96,62 +91,66 @@ window.goToClubPage = function () {
 };
 
 
-//Auth state
 
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     clubId = getUrlParameter('clubId');
 
     if (user) {
-        if (clubId) {
-            try {
-                const clubSnap = await getDoc(doc(db, "clubs", clubId));
-                if (clubSnap.exists()) {
-                    role = await getMemberRoleForClub(clubId, currentUser.uid);
+        if (!clubId) {
+            window.location.href = 'your_clubs.html';
+            return;
+        }
 
-                    await Promise.all([
-                        fetchAndDisplayEvents(),
-                        prefetchUserRsvps()
-                    ]);
-                    setupRealtimeUserRsvps();
-                    hideLoadingScreen();
-                    requestAnimationFrame(() => requestAnimationFrame(() => renderAllEvents()));
+        try {
+            const clubSnap = await getDoc(doc(db, "clubs", clubId));
 
-                    if (addEventButton) {
-                        if (role === 'manager' || role === 'admin') {
-                            addEventButton.style.display = 'block';
-                            addEventButton.addEventListener('click', addNewEventEditingCard);
-                        } else {
-                            addEventButton.style.display = 'none';
-                        }
-                    }
-                } else {
-                    hideLoadingScreen();
-                    if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Sorry, this club does not exist or you do not have access.</p>`;
-                    if (addEventButton) addEventButton.style.display = 'none';
-                }
-            } catch (error) {
+            if (!clubSnap.exists()) {
                 hideLoadingScreen();
-                console.error("Error during auth init:", error);
-                if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">An error occurred while loading club details.</p>`;
+                showContainerError(eventsContainer, "This club doesn't exist.");
                 if (addEventButton) addEventButton.style.display = 'none';
+                return;
             }
-        } else {
+
+            role = await getMemberRoleForClub(clubId, currentUser.uid);
+
+            if (role === null) {
+                hideLoadingScreen();
+                showContainerError(eventsContainer, "You're not a member of this club.");
+                if (addEventButton) addEventButton.style.display = 'none';
+                return;
+            }
+
+            await Promise.all([
+                fetchAndDisplayEvents(),
+                prefetchUserRsvps()
+            ]);
+            setupRealtimeUserRsvps();
             hideLoadingScreen();
-            if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Please return to your clubs page and select a club to view its schedule.</p>`;
+            requestAnimationFrame(() => requestAnimationFrame(() => renderAllEvents()));
+
+            if (addEventButton) {
+                if (role === 'manager' || role === 'admin') {
+                    addEventButton.style.display = 'block';
+                    addEventButton.addEventListener('click', addNewEventEditingCard);
+                } else {
+                    addEventButton.style.display = 'none';
+                }
+            }
+
+        } catch (error) {
+            hideLoadingScreen();
+            console.error("Error during auth init:", error);
+            showContainerError(eventsContainer, "Oops! Something went wrong.", true);
             if (addEventButton) addEventButton.style.display = 'none';
+            if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
         }
     } else {
-        hideLoadingScreen();
-        if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">You must be logged in to view club schedule. Redirecting...</p>`;
-        if (addEventButton) addEventButton.style.display = 'none';
         if (rsvpListenerUnsubscribe) { rsvpListenerUnsubscribe(); rsvpListenerUnsubscribe = null; }
-        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+        window.location.href = 'login.html';
     }
 });
 
-
-//Fetch and render all events
 
 async function fetchAndDisplayEvents() {
     if (!clubId) return;
@@ -168,7 +167,7 @@ async function fetchAndDisplayEvents() {
 
     } catch (error) {
         console.error("Error fetching events:", error);
-        if (eventsContainer) eventsContainer.innerHTML = `<p class="fancy-label">Error loading events. Please try again later.</p>`;
+        throw error;
     }
 }
 
@@ -177,14 +176,17 @@ function renderAllEvents() {
     eventsContainer.innerHTML = '';
 
     const allOccurrences = buildOccurrenceList();
+    const isAdmin = role === 'manager' || role === 'admin';
 
     if (allOccurrences.length === 0) {
         if (role === 'member') eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
         if (noEventsMessage) noEventsMessage.style.display = 'block';
+        eventsContainer.style.marginTop = '0px';
         return;
     }
 
     if (noEventsMessage) noEventsMessage.style.display = 'none';
+    eventsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
 
     allOccurrences.forEach((occurrence, index) => {
         const card = createSingleOccurrenceDisplayCard(occurrence.eventData, occurrence.occurrenceDate, occurrence.originalEventId);
@@ -238,11 +240,9 @@ function buildOccurrenceList() {
 
 
 
-// After saving/updating an event doc, refresh only the cards that belong to that eventId
 function refreshCardsForEvent(eventId) {
     if (!eventsContainer) return;
 
-    // Remove all existing display cards for this event
     eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
 
     const eventData = eventDocsMap.get(eventId);
@@ -283,13 +283,11 @@ function refreshCardsForEvent(eventId) {
         return;
     }
 
-    // Insert the new cards in the correct sorted position
     newOccurrences.forEach(occ => {
         const allCurrentCards = Array.from(eventsContainer.querySelectorAll('.display-event-card'));
         const newCard = createSingleOccurrenceDisplayCard(occ.eventData, occ.occurrenceDate, occ.originalEventId);
         const occDateTime = new Date(occ.occurrenceDate.toISOString().split('T')[0] + 'T' + occ.eventData.startTime + ':00Z').getTime();
 
-        // Find insertion point
         let inserted = false;
         for (const existingCard of allCurrentCards) {
             const existingDate = existingCard.dataset.occurrenceDate;
@@ -309,7 +307,6 @@ function refreshCardsForEvent(eventId) {
     if (noEventsMessage) noEventsMessage.style.display = 'none';
 }
 
-// Remove all cards for a given eventId and clean up the map
 function removeCardsForEvent(eventId) {
     eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
     eventDocsMap.delete(eventId);
@@ -322,11 +319,11 @@ function checkIfEmpty() {
     if (remaining.length === 0) {
         if (role === 'member') eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
         if (noEventsMessage) noEventsMessage.style.display = 'block';
+        eventsContainer.style.marginTop = '0px'; 
     }
 }
 
 
-//Add new event
 
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to add events."); return; }
@@ -340,7 +337,6 @@ async function addNewEventEditingCard() {
 }
 
 
-// Editing card 
 
 function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
     isEditingEvent = true;
@@ -361,12 +357,14 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
     const selectedDays = initialData.daysOfWeek || [];
 
     cardDiv.innerHTML = `
-        <div>
+        <h3>${isNewEvent ? 'ADD EVENT' : 'EDIT EVENT'}</h3>
+
+        <div class="field-section">
             <label for="edit-name-${currentEditId}">Event Name:</label>
             <input type="text" id="edit-name-${currentEditId}" value="${initialData.eventName || ''}" required>
         </div>
 
-        <div class="event-type-toggle" style="display: ${isNewEvent ? 'block' : 'none'};">
+        <div class="field-section event-type-toggle" style="display: ${isNewEvent ? 'block' : 'none'};">
             <label>Event Type:</label>
             <div class="event-type-strip-group">
                 <div class="club-vis-strip event-type-strip ${!initialData.isWeekly ? 'club-vis-strip-selected' : ''}" id="toggle-once-${currentEditId}">
@@ -379,54 +377,56 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
             <input type="checkbox" id="edit-is-weekly-${currentEditId}" ${isWeeklyChecked} style="display: none;">
         </div>
 
-        <div id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
+        <div class="field-section" id="date-input-group-${currentEditId}" style="display: ${!initialData.isWeekly || isEditingInstance ? 'block' : 'none'};">
             <label for="edit-date-${currentEditId}">Event Date:</label>
             <input type="date" id="edit-date-${currentEditId}" min="${new Date().toISOString().split('T')[0]}" value="${initialData.eventDate || originalOccurrenceDate || ''}" ${initialData.isWeekly && !isEditingInstance ? 'disabled' : ''} required>
         </div>
 
-        <div class="days-of-week-selection" id="days-of-week-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
-            <label>Days of Week:</label>
-            <div class="checkbox-group">
-                ${daysOfWeekOptions.map(day => `
-                    <label>
-                        <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''}>
-                        ${day}
-                    </label>
-                `).join('')}
+        <div class="field-section" id="days-of-week-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+            <div class="days-of-week-selection">
+                <label>Days of Week:</label>
+                <div class="checkbox-group">
+                    ${daysOfWeekOptions.map(day => `
+                        <label>
+                            <input type="checkbox" value="${day}" ${selectedDays.includes(day) ? 'checked' : ''} ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''}>
+                            ${day}
+                        </label>
+                    `).join('')}
+                </div>
             </div>
         </div>
 
-        <div id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+        <div class="field-section" id="weekly-start-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
             <label for="edit-weekly-start-date-${currentEditId}">Start Date:</label>
             <input type="date" id="edit-weekly-start-date-${currentEditId}" value="${initialData.weeklyStartDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
 
-        <div id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
+        <div class="field-section" id="weekly-end-date-group-${currentEditId}" style="display: ${initialData.isWeekly && !isEditingInstance ? 'block' : 'none'};">
             <label for="edit-weekly-end-date-${currentEditId}">End Date:</label>
             <input type="date" id="edit-weekly-end-date-${currentEditId}" min="${new Date().toISOString().split('T')[0]}" value="${initialData.weeklyEndDate || ''}" ${!initialData.isWeekly || isEditingInstance ? 'disabled' : ''} required>
         </div>
 
-        <div>
+        <div class="field-section">
             <label for="edit-start-time-${currentEditId}">Start Time:</label>
             <input type="time" id="edit-start-time-${currentEditId}" value="${initialData.startTime || ''}" required>
         </div>
 
-        <div>
+        <div class="field-section">
             <label for="edit-end-time-${currentEditId}">End Time:</label>
             <input type="time" id="edit-end-time-${currentEditId}" value="${initialData.endTime || ''}" required>
         </div>
 
-        <div>
+        <div class="field-section">
             <label for="edit-address-${currentEditId}">Address:</label>
             <input type="text" id="edit-address-${currentEditId}" value="${initialData.address || ''}" required>
         </div>
 
-        <div>
+        <div class="field-section">
             <label for="edit-location-${currentEditId}">Location (e.g., Room 132):</label>
             <input type="text" id="edit-location-${currentEditId}" value="${initialData.location || ''}" required>
         </div>
 
-        <div>
+        <div class="field-section">
             <label for="edit-notes-${currentEditId}">Notes (Optional):</label>
             <input type="text" id="edit-notes-${currentEditId}" value="${initialData.notes || ''}">
         </div>
@@ -520,7 +520,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         } else {
             cardDiv.remove();
             checkIfEmpty();
-            if (addEventButton) addEventButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
@@ -528,7 +528,6 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 }
 
 
-//Save event 
 
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
@@ -683,7 +682,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
 }
 
 
-//Edit event
 
 async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to edit events."); return; }
@@ -705,7 +703,6 @@ async function editEvent(eventId, occurrenceDateString = null) {
     }
 
     if (eventData.isWeekly && occurrenceDateString) {
-        // Editing a single instance of a recurring event
         const dataForCard = {
             eventName: eventData.eventName,
             isWeekly: false,
@@ -719,14 +716,12 @@ async function editEvent(eventId, occurrenceDateString = null) {
         const editingCard = createEditingCardElement(dataForCard, false, eventId, true, eventId, occurrenceDateString);
         targetDisplayCard.replaceWith(editingCard);
     } else {
-        // Editing the whole event 
         const editingCard = createEditingCardElement(eventData, false, eventId);
         targetDisplayCard.replaceWith(editingCard);
     }
 }
 
 
-//Delete /cancel occurrences
 
 async function cancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to cancel the event on ${formatDate(occurrenceDateString)}? It will no longer appear on the schedule.`);
@@ -740,7 +735,6 @@ async function cancelSingleOccurrence(eventId, occurrenceDateString) {
         const existingExceptions = eventData.exceptions || [];
         const hypotheticalExceptions = [...existingExceptions, occurrenceDateString];
 
-        // Count remaining occurrences after this exception
         let remaining = 0;
         if (eventData.isWeekly) {
             const startDate = new Date(eventData.weeklyStartDate + 'T00:00:00Z');
@@ -865,7 +859,6 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     }
 }
 
-// Not actively used in UI but kept for potential future use
 async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
     const confirmed = await showAppConfirm(`Are you sure you want to un-cancel the event on ${formatDate(occurrenceDateString)}? It will reappear on the schedule.`);
     if (!confirmed) return;
@@ -884,7 +877,6 @@ async function uncancelSingleOccurrence(eventId, occurrenceDateString) {
 }
 
 
-//Display card
 
 function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEventId) {
     const cardDiv = document.createElement('div');
@@ -989,18 +981,14 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
             </div>
         </div>
 
-        <div class="event-card-actions">
-            ${actionButtonsHtml}
-        </div>
+        ${actionButtonsHtml}
     `;
 
-    // Apply cached RSVP status immediately — no async fetch needed
     const cachedStatus = userRsvpMap.get(`${originalEventId}_${occurrenceDateString}`) || null;
     cardDiv.querySelectorAll('.rsvp-button').forEach(btn => {
         btn.classList.toggle('selected-rsvp', btn.dataset.status === cachedStatus);
     });
 
-    // RSVP buttons
     cardDiv.querySelectorAll('.rsvp-button').forEach(button => {
         button.addEventListener('click', e => {
             saveRsvpStatus(e.target.dataset.eventId, e.target.dataset.occurrenceDate, e.target.dataset.status);
@@ -1122,7 +1110,6 @@ function setupRealtimeUserRsvps() {
 }
 
 
-//RSVP details modal
 
 async function getAllClubMembers(clubID, useCache = true) {
     if (useCache && memberListCache.has(clubID)) {
@@ -1294,91 +1281,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 }
 
 
-//Announcements
-
-async function createAnnouncementPopup(initialData = {}) {
-    return new Promise((resolve) => {
-        let overlay = document.getElementById('announcement-popup-overlay');
-        let modal = document.getElementById('announcement-popup-modal');
-
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'announcement-popup-overlay';
-            overlay.className = 'announcement-popup-overlay';
-            document.body.appendChild(overlay);
-        }
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'announcement-popup-modal';
-            modal.className = 'announcement-card editing-announcement-card announcement-popup-modal';
-            document.body.appendChild(modal);
-        }
-
-        modal.innerHTML = `
-            <h3>Create Announcement</h3>
-            <div>
-                <label for="announcement-popup-title" style="margin-bottom: 5px;">Title:</label>
-                <input type="text" id="announcement-popup-title" value="${initialData.title || ''}" required style="width: calc(100% - 16px);">
-            </div>
-            <div>
-                <label for="announcement-popup-content" style="margin-bottom: 5px;">Content:</label>
-                <textarea id="announcement-popup-content" rows="5" required style="width: calc(100% - 16px);">${initialData.content || ''}</textarea>
-            </div>
-            <div class="announcement-card-actions">
-                <button id="announcement-popup-save-btn" class="fancy-button">SAVE</button>
-                <button id="announcement-popup-cancel-btn" class="fancy-button">CANCEL</button>
-            </div>
-        `;
-
-        document.body.classList.add('no-scroll');
-        overlay.style.display = 'flex';
-        modal.style.display = 'flex';
-
-        document.getElementById('announcement-popup-save-btn').addEventListener('click', async () => {
-            const title = document.getElementById('announcement-popup-title').value.trim();
-            const content = document.getElementById('announcement-popup-content').value.trim();
-            if (!title || !content) { await showAppAlert("Title and Content are required for the announcement."); return; }
-            const success = await saveAnnouncement(title, content);
-            if (success) {
-                overlay.style.display = 'none';
-                modal.style.display = 'none';
-                document.body.classList.remove('no-scroll');
-                resolve(true);
-            } else {
-                resolve(false);
-            }
-        });
-
-        document.getElementById('announcement-popup-cancel-btn').addEventListener('click', () => {
-            overlay.style.display = 'none';
-            modal.style.display = 'none';
-            document.body.classList.remove('no-scroll');
-            resolve(false);
-        });
-    });
-}
-
-async function saveAnnouncement(title, content) {
-    if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to create announcements."); return false; }
-    try {
-        await addDoc(collection(db, "clubs", clubId, "announcements"), {
-            title, content,
-            createdByUid: currentUser.uid,
-            createdByName: currentUser.displayName || "Anonymous",
-            clubId,
-            createdAt: serverTimestamp()
-        });
-        await showAppAlert("Announcement saved!");
-        return true;
-    } catch (error) {
-        console.error("Error saving announcement:", error);
-        await showAppAlert("Failed to save announcement: " + error.message);
-        return false;
-    }
-}
-
-
-// Utilities 
 
 function formatTime(timeString) {
     if (!timeString) return 'N/A';
@@ -1455,4 +1357,21 @@ function animateCardIn(card, index = 0) {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
     }, index * 80);
+}
+
+
+
+function showContainerError(container, message, showRetry = false) {
+    if (!container) return;
+    container.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <p class="fancy-label">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                ${showRetry
+                    ? `<button class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
+                    : `<button class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+                }
+            </div>
+        </div>
+    `;
 }

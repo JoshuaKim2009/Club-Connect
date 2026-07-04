@@ -4,6 +4,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
+import { handleUserSwitch } from './auth-guard.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -78,10 +79,7 @@ function getUrlParameter(name) {
 clubId = getUrlParameter('clubId');
 
 async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) {
-        console.warn("getMemberRoleForClub: clubId or uid is missing.");
-        return null;
-    }
+    if (!clubId || !uid) return null;
 
     const cacheKey = `role_${clubId}_${uid}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -92,15 +90,15 @@ async function getMemberRoleForClub(clubId, uid) {
         const memberRoleSnap = await getDoc(memberRoleRef);
 
         let role;
-        if (memberRoleSnap.exists() && memberRoleSnap.data().role) {
-            role = memberRoleSnap.data().role;
+        if (memberRoleSnap.exists()) {
+            role = memberRoleSnap.data().role || 'member';
         } else {
             const clubRef = doc(db, "clubs", clubId);
             const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : 'member';
+            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
         }
 
-        sessionStorage.setItem(cacheKey, role);
+        if (role !== null) sessionStorage.setItem(cacheKey, role);
         return role;
     } catch (error) {
         console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
@@ -116,40 +114,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-    
-    if (user) {
-        currentUser = user;
-        isLoggedIn = true;
-        userName = user.displayName || "";
-        userEmail = user.email || "";
-
-        console.log(userEmail);
-
-        if (clubId) {
-            if (chatMessages) {
-                chatMessages.classList.remove('loading');
-            }
-
-            
-                        
-            const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
-            const messagesPromise = loadInitialMessages();
-            
-            [role] = await Promise.all([rolePromise, messagesPromise]);
-            
-            
-            // await updateLastSeenMessages();
-            
-            startRealtimeListener();
-        } else {
-            window.location.href = 'your_clubs.html';
-        }
-    } else {
-        window.location.href = 'login.html';
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
     }
-    
-});
 
+    currentUser = user;
+    isLoggedIn = true;
+    userName = user.displayName || "";
+    userEmail = user.email || "";
+
+    if (clubId) {
+        const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
+        const messagesPromise = loadInitialMessages();
+        [role] = await Promise.all([rolePromise, messagesPromise]);
+        startRealtimeListener();
+    } else {
+        window.location.href = 'your_clubs.html';
+    }
+});
 
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
@@ -186,6 +169,7 @@ async function loadInitialMessages() {
     const q = query(messagesRef, orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1));
     
     try {
+        showChatState('loading');
         const snapshot = await getDocs(q);
         const docs = snapshot.docs;
         
@@ -235,12 +219,18 @@ async function loadInitialMessages() {
             console.log(messageCount);
         }
 
+        if (chatMessages.querySelectorAll('.message-wrapper').length === 0) {
+            showChatState('empty');
+        } else {
+            showChatState('none');
+        }
+
         requestAnimationFrame(() => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
 
     } catch (error) {
-        console.error(error);
+        showChatState('error');
     } finally {
         requestAnimationFrame(() => {
             const allMessages = chatMessages.querySelectorAll('.message-wrapper');
@@ -363,7 +353,6 @@ function startRealtimeListener() {
     
     const messagesRef = collection(db, "clubs", clubId, "messages");
     
-    // listener 1: new messages only (original behavior, cheap)
     let newMessagesQuery = newestDoc 
         ? query(messagesRef, orderBy("createdAt", "asc"), startAfter(newestDoc))
         : query(messagesRef, orderBy("createdAt", "asc"));
@@ -389,6 +378,7 @@ function startRealtimeListener() {
                     previousDateKey = currentDateKey;
                 }
                 const showSenderName = previousSenderId !== messageData.createdByUid;
+                document.querySelector('.chat-state-overlay')?.remove();
                 await displayMessage(messageId, messageData, showSenderName);
                 previousSenderId = messageData.createdByUid;
                 if (messageData.createdAt) newestDoc = change.doc;
@@ -397,7 +387,6 @@ function startRealtimeListener() {
         }
     }, (error) => { console.error("Error:", error); });
 
-    // listener 2: watches loaded messages for edits/deletes only
     startEditsListener();
 }
 
@@ -1097,6 +1086,7 @@ function adjustChatMessagesHeight() {
     chatMessages.style.height = `${windowHeight - inputHeight}px`;
 }
 
+adjustChatMessagesHeight(); 
 window.addEventListener('load', adjustChatMessagesHeight);
 let resizeTimeout = null;
 window.addEventListener('resize', () => {
@@ -1396,5 +1386,36 @@ function closeEmojiPickerOverlay(restoreModal) {
 }
 
 
-// I am interested in technology, computers, and creative fields. My long term goal is to work in technology and design. I am passionate about technology and computers, like how they can be used as tools for creative expression. Although I am open to many different career paths, I think it would be interesting to build a career developing products and/or websites that can be useful for many people. 
 
+function showChatState(type) {
+    const existing = document.querySelector('.chat-state-overlay');
+
+    if (type === 'loading' && existing?.querySelector('.chat-loading-bubble')) {
+        return;
+    }
+
+    existing?.remove();
+    if (type === 'none') return;
+
+    const div = document.createElement('div');
+    div.className = 'chat-state-overlay' + (type !== 'loading' ? ' chat-state-text' : '');
+
+    if (type === 'loading') {
+        div.innerHTML = `
+            <div class="chat-loading-bubble">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        `;
+    } else if (type === 'empty') {
+        div.innerHTML = `<p class="fancy-label">NO MESSAGES YET</p>`;
+    } else if (type === 'error') {
+        div.innerHTML = `
+            <p class="fancy-label">Oops! Something went wrong.</p>
+            <button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size:24px;">TRY AGAIN</button>
+        `;
+    }
+
+    document.querySelector('.chat-container').appendChild(div);
+}
