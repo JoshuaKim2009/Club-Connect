@@ -73,10 +73,10 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 16px;
     margin: 15px auto 40px auto;
-    width: 85%;
-    max-width: 600px;
+    width: calc(80% + 44px);
+    max-width: calc(576px + 44px);
     box-sizing: border-box;
 }
 
