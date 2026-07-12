@@ -218,10 +218,14 @@
     color: #888;
     cursor: pointer;
     padding: 6px 0;
-    margin-top: 8px;
+    margin-top: 4px;
     display: block;
     width: 100%;
     text-align: left;
+}
+
+.links-container:has(.add-link-button:only-child) {
+    margin-top: 0px;
 }
 
 .add-link-button:hover {
