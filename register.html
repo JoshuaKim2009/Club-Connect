@@ -16,13 +16,13 @@
   <body>
 
     <div class="chat-header">
-      <button type="button" id="back-button" class="fancy-button" onclick="history.length > 1 ? history.back() : window.location.href='index.html'">
+      <button type="button" id="back-button" class="fancy-button" onclick="window.location.href='index.html'">
         <i class="fa-solid fa-circle-left"></i>
       </button>
       <span class="chat-title">REGISTER</span>
     </div>
 
-    <form id="registerForm">
+    <div id="registerForm">
       <div class="auth-page-wrapper">
 
         <div class="auth-box visible" id="registerStep1">
@@ -69,7 +69,7 @@
 
           <div class="form-actions">
             <button type="button" id="register-back" class="fancy-outline-button">BACK</button>
-            <button id="register-submit" type="submit" class="fancy-button">CREATE</button>
+            <button id="register-submit" type="button" class="fancy-button">CREATE</button>
           </div>
         </div>
 
@@ -89,11 +89,11 @@
           <a href="login.html" class="fancy-button auth-register-card-btn">LOGIN</a>
         </div>
       </div>
-    </form>
+    </div>
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="register.js?v=15" defer></script>
+    <script type="module" src="register.js?v=16" defer></script>
 
   </body>
 </html>

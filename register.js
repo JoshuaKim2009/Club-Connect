@@ -396,7 +396,8 @@ document.getElementById("register-continue").addEventListener("click", () => {
 });
 
 
-document.getElementById("registerForm").addEventListener("submit", function(e) {
+document.getElementById("registerForm").addEventListener("keydown", function(e) {
+  if (e.key !== "Enter") return;
   e.preventDefault();
 
   if (step1.classList.contains("visible")) {
