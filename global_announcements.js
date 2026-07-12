@@ -291,7 +291,7 @@ async function markAllSeen(clubIds, userId) {
 
 
 function showEmpty(msg) {
-  announcementsContainer.innerHTML = `<p class="fancy-label">${msg}</p>`;
+  announcementsContainer.innerHTML = `<p class="fancy-label empty-state-label">${msg}</p>`;
 }
 
 function formatTimestamp(timestamp) {

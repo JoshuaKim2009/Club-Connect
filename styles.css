@@ -662,12 +662,12 @@ button {
   #create-club-button {
     width: 100%;
   }
-  .fancy-button {
+  /* .fancy-button {
     max-width: 85%;
-  }
-  .fancy-input {
+  } */
+  /* .fancy-input {
     max-width: 85%;
-  }
+  } */
 }
 
 @media (min-width: 751px) {
@@ -795,6 +795,7 @@ button {
   display: flex;
   gap: 10px;
   flex-shrink: 0;
+  margin-right: -3px;
 }
 
 .approve-member-btn,

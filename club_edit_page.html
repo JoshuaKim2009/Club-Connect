@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=58" rel="stylesheet" />
+    <link href="styles.css?v=59" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,12 +53,6 @@
         </div>
 
         <div class="club-form-section">
-          <label for="school-name-edit">School Name</label>
-          <input class="fancy-input" id="school-name-edit"
-                placeholder="School name" required value="" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
           <label for="state-edit">State/Territory</label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="state-edit"
@@ -73,6 +67,15 @@
             <input class="fancy-input" id="county-edit"
                   placeholder="County name" autocomplete="off">
             <div class="state-dropdown-list" id="county-dropdown-list-edit"></div>
+          </div>
+        </div>
+
+        <div class="club-form-section">
+          <label for="school-name-edit">School Name</label>
+          <div class="state-dropdown-wrapper">
+            <input class="fancy-input" id="school-name-edit"
+                  placeholder="School name" required value="" autocomplete="off">
+            <div class="state-dropdown-list" id="school-dropdown-list-edit"></div>
           </div>
         </div>
 
@@ -163,7 +166,7 @@
     <script src="theme.js?v=12"></script>
     <!-- <script type="module" src="loading_instant.js"></script> -->
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_edit_page.js?v=15"></script>
+    <script type="module" src="club_edit_page.js?v=16"></script>
 
     
 

@@ -6,6 +6,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
 import { handleUserSwitch } from './auth-guard.js';
+import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName } from './school-utils.js';
 
 
 const firebaseConfig = {
@@ -34,6 +35,8 @@ let originalClubData = null;
 document.body.classList.add('no-scroll');
 
 let COUNTIES = [];
+let CACHED_SCHOOLS = [];
+const schoolCacheByCounty = new Map();
 
 fetch('counties.json')
   .then(res => res.json())
@@ -41,6 +44,17 @@ fetch('counties.json')
     COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
   });
 
+async function loadSchoolsFor(state, county) {
+  if (!state || !county) {
+    CACHED_SCHOOLS = [];
+    return;
+  }
+  const key = `${state}|${county}`;
+  if (!schoolCacheByCounty.has(key)) {
+    schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
+  }
+  CACHED_SCHOOLS = schoolCacheByCounty.get(key);
+}
 
 const CLUB_CATEGORIES = [
   'Academic',
@@ -201,6 +215,7 @@ async function loadClubData(clubId, managerUid) {
             handleCountyVisibility(clubData.state || '');
             countyInput.value = clubData.countyName || '';
             selectedCountyFips = clubData.countyFips || null;
+            loadSchoolsFor(clubData.state || '', clubData.countyName || '');
             const savedVis = clubData.visibility || 'public';
             editVisStrips.forEach(s => {
                 s.classList.toggle('club-vis-strip-selected', s.dataset.value === savedVis);
@@ -392,8 +407,11 @@ submitButton.addEventListener("click", async function(event){
         console.log("Attempting to update club data in Firestore...");
         const clubRef = doc(db, "clubs", currentClubId);
 
+        const schoolId = await getOrCreateSchool(db, normalizedState, countyName, schoolName);
+
         await updateDoc(clubRef, {
             schoolName: schoolName,
+            schoolId: schoolId,
             state: normalizedState,
             clubName: clubName,
             clubNameLower: clubName.toLowerCase(),
@@ -416,14 +434,14 @@ submitButton.addEventListener("click", async function(event){
         });
         console.log("Club document updated with ID: ", currentClubId);
 
+        clearLoading(submitButton);
         await showAppAlert(`Club "${clubName}" updated successfully!`);
         window.location.href = `club_page_manager.html?id=${currentClubId}`;
 
     } catch (error) {
         console.error("Error updating club:", error);
-        await showAppAlert("Failed to update club: " + error.message);
-    } finally {
         clearLoading(submitButton);
+        await showAppAlert("Something went wrong while updating your club. Please try again.");
     }
 });
 
@@ -435,9 +453,7 @@ backButton.addEventListener("click", async function(event){
 
 deleteButton.addEventListener("click", async function(event){
     event.preventDefault();
-    setLoading(deleteButton);
     await deleteClub(currentClubId);
-    clearLoading(deleteButton);
 });
 
 
@@ -482,128 +498,81 @@ async function deleteClub(clubId) {
             return;
         }
 
-        console.log(`Fetching members for club ${clubId} to update their user profiles...`);
-        const membersCollectionRef = collection(db, "clubs", clubId, "members");
-        const memberDocsSnap = await getDocs(membersCollectionRef);
-        const memberUIDsToUpdate = [];
-        memberDocsSnap.forEach((memberDoc) => {
-            memberUIDsToUpdate.push(memberDoc.id);
-        });
-        console.log(`Found ${memberUIDsToUpdate.length} members to update their user profiles.`);
+        setLoading(deleteButton);
 
-        if (memberUIDsToUpdate.length > 0) {
-            console.log(`Removing club ID ${clubId} from all members' 'member_clubs' lists...`);
-            const updateMemberPromises = memberUIDsToUpdate.map(async (memberUid) => {
-                if (memberUid === managerUid) return Promise.resolve();
-                const memberUserDocRef = doc(db, "users", memberUid);
-                try {
-                    await updateDoc(memberUserDocRef, {
-                        member_clubs: arrayRemove(clubId),
-                        admin_clubs: arrayRemove(clubId)  // safe even if they weren't admin
-                    });
-                } catch (memberUpdateError) {
-                    console.error(`Error removing club ID from member ${memberUid}'s profile:`, memberUpdateError);
-                }
+        try {
+            console.log(`Fetching members for club ${clubId} to update their user profiles...`);
+            const membersCollectionRef = collection(db, "clubs", clubId, "members");
+            const memberDocsSnap = await getDocs(membersCollectionRef);
+            const memberUIDsToUpdate = [];
+            memberDocsSnap.forEach((memberDoc) => {
+                memberUIDsToUpdate.push(memberDoc.id);
             });
-            await Promise.all(updateMemberPromises);
-            console.log("All members' 'member_clubs' lists updated.");
+            console.log(`Found ${memberUIDsToUpdate.length} members to update their user profiles.`);
+
+            if (memberUIDsToUpdate.length > 0) {
+                console.log(`Removing club ID ${clubId} from all members' 'member_clubs' lists...`);
+                const updateMemberPromises = memberUIDsToUpdate.map(async (memberUid) => {
+                    if (memberUid === managerUid) return Promise.resolve();
+                    const memberUserDocRef = doc(db, "users", memberUid);
+                    try {
+                        await updateDoc(memberUserDocRef, {
+                            member_clubs: arrayRemove(clubId),
+                            admin_clubs: arrayRemove(clubId)
+                        });
+                    } catch (memberUpdateError) {
+                        console.error(`Error removing club ID from member ${memberUid}'s profile:`, memberUpdateError);
+                    }
+                });
+                await Promise.all(updateMemberPromises);
+                console.log("All members' 'member_clubs' lists updated.");
+            }
+
+            console.log(`Deleting all subcollections for club ${clubId} in parallel...`);
+
+            const deleteMembersPromise = Promise.all(
+                memberDocsSnap.docs.map(memberDoc => deleteDoc(memberDoc.ref))
+            ).then(() => console.log(`  Deleted ${memberDocsSnap.size} doc(s) from members`));
+
+            const otherSubcollectionNames = ['events', 'occurrenceRsvps', 'announcements', 'messages', 'polls', 'resourceSections'];
+            const otherDeletes = otherSubcollectionNames.map(async (name) => {
+                const snap = await getDocs(collection(db, "clubs", clubId, name));
+                await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+                console.log(`  Deleted ${snap.size} doc(s) from ${name}`);
+            });
+
+            await Promise.all([deleteMembersPromise, ...otherDeletes]);
+            console.log(`All subcollections deleted for club ${clubId}.`);
+
+            console.log(`Deleting club document with ID: ${clubId}...`);
+            await deleteDoc(clubRef);
+            console.log(`Club document ${clubId} deleted.`);
+
+            if (joinCode) {
+                console.log(`Deleting join code ${joinCode}...`);
+                const joinCodeRef = doc(db, "join_codes", joinCode);
+                await deleteDoc(joinCodeRef);
+                console.log(`Join code ${joinCode} deleted.`);
+            }
+
+            console.log(`Removing club ID ${clubId} from manager ${currentUser.uid}'s managed_clubs list...`);
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userDocRef, {
+                managed_clubs: arrayRemove(clubId)
+            });
+            console.log(`Club ID ${clubId} removed from manager's managed_clubs list.`);
+
+            clearLoading(deleteButton);
+            await showAppAlert(`Club "${clubData.clubName}" has been successfully deleted.`);
+            window.location.href = "your_clubs.html";
+        } catch (deleteInnerError) {
+            clearLoading(deleteButton);
+            throw deleteInnerError;
         }
-
-        console.log(`Deleting members subcollection for club ${clubId}...`);
-        const deleteMemberSubcollectionPromises = [];
-        memberDocsSnap.forEach((memberDoc) => {
-            deleteMemberSubcollectionPromises.push(deleteDoc(memberDoc.ref));
-        });
-        await Promise.all(deleteMemberSubcollectionPromises);
-        console.log(`All members subcollection documents for club ${clubId} deleted.`);
-
-        console.log(`Deleting events subcollection for club ${clubId}...`);
-        const eventsCollectionRef = collection(db, "clubs", clubId, "events");
-        const eventDocsSnap = await getDocs(eventsCollectionRef);
-        const deleteEventSubcollectionPromises = [];
-        eventDocsSnap.forEach((eventDoc) => {
-            deleteEventSubcollectionPromises.push(deleteDoc(eventDoc.ref));
-        });
-        await Promise.all(deleteEventSubcollectionPromises);
-        console.log(`All events subcollection documents for club ${clubId} deleted.`);
-
-        console.log(`Deleting occurrenceRsvps subcollection for club ${clubId}...`);
-        const rsvpsCollectionRef = collection(db, "clubs", clubId, "occurrenceRsvps");
-        const rsvpDocsSnap = await getDocs(rsvpsCollectionRef);
-        const deleteRsvpSubcollectionPromises = [];
-        rsvpDocsSnap.forEach((rsvpDoc) => {
-            deleteRsvpSubcollectionPromises.push(deleteDoc(rsvpDoc.ref));
-        });
-        await Promise.all(deleteRsvpSubcollectionPromises);
-        console.log(`All occurrenceRsvps subcollection documents for club ${clubId} deleted.`);
-
-        console.log(`Deleting announcements subcollection for club ${clubId}...`);
-        const announcementsCollectionRef = collection(db, "clubs", clubId, "announcements");
-        const announcementDocsSnap = await getDocs(announcementsCollectionRef);
-        const deleteAnnouncementPromises = [];
-        announcementDocsSnap.forEach((announcementDoc) => {
-            deleteAnnouncementPromises.push(deleteDoc(announcementDoc.ref));
-            console.log(`  Marked announcement doc ${announcementDoc.id} for deletion.`);
-        });
-        await Promise.all(deleteAnnouncementPromises);
-        console.log(`All announcements for club ${clubId} deleted.`);
-
-        console.log(`Deleting messages subcollection for club ${clubId}...`);
-        const messagesCollectionRef = collection(db, "clubs", clubId, "messages");
-        const messageDocsSnap = await getDocs(messagesCollectionRef);
-        const deleteMessagePromises = [];
-        messageDocsSnap.forEach((messageDoc) => {
-            deleteMessagePromises.push(deleteDoc(messageDoc.ref));
-            console.log(`  Marked message doc ${messageDoc.id} for deletion.`);
-        });
-        await Promise.all(deleteMessagePromises);
-        console.log(`All messages for club ${clubId} deleted.`);
-
-        console.log(`Deleting polls subcollection for club ${clubId}...`);
-        const pollsCollectionRef = collection(db, "clubs", clubId, "polls");
-        const pollDocsSnap = await getDocs(pollsCollectionRef);
-        const deletePollPromises = [];
-        pollDocsSnap.forEach((pollDoc) => {
-            deletePollPromises.push(deleteDoc(pollDoc.ref));
-            console.log(`  Marked poll doc ${pollDoc.id} for deletion.`);
-        });
-        await Promise.all(deletePollPromises);
-        console.log(`All polls for club ${clubId} deleted.`);
-
-        console.log(`Deleting resourceSections subcollection for club ${clubId}...`);
-        const resourceSectionsCollectionRef = collection(db, "clubs", clubId, "resourceSections");
-        const resourceSectionDocsSnap = await getDocs(resourceSectionsCollectionRef);
-        const deleteResourceSectionPromises = [];
-        resourceSectionDocsSnap.forEach((sectionDoc) => {
-            deleteResourceSectionPromises.push(deleteDoc(sectionDoc.ref));
-        });
-        await Promise.all(deleteResourceSectionPromises);
-        console.log(`All resourceSections for club ${clubId} deleted.`);
-
-        console.log(`Deleting club document with ID: ${clubId}...`);
-        await deleteDoc(clubRef);
-        console.log(`Club document ${clubId} deleted.`);
-
-        if (joinCode) {
-            console.log(`Deleting join code ${joinCode}...`);
-            const joinCodeRef = doc(db, "join_codes", joinCode);
-            await deleteDoc(joinCodeRef);
-            console.log(`Join code ${joinCode} deleted.`);
-        }
-
-        console.log(`Removing club ID ${clubId} from manager ${currentUser.uid}'s managed_clubs list...`);
-        const userDocRef = doc(db, "users", currentUser.uid);
-        await updateDoc(userDocRef, {
-            managed_clubs: arrayRemove(clubId)
-        });
-        console.log(`Club ID ${clubId} removed from manager's managed_clubs list.`);
-
-        await showAppAlert(`Club "${clubData.clubName}" has been successfully deleted.`);
-        window.location.href = "your_clubs.html";
 
     } catch (error) {
         console.error("Error deleting club:", error);
-        await showAppAlert("Failed to delete club: " + error.message);
+        await showAppAlert("Something went wrong while deleting your club. Please try again, or contact support if the issue continues.");
     }
 }
 
@@ -745,6 +714,7 @@ countyInput.addEventListener('input', function() {
         countyInput.value = county.name;
         selectedCountyFips = county.fips;
         countyDropdownList.classList.remove('show');
+        loadSchoolsFor(normalizeState(stateInput.value), county.name);
       };
       countyDropdownList.appendChild(div);
     });
@@ -760,76 +730,37 @@ document.addEventListener('click', function(e) {
   }
 });
 
-function normalizeSchoolName(schoolName) {
-    const trimmed = schoolName.trim();
-    
-    if (!trimmed) {
-        return { valid: false, normalized: '', error: 'Please enter a school name.' };
-    }
 
-    const words = trimmed.split(' ');
-    
-    if (words.length === 1) {
-        const word = words[0];
-        if (word.length >= 2 && word.length <= 5 && /^[a-zA-Z]+$/.test(word)) {
-            return { 
-                valid: false, 
-                normalized: '', 
-                error: 'Please spell out the full school name without abbreviations.' 
-            };
-        }
-    }
-    
-    let normalized = trimmed;
+const schoolDropdownList = document.getElementById('school-dropdown-list-edit');
 
-    if (normalized.toUpperCase().endsWith(' HS') || normalized.toUpperCase().endsWith(' H.S') || normalized.toUpperCase().endsWith(' H.S.')) {
-        if (!normalized.toLowerCase().endsWith('high school')) {
-            if (normalized.toUpperCase().endsWith(' HS')) {
-                normalized = normalized.slice(0, -2) + 'High School';
-            } else if (normalized.toUpperCase().endsWith(' H.S.')) {
-                normalized = normalized.slice(0, -4) + 'High School';
-            } else if (normalized.toUpperCase().endsWith(' H.S')) {
-                normalized = normalized.slice(0, -3) + 'High School';
-            }
-        }
-    }
+schoolNameInput.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  schoolDropdownList.innerHTML = '';
 
-    if (normalized.toUpperCase().endsWith(' MS') || normalized.toUpperCase().endsWith(' M.S') || normalized.toUpperCase().endsWith(' M.S.')) {
-        if (!normalized.toLowerCase().endsWith('middle school')) {
-            if (normalized.toUpperCase().endsWith(' MS')) {
-                normalized = normalized.slice(0, -2) + 'Middle School';
-            } else if (normalized.toUpperCase().endsWith(' M.S.')) {
-                normalized = normalized.slice(0, -4) + 'Middle School';
-            } else if (normalized.toUpperCase().endsWith(' M.S')) {
-                normalized = normalized.slice(0, -3) + 'Middle School';
-            }
-        }
-    }
+  const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
 
-    if (normalized.toUpperCase().endsWith(' ES') || normalized.toUpperCase().endsWith(' E.S') || normalized.toUpperCase().endsWith(' E.S.')) {
-        if (!normalized.toLowerCase().endsWith('elementary school')) {
-            if (normalized.toUpperCase().endsWith(' ES')) {
-                normalized = normalized.slice(0, -2) + 'Elementary School';
-            } else if (normalized.toUpperCase().endsWith(' E.S.')) {
-                normalized = normalized.slice(0, -4) + 'Elementary School';
-            } else if (normalized.toUpperCase().endsWith(' E.S')) {
-                normalized = normalized.slice(0, -3) + 'Elementary School';
-            }
-        }
-    }
+  if (value && pool.length > 0) {
+    pool.forEach(school => {
+      const div = document.createElement('div');
+      div.className = 'state-option';
+      div.textContent = school.name;
+      div.onclick = () => {
+        schoolNameInput.value = school.name;
+        schoolDropdownList.classList.remove('show');
+      };
+      schoolDropdownList.appendChild(div);
+    });
+    schoolDropdownList.classList.add('show');
+  } else {
+    schoolDropdownList.classList.remove('show');
+  }
+});
 
-    if (normalized.toLowerCase().endsWith(' high')) normalized = normalized + ' School';
-    if (normalized.toLowerCase().endsWith(' middle')) normalized = normalized + ' School';
-    if (normalized.toLowerCase().endsWith(' elementary')) normalized = normalized + ' School';
-
-    while (normalized.includes('  ')) {
-        normalized = normalized.replace('  ', ' ');
-    }
-    normalized = normalized.trim();
-    
-    return { valid: true, normalized: normalized, error: '' };
-}
-
+document.addEventListener('click', function(e) {
+  if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
+    schoolDropdownList.classList.remove('show');
+  }
+});
 
 
 function showContainerError(message, showRetry = false, topMargin = '165px') {

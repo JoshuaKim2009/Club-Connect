@@ -37,6 +37,7 @@ let userName = "";
 let role = null;
 let currentUser = null;
 let pendingScrollToNew = false;
+let currentMemberUIDs = new Set();
 
 
 const addPollButton = document.getElementById('add-poll-button');
@@ -160,6 +161,8 @@ onAuthStateChanged(auth, async (user) => {
                 if (addPollButton) addPollButton.style.display = 'none';
                 return;
             }
+
+            currentMemberUIDs = new Set(clubSnap.data().memberUIDs || []);
 
             role = await getMemberRoleForClub(clubId, currentUser.uid);
 
@@ -466,7 +469,7 @@ function createPollCard(pollData, pollId) {
     card.className = 'poll-card';
     card.dataset.pollId = pollId;
 
-    const totalVotes = pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+    const totalVotes = pollData.options.reduce((sum, opt) => sum + getValidVotes(opt.votes).length, 0);
     const userHasVoted = pollData.options.some(opt => opt.votes.includes(currentUser.uid));
     
     let canSeeResults = false;
@@ -484,7 +487,7 @@ function createPollCard(pollData, pollId) {
 
     let optionsHTML = '<div class="poll-options-list">';
     pollData.options.forEach((option, index) => {
-        const voteCount = option.votes.length;
+        const voteCount = getValidVotes(option.votes).length;
         const percentage = totalVotes > 0 ? ((voteCount / totalVotes) * 100).toFixed(1) : 0;
         const userVotedForThis = option.votes.includes(currentUser.uid);
 
@@ -584,7 +587,7 @@ function createPollCard(pollData, pollId) {
 }
 
 function updatePollCard(existingCard, pollData, pollId) {
-    const totalVotes = pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+    const totalVotes = pollData.options.reduce((sum, opt) => sum + getValidVotes(opt.votes).length, 0);
     const userHasVoted = pollData.options.some(opt => opt.votes.includes(currentUser.uid));
     
     let canSeeResults = false;
@@ -604,7 +607,7 @@ function updatePollCard(existingCard, pollData, pollId) {
         const optionElement = existingCard.querySelector(`[data-option-index="${index}"]`);
         if (!optionElement) return;
 
-        const voteCount = option.votes.length;
+        const voteCount = getValidVotes(option.votes).length;
         const percentage = totalVotes > 0 ? ((voteCount / totalVotes) * 100).toFixed(1) : 0;
         const userVotedForThis = option.votes.includes(currentUser.uid);
 
@@ -846,4 +849,9 @@ function showContainerError(container, message, showRetry = false) {
             </div>
         </div>
     `;
+}
+
+
+function getValidVotes(votes) {
+    return votes.filter(uid => currentMemberUIDs.has(uid));
 }

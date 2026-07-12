@@ -114,14 +114,22 @@ function hideLoadingScreen() {
 }
 
 
-onAuthStateChanged(auth, (user) => {
+let didTheLocalSearch = false;
+
+onAuthStateChanged(auth, async (user) => {
     if (!handleUserSwitch(user)) {
         if (!user) window.location.href = 'login.html';
         return;
     }
     currentUser = user;
+
+    if (!didTheLocalSearch) {
+        await prefillFromProfileIfNeeded(); 
+    }
+
     hideLoadingScreen();
 });
+
 
 
 document.getElementById("createClubForm").addEventListener("submit", async (e) => {
@@ -135,7 +143,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const selectedCategory = categoryInput.value;
     const selectedCounty = countySearchInput.value.trim().toLowerCase();
 
-    saveSearch(stateInput.value.trim(), countySearchInput.value.trim(), document.getElementById("searchSchool").value.trim(), selectedCategory);
+    saveSearch(state, countySearchInput.value.trim(), document.getElementById("searchSchool").value.trim(), selectedCategory);
 
     if (!state) {
         clubsGrid.innerHTML = "";
@@ -443,7 +451,7 @@ function normalizeState(input) {
 
 
 
-restoreSavedSearch();
+didTheLocalSearch = restoreSavedSearch(); 
 
 let SEARCH_COUNTIES = [];
 fetch('counties.json')
@@ -510,7 +518,8 @@ function fadeText(el, value, delay = 0) {
 
 function restoreSavedSearch() {
     const saved = localStorage.getItem('discoverySearch');
-    if (!saved) return;
+    if (!saved) return false;
+
     const { state, county, school, category } = JSON.parse(saved);
     if (state) {
         updateCountySearchVisibility(state);
@@ -524,5 +533,29 @@ function restoreSavedSearch() {
     }
     if (category) {
         categoryInput.value = category;
+    }
+    return true;
+}
+
+async function prefillFromProfileIfNeeded() {
+    if (!currentUser) return;
+
+    try {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            if (data.state) {
+                updateCountySearchVisibility(data.state);
+                stateInput.value = data.state;
+            }
+            if (data.county) {
+                countySearchInput.value = data.county;
+            }
+            if (data.school) {
+                document.getElementById('searchSchool').value = data.school;
+            }
+        }
+    } catch (e) {
+        console.error("Could not load user profile for search prefill:", e);
     }
 }

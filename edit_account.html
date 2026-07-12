@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=58" rel="stylesheet" />
+    <link href="styles.css?v=59" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <link href="login.css?v=11" rel="stylesheet" />
+    <link href="login.css?v=14" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Edit Account</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,8 +13,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         #save-submit {
-            width: 150px !important;
-            align-self: center !important;
+          /* width: 200px !important; */
+          width: 100% !important;
+          /* align-self: stretch !important; */
+          align-self: flex-end !important;
+          margin-top: 20px !important;
         }
     </style>
   </head>
@@ -30,14 +33,35 @@
       <button type="button" id="back-button" class="fancy-button" onclick="history.length > 1 ? history.back() : window.location.href='index.html'">
         <i class="fa-solid fa-circle-left"></i>
       </button>
-      <span class="chat-title">EDIT ACCOUNT</span>
+      <span class="chat-title">EDIT PROFILE</span>
     </div>
 
     <div id="content">
       <div class="auth-page-wrapper">
-        <div class="auth-box">
+        <div class="auth-box visible">
           <h1 class="auth-box-title">EDIT ACCOUNT</h1>
+
+          <label class="fancy-field-label" for="displayName">Display Name</label>
           <input type="text" class="fancy-login-input" placeholder="Display Name" id="displayName" />
+
+          <label class="fancy-field-label" for="editState">State</label>
+          <div class="state-dropdown-wrapper">
+            <input type="text" id="editState" class="fancy-login-input" placeholder="State name" autocomplete="off">
+            <div class="state-dropdown-list" id="edit-state-dropdown-list"></div>
+          </div>
+
+          <label class="fancy-field-label" for="editCounty" id="edit-county-label" style="display:none;">County</label>
+          <div class="state-dropdown-wrapper" id="edit-county-wrapper" style="display:none;">
+            <input type="text" id="editCounty" class="fancy-login-input" placeholder="County name" autocomplete="off">
+            <div class="state-dropdown-list" id="edit-county-dropdown-list"></div>
+          </div>
+
+          <label class="fancy-field-label" for="editSchool">School</label>
+          <div class="state-dropdown-wrapper">
+            <input type="text" id="editSchool" class="fancy-login-input" placeholder="Full name of school" autocomplete="off">
+            <div class="state-dropdown-list" id="edit-school-dropdown-list"></div>
+          </div>
+
           <button id="save-submit" type="button" class="fancy-button">SAVE</button>
         </div>
       </div>
@@ -45,6 +69,6 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="edit_account.js?v=4"></script>
+    <script type="module" src="edit_account.js?v=6"></script>
   </body>
 </html>

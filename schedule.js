@@ -774,7 +774,7 @@ async function deleteEntireEvent(eventIdToDelete, isWeeklyEvent = false, skipCon
 
     if (!skipConfirm) {
         const msg = isWeeklyEvent
-            ? `Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`
+            ? `Are you sure you want to delete the entire "${eventName}" repeating event series? All upcoming events in this series will be removed. This can't be undone.`
             : `Are you sure you want to cancel "${eventName}"? This action cannot be undone.`;
         const confirmed = await showAppConfirm(msg);
         if (!confirmed) return;
@@ -823,7 +823,7 @@ async function deleteEntireSeriesAndOverrides(parentEventIdToDelete) {
     if (!eventData) { await showAppAlert("Error: The main event series to delete was not found."); return; }
 
     const eventName = eventData.eventName || "Untitled Event Series";
-    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${eventName}" series? All upcoming events in this series will be removed. This can't be undone.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${eventName}" repeating event series? All upcoming events in this series will be removed. This can't be undone.`);
     if (!confirmed) return;
 
     try {

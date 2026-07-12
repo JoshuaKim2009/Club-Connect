@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=58" rel="stylesheet" />
+    <link href="styles.css?v=59" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,12 @@
     <title>Club Connect | Create</title>
   </head>
   <body>
-
+    <div id="loading-overlay">
+      <div id="loading-overlay-inner">
+        <div class="loading-spinner"></div>
+        <p>LOADING...</p>
+      </div>
+    </div>
     
     <div class="chat-header">
       <button id="back-button" class="fancy-button" onclick="goToHome()">
@@ -36,135 +41,141 @@
       </button>
       <span class="chat-title">CREATE</span>
     </div>
-    <form id="createClubForm">
 
-      <div class="club-form-card">
-        <h2>CREATE CLUB</h2>
+    <div id="content">
 
-        <div class="club-form-section">
-          <label for="club-name-select">Club Name</label>
-          <input class="fancy-input" id="club-name-select"
-                placeholder="Club name" required
-                name="club-name-select" autocomplete="off">
-        </div>
+      <form id="createClubForm">
 
-        <div class="club-form-section">
-          <label for="school-name-select">School Name</label>
-          <input class="fancy-input" id="school-name-select"
-                placeholder="Full name (no abbreviations)" required
-                name="school-name-select" value="" autocomplete="off">
-        </div>
+        <div class="club-form-card">
+          <h2>CREATE CLUB</h2>
 
-        <div class="club-form-section">
-          <label for="state-select">State/Territory</label>
-          <div class="state-dropdown-wrapper">
-            <input class="fancy-input" id="state-select"
-                  placeholder="State name" required
-                  name="state-select" value="" autocomplete="off">
-            <div class="state-dropdown-list" id="state-dropdown-list"></div>
+          <div class="club-form-section">
+            <label for="club-name-select">Club Name</label>
+            <input class="fancy-input" id="club-name-select"
+                  placeholder="Club name" required
+                  name="club-name-select" autocomplete="off">
           </div>
-        </div>
 
-        <div class="club-form-section" style="display:none">
-          <label for="county-select">County</label>
-          <div class="state-dropdown-wrapper">
-            <input class="fancy-input" id="county-select"
-                  placeholder="County name" 
-                  name="county-select" value="" autocomplete="off">
-            <div class="state-dropdown-list" id="county-dropdown-list"></div>
-          </div>
-        </div>
-
-        <div class="club-form-section">
-          <label for="category-select">Category</label>
-          <div class="category-dropdown-wrapper">
-            <input class="fancy-input" id="category-select" placeholder="Select a category" autocomplete="off" readonly>
-            <div class="category-dropdown-list" id="category-dropdown-list"></div>
-          </div>
-        </div>
-
-        <div class="club-form-section">
-          <label for="main-activity-select">Main Activity</label>
-          <input class="fancy-input" id="main-activity-select"
-                placeholder="e.g. Chess, Robotics, Art" required
-                name="main-activity-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="sponsor-select">Club Sponsor</label>
-          <input class="fancy-input" id="sponsor-select"
-                placeholder="Faculty or staff name (optional)" 
-                name="sponsor-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="club-leader-select">Student Representative</label>
-          <input class="fancy-input" id="club-leader-select"
-                placeholder="Student name (optional)"
-                name="club-leader-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="school-email-select">Student Representative Email</label>
-          <input class="fancy-input" id="school-email-select"
-                placeholder="School email (optional)"
-                name="school-email-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="room-number-select">Meeting Location</label>
-          <input class="fancy-input" id="room-number-select"
-                placeholder="Meeting room or location (optional)"
-                name="room-number-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="meeting-schedule-select">Typical Meeting Days/Schedule</label>
-          <input class="fancy-input" id="meeting-schedule-select"
-                placeholder="e.g. Every Tuesday during lunch (optional)"
-                name="meeting-schedule-select" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="description-input">Description</label>
-          <textarea id="description-input" class="fancy-input"
-                    rows="3" placeholder="Describe your club and any important information"
-                    required name="description-input" maxlength="500"></textarea>
-        </div>
-
-        <div class="club-form-section">
-          <label>Club Visibility</label>
-          <div class="club-vis-strip-group" id="visibility-strip-group-create">
-
-            <div class="club-vis-strip" data-value="public">
-              <span class="club-vis-strip-title">PUBLIC</span>
-              <span class="club-vis-strip-sub">
-                Anyone can find your club on the discovery page and request to join.
-                You approve or deny each request.
-              </span>
+          <div class="club-form-section">
+            <label for="state-select">State/Territory</label>
+            <div class="state-dropdown-wrapper">
+              <input class="fancy-input" id="state-select"
+                    placeholder="State name" required
+                    name="state-select" value="" autocomplete="off">
+              <div class="state-dropdown-list" id="state-dropdown-list"></div>
             </div>
+          </div>
 
-            <div class="club-vis-strip" data-value="private">
-              <span class="club-vis-strip-title">PRIVATE</span>
-              <span class="club-vis-strip-sub">
-                Your club won't appear in discovery. Members can only join using
-                your club's unique access code.
-              </span>
+          <div class="club-form-section" style="display:none">
+            <label for="county-select">County</label>
+            <div class="state-dropdown-wrapper">
+              <input class="fancy-input" id="county-select"
+                    placeholder="County name" 
+                    name="county-select" value="" autocomplete="off">
+              <div class="state-dropdown-list" id="county-dropdown-list"></div>
             </div>
+          </div>
 
+          <div class="club-form-section">
+            <label for="school-name-select">School Name</label>
+            <div class="state-dropdown-wrapper">
+              <input class="fancy-input" id="school-name-select"
+                    placeholder="Full name (no abbreviations)" required
+                    name="school-name-select" value="" autocomplete="off">
+              <div class="state-dropdown-list" id="school-dropdown-list"></div>
+            </div>
+          </div>
+
+          <div class="club-form-section">
+            <label for="category-select">Category</label>
+            <div class="category-dropdown-wrapper">
+              <input class="fancy-input" id="category-select" placeholder="Select a category" autocomplete="off" readonly>
+              <div class="category-dropdown-list" id="category-dropdown-list"></div>
+            </div>
+          </div>
+
+          <div class="club-form-section">
+            <label for="main-activity-select">Main Activity</label>
+            <input class="fancy-input" id="main-activity-select"
+                  placeholder="e.g. Chess, Robotics, Art" required
+                  name="main-activity-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="sponsor-select">Club Sponsor</label>
+            <input class="fancy-input" id="sponsor-select"
+                  placeholder="Faculty or staff name (optional)" 
+                  name="sponsor-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="club-leader-select">Student Representative</label>
+            <input class="fancy-input" id="club-leader-select"
+                  placeholder="Student name (optional)"
+                  name="club-leader-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="school-email-select">Student Representative Email</label>
+            <input class="fancy-input" id="school-email-select"
+                  placeholder="School email (optional)"
+                  name="school-email-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="room-number-select">Meeting Location</label>
+            <input class="fancy-input" id="room-number-select"
+                  placeholder="Meeting room or location (optional)"
+                  name="room-number-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="meeting-schedule-select">Typical Meeting Days/Schedule</label>
+            <input class="fancy-input" id="meeting-schedule-select"
+                  placeholder="e.g. Every Tuesday during lunch (optional)"
+                  name="meeting-schedule-select" autocomplete="off">
+          </div>
+
+          <div class="club-form-section">
+            <label for="description-input">Description</label>
+            <textarea id="description-input" class="fancy-input"
+                      rows="3" placeholder="Describe your club and any important information"
+                      required name="description-input" maxlength="500"></textarea>
+          </div>
+
+          <div class="club-form-section">
+            <label>Club Visibility</label>
+            <div class="club-vis-strip-group" id="visibility-strip-group-create">
+
+              <div class="club-vis-strip" data-value="public">
+                <span class="club-vis-strip-title">PUBLIC</span>
+                <span class="club-vis-strip-sub">
+                  Anyone can find your club on the discovery page and request to join.
+                  You approve or deny each request.
+                </span>
+              </div>
+
+              <div class="club-vis-strip" data-value="private">
+                <span class="club-vis-strip-title">PRIVATE</span>
+                <span class="club-vis-strip-sub">
+                  Your club won't appear in discovery. Members can only join using
+                  your club's unique access code.
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="club-form-actions">
+            <button id="submit-club-button" type="submit" class="fancy-button">SUBMIT</button>
           </div>
         </div>
-
-        <div class="club-form-actions">
-          <button id="submit-club-button" type="submit" class="fancy-button">SUBMIT</button>
-        </div>
-      </div>
-    </form>
-
+      </form>
+    </div>
           
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="create_club.js?v=12"></script>
+    <script type="module" src="create_club.js?v=13"></script>
 
     
     <script>

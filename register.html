@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=58" rel="stylesheet" />
+    <link href="styles.css?v=59" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <link href="login.css?v=11" rel="stylesheet" />
+    <link href="login.css?v=14" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Register</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,16 +24,66 @@
 
     <form id="registerForm">
       <div class="auth-page-wrapper">
-        <div class="auth-box">
+
+        <div class="auth-box visible" id="registerStep1">
+          <div class="step-progress">
+            <div class="step-dot active" id="reg-dot-1">1</div>
+            <div class="step-connector" id="reg-conn-1"></div>
+            <div class="step-dot" id="reg-dot-2">2</div>
+          </div>
           <h1 class="auth-box-title">REGISTER</h1>
-          <input type="text"     class="fancy-login-input" placeholder="Full name"        required id="name" />
-          <input type="text"     class="fancy-login-input" placeholder="Email"            required id="username" />
-          <input type="password" class="fancy-login-input" placeholder="Password"         required id="password" />
-          <input type="password" class="fancy-login-input" placeholder="Confirm Password" required id="confirmPassword" />
-          <button id="register-submit" type="submit" class="fancy-button">REGISTER</button>
+          <p class="auth-box-subtitle">STEP 1 OF 2 &middot; YOUR SCHOOL</p>
+
+          <div class="state-dropdown-wrapper">
+            <input type="text" id="regState" class="fancy-login-input" placeholder="State name" autocomplete="off">
+            <div class="state-dropdown-list" id="reg-state-dropdown-list"></div>
+          </div>
+
+          <div class="state-dropdown-wrapper" id="reg-county-wrapper" style="display:none;">
+            <input type="text" id="regCounty" class="fancy-login-input" placeholder="County name" autocomplete="off">
+            <div class="state-dropdown-list" id="reg-county-dropdown-list"></div>
+          </div>
+
+          <div class="state-dropdown-wrapper">
+            <input type="text" id="regSchool" class="fancy-login-input" placeholder="Full name of school" autocomplete="off">
+            <div class="state-dropdown-list" id="reg-school-dropdown-list"></div>
+          </div>
+
+
+          <button type="button" id="register-next" class="fancy-button">NEXT</button>
         </div>
 
-        <div class="auth-register-card">
+        <div class="auth-box" id="registerStep2">
+          <div class="step-progress">
+            <div class="step-dot done" id="reg-dot-1b"><i class="fa-solid fa-check"></i></div>
+            <div class="step-connector done" id="reg-conn-1b"></div>
+            <div class="step-dot active" id="reg-dot-2b">2</div>
+          </div>
+          <h1 class="auth-box-title">REGISTER</h1>
+          <p class="auth-box-subtitle">STEP 2 OF 2 &middot; CREATE ACCOUNT</p>
+
+          <input type="text" class="fancy-login-input" placeholder="Full name" required id="name" />
+          <input type="text" class="fancy-login-input" placeholder="Email" required id="username" />
+          <input type="password" class="fancy-login-input" placeholder="Password" required id="password" />
+          <input type="password" class="fancy-login-input" placeholder="Confirm Password" required id="confirmPassword" />
+
+          <div class="form-actions">
+            <button type="button" id="register-back" class="fancy-outline-button">BACK</button>
+            <button id="register-submit" type="submit" class="fancy-button">CREATE</button>
+          </div>
+        </div>
+
+        <div class="auth-box" id="registerSuccess">
+          <div class="success-check-wrap">
+            <div class="success-ring"></div>
+            <i class="fa-solid fa-circle-check success-check"></i>
+          </div>
+          <h1 class="auth-box-title-modified" style="font-size:38px;">YOU'RE ALL SET</h1>
+          <p class="done-summary" id="registerDoneSummary"></p>
+          <button type="button" id="register-continue" class="fancy-button" style="align-self:center;">CONTINUE</button>
+        </div>
+
+        <div class="auth-register-card visible" id="registerLoginCard">
           <h2 class="auth-box-title">LOG IN</h2>
           <p class="auth-register-card-subtitle">Already have an account? Login here!</p>
           <a href="login.html" class="fancy-button auth-register-card-btn">LOGIN</a>
@@ -43,7 +93,7 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script>
-    <script type="module" src="register.js?v=11" defer></script>
+    <script type="module" src="register.js?v=14" defer></script>
 
   </body>
 </html>

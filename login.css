@@ -20,10 +20,14 @@ body {
   width: 85%;
   max-width: 600px;
   box-sizing: border-box;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 12px;
   padding: 6px 15px 15px 15px;
+}
+
+.auth-box.visible {
+  display: flex;
 }
 
 .auth-box-title {
@@ -57,6 +61,33 @@ body {
   pointer-events: none;
 }
 
+.auth-box-subtitle {
+  font-family: var(--primary-font-family);
+  font-size: 20px;
+  color: #000000;
+  text-align: center;
+  margin: 0 0 0 0;
+}
+
+.auth-box-title-modified{
+  font-size: 50px;
+  font-family: var(--primary-font-family);
+  font-weight: 400;
+  font-style: normal;
+  text-align: center;
+  display: block;
+  background: linear-gradient(to bottom, #383838 0%, #000000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* letter-spacing: 0.05em; */
+  margin: 0 -15px 0 -15px;
+  padding: 0 15px 4px 15px;
+  /* border-bottom: 2px dotted black; */
+  position: relative;
+}
+
 .auth-register-card .auth-box-title {
   width: auto;
 }
@@ -88,11 +119,11 @@ body {
   margin: -4px 0;
 }
 
-#login-submit,
+/* #login-submit,
 #register-submit {
   align-self: center !important;
   width: 150px !important;
-}
+} */
 
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -109,6 +140,136 @@ body {
   vertical-align: middle;
 }
 
+.step-progress {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  align-self: center;
+}
+
+.step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid black;
+  background: linear-gradient(#ffffff, #f7f7f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--primary-font-family);
+  font-size: 16px;
+  color: #000000;
+}
+
+.step-dot.active {
+  background: linear-gradient(#000000, #000000);
+  color: rgb(255, 255, 255);
+  border-color: black;
+}
+
+.step-dot.done {
+  /* background: linear-gradient(#5dbb5d, #4fa54f); */
+  background: linear-gradient(#000000, #000000);
+  color: rgb(255, 255, 255);
+  border-color: black;
+}
+
+.step-connector {
+  width: 30px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+/* .step-connector.done {
+  background: #4fa54f;
+} */
+
+.fancy-outline-button {
+  background: transparent;
+  font-family: var(--primary-font-family);
+  font-size: 28px;
+  color: black;
+  border: 2px solid black;
+  padding: 5px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0px 2px 0px #000000;
+  transition: all 0.05s ease-in-out;
+}
+
+.fancy-outline-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000;
+}
+
+.fancy-outline-button:active {
+  transform: translateY(4px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 0;
+  width: 100%;
+}
+.form-actions > * {
+    flex: 1;
+}
+
+.success-check-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  margin: 6px 0 -6px 0;
+}
+
+.success-ring {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid #4fa54f;
+  opacity: 0;
+  animation: ring-pulse 0.9s ease-out 0.1s both;
+}
+
+.success-check {
+  font-size: 90px;
+  color: #4fa54f;
+  animation: check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  filter: drop-shadow(0px 2px 0px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes ring-pulse {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.done-summary {
+  font-size: 20px;
+  color: #333;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.done-summary b {
+  color: black;
+}
+
 .auth-register-card {
   margin: 12px auto 20px auto;
   border: 2px solid black;
@@ -118,12 +279,16 @@ body {
   width: 85%;
   max-width: 600px;
   box-sizing: border-box;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
   text-align: center;
   padding: 6px 15px 15px 15px;
+}
+
+.auth-register-card.visible {
+  display: flex;
 }
 
 .auth-register-card-subtitle {
@@ -135,8 +300,29 @@ body {
 
 .auth-register-card-btn {
   text-decoration: none;
-  width: 150px;
   box-sizing: border-box;
   text-align: center;
-  align-self: center;
+  align-self: stretch;
+  width: 100%;
+}
+
+.fancy-login-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #ececec;
+}
+
+
+.fancy-field-label {
+  font-family: var(--primary-font-family);
+  font-size: 20px;
+  color: #000000;
+  margin: 0 0 -4px 2px;
+  text-align: left;
+}
+
+
+#registerDoneSummary {
+  color: black;
+  margin-bottom: 12px;
 }

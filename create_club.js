@@ -1,9 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, collection, addDoc, updateDoc, arrayUnion, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, collection, addDoc, updateDoc, arrayUnion, runTransaction, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
+import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName, schoolDocId } from './school-utils.js';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -45,12 +47,27 @@ const STATE_ABBREVS = {
 };
 
 let COUNTIES = [];
+let CACHED_SCHOOLS = [];
+const schoolCacheByCounty = new Map();
 
-fetch('counties.json')
+
+const countiesReady = fetch('counties.json')
   .then(res => res.json())
   .then(data => {
     COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
   });
+
+async function loadSchoolsFor(state, county) {
+  if (!state || !county) {
+    CACHED_SCHOOLS = [];
+    return;
+  }
+  const key = `${state}|${county}`;
+  if (!schoolCacheByCounty.has(key)) {
+    schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
+  }
+  CACHED_SCHOOLS = schoolCacheByCounty.get(key);
+}
 
 
 const CLUB_CATEGORIES = [
@@ -110,7 +127,7 @@ function clearLoading(btn) {
     btn.innerHTML = btn._origHTML;
 }
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (!handleUserSwitch(user)) {
         if (!user) window.location.href = 'login.html';
         return;
@@ -118,8 +135,58 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     currentUserEmail = user.email;
     submitButton.disabled = false;
+
+    try {
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            if (data.state) {
+                stateInput.value = data.state;
+                handleCountyVisibility(data.state);
+            }
+            if (data.county) {
+                countyInput.value = data.county;
+                await countiesReady;
+                const matchedCounty = COUNTIES.find(c => c.state === data.state && c.name === data.county);
+                if (matchedCounty) {
+                    selectedCountyFips = matchedCounty.fips;
+                }
+            }
+            if (data.state && data.county) {
+                await loadSchoolsFor(data.state, data.county);
+            }
+            if (data.school) {
+                schoolNameInput.value = data.school;
+            }
+        }
+    } catch (e) {
+        console.error("Could not prefill school info:", e);
+    }
+
+    hideLoadingScreen();
 });
 
+function hideLoadingScreen() {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('content');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        overlay.addEventListener('transitionend', () => {
+            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+        }, { once: true });
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
+    if (content) {
+        content.style.display = 'block';
+        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+            item.classList.add('revealed-child');
+        });
+    }
+}
+
+document.body.classList.add('no-scroll');
 
 const submitButton = document.getElementById("submit-club-button");
 const schoolNameInput = document.getElementById("school-name-select");
@@ -248,8 +315,23 @@ submitButton.addEventListener("click", async function(event){
         const newClubRef = doc(collection(db, "clubs"));
         const newClubId = newClubRef.id;
 
-        await setDoc(newClubRef, {
+        const schoolId = schoolDocId(normalizedState, countyName, schoolName);
+
+        const batch1 = writeBatch(db);
+
+        batch1.set(doc(db, "schools", schoolId), {
+            schoolId,
+            name: schoolName,
+            nameLower: schoolName.toLowerCase(),
+            state: normalizedState,
+            stateLower: normalizedState.toLowerCase(),
+            county: countyName,
+            countyLower: countyName.toLowerCase(),
+        }, { merge: true });
+
+        batch1.set(newClubRef, {
             schoolName: schoolName,
+            schoolId: schoolId,
             state: normalizedState,
             clubName: clubName,
             clubNameLower: clubName.toLowerCase(),
@@ -274,21 +356,25 @@ submitButton.addEventListener("click", async function(event){
             countyName: countyName,
             countyFips: countyFips || null
         });
-        console.log("Club document written with ID: ", newClubId);
 
-        await createManagerMemberEntry(newClubId, currentUser.uid);
+        await batch1.commit();
 
-        const joinCodeRef = doc(db, "join_codes", joinCode);
-        await updateDoc(joinCodeRef, { clubId: newClubId, reserved: false });
-        console.log(`Join code ${joinCode} linked to club ID ${newClubId}.`);
+        const batch2 = writeBatch(db);
 
+        batch2.set(doc(db, "clubs", newClubId, "members", currentUser.uid), {
+            role: "manager",
+            joinedAt: serverTimestamp()
+        });
 
-        console.log(`Attempting to add club ID ${newClubId} to user ${currentUser.uid}'s managed_clubs list in 'users' collection...`);
-        const userDocRef = doc(db, "users", currentUser.uid);
-        await updateDoc(userDocRef, {
+        batch2.update(doc(db, "join_codes", joinCode), { clubId: newClubId, reserved: false });
+
+        batch2.update(doc(db, "users", currentUser.uid), {
             managed_clubs: arrayUnion(newClubId)
         });
-        console.log("User's managed_clubs list in 'users' collection updated successfully.");
+
+        await batch2.commit();
+
+        console.log("Club created with ID: ", newClubId);
 
         await showAppAlert(`Club "${clubName}" saved successfully!`);
         window.location.href = "your_clubs.html";
@@ -306,7 +392,7 @@ submitButton.addEventListener("click", async function(event){
 
     } catch (error) {
         console.error("Error creating club or updating user profile:", error);
-        await showAppAlert("Failed to create club: " + error.message);
+        await showAppAlert("Something went wrong while creating your club. Please try again.");
     } finally {
         clearLoading(submitButton);
     }
@@ -348,85 +434,6 @@ async function getUniqueJoinCode() {
     }
 }
 
-
-async function createManagerMemberEntry(clubId, managerUid) {
-    const managerMemberRef = doc(db, "clubs", clubId, "members", managerUid);
-    await setDoc(managerMemberRef, {
-        role: "manager",
-        joinedAt: serverTimestamp() 
-    });
-    console.log(`Manager ${managerUid} added to members subcollection with role 'manager' for club ${clubId}.`);
-}
-
-function normalizeSchoolName(schoolName) {
-    const trimmed = schoolName.trim();
-    
-    if (!trimmed) {
-        return { valid: false, normalized: '', error: 'Please enter a school name.' };
-    }
-
-    const words = trimmed.split(' ');
-    
-    if (words.length === 1) {
-        const word = words[0];
-        if (word.length >= 2 && word.length <= 5 && /^[a-zA-Z]+$/.test(word)) {
-            return { 
-                valid: false, 
-                normalized: '', 
-                error: 'Please spell out the full school name without abbreviations.' 
-            };
-        }
-    }
-    
-    let normalized = trimmed;
-
-    if (normalized.toUpperCase().endsWith(' HS') || normalized.toUpperCase().endsWith(' H.S') || normalized.toUpperCase().endsWith(' H.S.')) {
-        if (!normalized.toLowerCase().endsWith('high school')) {
-            if (normalized.toUpperCase().endsWith(' HS')) {
-                normalized = normalized.slice(0, -2) + 'High School';
-            } else if (normalized.toUpperCase().endsWith(' H.S.')) {
-                normalized = normalized.slice(0, -4) + 'High School';
-            } else if (normalized.toUpperCase().endsWith(' H.S')) {
-                normalized = normalized.slice(0, -3) + 'High School';
-            }
-        }
-    }
-
-    if (normalized.toUpperCase().endsWith(' MS') || normalized.toUpperCase().endsWith(' M.S') || normalized.toUpperCase().endsWith(' M.S.')) {
-        if (!normalized.toLowerCase().endsWith('middle school')) {
-            if (normalized.toUpperCase().endsWith(' MS')) {
-                normalized = normalized.slice(0, -2) + 'Middle School';
-            } else if (normalized.toUpperCase().endsWith(' M.S.')) {
-                normalized = normalized.slice(0, -4) + 'Middle School';
-            } else if (normalized.toUpperCase().endsWith(' M.S')) {
-                normalized = normalized.slice(0, -3) + 'Middle School';
-            }
-        }
-    }
-
-    if (normalized.toUpperCase().endsWith(' ES') || normalized.toUpperCase().endsWith(' E.S') || normalized.toUpperCase().endsWith(' E.S.')) {
-        if (!normalized.toLowerCase().endsWith('elementary school')) {
-            if (normalized.toUpperCase().endsWith(' ES')) {
-                normalized = normalized.slice(0, -2) + 'Elementary School';
-            } else if (normalized.toUpperCase().endsWith(' E.S.')) {
-                normalized = normalized.slice(0, -4) + 'Elementary School';
-            } else if (normalized.toUpperCase().endsWith(' E.S')) {
-                normalized = normalized.slice(0, -3) + 'Elementary School';
-            }
-        }
-    }
-
-    if (normalized.toLowerCase().endsWith(' high')) normalized = normalized + ' School';
-    if (normalized.toLowerCase().endsWith(' middle')) normalized = normalized + ' School';
-    if (normalized.toLowerCase().endsWith(' elementary')) normalized = normalized + ' School';
-
-    while (normalized.includes('  ')) {
-        normalized = normalized.replace('  ', ' ');
-    }
-    normalized = normalized.trim();
-    
-    return { valid: true, normalized: normalized, error: '' };
-}
 
 const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming', 'Puerto Rico', 'Guam', 'U.S. Virgin Islands', 'American Samoa', 'Northern Mariana Islands'];
 
@@ -549,6 +556,7 @@ countyInput.addEventListener('input', function() {
         countyInput.value = county.name;
         selectedCountyFips = county.fips;
         countyDropdownList.classList.remove('show');
+        loadSchoolsFor(normalizeState(stateInput.value), county.name);
       };
       countyDropdownList.appendChild(div);
     });
@@ -561,5 +569,37 @@ countyInput.addEventListener('input', function() {
 document.addEventListener('click', function(e) {
   if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
     countyDropdownList.classList.remove('show');
+  }
+});
+
+
+const schoolDropdownList = document.getElementById('school-dropdown-list');
+
+schoolNameInput.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  schoolDropdownList.innerHTML = '';
+
+  const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
+
+  if (value && pool.length > 0) {
+    pool.forEach(school => {
+      const div = document.createElement('div');
+      div.className = 'state-option';
+      div.textContent = school.name;
+      div.onclick = () => {
+        schoolNameInput.value = school.name;
+        schoolDropdownList.classList.remove('show');
+      };
+      schoolDropdownList.appendChild(div);
+    });
+    schoolDropdownList.classList.add('show');
+  } else {
+    schoolDropdownList.classList.remove('show');
+  }
+});
+
+document.addEventListener('click', function(e) {
+  if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
+    schoolDropdownList.classList.remove('show');
   }
 });
