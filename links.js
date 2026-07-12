@@ -200,14 +200,19 @@ async function fetchCategoryData() {
 
 function renderAllCategories(skipAnimation = false) {
     resourcesContainer.innerHTML = '';
-    if (categoriesCache.length === 0) {
+
+    const visibleCategories = isAdmin()
+        ? categoriesCache
+        : categoriesCache.filter(cat => cat.links.length > 0);
+
+    if (visibleCategories.length === 0) {
         noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
         resourcesContainer.style.marginTop = '0px';
         return;
     }
     noResourcesMessage.style.display = 'none';
-    resourcesContainer.style.marginTop = isAdmin() ? '0px' : '-73px';
-    categoriesCache.forEach((cat, i) => {
+    resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
+    visibleCategories.forEach((cat, i) => {
         const el = createCategoryElement(cat);
         el.dataset.id = cat.id;
         resourcesContainer.appendChild(el);
