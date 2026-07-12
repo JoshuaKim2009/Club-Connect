@@ -394,3 +394,14 @@ submit.addEventListener("click", async function(event) {
 document.getElementById("register-continue").addEventListener("click", () => {
   window.location.href = "index.html";
 });
+
+
+document.getElementById("registerForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  if (step1.classList.contains("visible")) {
+    document.getElementById("register-next").click();
+  } else if (step2.classList.contains("visible")) {
+    document.getElementById("register-submit").click();
+  }
+});
