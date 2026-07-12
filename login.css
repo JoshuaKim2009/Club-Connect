@@ -5,7 +5,7 @@ body {
 }
 
 .auth-page-wrapper {
-  margin-top: 140px;
+  margin-top: 118px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -285,6 +285,7 @@ body {
   gap: 6px;
   text-align: center;
   padding: 6px 15px 15px 15px;
+  margin-top: 20px !important;
 }
 
 .auth-register-card.visible {

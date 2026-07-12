@@ -54,6 +54,8 @@ function showStep(step) {
   step2.classList.toggle("visible", step === 2);
   successStep.classList.toggle("visible", step === 3);
   loginCard.classList.toggle("visible", step === 1);
+
+  window.scrollTo(0, 0);
 }
 
 document.getElementById("register-next").addEventListener("click", async () => {
