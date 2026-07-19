@@ -57,7 +57,7 @@ function hideLoadingScreen() {
     });
 }
 
-function showContainerError(message, showRetry = false, topMargin = '61px') {
+function showContainerError(message, showRetry = false, topMargin = '61px', redirectUrl = 'index.html', buttonText = 'GO HOME') {
     const content = document.getElementById('content');
     content.innerHTML = `
       <div class="revealed-child" style="text-align: center; padding: 20px; margin-top: ${topMargin};">
@@ -65,7 +65,7 @@ function showContainerError(message, showRetry = false, topMargin = '61px') {
         <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
           ${showRetry
             ? `<button type="button" class="fancy-button" onclick="window.location.reload()" style="font-size: 24px;">TRY AGAIN</button>`
-            : `<button type="button" class="fancy-button" onclick="window.location.href='your_clubs.html'" style="font-size: 24px;">GO TO MY CLUBS</button>`
+            : `<button type="button" class="fancy-button" onclick="window.location.href='${redirectUrl}'" style="font-size: 24px;">${buttonText}</button>`
           }
         </div>
       </div>
@@ -141,10 +141,10 @@ onAuthStateChanged(auth, async (user) => {
     currentSchoolId = schoolId;
 
     if (!schoolId) {
-      showEmpty("ADD YOUR SCHOOL TO SEE UPDATES");
-      hidePagination();
-      hideLoadingScreen();
-      return;
+        showContainerError("You haven't added a school yet.", false, '61px', 'edit_account.html', 'ADD SCHOOL');
+        hidePagination();
+        hideLoadingScreen();
+        return;
     }
 
     cursors = [null];
@@ -152,7 +152,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshCount(schoolId);
 
     if (totalCount === 0) {
-      showEmpty("NOTHING SHARED WITH YOUR SCHOOL YET");
+      showEmpty("NOTHING SHARED YET!");
       hidePagination();
       hideLoadingScreen();
       return;

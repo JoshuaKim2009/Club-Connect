@@ -315,6 +315,10 @@ saveBtn.addEventListener('click', async () => {
         localStorage.setItem('cc-user', JSON.stringify(data));
         sessionStorage.setItem('cc-user', JSON.stringify(data));
 
+        saveBtn.disabled = false;
+        saveBtn.style.width = '';
+        saveBtn.style.height = '';
+        saveBtn.innerHTML = 'SAVE';
         await showAppAlert("Account updated successfully!");
         history.back();
 
