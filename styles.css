@@ -1201,6 +1201,17 @@ button {
   font-weight: normal;
 }
 
+#communitySection h3 {
+  font-family: var(--primary-font-family);
+  text-align: center;
+  color: #000000;
+  margin-bottom: 15px;
+  font-size: 40px;
+  font-weight: normal;
+  margin-top: 10px;
+}
+
+#communitySection,
 #communicationSection,
 #scheduleSection {
   font-family: var(--primary-font-family);
@@ -2229,6 +2240,8 @@ input[type="checkbox"]:checked {
     margin-top: 0;
     justify-content: center;
     gap: 5px;
+    margin-top: 0;
+    margin-bottom: 16px;
 }
 
 
@@ -2783,6 +2796,13 @@ input[type="checkbox"]:checked {
   pointer-events: none;
 }
 
+.community-lbl {
+  font-family: var(--primary-font-family);
+  font-size: 22px;
+  line-height: 1.1;
+  text-align: center;
+  pointer-events: none;
+}
 
 #adminActionsSection > #links-button,
 #scheduleSection > #viewScheduleButton {

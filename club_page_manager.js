@@ -273,6 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatButton = document.getElementById('chatButton');
     const directMessagesButton = document.getElementById('directMessagesButton');
     const linksButton = document.getElementById('links-button');
+    const publicAnnouncementsButton = document.getElementById('publicAnnouncementsButton');
+    const collaborationsButton = document.getElementById('collaborationsButton');
     if (viewScheduleButton) {
         viewScheduleButton.addEventListener('click', () => {
             window.location.href = `schedule.html?clubId=${clubId}&returnTo=manager`;
@@ -309,6 +311,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (publicAnnouncementsButton) {
+        publicAnnouncementsButton.addEventListener('click', () => {
+            window.location.href = `public_announcement_creation.html?clubId=${clubId}&returnTo=manager`;
+        });
+    }
+
+    if (collaborationsButton) {
+        collaborationsButton.addEventListener('click', async () => {
+            await showAppAlert("This feature is coming soon!");
+        });
+    }
 
 });
 

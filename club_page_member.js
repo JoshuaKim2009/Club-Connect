@@ -403,8 +403,8 @@ async function fetchAndDisplayUpcomingEvent(currentClubId, animateCardEntry = tr
         });
 
         allPossibleOccurrences.sort((a, b) => {
-            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0] + 'T' + a.eventData.startTime + ':00Z').getTime();
-            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime + ':00Z').getTime();
+            const dateTimeA = new Date(a.occurrenceDate.toISOString().split('T')[0]  + 'T' + a.eventData.startTime).getTime();
+            const dateTimeB = new Date(b.occurrenceDate.toISOString().split('T')[0] + 'T' + b.eventData.startTime).getTime();
             return dateTimeA - dateTimeB;
         });
 

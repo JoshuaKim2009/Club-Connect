@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection, query, where, getCountFromServer, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert } from './dialog.js';
 
 const firebaseConfig = {
@@ -163,7 +163,6 @@ function buildThemeOptions() {
 
 
 
-// Announcements badge on home page
 document.getElementById('announcements-home-button').addEventListener('click', async () => {
     const cached = JSON.parse(
         sessionStorage.getItem('cc-user') || 
@@ -171,85 +170,15 @@ document.getElementById('announcements-home-button').addEventListener('click', a
         'null'
     );
     if (cached) {
-        window.location.href = 'global_announcements.html';
+        window.location.href = 'school_announcements.html'; 
         return;
     }
     const user = await Promise.race([
         authReady,
         new Promise(resolve => setTimeout(() => resolve(null), 4000))
     ]);
-    window.location.href = user ? 'global_announcements.html' : 'login.html';
+    window.location.href = user ? 'school_announcements.html' : 'login.html';
 });
-
-async function getTotalUnreadAnnouncementsAcrossClubs(userId) {
-  if (!userId) return 0;
-  try {
-    // Get only the clubs this user actually belongs to
-    const userSnap = await getDoc(doc(db, "users", userId));
-    if (!userSnap.exists()) return 0;
-
-    const userData = userSnap.data();
-    const clubIds = [
-      ...new Set([
-        ...(userData.managed_clubs || []),
-        ...(userData.member_clubs || [])
-      ])
-    ];
-
-    let total = 0;
-
-    await Promise.all(clubIds.map(async (clubId) => {
-      try {
-        const memberDocRef = doc(db, "clubs", clubId, "members", userId);
-        const memberSnap = await getDoc(memberDocRef);
-        if (!memberSnap.exists()) return;
-
-        const memberData = memberSnap.data();
-        const cutoff = memberData.lastSeenAnnouncements || memberData.joinedAt;
-        if (!cutoff) return;
-
-        const announcementsRef = collection(db, "clubs", clubId, "announcements");
-        const q = query(
-          announcementsRef,
-          where("createdAt", ">", cutoff),
-          where("createdByUid", "!=", userId)
-        );
-        const snap = await getCountFromServer(q);
-        total += snap.data().count;
-      } catch (e) {
-        console.warn(`Skipping club ${clubId} for unread count:`, e);
-      }
-    }));
-
-    return total;
-  } catch (e) {
-    console.error("Error getting total unread announcements:", e);
-    return 0;
-  }
-}
-
-function updateHomeAnnouncementsBadge(count) {
-  const badge = document.getElementById('homeUnreadAnnouncementsBadge');
-  if (!badge) return;
-  if (count > 0) {
-    badge.textContent = count;
-    badge.style.display = 'flex';
-    // Small timeout so display:flex registers before animation starts
-    requestAnimationFrame(() => badge.classList.add('badge-visible'));
-  } else {
-    badge.style.display = 'none';
-    badge.classList.remove('badge-visible');
-  }
-}
-
-authReady.then(async (user) => {
-  if (!user) return;
-  const count = await getTotalUnreadAnnouncementsAcrossClubs(user.uid);
-  updateHomeAnnouncementsBadge(count);
-});
-
-
-
 
 
 const scrollHintBtn = document.getElementById('scroll-hint-btn');
