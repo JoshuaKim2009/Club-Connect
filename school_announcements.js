@@ -218,7 +218,7 @@ async function renderPage(page) {
   const pageItems = await fetchSchoolAnnouncementsPage(currentSchoolId, currentPage);
 
   if (pageItems.length === 0) {
-    showEmpty("NOTHING SHARED WITH YOUR SCHOOL YET");
+    showEmpty("NOTHING SHARED YET!");
     hidePagination();
     return;
   }
