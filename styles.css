@@ -10,6 +10,11 @@
   --header-bg-start: var(--bg-dark);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background-color: var(--bg-dark);
   min-height: 100vh;
@@ -557,6 +562,13 @@ button {
   appearance: none;
   height: 44px;
   min-height: 44px;
+}
+
+.fancy-login-input:focus,
+.fancy-input:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 1px #000000;
 }
 
 .fancy-black-button {
@@ -1742,7 +1754,7 @@ input[type="checkbox"]:checked {
 
 #rsvp-details-modal {
   box-sizing: border-box;
-  padding: 10px 8px 18px;
+  padding: 10px 16px 12px 16px;
   border: 2px solid black;
   background: linear-gradient(#ffffff, #f7f7f7);
   box-shadow: 0px 2px 0px #000000;
@@ -1754,18 +1766,43 @@ input[type="checkbox"]:checked {
   top: 50%;
   left: 50%;
   transform: translate(-50%, calc(-50% + 6px));
-  display: none;
+  display: none; 
   flex-direction: column;
   font-family: var(--primary-font-family);
   color: black;
-  max-height: 80vh;
-  overflow-y: auto;
-  scrollbar-gutter: stable both-edges;
-  scrollbar-width: thin;
-  scrollbar-color: #868686 transparent;
-
+  max-height: 50vh;
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+
+#rsvp-scroll-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 0;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-color: #868686 transparent;
+  border: 2px solid black;
+  padding-top: 0;
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
+#rsvp-scroll-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+#rsvp-details-modal::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 #rsvp-details-modal.rsvp-modal-show {
@@ -1786,7 +1823,7 @@ input[type="checkbox"]:checked {
 .rsvp-close-btn {
   position: absolute;
   top: 10px;
-  left: 0px;
+  left: 8px;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -1802,10 +1839,12 @@ input[type="checkbox"]:checked {
 }
 
 .rsvp-title-row {
+  flex-shrink: 0; 
+  padding-right: 16px;
   text-align: center;
   margin: 0 0 12px;
-  padding: 0;
 }
+
 
 .rsvp-title-row h3 {
   margin: 0;
@@ -1820,16 +1859,23 @@ input[type="checkbox"]:checked {
 }
 
 .rsvp-status-section {
-  border-radius: 10px;
-  border: 2px solid #000;
+  /* border-radius: 10px; */
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
   background: #fff;
-  margin-bottom: 12px;
+  margin-bottom: -2px;
   overflow: hidden;
   text-align: left;
+  flex-shrink: 0;
 }
 
 .rsvp-status-section:last-child {
   margin-bottom: 0;
+  border-bottom: 0px solid #000;
+}
+
+.rsvp-status-section:first-child {
+  border-top: 0px solid #000;
 }
 
 .rsvp-section-head {
@@ -1892,9 +1938,8 @@ input[type="checkbox"]:checked {
 
 .rsvp-empty-message {
   text-align: center;
-  color: #777;
+  color: #000000;
   font-size: 20px;
-  padding: 10px 0 4px;
 }
 
 
@@ -1986,7 +2031,7 @@ input[type="checkbox"]:checked {
   font-family: var(--primary-font-family, sans-serif);
   color: black; 
   line-height: 1.4; 
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .announcement-card-actions .delete-btn .button-icon,
@@ -2001,7 +2046,7 @@ input[type="checkbox"]:checked {
   font-size: 26px;
   text-align: center;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   margin-left: -8px;
   margin-right: -8px;
   padding-bottom: 5px;
@@ -2025,13 +2070,12 @@ input[type="checkbox"]:checked {
 .announcement-card p {
   margin-top: 4px; 
   margin-bottom: 4px; 
-  font-size: 0.9em; 
 }
 
 .announcement-card .announcement-meta {
   display: block; 
   text-align: left;
-  font-size: 0.8em; 
+  font-size: 20px; 
   color: #666; 
   margin-top: 10px; 
 }
@@ -2077,7 +2121,7 @@ input[type="checkbox"]:checked {
 }
 
 .announcement-meta-text {
-  font-size: 0.8em;
+  font-size: 0.9em;
   color: #666;
   min-width: 0;
   flex: 1;
@@ -2578,7 +2622,7 @@ input[type="checkbox"]:checked {
   display: block;
   font-family: var(--primary-font-family);
   font-size: 22px;
-  color: #222;
+  color: #000000;
   margin-bottom: 6px;
 }
 

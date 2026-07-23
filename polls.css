@@ -219,7 +219,7 @@ body {
 
 .poll-option-input {
     width: 100%;
-    padding: 8px;
+    padding: 7px 8px 9px 8px;
     border: 2px solid black;
     border-radius: 10px;
     font-size: 20px;
@@ -330,7 +330,7 @@ body {
     text-align: center;
     font-family: var(--primary-font-family, sans-serif);
     line-height: 1.4;
-    font-size: 24px;
+    font-size: 20px;
 }
 
 .poll-card.editing-poll-card {
@@ -369,7 +369,7 @@ body {
     gap: 8px;
     margin-top: 8px;
     min-width: 0;
-    font-size: 0.8em;
+    font-size: 0.9em;
     color: #666;
     white-space: nowrap;
     overflow: hidden;

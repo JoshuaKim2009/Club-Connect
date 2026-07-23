@@ -1321,6 +1321,11 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             }
         });
 
+        // TEST ONLY
+        // for (let i = 1; i <= 30; i++) going.push(`Test Member ${i}`);
+        // for (let i = 1; i <= 10; i++) maybe.push(`Test Maybe ${i}`);
+        // for (let i = 1; i <= 10; i++) notGoing.push(`Test No ${i}`);
+
         const buildSection = (label, names, modifierClass, iconClass) => names.length === 0 ? '' : `
             <div class="rsvp-status-section ${modifierClass}">
                 <div class="rsvp-section-head">
@@ -1349,7 +1354,9 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                 <h3>Responses</h3>
                 <p>${formatDate(occurrenceDateString)}</p>
             </div>
-            ${sectionsHtml || '<p class="rsvp-empty-message">No responses yet.</p>'}
+            <div id="rsvp-scroll-content">
+                ${sectionsHtml || '<p class="rsvp-empty-message">No responses yet</p>'}
+            </div>
         `;
 
         modal.querySelector('.rsvp-close-btn').addEventListener('click', closeRsvpModal);
