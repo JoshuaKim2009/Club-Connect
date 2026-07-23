@@ -408,7 +408,7 @@ function setupRealtimePollsListener() {
                     if (pendingScrollToNew) {
                         pendingScrollToNew = false;
                         requestAnimationFrame(() => {
-                            window.scrollTo({ top: pollCard.getBoundingClientRect().top + window.pageYOffset - 95, behavior: 'smooth' });
+                            scrollToPoll(pollId);
                         });
                     }
                 }
@@ -789,8 +789,7 @@ async function editPoll(pollId, pollData) {
             await updateDoc(doc(db, "clubs", clubId, "polls", pollId), { visibility: selected });
             editCard.replaceWith(existingCard);
             requestAnimationFrame(() => {
-                const card = document.querySelector(`[data-poll-id="${pollId}"]`);
-                if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.pageYOffset - 95, behavior: 'smooth' });
+                scrollToPoll(pollId);
             });
         } catch (err) {
             await showAppAlert("Failed to update poll: " + err.message);
@@ -799,9 +798,8 @@ async function editPoll(pollId, pollData) {
 
     editCard.querySelector('.cancel-edit-inline-btn').addEventListener('click', () => {
         editCard.replaceWith(existingCard);
-        requestAnimationFrame(() => { 
-            const card = document.querySelector(`[data-poll-id="${pollId}"]`);
-            if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.pageYOffset - 95, behavior: 'smooth' });
+        requestAnimationFrame(() => {
+            scrollToPoll(pollId);
         });
     });
 
@@ -854,4 +852,18 @@ function showContainerError(container, message, showRetry = false) {
 
 function getValidVotes(votes) {
     return votes.filter(uid => currentMemberUIDs.has(uid));
+}
+
+
+
+function scrollToPoll(pollId) {
+    const card = document.querySelector(`.poll-card[data-poll-id="${pollId}"]`);
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+    if (!isFullyVisible) {
+        window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
+    }
 }

@@ -780,14 +780,12 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
 
     const messageToDelete = selectedMessageForOptions;
 
-    document.getElementById('messageOptionsModal').style.opacity = '0';
-    document.getElementById('messageOptionsModal').style.pointerEvents = 'none';
+    document.getElementById('messageOptionsOverlay').classList.remove('show');
 
-    const confirmed = await showAppConfirm("Delete this message?");
+    const confirmed = await showAppConfirm("Delete this message? This can't be undone.", "Delete message?");
 
     if (!confirmed) {
-        document.getElementById('messageOptionsModal').style.opacity = '1';
-        document.getElementById('messageOptionsModal').style.pointerEvents = 'all';
+        document.getElementById('messageOptionsOverlay').classList.add('show');
         return;
     }
 

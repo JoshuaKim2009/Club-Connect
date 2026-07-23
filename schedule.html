@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=60" rel="stylesheet" />
+    <link href="styles.css?v=62" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Events</title>
@@ -31,17 +31,6 @@
         color: black !important;
       }
 
-      #rsvp-details-modal #rsvp-lists #close-rsvp-modal:hover {
-        filter: brightness(1.1) !important;
-        transform: translateY(1px) !important;
-        box-shadow: 0px 1px 0px #000000 !important; 
-      }
-
-      #rsvp-details-modal #rsvp-lists #close-rsvp-modal:active {
-        transform: translateY(2px) !important;
-        box-shadow: 0px 0px 0px #000000 !important;
-      }
-
       .rsvp-buttons {
         gap: 7px;
       }
@@ -63,7 +52,7 @@
     </div>
     <div id="content">
       <h1 id="clubScheduleTitle"></h1>
-      <button id="add-event-button" class="fancy-button" style="display: none;">ADD NEW EVENT</button>
+      <button id="add-event-button" class="fancy-button" style="display: none;">ADD EVENT</button>
 
       <div id="eventsContainer" class="fancy-black-label">
           <!-- Event cards will be dynamically loaded here by schedule.js -->
@@ -72,7 +61,7 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="schedule.js?v=25"></script>
+    <script type="module" src="schedule.js?v=26"></script>
     <!-- <script type="module" src="loading.js?v=2"></script> -->
   </body>
 </html>

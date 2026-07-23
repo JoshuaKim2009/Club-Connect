@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=60" rel="stylesheet" />
+    <link href="styles.css?v=62" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,13 +47,13 @@
         <h2>Edit Details</h2>
 
         <div class="club-form-section">
-          <label for="club-name-edit">Club Name</label>
+          <label for="club-name-edit">Club Name <span class="required-mark">*</span></label>
           <input class="fancy-input" id="club-name-edit"
                 placeholder="Club name" required autocomplete="off">
         </div>
 
         <div class="club-form-section">
-          <label for="state-edit">State/Territory</label>
+          <label for="state-edit">State/Territory <span class="required-mark">*</span></label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="state-edit"
                   placeholder="State name" required autocomplete="off">
@@ -62,7 +62,7 @@
         </div>
 
         <div class="club-form-section">
-          <label for="county-edit">County</label>
+          <label for="county-edit">County <span class="required-mark">*</span></label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="county-edit"
                   placeholder="County name" autocomplete="off">
@@ -71,7 +71,7 @@
         </div>
 
         <div class="club-form-section">
-          <label for="school-name-edit">School Name</label>
+          <label for="school-name-edit">School Name <span class="required-mark">*</span></label>
           <div class="state-dropdown-wrapper">
             <input class="fancy-input" id="school-name-edit"
                   placeholder="School name" required value="" autocomplete="off">
@@ -80,7 +80,7 @@
         </div>
 
         <div class="club-form-section">
-          <label for="category-edit">Category</label>
+          <label for="category-edit">Category <span class="required-mark">*</span></label>
           <div class="category-dropdown-wrapper">
             <input class="fancy-input" id="category-edit" placeholder="Select a category" autocomplete="off" readonly>
             <div class="category-dropdown-list" id="category-dropdown-list-edit"></div>
@@ -88,7 +88,7 @@
         </div>
 
         <div class="club-form-section">
-          <label for="main-activity-edit">Main Activity</label>
+          <label for="main-activity-edit">Main Activity <span class="required-mark">*</span></label>
           <input class="fancy-input" id="main-activity-edit"
                 placeholder="e.g. Chess, Robotics, Art" required autocomplete="off">
         </div>
@@ -96,42 +96,42 @@
         <div class="club-form-section">
           <label for="sponsor-edit">Club Sponsor</label>
           <input class="fancy-input" id="sponsor-edit"
-                placeholder="Faculty or staff name (optional)" autocomplete="off">
+                placeholder="Faculty or staff name" autocomplete="off">
         </div>
 
         <div class="club-form-section">
           <label for="club-leader-edit">Student Representative</label>
           <input class="fancy-input" id="club-leader-edit"
-                placeholder="Student name (optional)" autocomplete="off">
+                placeholder="Student name" autocomplete="off">
         </div>
 
         <div class="club-form-section">
           <label for="school-email-edit">Student Representative Email</label>
           <input class="fancy-input" id="school-email-edit"
-                placeholder="School email (optional)" autocomplete="off">
+                placeholder="School email" autocomplete="off">
         </div>
 
         <div class="club-form-section">
           <label for="room-number-edit">Meeting Location</label>
           <input class="fancy-input" id="room-number-edit"
-                placeholder="Meeting room or location (optional)" autocomplete="off">
+                placeholder="Meeting room or location" autocomplete="off">
         </div>
 
         <div class="club-form-section">
           <label for="meeting-schedule-edit">Typical Meeting Days/Schedule</label>
           <input class="fancy-input" id="meeting-schedule-edit"
-                placeholder="e.g. Every Tuesday during lunch (optional)" autocomplete="off">
+                placeholder="e.g. Every Tuesday during lunch" autocomplete="off">
         </div>
 
         <div class="club-form-section">
-          <label for="description-edit">Description</label>
+          <label for="description-edit">Description <span class="required-mark">*</span></label>
           <textarea id="description-edit" class="fancy-input"
                     rows="3" placeholder="Describe your club and any important information"
                     required maxlength="500"></textarea>
         </div>
 
         <div class="club-form-section">
-          <label>Club Visibility</label>
+          <label>Club Visibility <span class="required-mark">*</span></label>
           <div class="club-vis-strip-group" id="visibility-strip-group-edit">
 
             <div class="club-vis-strip" data-value="public">

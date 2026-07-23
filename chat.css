@@ -71,7 +71,7 @@ body {
     left: 0;
     right: 0;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     padding: 10px;
     padding-inline: calc(10px + env(safe-area-inset-left))
                     calc(10px + env(safe-area-inset-right));
@@ -80,7 +80,7 @@ body {
     background: linear-gradient(
         to top,
         var(--bg-dark) 8%,
-        color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 250%
+        color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 600%
     );
     border-top: 2px solid black;
 
@@ -144,6 +144,13 @@ body {
 
 .custom-dialog-overlay {
     z-index: 1000;
+}
+
+.custom-dialog-overlay {
+    z-index: 1000;
+    background-color: transparent;
+    /* backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); */
 }
 
 .msgBox {
@@ -441,7 +448,6 @@ body {
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 20px;
 }
 
 .message-options-overlay.show {
@@ -449,16 +455,16 @@ body {
 }
 
 .message-options-modal {
+    box-sizing: border-box;
     background: radial-gradient(circle at center, #ffffff, #f7f7f7);
     border: 2px solid black;
-    border-radius: 15px;
-    min-width: 280px;
-    width: 90%;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 480px;
     box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.4);
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 0.2s ease, transform 0.2s ease;
-    max-width: 600px;
 }
 
 .message-options-overlay.show .message-options-modal {
@@ -567,7 +573,7 @@ body {
 .reply-preview-content {
     background: radial-gradient(circle at center, #ffffff, #f7f7f7);
     border: 2px solid black;
-    border-radius: 15px;
+    border-radius: 10px;
     padding: 10px 15px;
     box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.2);
     display: flex;

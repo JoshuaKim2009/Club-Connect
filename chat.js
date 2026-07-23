@@ -1194,20 +1194,18 @@ function getMessageDateKey(timestamp) {
 
 document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
     if (!selectedMessageForOptions) return;
-    
-    const messageToDelete = selectedMessageForOptions; 
-    
-    document.getElementById('messageOptionsModal').style.opacity = '0';
-    document.getElementById('messageOptionsModal').style.pointerEvents = 'none';
-    
-    const confirmed = await showAppConfirm("Delete this message?");
-    
+
+    const messageToDelete = selectedMessageForOptions;
+
+    document.getElementById('messageOptionsOverlay').classList.remove('show');
+
+    const confirmed = await showAppConfirm("Delete this message? This can't be undone.", "Delete message?");
+
     if (!confirmed) {
-        document.getElementById('messageOptionsModal').style.opacity = '1';
-        document.getElementById('messageOptionsModal').style.pointerEvents = 'all';
+        document.getElementById('messageOptionsOverlay').classList.add('show');
         return;
     }
-    
+
     const msgRef = doc(db, "clubs", clubId, "messages", messageToDelete.id);
     const messagesRef = collection(db, "clubs", clubId, "messages");
     const batch = writeBatch(db);
@@ -1222,8 +1220,6 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
     await batch.commit();
     hideMessageOptions();
 });
-
-
 
 
 

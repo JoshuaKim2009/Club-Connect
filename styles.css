@@ -45,7 +45,7 @@ body {
   background: linear-gradient(
     to bottom,
     var(--bg-dark) 8%,
-    color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 200%
+    color-mix(in srgb, var(--bg-dark), var(--header-bg-end)) 400%
   );
   color: rgb(0, 0, 0);
   padding: 15px;
@@ -520,27 +520,43 @@ button {
 }
 
 .fancy-login-input {
-  background: linear-gradient(#ffffff, #f7f7f7);
-  font-family: var(--primary-font-family);
-  font-size: 20px;
-  color: black;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
   border: 2px solid black;
-  padding: 10px 10px;
   border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0px 1px 0px #000000;
+  font-size: 20px;
+  line-height: 1.4;
+  font-family: var(--primary-font-family, sans-serif);
+  background-color: #ffffff;
+  text-align: left;
+  text-align: left !important;
+  text-align-last: left !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  height: 44px;
+  min-height: 44px;
 }
 
 .fancy-input {
-  background: linear-gradient(#ffffff, #f7f7f7);
-  font-family: var(--primary-font-family);
-  font-size: 25px;
-  color: black;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
   border: 2px solid black;
-  padding: 2px 5px;
   border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0px 1px 0px #000000;
+  font-size: 20px;
+  line-height: 1.4;
+  font-family: var(--primary-font-family, sans-serif);
+  background-color: #ffffff;
+  text-align: left;
+  text-align: left !important;
+  text-align-last: left !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  height: 44px;
+  min-height: 44px;
 }
 
 .fancy-black-button {
@@ -917,12 +933,13 @@ button {
 }
 
 #role-management-popup {
+  box-sizing: border-box;
   padding: 15px;
   border: 2px solid black;
   background: linear-gradient(#ffffff, #f7f7f7);
   box-shadow: 0px 2px 0px #000000;
   width: 80%;
-  max-width: 400px;
+  max-width: 480px;
   border-radius: 10px;
   z-index: 1000;
   position: fixed;
@@ -1137,6 +1154,7 @@ button {
 }
 
 .msgBox {
+  box-sizing: border-box;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -1153,8 +1171,8 @@ button {
   gap: 15px;
   font-family: var(--primary-font-family);
   color: black;
-  max-width: 450px;
-  min-width: 250px;
+  width: 80%;
+  max-width: 480px;
   text-align: center;
 }
 
@@ -1400,7 +1418,7 @@ button {
 .editing-event-card .field-section,
 .editing-announcement-card .field-section {
     border: 2px solid rgba(0, 0, 0, 0);
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 10px;
     background-color: rgba(255, 255, 255, 0);
     margin-bottom: 12px;
@@ -1481,7 +1499,7 @@ input[type="checkbox"]:checked {
 
 .days-of-week-selection {
   border: 2px solid #000000;
-  border-radius: 5px;
+  border-radius: 10px;
   padding: 10px;
   background-color: #ffffff;
   box-sizing: border-box;
@@ -1521,7 +1539,7 @@ input[type="checkbox"]:checked {
   padding: 8px;
   box-sizing: border-box;
   border: 2px solid black;
-  border-radius: 5px;
+  border-radius: 10px;
   font-size: 20px;
   line-height: 1.4;
   font-family: var(--primary-font-family, sans-serif);
@@ -1543,19 +1561,6 @@ input[type="checkbox"]:checked {
   outline: none;
   border-color: #000000;
   box-shadow: 0 0 0 1px #000000;
-}
-
-@media (max-width: 800px) {
-    #rsvp-details-modal {
-        max-height: 50vh !important;
-        width: 92%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    #rsvp-details-modal.rsvp-loading-collapsed {
-        max-height: 120px !important;
-    }
 }
 
 .event-card-actions {
@@ -1619,7 +1624,7 @@ input[type="checkbox"]:checked {
 
 .rsvp-box {
   border: 2px solid #000000;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px;
   /* margin-top: 8px; */
   background-color: transparent;
@@ -1653,7 +1658,7 @@ input[type="checkbox"]:checked {
   padding: 8px 15px;
   margin: 0;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9em;
   text-align: center;
   color: black;
@@ -1701,7 +1706,7 @@ input[type="checkbox"]:checked {
   padding: 6px 10px;
   margin: 0;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9em;
   text-align: center;
 
@@ -1721,6 +1726,7 @@ input[type="checkbox"]:checked {
   background: linear-gradient(#ffffff, #f0f0f0);
 }
 
+
 #rsvp-details-overlay {
   position: fixed;
   top: 0;
@@ -1734,127 +1740,163 @@ input[type="checkbox"]:checked {
   align-items: center;
 }
 
-#rsvp-details-modal { 
-  margin-top: 20px;
-  font-weight: normal;
-  padding: 20px;
+#rsvp-details-modal {
+  box-sizing: border-box;
+  padding: 10px 8px 18px;
   border: 2px solid black;
   background: linear-gradient(#ffffff, #f7f7f7);
   box-shadow: 0px 2px 0px #000000;
-  width: 90%;
-  max-width: 600px;
+  width: 80%;
+  max-width: 480px;
   border-radius: 10px;
   z-index: 1000;
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, calc(-50% + 6px));
   display: none;
   flex-direction: column;
-  gap: 15px;
   font-family: var(--primary-font-family);
-  text-align: center;
-  font-size: 20px;
   color: black;
-
-  max-height: 80vh; 
-  overflow-y: hidden;
-  transition: max-height 0.5s ease-out; 
-
-  padding-right: 14px; 
-  box-sizing: border-box;
-  scrollbar-gutter: stable;
-  background-clip: padding-box;
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;
-  scrollbar-color: #747474 transparent;
+  scrollbar-color: #868686 transparent;
+
+  opacity: 0;
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
 }
 
-
-.rsvp-scroll-active {
-  overflow-y: auto !important; 
+#rsvp-details-modal.rsvp-modal-show {
+  opacity: 1;
+  transform: translate(-50%, -50%);
 }
 
-.rsvp-loading-collapsed {
-  max-height: 150px !important; 
-  overflow-y: hidden !important; 
+#rsvp-modal-spinner {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 50px;
+  height: 50px;
+  z-index: 1000;
+  display: none;
 }
 
-#rsvp-details-modal h2 {
-  font-size: 28px;
-  margin-bottom: 15px;
-  color: black;
-  font-weight: normal;
-}
-
-#rsvp-details-modal #rsvp-lists {
-  text-align: left;
-  width: 90%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-#rsvp-details-modal h3 {
-  font-size: 22px;
-  font-weight: normal;
-  margin-top: 20px;
-  margin-bottom: 5px;
-  color: #333;
-  padding-bottom: 5px;
-}
-
-#rsvp-loading-indicator {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-#rsvp-details-modal ul {
-  list-style: none;
-  padding: 10px;
-  margin: 0;
-  border: 2px solid #000000;
-  border-radius: 10px;
-  background-color: #fff;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-#rsvp-details-modal li {
-  padding: 5px 0;
-}
-
-#rsvp-details-modal li:not(:last-child) {
-  border-bottom: 1px dashed #eee;
-}
-#rsvp-details-modal #rsvp-lists #close-rsvp-modal {
-  background-color: transparent;
-
-  width: auto;
-  padding: 5px 15px;
+.rsvp-close-btn {
+  position: absolute;
+  top: 10px;
+  left: 0px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   font-size: 20px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-  margin-top: 30px;
-  margin-bottom: 30px;
-
-  box-shadow: 0px 2px 0px #000000;
-  transition: all 0.05s ease-in-out;
+  padding: 6px 10px;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
 }
 
-#rsvp-details-modal #rsvp-lists #close-rsvp-modal:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-  box-shadow: 0px 3px 0px #000000;
+.rsvp-close-btn:hover {
+  color: #000;
 }
 
-#rsvp-details-modal #rsvp-lists #close-rsvp-modal:active {
-  transform: translateY(2px);
-  box-shadow: 0px 0px 0px #000000;
+.rsvp-title-row {
+  text-align: center;
+  margin: 0 0 12px;
+  padding: 0;
 }
+
+.rsvp-title-row h3 {
+  margin: 0;
+  font-weight: normal;
+  font-size: 28px;
+}
+
+.rsvp-title-row p {
+  margin: 2px 0 0;
+  font-size: 20px;
+  color: #000000;
+}
+
+.rsvp-status-section {
+  border-radius: 10px;
+  border: 2px solid #000;
+  background: #fff;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.rsvp-status-section:last-child {
+  margin-bottom: 0;
+}
+
+.rsvp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 20px;
+}
+
+.rsvp-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rsvp-section-label i {
+  position: relative;
+  top: -2px;
+  left: -1px;
+}
+
+.rsvp-status-going .rsvp-section-head {
+  background: #3e9e41;
+  color: #fff;
+}
+.rsvp-status-maybe .rsvp-section-head {
+  background: #858585;
+  color: #fff;
+}
+.rsvp-status-no .rsvp-section-head {
+  background: #f44336;
+  color: #fff;
+}
+/* .rsvp-status-none .rsvp-section-head {
+  background: #e9e9e9;
+  color: #666666;
+} */
+
+
+.rsvp-count {
+  /* font-size: 20px; */
+  opacity: 0.85;
+  right: 4px;
+}
+
+.rsvp-namelist {
+  padding: 2px 12px 4px;
+}
+
+.rsvp-name-row {
+  padding: 7px 0;
+  font-size: 21px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rsvp-name-row:last-child {
+  border-bottom: none;
+}
+
+.rsvp-empty-message {
+  text-align: center;
+  color: #777;
+  font-size: 20px;
+  padding: 10px 0 4px;
+}
+
 
 #announcementsButton,
 #pollsButton,
@@ -1873,7 +1915,7 @@ input[type="checkbox"]:checked {
 
 
 #rsvp-details-modal::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 #rsvp-details-modal::-webkit-scrollbar-track {
@@ -2106,7 +2148,7 @@ input[type="checkbox"]:checked {
   padding: 8px;
   box-sizing: border-box;
   border: 2px solid black;
-  border-radius: 5px;
+  border-radius: 10px;
   font-size: 20px;
   line-height: 1.4;
   font-family: var(--primary-font-family, sans-serif);
@@ -2525,7 +2567,7 @@ input[type="checkbox"]:checked {
 
 .club-form-section {
   border: 2px solid rgba(0,0,0,0);
-  border-radius: 5px;
+  border-radius: 10px;
   padding: 12px 10px 4px 10px;
   background-color: rgba(255,255,255,0);
   margin-bottom: 4px;
@@ -2550,6 +2592,13 @@ input[type="checkbox"]:checked {
   margin: 0;
 }
 
+.club-form-section textarea.fancy-input {
+  line-height: 1.4;
+  height: calc(1.4em * 3 + 16px);
+  box-sizing: border-box;
+  resize: none;
+}
+
 .club-vis-strip-group {
   display: flex;
   flex-direction: column;
@@ -2563,7 +2612,7 @@ input[type="checkbox"]:checked {
   gap: 3px;
   padding: 10px 12px;
   border: 2px solid #000;
-  border-radius: 7px;
+  border-radius: 10px;
   cursor: pointer;
   background: #fff;
   transition: background 0.05s ease-in-out;

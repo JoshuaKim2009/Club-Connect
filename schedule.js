@@ -1132,27 +1132,30 @@ async function prefetchUserRsvps() {
 async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in to RSVP."); return; }
 
-    const freshness = await checkEventFreshness(originalEventId, occurrenceDateString);
-    if (!freshness.live) {
-        await showAppAlert(staleEventMessage("provide an RSVP for this event", freshness.reason));
-        return;
-    }
+    const key = `${originalEventId}_${occurrenceDateString}`;
+    const previousStatus = userRsvpMap.get(key) || null;
+    const newStatus = (previousStatus === status) ? null : status;
 
+    // --- Optimistic update: happens instantly, before any network call ---
+    if (newStatus === null) userRsvpMap.delete(key);
+    else userRsvpMap.set(key, newStatus);
+    updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
 
     try {
+        const freshness = await checkEventFreshness(originalEventId, occurrenceDateString);
+        if (!freshness.live) {
+            revertRsvpUI(key, previousStatus, originalEventId, occurrenceDateString);
+            await showAppAlert(staleEventMessage("provide an RSVP for this event", freshness.reason));
+            return;
+        }
+
         const userUid = currentUser.uid;
         const rsvpDocId = `${originalEventId}_${occurrenceDateString}_${userUid}`;
         const rsvpDocRef = doc(db, "clubs", clubId, "occurrenceRsvps", rsvpDocId);
-        const key = `${originalEventId}_${occurrenceDateString}`;
-        const currentStatus = userRsvpMap.get(key) || null;
 
-        if (currentStatus === status) {
-            userRsvpMap.delete(key);
-            updateRsvpButtonsUI(originalEventId, occurrenceDateString, null);
+        if (newStatus === null) {
             await deleteDoc(rsvpDocRef);
         } else {
-            userRsvpMap.set(key, status);
-            updateRsvpButtonsUI(originalEventId, occurrenceDateString, status);
             await setDoc(rsvpDocRef, {
                 eventId: originalEventId,
                 occurrenceDate: occurrenceDateString,
@@ -1160,11 +1163,13 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
                 userName: currentUser.displayName || "Anonymous User",
                 timestamp: serverTimestamp(),
                 clubId,
-                status,
+                status: newStatus,
             });
         }
     } catch (error) {
         console.error("Error saving RSVP:", error);
+        revertRsvpUI(key, previousStatus, originalEventId, occurrenceDateString);
+
         if (isPermissionError(error)) {
             await showAppAlert(permissionDeniedMessage("provide an RSVP for this event"));
         } else {
@@ -1172,6 +1177,13 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
         }
     }
 }
+
+function revertRsvpUI(key, previousStatus, eventId, occurrenceDateString) {
+    if (previousStatus === null) userRsvpMap.delete(key);
+    else userRsvpMap.set(key, previousStatus);
+    updateRsvpButtonsUI(eventId, occurrenceDateString, previousStatus);
+}
+
 
 function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatus) {
     const card = document.querySelector(`.event-card[data-original-event-id="${originalEventId}"][data-occurrence-date="${occurrenceDateString}"]`);
@@ -1247,11 +1259,11 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
     let overlay = document.getElementById('rsvp-details-overlay');
     let modal = document.getElementById('rsvp-details-modal');
+    let spinner = document.getElementById('rsvp-modal-spinner');
 
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'rsvp-details-overlay';
-        overlay.className = 'rsvp-details-overlay';
         document.body.appendChild(overlay);
     }
     if (!modal) {
@@ -1259,41 +1271,32 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         modal.id = 'rsvp-details-modal';
         document.body.appendChild(modal);
     }
-
-    modal.innerHTML = `
-        <h2>Responses for ${formatDate(occurrenceDateString)}</h2>
-        <div id="rsvp-lists-container">
-            <div id="rsvp-lists" style="display: none; text-align: left; padding: 0 15px;">
-                <div id="rsvp-sections-content"></div>
-                <button id="close-rsvp-modal" class="fancy-button" disabled>Close</button>
-            </div>
-        </div>
-    `;
-    modal.classList.add('rsvp-loading-collapsed');
-    modal.classList.remove('rsvp-scroll-active');
-    document.body.classList.add('no-scroll');
-
-    let safetyTimer = null;
-
-    function closeRsvpModal() {
-        clearTimeout(safetyTimer);
-        overlay.style.display = 'none';
-        modal.style.display = 'none';
-        document.body.classList.remove('no-scroll', 'no-interaction');
-        modal.classList.add('rsvp-loading-collapsed');
-        modal.classList.remove('rsvp-scroll-active');
-        const contentDiv = document.getElementById('rsvp-lists');
-        if (contentDiv) contentDiv.style.display = 'none';
+    if (!spinner) {
+        spinner = document.createElement('div');
+        spinner.id = 'rsvp-modal-spinner';
+        spinner.className = 'loading-spinner';
+        document.body.appendChild(spinner);
     }
 
-    document.getElementById('close-rsvp-modal').addEventListener('click', closeRsvpModal);
+    modal.classList.remove('rsvp-modal-show');
+    modal.style.display = 'none';
+    modal.innerHTML = '';
+    spinner.style.display = 'block';
+
+    overlay.style.display = 'flex';
+    document.body.classList.add('no-scroll');
+
+    function closeRsvpModal() {
+        overlay.style.display = 'none';
+        spinner.style.display = 'none';
+        modal.classList.remove('rsvp-modal-show');
+        modal.style.display = 'none';
+        document.body.classList.remove('no-scroll', 'no-interaction');
+    }
 
     overlay.onclick = (e) => {
         if (e.target === overlay) closeRsvpModal();
     };
-
-    overlay.style.display = 'flex';
-    modal.style.display = 'flex';
 
     try {
         const [rsvpsSnap, allMembers] = await Promise.all([
@@ -1304,6 +1307,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             )),
             getAllClubMembers(clubId)
         ]);
+
         const rsvpsMap = {};
         rsvpsSnap.forEach(d => { rsvpsMap[d.data().userId] = { status: d.data().status, userName: d.data().userName }; });
         const going = [], maybe = [], notGoing = [], noResponse = [];
@@ -1314,53 +1318,59 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                 if (rsvp.status === 'YES') going.push(rsvp.userName);
                 else if (rsvp.status === 'NO') notGoing.push(rsvp.userName);
                 else if (rsvp.status === 'MAYBE') maybe.push(rsvp.userName);
-            } else {
-                noResponse.push(member.name);
             }
         });
 
-        const buildSection = (label, names) => names.length === 0 ? '' : `
-            <h3>${label} (${names.length})</h3>
-            <ul>${names.map(n => `<li>${n}</li>`).join('')}</ul>
+        const buildSection = (label, names, modifierClass, iconClass) => names.length === 0 ? '' : `
+            <div class="rsvp-status-section ${modifierClass}">
+                <div class="rsvp-section-head">
+                    <span class="rsvp-section-label"><i class="${iconClass}" aria-hidden="true"></i>${label}</span>
+                    <span class="rsvp-count">${names.length}</span>
+                </div>
+                <div class="rsvp-namelist">
+                    ${names.map(n => `<div class="rsvp-name-row">${n}</div>`).join('')}
+                </div>
+            </div>
         `;
 
-        document.getElementById('rsvp-sections-content').innerHTML =
-            buildSection('Going', going) +
-            buildSection('Maybe', maybe) +
-            buildSection('Not Going', notGoing) +
-            buildSection('No Response', noResponse);
+        const sectionsHtml =
+            buildSection('Going', going, 'rsvp-status-going', 'fa-solid fa-check') +
+            buildSection('Maybe', maybe, 'rsvp-status-maybe', 'fa-solid fa-question') +
+            buildSection('Not Going', notGoing, 'rsvp-status-no', 'fa-solid fa-xmark');
+            // buildSection('No Response', noResponse, 'rsvp-status-none', 'fa-regular fa-clock');
 
-        document.getElementById('rsvp-lists').style.display = 'block';
-        modal.classList.remove('rsvp-loading-collapsed');
+        if (overlay.style.display === 'none') return;
 
-        safetyTimer = setTimeout(() => {
-            modal.classList.add('rsvp-scroll-active');
-            document.getElementById('rsvp-lists').style.display = 'block';
-            document.getElementById('close-rsvp-modal').disabled = false;
-            document.body.classList.remove('no-interaction');
-        }, 600);
+        modal.innerHTML = `
+            <button class="rsvp-close-btn" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="rsvp-title-row">
+                <h3>Responses</h3>
+                <p>${formatDate(occurrenceDateString)}</p>
+            </div>
+            ${sectionsHtml || '<p class="rsvp-empty-message">No responses yet.</p>'}
+        `;
 
-        modal.addEventListener('transitionend', function handler(e) {
-            if (e.propertyName === 'max-height') {
-                clearTimeout(safetyTimer);
-                modal.classList.add('rsvp-scroll-active');
-                document.getElementById('rsvp-lists').style.display = 'block';
-                document.getElementById('close-rsvp-modal').disabled = false;
-                document.body.classList.remove('no-interaction');
-                modal.removeEventListener('transitionend', handler);
-            }
+        modal.querySelector('.rsvp-close-btn').addEventListener('click', closeRsvpModal);
+
+        spinner.style.display = 'none';
+        modal.style.display = 'flex';
+        document.body.classList.remove('no-interaction');
+        requestAnimationFrame(() => {
+            modal.classList.add('rsvp-modal-show');
         });
+
     } catch (error) {
         console.error("Error fetching RSVP details:", error);
+        closeRsvpModal();
         if (isPermissionError(error)) {
             await showAppAlert(permissionDeniedMessage("provide an RSVP for this event"));
         } else {
             await showAppAlert("Something went wrong while loading RSVP details.");
         }
-        closeRsvpModal();
     }
 }
-
 
 
 function formatTime(timeString) {

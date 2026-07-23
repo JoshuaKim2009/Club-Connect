@@ -98,20 +98,6 @@ body {
   box-sizing: border-box;
 }
 
-.fancy-login-input {
-  background: linear-gradient(#ffffff, #f7f7f7);
-  font-family: var(--primary-font-family);
-  font-size: 20px;
-  color: black;
-  border: 2px solid black;
-  padding: 4px 8px;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0px 1px 0px #000000;
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .auth-box .auth-divider {
   background-color: transparent;
   height: 3px;

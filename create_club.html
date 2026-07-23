@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=60" rel="stylesheet" />
+    <link href="styles.css?v=62" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,14 +50,14 @@
           <h2>CREATE CLUB</h2>
 
           <div class="club-form-section">
-            <label for="club-name-select">Club Name</label>
+            <label for="club-name-select">Club Name <span class="required-mark">*</span></label>
             <input class="fancy-input" id="club-name-select"
                   placeholder="Club name" required
                   name="club-name-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
-            <label for="state-select">State/Territory</label>
+            <label for="state-select">State/Territory <span class="required-mark">*</span></label>
             <div class="state-dropdown-wrapper">
               <input class="fancy-input" id="state-select"
                     placeholder="State name" required
@@ -67,17 +67,17 @@
           </div>
 
           <div class="club-form-section" style="display:none">
-            <label for="county-select">County</label>
+            <label for="county-select">County <span class="required-mark">*</span></label>
             <div class="state-dropdown-wrapper">
               <input class="fancy-input" id="county-select"
-                    placeholder="County name" 
+                    placeholder="County name"
                     name="county-select" value="" autocomplete="off">
               <div class="state-dropdown-list" id="county-dropdown-list"></div>
             </div>
           </div>
 
           <div class="club-form-section">
-            <label for="school-name-select">School Name</label>
+            <label for="school-name-select">School Name <span class="required-mark">*</span></label>
             <div class="state-dropdown-wrapper">
               <input class="fancy-input" id="school-name-select"
                     placeholder="Full name (no abbreviations)" required
@@ -87,7 +87,7 @@
           </div>
 
           <div class="club-form-section">
-            <label for="category-select">Category</label>
+            <label for="category-select">Category <span class="required-mark">*</span></label>
             <div class="category-dropdown-wrapper">
               <input class="fancy-input" id="category-select" placeholder="Select a category" autocomplete="off" readonly>
               <div class="category-dropdown-list" id="category-dropdown-list"></div>
@@ -95,7 +95,7 @@
           </div>
 
           <div class="club-form-section">
-            <label for="main-activity-select">Main Activity</label>
+            <label for="main-activity-select">Main Activity <span class="required-mark">*</span></label>
             <input class="fancy-input" id="main-activity-select"
                   placeholder="e.g. Chess, Robotics, Art" required
                   name="main-activity-select" autocomplete="off">
@@ -104,47 +104,47 @@
           <div class="club-form-section">
             <label for="sponsor-select">Club Sponsor</label>
             <input class="fancy-input" id="sponsor-select"
-                  placeholder="Faculty or staff name (optional)" 
+                  placeholder="Faculty or staff name" 
                   name="sponsor-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
             <label for="club-leader-select">Student Representative</label>
             <input class="fancy-input" id="club-leader-select"
-                  placeholder="Student name (optional)"
+                  placeholder="Student name"
                   name="club-leader-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
             <label for="school-email-select">Student Representative Email</label>
             <input class="fancy-input" id="school-email-select"
-                  placeholder="School email (optional)"
+                  placeholder="School email"
                   name="school-email-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
             <label for="room-number-select">Meeting Location</label>
             <input class="fancy-input" id="room-number-select"
-                  placeholder="Meeting room or location (optional)"
+                  placeholder="Meeting room or location"
                   name="room-number-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
             <label for="meeting-schedule-select">Typical Meeting Days/Schedule</label>
             <input class="fancy-input" id="meeting-schedule-select"
-                  placeholder="e.g. Every Tuesday during lunch (optional)"
+                  placeholder="e.g. Every Tuesday during lunch"
                   name="meeting-schedule-select" autocomplete="off">
           </div>
 
           <div class="club-form-section">
-            <label for="description-input">Description</label>
+            <label for="description-input">Description <span class="required-mark">*</span></label>
             <textarea id="description-input" class="fancy-input"
                       rows="3" placeholder="Describe your club and any important information"
                       required name="description-input" maxlength="500"></textarea>
           </div>
 
           <div class="club-form-section">
-            <label>Club Visibility</label>
+            <label>Club Visibility <span class="required-mark">*</span></label>
             <div class="club-vis-strip-group" id="visibility-strip-group-create">
 
               <div class="club-vis-strip" data-value="public">
