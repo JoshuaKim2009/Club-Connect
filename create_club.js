@@ -226,12 +226,10 @@ submitButton.disabled = true;
 
 submitButton.addEventListener("click", async function(event){
     event.preventDefault();
-    setLoading(submitButton);
 
     if (!currentUser || !currentUser.uid) {
         await showAppAlert("You must be logged in to create a club.");
         console.warn("Attempted club creation by unauthenticated user. Aborting.");
-        clearLoading(submitButton);
         return; 
     }
 
@@ -251,13 +249,11 @@ submitButton.addEventListener("click", async function(event){
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
-        clearLoading(submitButton);
         return; 
     }
 
     if (clubDescription.length > 500) {
         await showAppAlert("Description must be 500 characters or less.");
-        clearLoading(submitButton);
         return;
     }
 
@@ -265,13 +261,11 @@ submitButton.addEventListener("click", async function(event){
 
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
-        clearLoading(submitButton);
         return;
     }
 
     if (!clubCategory) {
         await showAppAlert("Please select a category.");
-        clearLoading(submitButton);
         return;
     }
 
@@ -281,7 +275,6 @@ submitButton.addEventListener("click", async function(event){
     if (!schoolNameResult.valid) {
         const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES if to continue or NO to correct it.`);
         if (!confirmed) {
-            clearLoading(submitButton);
             return;
         }
         schoolName = rawSchoolName; 
@@ -299,15 +292,15 @@ submitButton.addEventListener("click", async function(event){
     const clubVisibility = getSelectedVisibility('visibility-strip-group-create');
     if (!clubVisibility) {
         await showAppAlert("Please select a club visibility (Public or Private).");
-        clearLoading(submitButton);
         return;
     }
+
+    setLoading(submitButton);
 
     try {
         const joinCode = await getUniqueJoinCode();
         if (!joinCode) {
             await showAppAlert("Failed to generate a unique join code. Please try again.");
-            clearLoading(submitButton);
             return;
         }
         console.log(`join code: ${joinCode}`);

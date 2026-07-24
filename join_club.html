@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=63" rel="stylesheet" />
+    <link href="styles.css?v=64" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Join</title>
@@ -53,6 +53,9 @@
         0%   { left: -200%; }
         100% { left: 150%; }
       }
+      #join-code-input::placeholder {
+        text-transform: none;
+      }
     </style>
 
   </head>
@@ -80,7 +83,7 @@
         <div class="club-form-section">
           <label for="join-code-input">Join Code</label>
           <input class="fancy-input" id="join-code-input"
-                placeholder="6 digit join code" required name="join-code-input"
+                placeholder="6 digit code" required name="join-code-input"
                 style="text-transform: uppercase" maxlength="6" value=""
                 autocomplete="off">
         </div>

@@ -97,7 +97,7 @@ body {
 #poll-creation-modal textarea:focus {
     outline: none;
     border-color: #000000;
-    box-shadow: 0 0 0 1px #000000;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 50%, transparent);
 }
 
 .poll-modal-actions {
@@ -235,7 +235,7 @@ body {
 .poll-option-input:focus {
     outline: none;
     border-color: #000000;
-    box-shadow: 0 0 0 1px #000000;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 50%, transparent);
 }
 
 .subtract-option-inline-btn {
@@ -616,7 +616,7 @@ body {
 
 .vis-strip-sub {
     font-size: 18px;
-    color: #555;
+    color: #808080;
     font-family: var(--primary-font-family);
     line-height: 1.3;
 }

@@ -160,6 +160,18 @@
     margin: 10px -12px -12px -12px;
     width: calc(100% + 24px);
     border-top: 2px dotted black;
+    position: relative;
+}
+
+.club-card-footer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -10px;
+    height: 10px;
+    background: linear-gradient(to top, rgba(128,128,128,0.03), transparent);
+    pointer-events: none;
 }
 
 
@@ -221,6 +233,18 @@
     font-family: var(--primary-font-family);
     border-bottom: 2px dotted rgba(0, 0, 0);
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+}
+
+.club-more-btn::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, transparent, rgba(128,128,128,0.03));
+    pointer-events: none;
 }
 
 .club-more-btn i {

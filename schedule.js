@@ -28,8 +28,6 @@ let isEditingEvent = false;
 
 let eventDocsMap = new Map();
 const userCache = new Map();
-const memberListCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000;
 const userRsvpMap = new Map(); 
 
 const eventsContainer = document.getElementById('eventsContainer');
@@ -1160,7 +1158,7 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
                 eventId: originalEventId,
                 occurrenceDate: occurrenceDateString,
                 userId: userUid,
-                userName: currentUser.displayName || "Anonymous User",
+                userName: currentUser.displayName || "Unknown User",
                 timestamp: serverTimestamp(),
                 clubId,
                 status: newStatus,
@@ -1191,59 +1189,6 @@ function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatu
     card.querySelectorAll('.rsvp-button').forEach(btn => {
         btn.classList.toggle('selected-rsvp', btn.dataset.status === currentStatus);
     });
-}
-
-async function getAllClubMembers(clubID, useCache = true) {
-    if (useCache && memberListCache.has(clubID)) {
-        const cached = memberListCache.get(clubID);
-        if (Date.now() - cached.timestamp < CACHE_DURATION) return cached.members;
-    }
-
-    const members = [];
-    try {
-        const [clubSnap, membersSnap] = await Promise.all([
-            getDoc(doc(db, "clubs", clubID)),
-            getDocs(collection(db, "clubs", clubID, "members"))
-        ]);
-
-        const managerUid = clubSnap.exists() ? clubSnap.data().managerUid : null;
-
-        const uidsToFetch = [];
-        if (managerUid && !userCache.has(managerUid)) uidsToFetch.push(managerUid);
-        membersSnap.docs.forEach(d => {
-            if (d.id !== managerUid && !userCache.has(d.id)) uidsToFetch.push(d.id);
-        });
-
-        if (uidsToFetch.length > 0) {
-            const userSnaps = await Promise.all(
-                uidsToFetch.map(uid => getDoc(doc(db, "users", uid)))
-            );
-            userSnaps.forEach((snap, i) => {
-                if (snap.exists()) userCache.set(uidsToFetch[i], snap.data());
-            });
-        }
-
-        if (managerUid) {
-            const d = userCache.get(managerUid);
-            const name = d ? (d.displayName || d.name || `Unknown ${ROLE_LABELS.manager}`) : `Unknown ${ROLE_LABELS.manager}`;
-            members.push({ uid: managerUid, name, role: 'manager' });
-        }
-
-        membersSnap.docs.forEach(memberDoc => {
-            if (memberDoc.id === managerUid) return;
-            const d = userCache.get(memberDoc.id);
-            members.push({
-                uid: memberDoc.id,
-                name: d ? (d.displayName || d.name) : "Unknown User",
-                role: memberDoc.data().role || 'member'
-            });
-        });
-
-        memberListCache.set(clubID, { members, timestamp: Date.now() });
-    } catch (error) {
-        console.error("Error fetching club members:", error);
-    }
-    return members;
 }
 
 async function showRsvpDetailsModal(eventId, occurrenceDateString) {
@@ -1299,32 +1244,25 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     };
 
     try {
-        const [rsvpsSnap, allMembers] = await Promise.all([
-            getDocs(query(
-                collection(db, "clubs", clubId, "occurrenceRsvps"),
-                where("eventId", "==", eventId),
-                where("occurrenceDate", "==", occurrenceDateString)
-            )),
-            getAllClubMembers(clubId)
-        ]);
+        const rsvpsSnap = await getDocs(query(
+            collection(db, "clubs", clubId, "occurrenceRsvps"),
+            where("eventId", "==", eventId),
+            where("occurrenceDate", "==", occurrenceDateString)
+        ));
 
-        const rsvpsMap = {};
-        rsvpsSnap.forEach(d => { rsvpsMap[d.data().userId] = { status: d.data().status, userName: d.data().userName }; });
-        const going = [], maybe = [], notGoing = [], noResponse = [];
+        const rsvpDocs = rsvpsSnap.docs.map(d => d.data());
 
-        allMembers.forEach(member => {
-            const rsvp = rsvpsMap[member.uid];
-            if (rsvp) {
-                if (rsvp.status === 'YES') going.push(rsvp.userName);
-                else if (rsvp.status === 'NO') notGoing.push(rsvp.userName);
-                else if (rsvp.status === 'MAYBE') maybe.push(rsvp.userName);
-            }
+        const names = await Promise.all(rsvpDocs.map(async data => {
+            const name = data.userName || await getUserNameCached(data.userId);
+            return { status: data.status, name };
+        }));
+
+        const going = [], maybe = [], notGoing = [];
+        names.forEach(({ status, name }) => {
+            if (status === 'YES') going.push(name);
+            else if (status === 'MAYBE') maybe.push(name);
+            else if (status === 'NO') notGoing.push(name);
         });
-
-        // TEST ONLY
-        // for (let i = 1; i <= 30; i++) going.push(`Test Member ${i}`);
-        // for (let i = 1; i <= 10; i++) maybe.push(`Test Maybe ${i}`);
-        // for (let i = 1; i <= 10; i++) notGoing.push(`Test No ${i}`);
 
         const buildSection = (label, names, modifierClass, iconClass) => names.length === 0 ? '' : `
             <div class="rsvp-status-section ${modifierClass}">
@@ -1342,7 +1280,6 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
             buildSection('Going', going, 'rsvp-status-going', 'fa-solid fa-check') +
             buildSection('Maybe', maybe, 'rsvp-status-maybe', 'fa-solid fa-question') +
             buildSection('Not Going', notGoing, 'rsvp-status-no', 'fa-solid fa-xmark');
-            // buildSection('No Response', noResponse, 'rsvp-status-none', 'fa-regular fa-clock');
 
         if (overlay.style.display === 'none') return;
 
@@ -1379,6 +1316,23 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     }
 }
 
+async function getUserNameCached(uid) {
+    if (userCache.has(uid)) {
+        const d = userCache.get(uid);
+        return d.displayName || d.name || "Unknown User";
+    }
+    try {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) {
+            const d = snap.data();
+            userCache.set(uid, d);
+            return d.displayName || d.name || "Unknown User";
+        }
+    } catch (e) {
+        console.error(`Error fetching user ${uid}:`, e);
+    }
+    return "Unknown User";
+}
 
 function formatTime(timeString) {
     if (!timeString) return 'N/A';

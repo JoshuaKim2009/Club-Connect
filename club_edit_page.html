@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=63" rel="stylesheet" />
+    <link href="styles.css?v=64" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -94,6 +94,13 @@
         </div>
 
         <div class="club-form-section">
+          <label for="description-edit">Description <span class="required-mark">*</span></label>
+          <textarea id="description-edit" class="fancy-input"
+                    rows="3" placeholder="Describe your club and any important information"
+                    required maxlength="500"></textarea>
+        </div>
+
+        <div class="club-form-section">
           <label for="sponsor-edit">Club Sponsor</label>
           <input class="fancy-input" id="sponsor-edit"
                 placeholder="Faculty or staff name" autocomplete="off">
@@ -121,13 +128,6 @@
           <label for="meeting-schedule-edit">Typical Meeting Days</label>
           <input class="fancy-input" id="meeting-schedule-edit"
                 placeholder="e.g. Every Tuesday during lunch" autocomplete="off">
-        </div>
-
-        <div class="club-form-section">
-          <label for="description-edit">Description <span class="required-mark">*</span></label>
-          <textarea id="description-edit" class="fancy-input"
-                    rows="3" placeholder="Describe your club and any important information"
-                    required maxlength="500"></textarea>
         </div>
 
         <div class="club-form-section">
@@ -166,7 +166,7 @@
     <script src="theme.js?v=12"></script>
     <!-- <script type="module" src="loading_instant.js"></script> -->
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="club_edit_page.js?v=16"></script>
+    <script type="module" src="club_edit_page.js?v=17"></script>
 
     
 

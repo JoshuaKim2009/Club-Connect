@@ -564,11 +564,21 @@ button {
   min-height: 44px;
 }
 
+input::placeholder,
+input::-webkit-input-placeholder,
+input::-moz-placeholder,
+input:-moz-placeholder,
+input:-ms-input-placeholder {
+  color: #808080;
+  opacity: 1;
+}
+
+
 .fancy-login-input:focus,
 .fancy-input:focus {
   outline: none;
   border-color: #000000;
-  box-shadow: 0 0 0 1px #000000;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 50%, transparent);
 }
 
 .fancy-black-button {
@@ -603,6 +613,12 @@ button {
   padding: 5px 15px;
 }
 
+#back-button i,
+#back-button-edit i {
+  position: relative;
+  top: 2px;
+}
+
 .fancy-link-button {
   margin: 0 auto;
   display: block;
@@ -632,7 +648,7 @@ button {
 }
 
 .fancy-button:hover {
-  filter: brightness(1.1);
+  /* filter: brightness(1.1); */
   transform: translateY(1px);
   box-shadow: 0px 1px 0px #000000;
 }
@@ -1572,7 +1588,7 @@ input[type="checkbox"]:checked {
 .editing-event-card textarea:focus {
   outline: none;
   border-color: #000000;
-  box-shadow: 0 0 0 1px #000000;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 50%, transparent);
 }
 
 .event-card-actions {
@@ -1734,7 +1750,7 @@ input[type="checkbox"]:checked {
 }
 
 .view-availability-btn:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.05);
   background: linear-gradient(#ffffff, #f0f0f0);
 }
 
@@ -1791,6 +1807,8 @@ input[type="checkbox"]:checked {
   padding-top: 0;
   margin-top: -4px;
   margin-bottom: 4px;
+  overscroll-behavior-y: contain;
+  overscroll-behavior: contain;
 }
 
 #rsvp-scroll-content::-webkit-scrollbar {
@@ -2212,7 +2230,7 @@ input[type="checkbox"]:checked {
 .editing-announcement-card textarea:focus {
   outline: none;
   border-color: #000000;
-  box-shadow: 0 0 0 1px #000000;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 50%, transparent);
 }
 
 .editing-announcement-card .announcement-card-actions {
@@ -2637,10 +2655,18 @@ input[type="checkbox"]:checked {
 }
 
 .club-form-section textarea.fancy-input {
-  line-height: 1.4;
-  height: calc(1.4em * 3 + 16px);
+  font-size: 22px;
+  line-height: 28px;
+  height: calc(28px * 3 + 16px);
   box-sizing: border-box;
   resize: none;
+  overflow: auto;
+}
+
+.club-form-section .fancy-button:hover {
+  filter: brightness(1);
+  transform: translateY(1px);
+  box-shadow: 0px 1px 0px #000000;
 }
 
 .club-vis-strip-group {
@@ -2680,7 +2706,7 @@ input[type="checkbox"]:checked {
 
 .club-vis-strip-sub {
   font-size: 20px;
-  color: #555;
+  color: #808080;
   font-family: var(--primary-font-family);
   line-height: 1.3;
 }

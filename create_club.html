@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=63" rel="stylesheet" />
+    <link href="styles.css?v=64" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,6 +102,13 @@
           </div>
 
           <div class="club-form-section">
+            <label for="description-input">Description <span class="required-mark">*</span></label>
+            <textarea id="description-input" class="fancy-input"
+                      rows="3" placeholder="Describe your club and any important information"
+                      required name="description-input" maxlength="500"></textarea>
+          </div>
+
+          <div class="club-form-section">
             <label for="sponsor-select">Club Sponsor</label>
             <input class="fancy-input" id="sponsor-select"
                   placeholder="Faculty or staff name" 
@@ -137,13 +144,6 @@
           </div>
 
           <div class="club-form-section">
-            <label for="description-input">Description <span class="required-mark">*</span></label>
-            <textarea id="description-input" class="fancy-input"
-                      rows="3" placeholder="Describe your club and any important information"
-                      required name="description-input" maxlength="500"></textarea>
-          </div>
-
-          <div class="club-form-section">
             <label>Club Visibility <span class="required-mark">*</span></label>
             <div class="club-vis-strip-group" id="visibility-strip-group-create">
 
@@ -167,7 +167,7 @@
           </div>
 
           <div class="club-form-actions">
-            <button id="submit-club-button" type="submit" class="fancy-button">SUBMIT</button>
+            <button id="submit-club-button" type="submit" class="fancy-button">CREATE</button>
           </div>
         </div>
       </form>
@@ -175,7 +175,7 @@
           
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js"></script> 
-    <script type="module" src="create_club.js?v=13"></script>
+    <script type="module" src="create_club.js?v=14"></script>
 
     
     <script>

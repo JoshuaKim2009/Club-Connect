@@ -250,6 +250,13 @@ regCounty.addEventListener('input', function() {
 	} else {
 		regCountyDropdownList.classList.remove('show');
 	}
+
+	const exactMatch = REGISTER_COUNTIES.find(c =>
+		c.state === currentState && c.name.toLowerCase() === value
+	);
+	if (exactMatch) {
+		loadSchoolsFor(currentState, exactMatch.name);
+	}
 });
 
 const regSchool = document.getElementById('regSchool');

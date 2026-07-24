@@ -304,18 +304,17 @@ submitButton.addEventListener("click", async function(event){
     event.preventDefault();
 
     submitButton.disabled = true;
-    setLoading(submitButton)
 
     if (!currentUser || !currentUser.uid) {
       await showAppAlert("You must be logged in to update a club.");
       console.warn("Attempted club update by unauthenticated user. Aborting.");
-      clearLoading(submitButton);
+      submitButton.disabled = false;
       return;
     }
     if (!currentClubId) {
         await showAppAlert("No club selected for update.");
         console.warn("Attempted club update without a club ID. Aborting.");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
 
@@ -352,19 +351,19 @@ submitButton.addEventListener("click", async function(event){
         (selectedCountyFips ?? null) === (originalClubData.countyFips ?? null)
     ) {
         await showAppAlert("No changes were made.");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
 
     if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
         await showAppAlert("Please fill in all club details.");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
 
     if (clubDescription.length > 500) {
         await showAppAlert("Description must be 500 characters or less.");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
 
@@ -372,7 +371,7 @@ submitButton.addEventListener("click", async function(event){
     
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
 
@@ -382,10 +381,10 @@ submitButton.addEventListener("click", async function(event){
     if (!schoolNameResult.valid) {
         const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES to continue or NO to correct it.`);
         if (!confirmed) {
-            clearLoading(submitButton);
+            submitButton.disabled = false;
             return;
         }
-        schoolName = rawSchoolName; 
+        schoolName = rawSchoolName;
     } else {
         if (schoolNameResult.normalized !== rawSchoolName) {
             const confirmed = await showAppConfirm(`We recommend changing "${rawSchoolName}" to "${schoolNameResult.normalized}". Would you like to use the recommended version?`);
@@ -399,9 +398,11 @@ submitButton.addEventListener("click", async function(event){
 
     if (!clubVisibility) {
         await showAppAlert("Please select a club visibility.");
-        clearLoading(submitButton);
+        submitButton.disabled = false;
         return;
     }
+
+    setLoading(submitButton);
 
     try {
         console.log("Attempting to update club data in Firestore...");
