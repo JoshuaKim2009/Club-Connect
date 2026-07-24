@@ -406,7 +406,7 @@ function openRoleManagementPopup(memberUid, memberName, currentRole) {
     selectedMemberUid = memberUid;
     currentMemberRoleInPopup = currentRole;
 
-    memberNameForRoleDisplay.textContent = `Manage ${memberName}`;
+    memberNameForRoleDisplay.textContent = `${memberName}`;
     roleSelect.value = currentRole;
 
     const managerOption = roleSelect.querySelector('option[value="manager"]');
