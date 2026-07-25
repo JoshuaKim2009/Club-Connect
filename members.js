@@ -610,3 +610,10 @@ function showContainerError(container, message, showRetry = false, topPadding = 
         </div>
     `;
 }
+
+
+popupOverlay.addEventListener('click', (e) => {
+    if (e.target === popupOverlay && roleManagementPopup.style.display === 'flex') {
+        closeRoleManagementPopup();
+    }
+});
