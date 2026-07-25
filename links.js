@@ -380,29 +380,21 @@ function openEditingCard(category, existingCard) {
     const actionsRow = document.createElement('div');
     actionsRow.className = 'edit-card-actions';
 
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'fancy-button edit-card-save-btn';
-    saveBtn.innerHTML = 'SAVE';
-    // saveBtn.innerHTML = 'SAVE <i class="action-icon fa-solid fa-check"></i>';
-    // cancelBtn.innerHTML = 'CANCEL <i class="action-icon fa-solid fa-xmark"></i>';
-    // deleteBtn.innerHTML = 'DELETE <i class="action-icon fa-regular fa-trash-can"></i>';
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'fancy-button edit-card-cancel-btn';
-    cancelBtn.innerHTML = 'CANCEL';
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'fancy-button edit-card-save-btn';
+    doneBtn.innerHTML = 'DONE';
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'fancy-button edit-card-delete-btn';
     deleteBtn.innerHTML = 'DELETE';
 
-    actionsRow.appendChild(saveBtn);
-    actionsRow.appendChild(cancelBtn);
+    actionsRow.appendChild(doneBtn);
     actionsRow.appendChild(deleteBtn);
     editCard.appendChild(actionsRow);
 
     buildLinksSection();
 
-    saveBtn.addEventListener('click', async () => {
+    doneBtn.addEventListener('click', async () => {
         const newTitle = titleInput.value.trim();
         if (!newTitle) { await showAppAlert("Title can't be empty!"); return; }
 
@@ -413,6 +405,18 @@ function openEditingCard(category, existingCard) {
             const u = row.querySelector('.edit-link-url-input').value.trim();
             if (t && u) updatedLinks.push({ title: t, url: u });
         });
+
+        const linksChanged = updatedLinks.length !== category.links.length ||
+            updatedLinks.some((l, i) => l.title !== category.links[i].title || l.url !== category.links[i].url);
+        const titleChanged = newTitle !== category.title;
+
+        if (!titleChanged && !linksChanged) {
+            editCard.replaceWith(existingCard);
+            const reorderButton = document.getElementById('reorder-button');
+            reorderButton.style.pointerEvents = '';
+            reorderButton.style.opacity = '';
+            return;
+        }
 
         try {
             await updateDoc(doc(db, "clubs", clubId, "resourceSections", category.id), {
@@ -425,19 +429,13 @@ function openEditingCard(category, existingCard) {
         }
     });
 
-    cancelBtn.addEventListener('click', () => {
-        editCard.replaceWith(existingCard);
-        const reorderButton = document.getElementById('reorder-button');
-        reorderButton.style.pointerEvents = '';
-        reorderButton.style.opacity = '';
-    });
-
     deleteBtn.addEventListener('click', async () => {
         const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" category?`);
         if (!confirmed) return;
         try {
             await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
             await fetchAndDisplayCategories();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (e) {
             await showAppAlert("Failed to delete: " + e.message);
         }

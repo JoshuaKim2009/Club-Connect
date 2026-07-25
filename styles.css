@@ -2983,12 +2983,12 @@ input[type="checkbox"]:checked {
 
 
 .input-error {
-  border-color: #cc0000 !important;
+  /* border-color: #cc0000 !important; */
   animation: input-shake 0.3s ease-in-out;
 }
 
 @keyframes input-shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-2px); }
-  75% { transform: translateX(2px); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
