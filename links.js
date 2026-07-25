@@ -42,6 +42,7 @@ let currentUserRole = null;
 let categoriesCache = [];
 let sortableInstance = null;
 let reorderMode = false;
+let isEditingCategory = false;
 
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage = document.getElementById('noResourcesMessage');
@@ -306,6 +307,11 @@ function createCategoryElement(category) {
 
 
 function openEditingCard(category, existingCard) {
+    if (isEditingCategory) {
+        showAppAlert("Please finish editing before starting another edit."); 
+        return; 
+    }
+    isEditingCategory = true;
     const editingCategory = { ...category, links: category.links.map(l => ({ ...l })) };
 
     const editCard = document.createElement('div');
@@ -412,9 +418,7 @@ function openEditingCard(category, existingCard) {
 
         if (!titleChanged && !linksChanged) {
             editCard.replaceWith(existingCard);
-            const reorderButton = document.getElementById('reorder-button');
-            reorderButton.style.pointerEvents = '';
-            reorderButton.style.opacity = '';
+            isEditingCategory = false;
             return;
         }
 
@@ -423,6 +427,7 @@ function openEditingCard(category, existingCard) {
                 title: newTitle,
                 links: updatedLinks
             });
+            isEditingCategory = false;
             await fetchAndDisplayCategories();
         } catch (e) {
             await showAppAlert("Failed to save: " + e.message);
@@ -434,6 +439,7 @@ function openEditingCard(category, existingCard) {
         if (!confirmed) return;
         try {
             await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
+            isEditingCategory = false;
             await fetchAndDisplayCategories();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (e) {
@@ -442,9 +448,6 @@ function openEditingCard(category, existingCard) {
     });
 
     existingCard.replaceWith(editCard);
-    const reorderButton = document.getElementById('reorder-button');
-    reorderButton.style.pointerEvents = 'none';
-    reorderButton.style.opacity = '0.4';
 }
 
 
@@ -536,6 +539,10 @@ function setupReorder() {
     });
 
     reorderButton.onclick = async () => {
+        if (isEditingCategory) {
+            await showAppAlert("Please finish editing before reordering.");
+            return;
+        }
         if (!reorderMode) {
             reorderMode = true;
             sortableInstance.option('disabled', false);
