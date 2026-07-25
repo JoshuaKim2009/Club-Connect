@@ -652,3 +652,14 @@ function showContainerError(container, message, showRetry = false, topMargin = '
         </div>
     `;
 }
+
+
+categoryOverlay.addEventListener('click', (e) => {
+    if (e.target !== categoryOverlay) return;
+
+    if (categoryCreationModal.style.display === 'flex') {
+        hideCategoryModal();
+    } else if (addLinkModal.style.display === 'flex') {
+        hideAddLinkModal();
+    }
+});
