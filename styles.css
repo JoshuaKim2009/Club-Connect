@@ -10,6 +10,10 @@
   --header-bg-start: var(--bg-dark);
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -150,7 +154,7 @@ body.no-interaction {
 
 .loading-spinner {
   border: 8px solid #f3f3f3;
-  border-top: 8px solid var(--bg-light);
+  border-top: 8px solid color-mix(in srgb, var(--bg-light) 75%, white 25%);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -1176,7 +1180,7 @@ input:-ms-input-placeholder {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
   z-index: 9999;
   display: none;
 }
@@ -1761,7 +1765,7 @@ input[type="checkbox"]:checked {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
   z-index: 999;
   display: flex;
   justify-content: center;
@@ -2064,7 +2068,7 @@ input[type="checkbox"]:checked {
   font-size: 26px;
   text-align: center;
   margin-top: 0;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   margin-left: -8px;
   margin-right: -8px;
   padding-bottom: 5px;
@@ -2412,7 +2416,7 @@ input[type="checkbox"]:checked {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
     z-index: 999;
     display: flex;
     justify-content: center;
@@ -2425,7 +2429,7 @@ input[type="checkbox"]:checked {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
     z-index: 1000;
     display: flex;
     justify-content: center;
@@ -2975,4 +2979,16 @@ input[type="checkbox"]:checked {
 
 .button-row-2:last-child {
   margin-bottom: 0;
+}
+
+
+.input-error {
+  border-color: #cc0000 !important;
+  animation: input-shake 0.3s ease-in-out;
+}
+
+@keyframes input-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }

@@ -24,7 +24,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
     z-index: 9999;
     display: none;
     justify-content: center;

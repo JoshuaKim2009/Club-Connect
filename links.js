@@ -154,6 +154,8 @@ onAuthStateChanged(auth, async (user) => {
 
 function handleAddCategory() {
     if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
+    const titleInput = document.getElementById('category-title-input');
+    titleInput.classList.remove('input-error');
     showOverlay();
     categoryCreationModal.style.display = 'flex';
 }
@@ -161,14 +163,25 @@ function handleAddCategory() {
 function hideCategoryModal() {
     categoryCreationModal.style.display = 'none';
     hideOverlay();
-    document.getElementById('category-title-input').value = '';
+    const titleInput = document.getElementById('category-title-input');
+    titleInput.value = '';
+    titleInput.classList.remove('input-error');
 }
 
 document.getElementById('cancel-category-button').addEventListener('click', hideCategoryModal);
 
 document.getElementById('post-category-button').addEventListener('click', async () => {
-    const title = document.getElementById('category-title-input').value.trim();
-    if (!title) { await showAppAlert("Category name is required!"); return; }
+    const titleInput = document.getElementById('category-title-input');
+    const title = titleInput.value.trim();
+
+    if (!title) {
+        titleInput.classList.remove('input-error');
+        void titleInput.offsetWidth;
+        titleInput.classList.add('input-error');
+        titleInput.focus();
+        return;
+    }
+
     try {
         await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
             title, links: [], order: categoriesCache.length,
@@ -183,7 +196,6 @@ document.getElementById('post-category-button').addEventListener('click', async 
         await showAppAlert("Failed to create category: " + e.message);
     }
 });
-
 
 
 async function fetchCategoryData() {
@@ -552,8 +564,12 @@ let activeLinkCategoryId = null;
 
 function openAddLinkModal(category) {
     activeLinkCategoryId = category.id;
-    document.getElementById('link-title-input').value = '';
-    document.getElementById('link-url-input').value   = '';
+    const titleInput = document.getElementById('link-title-input');
+    const urlInput = document.getElementById('link-url-input');
+    titleInput.value = '';
+    urlInput.value   = '';
+    titleInput.classList.remove('input-error');
+    urlInput.classList.remove('input-error');
     showOverlay();
     addLinkModal.style.display = 'flex';
 }
@@ -562,14 +578,34 @@ function hideAddLinkModal() {
     addLinkModal.style.display = 'none';
     hideOverlay();
     activeLinkCategoryId = null;
+    document.getElementById('link-title-input').classList.remove('input-error');
+    document.getElementById('link-url-input').classList.remove('input-error');
 }
 
 document.getElementById('cancel-link-button').addEventListener('click', hideAddLinkModal);
 
 document.getElementById('save-link-button').addEventListener('click', async () => {
-    const title = document.getElementById('link-title-input').value.trim();
-    const url   = document.getElementById('link-url-input').value.trim();
-    if (!title || !url) { await showAppAlert("Both a title and URL are required!"); return; }
+    const titleInput = document.getElementById('link-title-input');
+    const urlInput = document.getElementById('link-url-input');
+    const title = titleInput.value.trim();
+    const url   = urlInput.value.trim();
+
+    titleInput.classList.remove('input-error');
+    urlInput.classList.remove('input-error');
+
+    if (!title || !url) {
+        if (!title) {
+            void titleInput.offsetWidth;
+            titleInput.classList.add('input-error');
+        }
+        if (!url) {
+            void urlInput.offsetWidth;
+            urlInput.classList.add('input-error');
+        }
+        (!title ? titleInput : urlInput).focus();
+        return;
+    }
+
     try {
         const sectionRef  = doc(db, "clubs", clubId, "resourceSections", activeLinkCategoryId);
         const sectionSnap = await getDoc(sectionRef);
@@ -582,6 +618,13 @@ document.getElementById('save-link-button').addEventListener('click', async () =
     }
 });
 
+[
+  document.getElementById('category-title-input'),
+  document.getElementById('link-title-input'),
+  document.getElementById('link-url-input')
+].forEach(input => {
+  input.addEventListener('input', () => input.classList.remove('input-error'));
+});
 
 
 function animateCardIn(card, index = 0) {

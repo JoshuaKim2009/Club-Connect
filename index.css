@@ -167,7 +167,7 @@
 	display: none;
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
+	background-color: color-mix(in srgb, color-mix(in srgb, var(--bg-dark), var(--header-bg-end)), transparent 50%);
 	z-index: 9999;
 }
 
