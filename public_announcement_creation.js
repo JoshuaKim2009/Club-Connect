@@ -208,11 +208,11 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
 
 async function addNewAnnouncementEditingCard() {
     if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to add announcements.");
+        await showAppAlert("You must be logged in and viewing a club to add posts.");
         return;
     }
     if (isEditingAnnouncement) {
-        await showAppAlert("Please finish editing the current announcement before adding a new one.");
+        await showAppAlert("Please finish editing the current post before adding a new one.");
         return;
     }
 
@@ -258,8 +258,8 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     const title = cardDiv.querySelector(`#edit-title-${tempDomId}`).value.trim();
     const content = cardDiv.querySelector(`#edit-content-${tempDomId}`).value.trim();
 
-    if (!title) { await showAppAlert("Announcement Title is required!"); return; }
-    if (!content) { await showAppAlert("Announcement Content is required!"); return; }
+    if (!title) { await showAppAlert("Title is required!"); return; }
+    if (!content) { await showAppAlert("Content is required!"); return; }
 
     try {
         if (existingAnnouncementId) {
@@ -271,7 +271,7 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             isEditingAnnouncement = false;
             const restoredCard = createAnnouncementDisplayCard(updatedData, existingAnnouncementId);
             cardDiv.replaceWith(restoredCard);
-            showAppAlert("Announcement updated successfully!");
+            showAppAlert("Post updated successfully!");
             requestAnimationFrame(() => scrollToAnnouncement(existingAnnouncementId));
 
         } else {
@@ -285,13 +285,13 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             await refreshCount();
             await renderPage(1, true);
 
-            showAppAlert("New announcement added successfully!");
+            showAppAlert("New post added successfully!");
             requestAnimationFrame(() => scrollToAnnouncement(currentPageAnnouncements[0]?.id));
         }
     } catch (error) {
         console.error("Error saving announcement:", error);
         isEditingAnnouncement = false;
-        await showAppAlert("Failed to save announcement: " + error.message);
+        await showAppAlert("Something went wrong while saving this post. Please try again.");
     }
 }
 
@@ -483,20 +483,20 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
 
 async function editAnnouncement(announcementId) {
     if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to edit announcements.");
+        await showAppAlert("You must be logged in and viewing a club to edit posts.");
         return;
     }
     if (isEditingAnnouncement) {
-        await showAppAlert("Please finish editing the current announcement before starting another edit.");
+        await showAppAlert("Please finish editing the current post before starting another edit.");
         return;
     }
 
     const announcementData = currentPageAnnouncements.find(a => a.id === announcementId);
-    if (!announcementData) { await showAppAlert("Error: Announcement not found."); return; }
+    if (!announcementData) { await showAppAlert("Error: Post not found."); return; }
 
     const targetDisplayCard = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
     if (!targetDisplayCard) {
-        await showAppAlert("Could not find the announcement card to edit. Please refresh.");
+        await showAppAlert("Could not find the post card to edit. Please refresh.");
         return;
     }
 
@@ -506,11 +506,11 @@ async function editAnnouncement(announcementId) {
 
 async function deleteAnnouncement(announcementId, announcementTitle) {
     if (!currentUser || !clubId) {
-        await showAppAlert("You must be logged in and viewing a club to delete announcements.");
+        await showAppAlert("You must be logged in and viewing a club to delete posts.");
         return;
     }
 
-    const confirmed = await showAppConfirm(`Are you sure you want to delete the announcement "${announcementTitle}"? This action cannot be undone.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to delete this post? This action cannot be undone.`);
     if (!confirmed) return;
 
     try {
@@ -529,10 +529,10 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showAppAlert("Announcement deleted successfully!");
+        showAppAlert("Post deleted successfully!");
     } catch (error) {
-        console.error("Error deleting announcement:", error);
-        await showAppAlert("Failed to delete announcement: " + error.message);
+        console.error("Error deleting post:", error);
+        await showAppAlert("Something went wrong while deleting this post. Please try again.");
     }
 }
 

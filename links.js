@@ -46,6 +46,7 @@ let isEditingCategory = false;
 
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage = document.getElementById('noResourcesMessage');
+const noResourcesMessageAdmin = document.getElementById('noResourcesMessageAdmin');
 const addCategoryButton = document.getElementById('add-category-button');
 const categoryCreationModal = document.getElementById('category-creation-modal');
 const categoryOverlay= document.getElementById('popup-overlay');
@@ -184,7 +185,7 @@ document.getElementById('post-category-button').addEventListener('click', async 
     }
 
     try {
-        await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
+        const docRef = await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
             title, links: [], order: categoriesCache.length,
             createdAt: serverTimestamp(),
             createdByUid: currentUser.uid,
@@ -193,11 +194,11 @@ document.getElementById('post-category-button').addEventListener('click', async 
         });
         hideCategoryModal();
         await fetchAndDisplayCategories();
+        requestAnimationFrame(() => scrollToCategory(docRef.id));
     } catch (e) {
         await showAppAlert("Failed to create category: " + e.message);
     }
 });
-
 
 async function fetchCategoryData() {
     const snap = await getDocs(
@@ -220,10 +221,12 @@ function renderAllCategories(skipAnimation = false) {
 
     if (visibleCategories.length === 0) {
         noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
+        noResourcesMessageAdmin.style.display = isAdmin() ? 'block' : 'none';
         resourcesContainer.style.marginTop = '0px';
         return;
     }
     noResourcesMessage.style.display = 'none';
+    noResourcesMessageAdmin.style.display = 'none';
     resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
     visibleCategories.forEach((cat, i) => {
         const el = createCategoryElement(cat);
@@ -419,6 +422,7 @@ function openEditingCard(category, existingCard) {
         if (!titleChanged && !linksChanged) {
             editCard.replaceWith(existingCard);
             isEditingCategory = false;
+            requestAnimationFrame(() => scrollToCategory(category.id));
             return;
         }
 
@@ -429,6 +433,7 @@ function openEditingCard(category, existingCard) {
             });
             isEditingCategory = false;
             await fetchAndDisplayCategories();
+            requestAnimationFrame(() => scrollToCategory(category.id));
         } catch (e) {
             await showAppAlert("Failed to save: " + e.message);
         }
@@ -611,13 +616,16 @@ document.getElementById('save-link-button').addEventListener('click', async () =
         return;
     }
 
+    const savedCategoryId = activeLinkCategoryId;
+
     try {
-        const sectionRef  = doc(db, "clubs", clubId, "resourceSections", activeLinkCategoryId);
+        const sectionRef  = doc(db, "clubs", clubId, "resourceSections", savedCategoryId);
         const sectionSnap = await getDoc(sectionRef);
         const existing    = sectionSnap.data().links || [];
         await updateDoc(sectionRef, { links: [...existing, { title, url }] });
         hideAddLinkModal();
         await fetchAndDisplayCategories();
+        requestAnimationFrame(() => scrollToCategory(savedCategoryId));
     } catch (e) {
         await showAppAlert("Failed to save link: " + e.message);
     }
@@ -668,3 +676,16 @@ categoryOverlay.addEventListener('click', (e) => {
         hideAddLinkModal();
     }
 });
+
+
+function scrollToCategory(categoryId) {
+    const card = resourcesContainer.querySelector(`.category[data-id="${categoryId}"]`);
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+    if (!isFullyVisible) {
+        window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
+    }
+}

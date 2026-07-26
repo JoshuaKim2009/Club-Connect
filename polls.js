@@ -216,10 +216,10 @@ function _createPollEditingCardElement() {
     card.className = 'poll-card editing-poll-card';
 
     card.innerHTML = `
-        <h3>CREATE POLL</h3>
+        <h3>NEW POLL</h3>
         <div class="poll-section-box">
-            <label style="font-size:20px;margin-bottom:6px;">Title</label>
-            <textarea class="poll-option-input poll-title-input-inline" placeholder="What is the title of your poll?" rows="1"></textarea>
+            <label style="font-size:20px;margin-bottom:6px;">Question</label>
+            <textarea class="poll-option-input poll-title-input-inline" placeholder="Ask a question" rows="1"></textarea>
         </div>
 
         <div class="poll-options-selection">

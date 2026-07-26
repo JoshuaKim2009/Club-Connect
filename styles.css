@@ -2032,12 +2032,38 @@ input[type="checkbox"]:checked {
   padding: 0;
 }
 
-#noAnnouncementsMessage {
+.empty-state-card {
+  border: 2px solid black;
+  border-radius: 10px;
+  background: linear-gradient(#ffffff, #f7f7f7);
+  box-shadow: 0px 2px 0px #000000;
+  padding: 20px 16px;
+  text-align: center;
+  width: calc(85% - 16px);
+  max-width: 584px;
+  margin: 20px auto;
+}
 
-    text-align: center;
-    padding: 20px; 
-    font-style: italic; 
-    color: #ffffff; 
+.empty-state-card i {
+  font-size: 30px;
+  color: var(--bg-accent);
+}
+
+.empty-state-title {
+  font-family: var(--primary-font-family);
+  font-size: 26px;
+  color: var(--bg-accent);
+  margin: 8px 0 2px;
+  font-style: italic;
+  text-wrap: balance;
+}
+
+.empty-state-subtitle {
+  font-family: var(--primary-font-family);
+  font-size: 18px;
+  color: var(--bg-accent);
+  margin: 0;
+  text-wrap: pretty;
 }
 
 .announcement-card {
@@ -2058,8 +2084,8 @@ input[type="checkbox"]:checked {
 
 .announcement-card-actions .delete-btn .button-icon,
 .announcement-card-actions .edit-btn .button-icon {
-    display: inline-block; 
-    margin-left: 8px; 
+  display: inline-block; 
+  margin-left: 8px; 
 }
 
 
@@ -2906,6 +2932,7 @@ input[type="checkbox"]:checked {
   padding: 12px 8px 10px;
   gap: 4px;
 }
+
 .comm-grid i {
   font-size: 20px;
   color: #222;
@@ -2925,6 +2952,40 @@ input[type="checkbox"]:checked {
   line-height: 1.1;
   text-align: center;
   pointer-events: none;
+}
+
+.community-icon {
+  font-size: 1em;
+  margin-right: 4px;
+}
+
+@media (max-width: 750px) {
+  .community-lbl {
+    font-family: var(--primary-font-family);
+    font-size: 20px;
+    line-height: 1.1;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .community-icon {
+    font-size: 1.1em;
+    margin-right: 0;
+  }
+
+  .comm-grid #publicAnnouncementsButton,
+  .comm-grid #collaborationsButton {
+    width: 100%;
+    max-width: none;
+    min-height: 84px;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px 10px;
+    gap: 4px;
+  }
 }
 
 #adminActionsSection > #links-button,

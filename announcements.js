@@ -136,6 +136,7 @@ onAuthStateChanged(auth, async (user) => {
 
         if (addAnnouncementButton) {
             addAnnouncementButton.onclick = addNewAnnouncementEditingCard;
+            addAnnouncementButton.style.display = (currentUserRole === 'manager' || currentUserRole === 'admin') ? 'block' : 'none';
         }
 
         await renderAnnouncementPage();
@@ -178,7 +179,7 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
     const id = cardDiv.dataset.editId;
 
     cardDiv.innerHTML = `
-        <h3>${isNewAnnouncement ? 'CREATE ANNOUNCEMENT' : 'EDIT ANNOUNCEMENT'}</h3>
+        <h3>${isNewAnnouncement ? 'POST ANNOUNCEMENT' : 'EDIT ANNOUNCEMENT'}</h3>
         <div class="field-section">
             <label for="edit-title-${id}">Title</label>
             <input type="text" id="edit-title-${id}" value="${initialData.title || ''}" required>
@@ -313,7 +314,7 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     } catch (error) {
         console.error("Error saving announcement:", error);
         isEditingAnnouncement = false;
-        await showAppAlert("Failed to save announcement: " + error.message);
+        await showAppAlert("Something went wrong while saving this announcement. Please try again.");
     }
 }
 
@@ -538,7 +539,7 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         return;
     }
 
-    const confirmed = await showAppConfirm(`Are you sure you want to delete the announcement "${announcementTitle}"? This action cannot be undone.`);
+    const confirmed = await showAppConfirm(`Are you sure you want to delete this announcement? This action cannot be undone.`);
     if (!confirmed) {
         return;
     }
@@ -564,7 +565,7 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         showAppAlert("Announcement deleted successfully!");
     } catch (error) {
         console.error("Error deleting announcement:", error);
-        await showAppAlert("Oops, something went wrong while deleting the announcement.");
+        await showAppAlert("Something went wrong while deleting this announcement.");
     }
 }
 
