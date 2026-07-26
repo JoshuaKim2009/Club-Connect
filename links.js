@@ -445,7 +445,21 @@ function openEditingCard(category, existingCard) {
         try {
             await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
             isEditingCategory = false;
-            await fetchAndDisplayCategories();
+            await fetchCategoryData();
+
+            const visibleCategories = isAdmin()
+                ? categoriesCache
+                : categoriesCache.filter(cat => cat.links.length > 0);
+
+            if (visibleCategories.length === 0) {
+                resourcesContainer.innerHTML = '';
+                noResourcesMessage.style.display = 'none';
+                noResourcesMessageAdmin.style.display = 'none';
+                resourcesContainer.style.marginTop = '0px';
+            } else {
+                renderAllCategories(true);
+            }
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (e) {
             await showAppAlert("Failed to delete: " + e.message);
@@ -682,8 +696,9 @@ function scrollToCategory(categoryId) {
     const card = resourcesContainer.querySelector(`.category[data-id="${categoryId}"]`);
     if (!card) return;
 
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
     const rect = card.getBoundingClientRect();
-    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const isFullyVisible = rect.top >= headerHeight && rect.bottom <= window.innerHeight;
 
     if (!isFullyVisible) {
         window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });

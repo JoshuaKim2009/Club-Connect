@@ -161,8 +161,9 @@ function scrollToAnnouncement(announcementId) {
     const card = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
     if (!card) return;
 
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
     const rect = card.getBoundingClientRect();
-    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const isFullyVisible = rect.top >= headerHeight && rect.bottom <= window.innerHeight;
 
     if (!isFullyVisible) {
         window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
@@ -199,7 +200,7 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
     cardDiv.querySelector('.cancel-btn').addEventListener('click', () => {
         isEditingAnnouncement = false;
         if (!isNewAnnouncement) {
-            const cached = allAnnouncements.find(a => a.id === announcementIdToUpdate);
+            const cached = currentPageAnnouncements.find(a => a.id === announcementIdToUpdate);
             if (cached) {
                 const restoredCard = createAnnouncementDisplayCard(cached, cached.id);
                 cardDiv.replaceWith(restoredCard);
@@ -251,7 +252,7 @@ async function createAnnouncement(clubId, title, content, user) {
   	const newSnap = await getDoc(announcementRef);
 	// returns all the doc data and the firestore doc ID. This is used to display the new announcement to the user without having to do another database read 
     return {
-        ...newSnap.data(), 
+        ...newSnap.data({ serverTimestamps: 'estimate' }), 
         id: announcementRef.id 
     };
 }
@@ -266,9 +267,9 @@ async function updateAnnouncement(clubId, announcementId, title, content) {
   	const announcementSnap = await getDoc(announcementRef); 
     // returns object with the newly updated document fields and its firestore doc ID to display the updated announcement without having to do another read
     return { 
-        ...announcementSnap.data(), 
+        ...announcementSnap.data({ serverTimestamps: 'estimate' }), 
         id: announcementSnap.id 
-  	}; 
+  	};
 }
 
 
@@ -293,23 +294,41 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             isEditingAnnouncement = false;
             const restoredCard = createAnnouncementDisplayCard(updatedData, existingAnnouncementId);
             cardDiv.replaceWith(restoredCard);
-            showAppAlert("Announcement updated successfully!");
+            // showAppAlert("Announcement updated successfully!");
             requestAnimationFrame(() => scrollToAnnouncement(existingAnnouncementId));
 
         } else {
-            await createAnnouncement(clubId, title, content, currentUser);
+            const newData = await createAnnouncement(clubId, title, content, currentUser);
 
             isEditingAnnouncement = false;
-            cardDiv.remove();
             if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
 
-            cursors = [null];
-            await refreshCount();
-            await renderPage(1, true);
+            const newCard = createAnnouncementDisplayCard(newData, newData.id);
+            cardDiv.replaceWith(newCard);
+            animateCardIn(newCard, 0);
 
-            showAppAlert("New announcement added successfully!");
-            requestAnimationFrame(() => scrollToAnnouncement(currentPageAnnouncements[0]?.id));
+            currentPageAnnouncements.unshift(newData);
+
+            if (currentPageAnnouncements.length > PAGE_SIZE) {
+                currentPageAnnouncements.pop();
+                const allCards = announcementsContainer.querySelectorAll('.announcement-card');
+                const lastCard = allCards[allCards.length - 1];
+                if (lastCard) lastCard.remove();
+            }
+
+            requestAnimationFrame(() => scrollToAnnouncement(newData.id));
             updateLastSeenAnnouncements();
+
+            cursors = [null];
+            hidePagination();
+            refreshCount().then(async () => {
+                await fetchPage(1);
+                if (totalPages > 1) {
+                    renderPaginationButtons(currentPage, totalPages);
+                } else {
+                    hidePagination();
+                }
+            });
         }
     } catch (error) {
         console.error("Error saving announcement:", error);
@@ -562,7 +581,7 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showAppAlert("Announcement deleted successfully!");
+        // showAppAlert("Announcement deleted successfully!");
     } catch (error) {
         console.error("Error deleting announcement:", error);
         await showAppAlert("Something went wrong while deleting this announcement.");

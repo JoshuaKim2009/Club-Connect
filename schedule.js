@@ -1359,8 +1359,9 @@ function scrollToEditedEvent(eventId, occurrenceDateStr = null) {
 
     if (!card) return;
 
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
     const rect = card.getBoundingClientRect();
-    const isFullyVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
+    const isFullyVisible = (rect.top >= headerHeight && rect.bottom <= window.innerHeight);
 
     if (!isFullyVisible) {
         const targetY = rect.top + window.scrollY - 90;

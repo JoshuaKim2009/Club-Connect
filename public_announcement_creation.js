@@ -148,8 +148,9 @@ function scrollToAnnouncement(announcementId) {
     const card = announcementsContainer.querySelector(`.announcement-card[data-announcement-id="${announcementId}"]`);
     if (!card) return;
 
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
     const rect = card.getBoundingClientRect();
-    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const isFullyVisible = rect.top >= headerHeight && rect.bottom <= window.innerHeight;
 
     if (!isFullyVisible) {
         window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
@@ -237,7 +238,7 @@ async function createAnnouncement(clubId, title, content, user, schoolId, clubNa
     const annRef = await addDoc(annCollection, announcementData);
     const newSnap = await getDoc(annRef);
     return {
-        ...newSnap.data(),
+        ...newSnap.data({ serverTimestamps: 'estimate' }),
         id: annRef.id
     };
 }
@@ -247,7 +248,7 @@ async function updateAnnouncement(clubId, announcementId, title, content) {
     await updateDoc(annRef, { title, content });
     const annSnap = await getDoc(annRef);
     return {
-        ...annSnap.data(),
+        ...annSnap.data({ serverTimestamps: 'estimate' }),
         id: annSnap.id
     };
 }
@@ -271,27 +272,45 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             isEditingAnnouncement = false;
             const restoredCard = createAnnouncementDisplayCard(updatedData, existingAnnouncementId);
             cardDiv.replaceWith(restoredCard);
-            showAppAlert("Post updated successfully!");
+            // showAppAlert("Post updated successfully!");
             requestAnimationFrame(() => scrollToAnnouncement(existingAnnouncementId));
 
         } else {
-            await createAnnouncement(clubId, title, content, currentUser, currentSchoolId, currentClubName);
+            const newData = await createAnnouncement(clubId, title, content, currentUser, currentSchoolId, currentClubName);
 
             isEditingAnnouncement = false;
-            cardDiv.remove();
             if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
 
-            cursors = [null];
-            await refreshCount();
-            await renderPage(1, true);
+            const newCard = createAnnouncementDisplayCard(newData, newData.id);
+            cardDiv.replaceWith(newCard);
+            animateCardIn(newCard, 0);
 
-            showAppAlert("New post added successfully!");
-            requestAnimationFrame(() => scrollToAnnouncement(currentPageAnnouncements[0]?.id));
+            currentPageAnnouncements.unshift(newData);
+
+            if (currentPageAnnouncements.length > PAGE_SIZE) {
+                currentPageAnnouncements.pop();
+                const allCards = announcementsContainer.querySelectorAll('.announcement-card');
+                const lastCard = allCards[allCards.length - 1];
+                if (lastCard) lastCard.remove();
+            }
+
+            requestAnimationFrame(() => scrollToAnnouncement(newData.id));
+
+            cursors = [null];
+            hidePagination();
+            refreshCount().then(async () => {
+                await fetchPage(1);
+                if (totalPages > 1) {
+                    renderPaginationButtons(currentPage, totalPages);
+                } else {
+                    hidePagination();
+                }
+            });
         }
     } catch (error) {
         console.error("Error saving announcement:", error);
         isEditingAnnouncement = false;
-        await showAppAlert("Something went wrong while saving this post. Please try again.");
+        await showAppAlert("Something went wrong while saving this post.");
     }
 }
 
@@ -521,7 +540,6 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
 
         if (totalCount === 0) {
             announcementsContainer.innerHTML = '';
-            noAnnouncementsMessage.style.display = 'block';
             hidePagination();
         } else {
             const pageToShow = Math.min(currentPage, totalPages);
@@ -529,10 +547,10 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showAppAlert("Post deleted successfully!");
+        // showAppAlert("Post deleted successfully!");
     } catch (error) {
         console.error("Error deleting post:", error);
-        await showAppAlert("Something went wrong while deleting this post. Please try again.");
+        await showAppAlert("Something went wrong while deleting this post.");
     }
 }
 

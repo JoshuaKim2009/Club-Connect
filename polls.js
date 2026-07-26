@@ -37,6 +37,7 @@ let userName = "";
 let role = null;
 let currentUser = null;
 let pendingScrollToNew = false;
+let pendingEditingCardToRemove = null;
 let currentMemberUIDs = new Set();
 
 
@@ -264,9 +265,6 @@ function _createPollEditingCardElement() {
 
     // auto-resize on input
     card.querySelectorAll('.poll-option-input').forEach(autoResize);
-    card.addEventListener('input', (e) => {
-        if (e.target.classList.contains('poll-option-input')) autoResize(e.target);
-    });
 
     // visibility radio info text
     const visStrips = card.querySelectorAll('.vis-strip');
@@ -328,6 +326,7 @@ function _createPollEditingCardElement() {
 
         try {
             pendingScrollToNew = true;
+            pendingEditingCardToRemove = card;
             await addDoc(collection(db, "clubs", clubId, "polls"), {
                 title, options, visibility,
                 createdAt:     serverTimestamp(),
@@ -336,9 +335,9 @@ function _createPollEditingCardElement() {
                 clubId, isActive: true
             });
             updateLastSeenPolls();
-            card.remove();
-            showAppAlert("Poll created successfully!");
+            // showAppAlert("Poll created successfully!");
         } catch (err) {
+            pendingEditingCardToRemove = null;
             pendingScrollToNew = false;
             console.error("Error creating poll:", err);
             await showAppAlert("Failed to create poll: " + err.message);
@@ -388,7 +387,7 @@ function setupRealtimePollsListener() {
         if (isInitialSnapshot) hideLoadingScreen();
 
         querySnapshot.docChanges().forEach((change) => {
-            const pollData = change.doc.data();
+            const pollData = change.doc.data({ serverTimestamps: 'estimate' });
             const pollId = change.doc.id;
 
             if (change.type === "added" || change.type === "modified") {
@@ -403,13 +402,15 @@ function setupRealtimePollsListener() {
                     pollsContainer.appendChild(pollCard);
                     animateCardIn(pollCard, pollsContainer.children.length - 1);
                 } else {
+                    if (pendingEditingCardToRemove) {
+                        pendingEditingCardToRemove.remove();
+                        pendingEditingCardToRemove = null;
+                    }
                     pollsContainer.insertBefore(pollCard, pollsContainer.firstChild);
                     animateCardIn(pollCard, 0);
                     if (pendingScrollToNew) {
                         pendingScrollToNew = false;
-                        requestAnimationFrame(() => {
-                            scrollToPoll(pollId);
-                        });
+                        scrollToPoll(pollId);
                     }
                 }
             } else if (change.type === "modified") {
@@ -423,15 +424,19 @@ function setupRealtimePollsListener() {
 
         const noPollsMessage = document.getElementById('no-polls-message');
         const isAdmin = role === 'manager' || role === 'admin';
-        if (pollsContainer.children.length === 0) {
-            if (role === 'member' && noPollsMessage) {
-                noPollsMessage.textContent = 'NO POLLS YET';
-                noPollsMessage.style.display = 'block';
+        const isEmpty = pollsContainer.children.length === 0;
+
+        const desiredMargin = isEmpty ? '0px' : (isAdmin ? '0px' : '-45px');
+        if (pollsContainer.style.marginTop !== desiredMargin) {
+            pollsContainer.style.marginTop = desiredMargin;
+        }
+
+        if (noPollsMessage) {
+            const desiredDisplay = (isEmpty && role === 'member') ? 'block' : 'none';
+            if (desiredDisplay === 'block') noPollsMessage.textContent = 'NO POLLS YET';
+            if (noPollsMessage.style.display !== desiredDisplay) {
+                noPollsMessage.style.display = desiredDisplay;
             }
-            pollsContainer.style.marginTop = '0px';
-        } else {
-            if (noPollsMessage) noPollsMessage.style.display = 'none';
-            pollsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
         }
 
         if (isInitialSnapshot) updateLastSeenPolls();
@@ -440,7 +445,7 @@ function setupRealtimePollsListener() {
 }
 
 
-
+//redraws the card with the vote the user chose before Firestore confirms so it feels instant instead of slow
 function applyOptimisticVote(card, pollData, optionIndex, userUid) {
     const options = pollData.options.map(opt => ({
         ...opt,
@@ -729,7 +734,7 @@ async function deletePoll(pollId) {
         const pollRef = doc(db, "clubs", clubId, "polls", pollId);
         await deleteDoc(pollRef);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showAppAlert("Poll deleted successfully!");
+        // showAppAlert("Poll deleted successfully!");
     } catch (error) {
         console.error("Error deleting poll:", error);
         await showAppAlert("Failed to delete poll: " + error.message);
@@ -788,9 +793,7 @@ async function editPoll(pollId, pollData) {
         try {
             await updateDoc(doc(db, "clubs", clubId, "polls", pollId), { visibility: selected });
             editCard.replaceWith(existingCard);
-            requestAnimationFrame(() => {
-                scrollToPoll(pollId);
-            });
+            scrollToPoll(pollId);
         } catch (err) {
             await showAppAlert("Failed to update poll: " + err.message);
         }
@@ -825,13 +828,20 @@ async function updateLastSeenPolls() {
 function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
     card.style.transform = 'translateY(16px)';
-    card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
-    setTimeout(() => {
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-    }, index * 80);
-}
+    card.style.willChange = 'opacity, transform';
 
+    void card.offsetWidth;
+
+    const delay = index * 60;
+    card.style.transition = `opacity 0.28s ease-out ${delay}ms, transform 0.28s ease-out ${delay}ms`;
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+
+    card.addEventListener('transitionend', () => {
+        card.style.willChange = '';
+        card.style.transition = '';
+    }, { once: true });
+}
 
 
 function showContainerError(container, message, showRetry = false) {
@@ -851,19 +861,29 @@ function showContainerError(container, message, showRetry = false) {
 
 
 function getValidVotes(votes) {
+    // ignores votes from users who left the club
     return votes.filter(uid => currentMemberUIDs.has(uid));
 }
 
 
+// Gets position from top of document using offsetTop which ignores CSS transforms so I get the card's final position even mid animation
+function documentTopOf(el) {
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) y += node.offsetTop;
+    return y;
+}
 
 function scrollToPoll(pollId) {
     const card = document.querySelector(`.poll-card[data-poll-id="${pollId}"]`);
     if (!card) return;
 
-    const rect = card.getBoundingClientRect();
-    const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
+    const top = documentTopOf(card);
+    const bottom = top + card.offsetHeight;
 
-    if (!isFullyVisible) {
-        window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
-    }
+    const viewTop = window.pageYOffset + headerHeight;
+    const viewBottom = window.pageYOffset + window.innerHeight;
+    if (top >= viewTop && bottom <= viewBottom) return;
+
+    window.scrollTo({ top: top - headerHeight - 12, behavior: 'smooth' });
 }
