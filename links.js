@@ -48,7 +48,6 @@ const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage = document.getElementById('noResourcesMessage');
 const noResourcesMessageAdmin = document.getElementById('noResourcesMessageAdmin');
 const addCategoryButton = document.getElementById('add-category-button');
-const categoryCreationModal = document.getElementById('category-creation-modal');
 const categoryOverlay= document.getElementById('popup-overlay');
 const buttonRow = document.getElementById('button-row');
 
@@ -155,50 +154,20 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function handleAddCategory() {
-    if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
-    const titleInput = document.getElementById('category-title-input');
-    titleInput.classList.remove('input-error');
-    showOverlay();
-    categoryCreationModal.style.display = 'flex';
+    if (reorderMode) {
+        showAppAlert("Finish reordering first!");
+        return; 
+    }
+    if (isEditingCategory) {
+        showAppAlert("Please finish editing before adding a new folder."); 
+        return; 
+    }
+    noResourcesMessage.style.display = 'none';
+    noResourcesMessageAdmin.style.display = 'none';
+    resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
+    openEditingCard(null, null);
 }
 
-function hideCategoryModal() {
-    categoryCreationModal.style.display = 'none';
-    hideOverlay();
-    const titleInput = document.getElementById('category-title-input');
-    titleInput.value = '';
-    titleInput.classList.remove('input-error');
-}
-
-document.getElementById('cancel-category-button').addEventListener('click', hideCategoryModal);
-
-document.getElementById('post-category-button').addEventListener('click', async () => {
-    const titleInput = document.getElementById('category-title-input');
-    const title = titleInput.value.trim();
-
-    if (!title) {
-        titleInput.classList.remove('input-error');
-        void titleInput.offsetWidth;
-        titleInput.classList.add('input-error');
-        titleInput.focus();
-        return;
-    }
-
-    try {
-        const docRef = await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
-            title, links: [], order: categoriesCache.length,
-            createdAt: serverTimestamp(),
-            createdByUid: currentUser.uid,
-            createdByName: currentUser.displayName || "Anonymous",
-            clubId
-        });
-        hideCategoryModal();
-        await fetchAndDisplayCategories();
-        requestAnimationFrame(() => scrollToCategory(docRef.id));
-    } catch (e) {
-        await showAppAlert("Failed to create category: " + e.message);
-    }
-});
 
 async function fetchCategoryData() {
     const snap = await getDocs(
@@ -296,38 +265,49 @@ function createCategoryElement(category) {
                 resourcesContainer.classList.remove('reorder-mode');
                 const updates = [];
                 resourcesContainer.querySelectorAll('.category, .editing-category-card').forEach((el, i) => {
+                    if (!el.dataset.id) return;
                     updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", el.dataset.id), { order: i }));
                 });
                 await Promise.all(updates);
             }
             openEditingCard(category, div);
         });
-        div.querySelector('.add-link-button').addEventListener('click', () => openAddLinkModal(category));
+        div.querySelector('.add-link-button').addEventListener('click', () => {
+            if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
+            openEditingCard(category, div, true);
+        });
     }
     return div;
 }
 
 
 
-function openEditingCard(category, existingCard) {
+function openEditingCard(category, existingCard, startWithNewLink = false) {
     if (isEditingCategory) {
-        showAppAlert("Please finish editing before starting another edit."); 
-        return; 
+        showAppAlert("Please finish editing before starting another edit.");
+        return;
     }
     isEditingCategory = true;
-    const editingCategory = { ...category, links: category.links.map(l => ({ ...l })) };
+
+    const isNew = !category;
+    const domId = isNew ? `new-${Date.now()}` : category.id;
+    const editingCategory = {
+        title: isNew ? '' : category.title,
+        links: isNew ? [] : category.links.map(l => ({ ...l }))
+    };
+    if (startWithNewLink) editingCategory.links.push({ title: '', url: '' });
 
     const editCard = document.createElement('div');
     editCard.className = 'editing-category-card';
-    editCard.dataset.id = category.id;
+    if (!isNew) editCard.dataset.id = category.id;
     editCard.innerHTML = `
-        <div class="edit-card-section" id="title-section-${category.id}">
-            <span class="edit-card-section-label">Category Name</span>
-            <textarea class="edit-card-title-input" rows="1">${category.title}</textarea>
+        <div class="edit-card-section" id="title-section-${domId}">
+            <span class="edit-card-section-label">Folder Name</span>
+            <textarea class="edit-card-title-input" rows="1" placeholder="Give this folder a title">${editingCategory.title}</textarea>
         </div>
     `;
 
-    const titleSection = editCard.querySelector(`#title-section-${category.id}`);
+    const titleSection = editCard.querySelector(`#title-section-${domId}`);
     const titleInput = editCard.querySelector('.edit-card-title-input');
 
     let linksSection = null;
@@ -391,14 +371,15 @@ function openEditingCard(category, existingCard) {
 
     const doneBtn = document.createElement('button');
     doneBtn.className = 'fancy-button edit-card-save-btn';
-    doneBtn.innerHTML = 'DONE';
+    doneBtn.innerHTML = isNew ? 'CREATE' : 'DONE';
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'fancy-button edit-card-delete-btn';
-    deleteBtn.innerHTML = 'DELETE';
+    // new folders get CANCEL because there is nothing to delete yet
+    const secondaryBtn = document.createElement('button');
+    secondaryBtn.className = isNew ? 'fancy-button edit-card-cancel-btn' : 'fancy-button edit-card-delete-btn';
+    secondaryBtn.innerHTML = isNew ? 'CANCEL' : 'DELETE';
 
     actionsRow.appendChild(doneBtn);
-    actionsRow.appendChild(deleteBtn);
+    actionsRow.appendChild(secondaryBtn);
     editCard.appendChild(actionsRow);
 
     buildLinksSection();
@@ -414,6 +395,26 @@ function openEditingCard(category, existingCard) {
             const u = row.querySelector('.edit-link-url-input').value.trim();
             if (t && u) updatedLinks.push({ title: t, url: u });
         });
+
+        if (isNew) {
+            try {
+                const docRef = await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
+                    title: newTitle,
+                    links: updatedLinks,
+                    order: categoriesCache.length,
+                    createdAt: serverTimestamp(),
+                    createdByUid: currentUser.uid,
+                    createdByName: currentUser.displayName || "Anonymous",
+                    clubId
+                });
+                isEditingCategory = false;
+                await fetchAndDisplayCategories();
+                requestAnimationFrame(() => scrollToCategory(docRef.id));
+            } catch (e) {
+                await showAppAlert("Failed to create folder: " + e.message);
+            }
+            return;
+        }
 
         const linksChanged = updatedLinks.length !== category.links.length ||
             updatedLinks.some((l, i) => l.title !== category.links[i].title || l.url !== category.links[i].url);
@@ -439,8 +440,16 @@ function openEditingCard(category, existingCard) {
         }
     });
 
-    deleteBtn.addEventListener('click', async () => {
-        const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" category?`);
+    secondaryBtn.addEventListener('click', async () => {
+        if (isNew) {
+            // rebuilds from cache, which drops the card and restores the empty state if needed
+            isEditingCategory = false;
+            renderAllCategories(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" folder?`);
         if (!confirmed) return;
         try {
             await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
@@ -466,9 +475,18 @@ function openEditingCard(category, existingCard) {
         }
     });
 
-    existingCard.replaceWith(editCard);
-}
+    if (isNew) {
+        resourcesContainer.appendChild(editCard);
+        requestAnimationFrame(() => editCard.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    } else {
+        existingCard.replaceWith(editCard);
+    }
 
+    if (startWithNewLink && linksSection) {
+        const rows = linksSection.querySelectorAll('.edit-link-row');
+        rows[rows.length - 1]?.querySelector('.edit-link-title-input')?.focus();
+    }
+}
 
 
 function buildLinkRow(link, index, editingCategory, rebuildLinks) {
@@ -576,6 +594,7 @@ function setupReorder() {
             resourcesContainer.classList.remove('reorder-mode');
             const updates = [];
             resourcesContainer.querySelectorAll('.category, .editing-category-card').forEach((el, i) => {
+                if (!el.dataset.id) return;
                 updates.push(updateDoc(doc(db, "clubs", clubId, "resourceSections", el.dataset.id), { order: i }));
             });
             await Promise.all(updates);
@@ -646,7 +665,6 @@ document.getElementById('save-link-button').addEventListener('click', async () =
 });
 
 [
-  document.getElementById('category-title-input'),
   document.getElementById('link-title-input'),
   document.getElementById('link-url-input')
 ].forEach(input => {
@@ -683,12 +701,7 @@ function showContainerError(container, message, showRetry = false, topMargin = '
 
 categoryOverlay.addEventListener('click', (e) => {
     if (e.target !== categoryOverlay) return;
-
-    if (categoryCreationModal.style.display === 'flex') {
-        hideCategoryModal();
-    } else if (addLinkModal.style.display === 'flex') {
-        hideAddLinkModal();
-    }
+    if (addLinkModal.style.display === 'flex') hideAddLinkModal();
 });
 
 

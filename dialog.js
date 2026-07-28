@@ -127,9 +127,11 @@ export async function showAppConfirm(message, title = 'Confirm Action') {
         noBtn.addEventListener("click", handleNo);
 
         // A small delay to ensure DOM is ready and CSS applied
-        setTimeout(() => {
-            panel.style.display = 'flex';
-            overlay.style.display = 'block';
-        }, 50);
+        // setTimeout(() => {
+        //     panel.style.display = 'flex';
+        //     overlay.style.display = 'block';
+        // }, 50);
+        panel.style.display = 'flex';
+        overlay.style.display = 'block';
     });
 }
