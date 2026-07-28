@@ -169,19 +169,29 @@
     pointer-events: none;
 }
 
-.edit-category-button {
+.category-header-btns {
     position: absolute;
-    right: 8px;
+    right: 2px;
     top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.edit-category-button,
+.delete-category-button {
     background: transparent;
     border: none;
+    box-shadow: none;
     color: #888;
     font-size: 1em;
     cursor: pointer;
     padding: 4px 6px;
+    line-height: 1;
 }
 
-.edit-category-button:hover {
+.edit-category-button:hover,
+.delete-category-button:hover {
     color: #333;
 }
 

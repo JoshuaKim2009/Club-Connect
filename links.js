@@ -244,7 +244,12 @@ function createCategoryElement(category) {
     div.innerHTML = `
         <div class="category-header">
             <h3>${category.title}</h3>
-            ${isAdmin() ? `<button class="edit-category-button" title="Edit category"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+            ${isAdmin() ? `
+                <div class="category-header-btns">
+                    <button class="edit-category-button" title="Edit folder"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="delete-category-button" title="Delete folder"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            ` : ''}
         </div>
         <div class="links-container" id="links-${category.id}">
             ${category.links.map(link => {
@@ -276,11 +281,41 @@ function createCategoryElement(category) {
             if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
             openEditingCard(category, div, true);
         });
+        div.querySelector('.delete-category-button').addEventListener('click', () => {
+            if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
+            if (isEditingCategory) { showAppAlert("Please finish editing first."); return; }
+            deleteCategory(category);
+        });
     }
     return div;
 }
 
+async function deleteCategory(category) {
+    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" folder?`);
+    if (!confirmed) return;
+    try {
+        await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
+        isEditingCategory = false;
+        await fetchCategoryData();
 
+        const visibleCategories = isAdmin()
+            ? categoriesCache
+            : categoriesCache.filter(cat => cat.links.length > 0);
+
+        if (visibleCategories.length === 0) {
+            resourcesContainer.innerHTML = '';
+            noResourcesMessage.style.display = 'none';
+            noResourcesMessageAdmin.style.display = 'none';
+            resourcesContainer.style.marginTop = '0px';
+        } else {
+            renderAllCategories(true);
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+        await showAppAlert("Failed to delete: " + e.message);
+    }
+}
 
 function openEditingCard(category, existingCard, startWithNewLink = false) {
     if (isEditingCategory) {
@@ -371,12 +406,11 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
 
     const doneBtn = document.createElement('button');
     doneBtn.className = 'fancy-button edit-card-save-btn';
-    doneBtn.innerHTML = isNew ? 'CREATE' : 'DONE';
+    doneBtn.innerHTML = isNew ? 'CREATE' : 'SAVE';
 
-    // new folders get CANCEL because there is nothing to delete yet
     const secondaryBtn = document.createElement('button');
-    secondaryBtn.className = isNew ? 'fancy-button edit-card-cancel-btn' : 'fancy-button edit-card-delete-btn';
-    secondaryBtn.innerHTML = isNew ? 'CANCEL' : 'DELETE';
+    secondaryBtn.className = 'fancy-button edit-card-cancel-btn';
+    secondaryBtn.innerHTML = 'CANCEL';
 
     actionsRow.appendChild(doneBtn);
     actionsRow.appendChild(secondaryBtn);
@@ -440,38 +474,14 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
         }
     });
 
-    secondaryBtn.addEventListener('click', async () => {
+    secondaryBtn.addEventListener('click', () => {
+        isEditingCategory = false;
         if (isNew) {
-            // rebuilds from cache, which drops the card and restores the empty state if needed
-            isEditingCategory = false;
             renderAllCategories(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-
-        const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" folder?`);
-        if (!confirmed) return;
-        try {
-            await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
-            isEditingCategory = false;
-            await fetchCategoryData();
-
-            const visibleCategories = isAdmin()
-                ? categoriesCache
-                : categoriesCache.filter(cat => cat.links.length > 0);
-
-            if (visibleCategories.length === 0) {
-                resourcesContainer.innerHTML = '';
-                noResourcesMessage.style.display = 'none';
-                noResourcesMessageAdmin.style.display = 'none';
-                resourcesContainer.style.marginTop = '0px';
-            } else {
-                renderAllCategories(true);
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (e) {
-            await showAppAlert("Failed to delete: " + e.message);
+        } else {
+            editCard.replaceWith(existingCard);
+            requestAnimationFrame(() => scrollToCategory(category.id));
         }
     });
 
