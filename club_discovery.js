@@ -152,7 +152,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     }
     const club = "";
 
-    clubsGrid.innerHTML = '<p class="no-results">SEARCHING <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> </p>';
+    // clubsGrid.innerHTML = '<p class="no-results">SEARCHING <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> </p>';
 
     if (!state) {
         clubsGrid.innerHTML = "";
@@ -239,11 +239,28 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
             );
         });
 
+        requestAnimationFrame(() => scrollToResults());
+
     } catch (error) {
         await showAppAlert("Error searching clubs. Please try again.");
     }
 });
 
+function documentTopOf(el) {
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) y += node.offsetTop;
+    return y;
+}
+
+function scrollToResults() {
+    const clubsGrid = document.getElementById("clubsGrid");
+    if (!clubsGrid || !clubsGrid.firstElementChild) return;
+
+    const headerHeight = document.querySelector('.chat-header').offsetHeight;
+    const top = documentTopOf(clubsGrid);
+
+    window.scrollTo({ top: top - headerHeight + 100, behavior: 'smooth' });
+}
 
 function createClubCard(clubId, clubName, schoolName, state, countyName, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor, clubLeader, schoolEmail, roomNumber, meetingSchedule) {
     const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);

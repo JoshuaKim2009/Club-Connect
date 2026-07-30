@@ -105,7 +105,7 @@
     position: relative;
 }
 
-.club-card-header::after {
+/* .club-card-header::after {
     content: '';
     position: absolute;
     left: 0;
@@ -114,7 +114,7 @@
     height: 10px;
     background: linear-gradient(to bottom, rgba(128,128,128,0.1), transparent);
     pointer-events: none;
-}
+} */
 
 .club-card-name {
     font-size: 1.9em;
@@ -163,7 +163,7 @@
     position: relative;
 }
 
-.club-card-footer::before {
+/* .club-card-footer::before {
     content: '';
     position: absolute;
     left: 0;
@@ -172,7 +172,7 @@
     height: 10px;
     background: linear-gradient(to top, rgba(128,128,128,0.03), transparent);
     pointer-events: none;
-}
+} */
 
 
 .club-join-wrapper {
@@ -186,8 +186,21 @@
 .club-join-btn {
     font-size: 24px;
     padding: 3px 22px;
-    width: 220px;
+    min-width: 170px;
+    /* box-shadow: none; */
 }
+/* 
+.club-join-btn:hover {
+  transform: translateY(0px) !important;
+  box-shadow: none !important;
+  transform: scale(1.02)  !important;
+}
+
+.club-join-btn:active {
+  transform: translateY(0px) !important;
+  box-shadow: none !important;
+  transform: scale(0.98)  !important;
+} */
 
 .club-join-btn:disabled {
     opacity: 0.5;
@@ -236,7 +249,7 @@
     position: relative;
 }
 
-.club-more-btn::after {
+/* .club-more-btn::after {
     content: '';
     position: absolute;
     left: 0;
@@ -245,7 +258,7 @@
     height: 10px;
     background: linear-gradient(to bottom, transparent, rgba(128,128,128,0.03));
     pointer-events: none;
-}
+} */
 
 .club-more-btn i {
     transition: transform 0.2s;
