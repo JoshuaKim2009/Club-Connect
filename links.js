@@ -36,6 +36,15 @@ const db   = initializeFirestore(app, {
 });
 const auth = getAuth(app);
 
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 let currentUser = null;
 let clubId=null;
 let currentUserRole = null;
@@ -43,6 +52,7 @@ let categoriesCache = [];
 let sortableInstance = null;
 let reorderMode = false;
 let isEditingCategory = false;
+let cameFromEmptyStateCard = false;
 
 const resourcesContainer = document.getElementById('resourcesContainer');
 const noResourcesMessage = document.getElementById('noResourcesMessage');
@@ -138,7 +148,6 @@ onAuthStateChanged(auth, async (user) => {
         }
         await fetchCategoryData();
         if (isAdmin()) {
-            addCategoryButton.style.display = 'block';
             addCategoryButton.addEventListener('click', handleAddCategory);
             const reorderButton = document.getElementById('reorder-button');
             reorderButton.style.display = categoriesCache.length >= 2 ? 'block' : 'none';
@@ -156,18 +165,21 @@ onAuthStateChanged(auth, async (user) => {
 function handleAddCategory() {
     if (reorderMode) {
         showAppAlert("Finish reordering first!");
+        cameFromEmptyStateCard = false;
         return; 
     }
     if (isEditingCategory) {
         showAppAlert("Please finish editing before adding a new folder."); 
+        cameFromEmptyStateCard = false;
         return; 
     }
+    const isFirstCard = cameFromEmptyStateCard;
+    cameFromEmptyStateCard = false;
     noResourcesMessage.style.display = 'none';
     noResourcesMessageAdmin.style.display = 'none';
     resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
-    openEditingCard(null, null);
+    openEditingCard(null, null, false, isFirstCard);
 }
-
 
 async function fetchCategoryData() {
     const snap = await getDocs(
@@ -191,11 +203,13 @@ function renderAllCategories(skipAnimation = false) {
     if (visibleCategories.length === 0) {
         noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
         noResourcesMessageAdmin.style.display = isAdmin() ? 'block' : 'none';
+        addCategoryButton.style.display = 'none';
         resourcesContainer.style.marginTop = '0px';
         return;
     }
     noResourcesMessage.style.display = 'none';
     noResourcesMessageAdmin.style.display = 'none';
+    addCategoryButton.style.display = isAdmin() ? 'block' : 'none';
     resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
     visibleCategories.forEach((cat, i) => {
         const el = createCategoryElement(cat);
@@ -243,7 +257,7 @@ function createCategoryElement(category) {
     div.dataset.id = category.id;
     div.innerHTML = `
         <div class="category-header">
-            <h3>${category.title}</h3>
+            <h3>${escapeHtml(category.title)}</h3>
             ${isAdmin() ? `
                 <div class="category-header-btns">
                     <button class="edit-category-button" title="Edit folder"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -253,8 +267,8 @@ function createCategoryElement(category) {
         </div>
         <div class="links-container" id="links-${category.id}">
             ${category.links.map(link => {
-                const url = link.url.startsWith('http') ? link.url : 'https://' + link.url;
-                return `<div class="link-item"><i class="fa-solid fa-link link-item-icon"></i><a href="${url}" target="_blank">${link.title}</a></div>`;
+                const url = escapeHtml(link.url.startsWith('http') ? link.url : 'https://' + link.url);
+                return `<div class="link-item"><i class="fa-solid fa-link link-item-icon"></i><a href="${url}" target="_blank">${escapeHtml(link.title)}</a></div>`;
             }).join('')}
             ${isAdmin() ? `<button class="add-link-button" data-category-id="${category.id}">+ Add Link</button>` : ''}
         </div>
@@ -304,8 +318,9 @@ async function deleteCategory(category) {
 
         if (visibleCategories.length === 0) {
             resourcesContainer.innerHTML = '';
-            noResourcesMessage.style.display = 'none';
-            noResourcesMessageAdmin.style.display = 'none';
+            noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
+            noResourcesMessageAdmin.style.display = isAdmin() ? 'block' : 'none';
+            addCategoryButton.style.display = isAdmin() ? 'none' : 'none';
             resourcesContainer.style.marginTop = '0px';
         } else {
             renderAllCategories(true);
@@ -313,11 +328,15 @@ async function deleteCategory(category) {
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-        await showAppAlert("Failed to delete: " + e.message);
+        if (isPermissionError(e)) {
+            await showAppAlert(permissionDeniedMessage("delete folders"));
+        } else {
+            await showAppAlert("Something went wrong while deleting this folder");
+        }
     }
 }
 
-function openEditingCard(category, existingCard, startWithNewLink = false) {
+function openEditingCard(category, existingCard, startWithNewLink = false, isFirstCard = false) {
     if (isEditingCategory) {
         showAppAlert("Please finish editing before starting another edit.");
         return;
@@ -333,12 +352,12 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
     if (startWithNewLink) editingCategory.links.push({ title: '', url: '' });
 
     const editCard = document.createElement('div');
-    editCard.className = 'editing-category-card';
+    editCard.className = (isNew && isFirstCard) ? 'editing-category-card editing-category-card-first' : 'editing-category-card';
     if (!isNew) editCard.dataset.id = category.id;
     editCard.innerHTML = `
         <div class="edit-card-section" id="title-section-${domId}">
             <span class="edit-card-section-label">Folder Name</span>
-            <textarea class="edit-card-title-input" rows="1" placeholder="Give this folder a title">${editingCategory.title}</textarea>
+            <textarea class="edit-card-title-input" rows="1" placeholder="Give this folder a title">${escapeHtml(editingCategory.title)}</textarea>
         </div>
     `;
 
@@ -419,6 +438,8 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
     buildLinksSection();
 
     doneBtn.addEventListener('click', async () => {
+        if (doneBtn.disabled) return;
+
         const newTitle = titleInput.value.trim();
         if (!newTitle) { await showAppAlert("Title can't be empty!"); return; }
 
@@ -431,6 +452,8 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
         });
 
         if (isNew) {
+            doneBtn.disabled = true;
+            secondaryBtn.disabled = true;
             try {
                 const docRef = await addDoc(collection(db, "clubs", clubId, "resourceSections"), {
                     title: newTitle,
@@ -445,7 +468,13 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
                 await fetchAndDisplayCategories();
                 requestAnimationFrame(() => scrollToCategory(docRef.id));
             } catch (e) {
-                await showAppAlert("Failed to create folder: " + e.message);
+                doneBtn.disabled = false;
+                secondaryBtn.disabled = false;
+                if (isPermissionError(e)) {
+                    await showAppAlert(permissionDeniedMessage("create folders"));
+                } else {
+                    await showAppAlert("Something went wrong while creating this folder");
+                }
             }
             return;
         }
@@ -470,14 +499,23 @@ function openEditingCard(category, existingCard, startWithNewLink = false) {
             await fetchAndDisplayCategories();
             requestAnimationFrame(() => scrollToCategory(category.id));
         } catch (e) {
-            await showAppAlert("Failed to save: " + e.message);
+            if (isPermissionError(e)) {
+                await showAppAlert(permissionDeniedMessage("edit folders"));
+            } else {
+                await showAppAlert("Something went wrong while editing this folder");
+            }
         }
     });
 
     secondaryBtn.addEventListener('click', () => {
         isEditingCategory = false;
         if (isNew) {
-            renderAllCategories(true);
+            const wasFirstCard = editCard.classList.contains('editing-category-card-first');
+            if (wasFirstCard) {
+                renderAllCategories(true);
+            } else {
+                editCard.remove();
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             editCard.replaceWith(existingCard);
@@ -670,7 +708,24 @@ document.getElementById('save-link-button').addEventListener('click', async () =
         await fetchAndDisplayCategories();
         requestAnimationFrame(() => scrollToCategory(savedCategoryId));
     } catch (e) {
-        await showAppAlert("Failed to save link: " + e.message);
+        if (isPermissionError(e)) {
+            await showAppAlert(permissionDeniedMessage("add links"));
+        } else {
+            await showAppAlert("Something went wrong while adding this link");
+        }
+    }
+});
+
+
+noResourcesMessageAdmin.addEventListener('click', () => {
+    cameFromEmptyStateCard = true;
+    handleAddCategory();
+});
+noResourcesMessageAdmin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        cameFromEmptyStateCard = true;
+        handleAddCategory();
     }
 });
 
@@ -726,4 +781,13 @@ function scrollToCategory(categoryId) {
     if (!isFullyVisible) {
         window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
     }
+}
+
+
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
 }

@@ -668,7 +668,10 @@ function showMessageOptions(messageId, messageData, messageElement) {
 
     document.getElementById('modalSenderName').textContent = messageData.createdByName || "Anonymous";
     const deleteBtn = document.getElementById('deleteOptionButton');
-    deleteBtn.style.display = messageData.createdByUid === currentUser.uid ? 'flex' : 'none';
+    const isOwner = messageData.createdByUid === currentUser.uid;
+    deleteBtn.style.display = isOwner ? 'flex' : 'none';
+
+    document.getElementById('messageOptionsModal').classList.toggle('no-actions', !isOwner);
 
     const modalMessageContainer = document.getElementById('modalMessageContainer');
     modalMessageContainer.innerHTML = '';
@@ -682,16 +685,15 @@ function showMessageOptions(messageId, messageData, messageElement) {
     chatMessages.classList.add('blur-background');
     document.getElementById('messageOptionsOverlay').classList.add('show');
 
-    const existingReactionsBar = document.querySelector('.modal-reactions-row');
-    if (existingReactionsBar) existingReactionsBar.remove();
+    document.querySelector('.modal-reactions-float')?.remove();
 
     const reactionsBar = document.createElement('div');
-    reactionsBar.className = 'modal-reactions-row';
+    reactionsBar.className = 'modal-reactions-float';
 
     QUICK_REACTIONS.forEach(emoji => {
         const myEntry = !!messageElement.querySelector(`.reaction-chip[data-emoji="${emoji}"].mine`);
         const btn = document.createElement('div');
-        btn.className = 'reaction-pick-btn' + (myEntry ? ' mine' : '');
+        btn.className = 'reaction-pick-btn-sm' + (myEntry ? ' mine' : '');
         btn.textContent = emoji;
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -704,17 +706,15 @@ function showMessageOptions(messageId, messageData, messageElement) {
     });
 
     const moreBtn = document.createElement('div');
-    moreBtn.className = 'reaction-pick-btn';
-    moreBtn.textContent = '+';
-    moreBtn.style.fontSize = '22px';
+    moreBtn.className = 'reaction-pick-btn-sm reaction-pick-btn-more';
+    moreBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
     moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         showEmojiPickerOverlay(messageId);
     });
     reactionsBar.appendChild(moreBtn);
 
-    const actionsSection = document.querySelector('.message-options-actions');
-    actionsSection.parentNode.insertBefore(reactionsBar, actionsSection);
+    document.getElementById('messageOptionsModal').appendChild(reactionsBar);
 }
 
 function hideMessageOptions() {
@@ -768,12 +768,12 @@ document.getElementById('messageOptionsOverlay')?.addEventListener('click', (e) 
     if (e.target.id === 'messageOptionsOverlay') hideMessageOptions();
 });
 
-document.getElementById('replyOptionButton')?.addEventListener('click', () => {
-    if (selectedMessageForOptions) {
-        startReply(selectedMessageForOptions.id, selectedMessageForOptions.data);
-        hideMessageOptions();
-    }
-});
+// document.getElementById('replyOptionButton')?.addEventListener('click', () => {
+//     if (selectedMessageForOptions) {
+//         startReply(selectedMessageForOptions.id, selectedMessageForOptions.data);
+//         hideMessageOptions();
+//     }
+// });
 
 document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
     if (!selectedMessageForOptions) return;

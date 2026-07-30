@@ -37,6 +37,10 @@ const memberNameForRoleDisplay = document.getElementById('member-name-for-role')
 const roleSelect = document.getElementById('role-select');
 const submitRoleChangeButton = document.getElementById('submit-role-change');
 const cancelRoleChangeButton = document.getElementById('cancel-role-change');
+const transferConfirmRow = document.getElementById('transfer-confirm-row');
+const transferConfirmLabel = document.getElementById('transfer-confirm-label');
+const transferConfirmCheckbox = document.getElementById('transfer-confirm-checkbox');
+const transferConfirmText = document.getElementById('transfer-confirm-text');
 const dynamicWrapper = document.getElementById('dynamic-sections-wrapper');
 
 let currentMemberRoleInPopup = null;
@@ -169,7 +173,11 @@ async function approveMember(clubID, memberID) {
         console.log(`Successfully moved user ${memberID} from pending to members for club ${clubID}.`);
     } catch (error) {
         console.error("Error approving member:", error);
-        await showAppAlert("Failed to approve member: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("approve members"));
+        } else {
+            await showAppAlert("Something went wrong while approving this member.");
+        }
     }
 }
 
@@ -180,7 +188,11 @@ async function denyMember(clubID, memberID) {
         console.log(`Successfully denied membership for user ${memberID} from club ${clubID}.`);
     } catch (error) {
         console.error("Error denying member:", error);
-        await showAppAlert("Failed to deny member: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("deny members"));
+        } else {
+            await showAppAlert("Something went wrong while denying this request.");
+        }
     }
 }
 
@@ -198,7 +210,11 @@ async function removeMember(clubID, memberID) {
         console.log(`Successfully removed user ${memberID} from club ${clubID}.`);
     } catch (error) {
         console.error("Error removing member:", error);
-        await showAppAlert("Failed to remove member: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("remove members"));
+        } else {
+            await showAppAlert("Something went wrong while removing this member.");
+        }
     }
 }
 
@@ -215,7 +231,7 @@ async function updateMemberRole(clubID, memberUid, newRole) {
         console.log(`User ${memberUid}'s role updated to '${newRole}' for club ${clubID}.`);
     } catch (error) {
         console.error(`Error updating member role to ${newRole}:`, error);
-        throw new Error(`Failed to update member role to ${newRole}: ` + error.message);
+        throw error;
     }
 }
 
@@ -259,7 +275,11 @@ async function transferClubManagement(clubID, newManagerUid) {
         window.location.href = 'your_clubs.html';
     } catch (error) {
         console.error("Error during club management transfer transaction:", error);
-        await showAppAlert("Failed to transfer club management: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage(`transfer the ${ROLE_LABELS.manager.toLowerCase()} role`));
+        } else {
+            await showAppAlert("Something went wrong while transferring club management.");
+        }
         throw error;
     }
 }
@@ -323,13 +343,10 @@ function displayPendingMembers(memberNames, memberUids) {
     });
 }
 
-// Builds a single member card's action buttons area and returns it,
-// or returns null if no actions apply for this viewer's role.
 function buildMemberActions(memberUid, memberName, memberRole) {
     const actionButtonsDiv = document.createElement("div");
     actionButtonsDiv.className = "member-actions";
 
-    // Your own card: show leave button
     if (memberUid === myUid) {
         const leaveBtn = document.createElement("button");
         leaveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
@@ -348,7 +365,6 @@ function buildMemberActions(memberUid, memberName, memberRole) {
         return actionButtonsDiv;
     }
 
-    // Manager/admin viewing other members
     if (role === 'manager' || role === 'admin') {
         const optionsBtn = document.createElement("button");
         optionsBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
@@ -420,6 +436,8 @@ function openRoleManagementPopup(memberUid, memberName, currentRole) {
         memberOption.style.display = '';
     }
 
+    updateTransferConfirmRow();
+
     popupOverlay.style.display = 'flex';
     roleManagementPopup.style.display = 'flex';
 }
@@ -429,9 +447,42 @@ function closeRoleManagementPopup() {
     popupOverlay.style.display = 'none';
     roleManagementPopup.style.display = 'none';
     document.body.classList.remove('no-scroll');
+    resetTransferConfirmRow();
+}
+
+function updateTransferConfirmRow() {
+    if (roleSelect.value === 'manager') {
+        transferConfirmCheckbox.checked = false;
+        transferConfirmLabel.classList.remove('transfer-confirm-invalid');
+        transferConfirmText.textContent = `Yes, transfer the ${ROLE_LABELS.manager} role to ${memberNameForRoleDisplay.textContent}.`;
+        transferConfirmRow.classList.remove('hidden');
+    } else {
+        resetTransferConfirmRow();
+    }
+}
+
+function resetTransferConfirmRow() {
+    transferConfirmRow.classList.add('hidden');
+    transferConfirmCheckbox.checked = false;
+    transferConfirmLabel.classList.remove('transfer-confirm-invalid');
+}
+
+function shakeTransferConfirm() {
+    transferConfirmText.textContent = `You must check this box to transfer the ${ROLE_LABELS.manager.toLowerCase()} role.`;
+    transferConfirmLabel.classList.remove('transfer-confirm-invalid');
+    void transferConfirmLabel.offsetWidth; 
+    transferConfirmLabel.classList.add('transfer-confirm-invalid');
 }
 
 cancelRoleChangeButton.addEventListener('click', closeRoleManagementPopup);
+
+roleSelect.addEventListener('change', updateTransferConfirmRow);
+
+transferConfirmCheckbox.addEventListener('change', () => {
+    if (transferConfirmCheckbox.checked) {
+        transferConfirmLabel.classList.remove('transfer-confirm-invalid');
+    }
+});
 
 document.getElementById('remove-member-popup-btn').addEventListener('click', async () => {
     const memberName = memberNameForRoleDisplay.textContent.replace('Manage ', '');
@@ -463,10 +514,11 @@ submitRoleChangeButton.addEventListener('click', async () => {
             await updateMemberRole(clubId, selectedMemberUid, newRole);
             closeRoleManagementPopup();
         } else if (newRole === "manager") {
-            if (await showAppConfirm(`Are you absolutely sure you want to transfer the ${ROLE_LABELS.manager.toLowerCase()} role to ${memberName}?`)) {
-                await transferClubManagement(clubId, selectedMemberUid);
-                // transferClubManagement redirects on success, no need to close popup
+            if (!transferConfirmCheckbox.checked) {
+                shakeTransferConfirm();
+                return;
             }
+            await transferClubManagement(clubId, selectedMemberUid);
         } else {
             console.warn(`Attempted to set an unknown role: ${newRole}`);
             await showAppAlert(`Invalid role selected: ${getRoleLabel(newRole)}. No update performed.`);
@@ -474,7 +526,11 @@ submitRoleChangeButton.addEventListener('click', async () => {
         }
     } catch (error) {
         console.error("Error changing member role:", error);
-        await showAppAlert("Failed to change member role: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("change member roles"));
+        } else {
+            await showAppAlert("Something went wrong while changing this member's role.");
+        }
     }
 });
 
@@ -506,7 +562,6 @@ async function fetchAndDisplayMembers() {
         managerName = actualManagerName;
         managerUid = actualManagerUid;
 
-        // Pending members (managers/admins only)
         if (role === 'manager' || role === 'admin') {
             const pendingMemberUids = clubData.pendingMemberUIDs || [];
             const pendingNames = [];
@@ -573,7 +628,6 @@ function setupRealtimeListeners() {
     const docRef = doc(db, "clubs", clubId);
     const membersRef = collection(db, "clubs", clubId, "members");
 
-    // Each listener has its own initial-fire guard
     let mainDocInitial = true;
     let membersColInitial = true;
 
@@ -617,3 +671,12 @@ popupOverlay.addEventListener('click', (e) => {
         closeRoleManagementPopup();
     }
 });
+
+
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+}

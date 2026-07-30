@@ -340,7 +340,11 @@ function _createPollEditingCardElement() {
             pendingEditingCardToRemove = null;
             pendingScrollToNew = false;
             console.error("Error creating poll:", err);
-            await showAppAlert("Failed to create poll: " + err.message);
+            if (isPermissionError(err)) {
+                await showAppAlert(permissionDeniedMessage("create polls"));
+            } else {
+                await showAppAlert("Something went wrong while creating this poll.");
+            }
         }
     });
 
@@ -721,7 +725,11 @@ async function handleVote(pollId, optionIndex) {
 
     } catch (error) {
         console.error("Transaction failed:", error);
-        await showAppAlert("Failed to save vote: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("vote on this poll"));
+        } else {
+            await showAppAlert("Something went wrong while saving your vote.");
+        }
     }
 }
 
@@ -737,7 +745,11 @@ async function deletePoll(pollId) {
         // showAppAlert("Poll deleted successfully!");
     } catch (error) {
         console.error("Error deleting poll:", error);
-        await showAppAlert("Failed to delete poll: " + error.message);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("delete polls"));
+        } else {
+            await showAppAlert("Something went wrong while deleting this poll.");
+        }
     }
 }
 
@@ -795,7 +807,11 @@ async function editPoll(pollId, pollData) {
             editCard.replaceWith(existingCard);
             scrollToPoll(pollId);
         } catch (err) {
-            await showAppAlert("Failed to update poll: " + err.message);
+            if (isPermissionError(err)) {
+                await showAppAlert(permissionDeniedMessage("edit polls"));
+            } else {
+                await showAppAlert("Something went wrong while updating this poll.");
+            }
         }
     });
 
@@ -886,4 +902,12 @@ function scrollToPoll(pollId) {
     if (top >= viewTop && bottom <= viewBottom) return;
 
     window.scrollTo({ top: top - headerHeight - 12, behavior: 'smooth' });
+}
+
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
 }

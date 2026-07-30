@@ -21,10 +21,20 @@ const db = initializeFirestore(app, {
 });
 const auth = getAuth(app);
 
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 let currentUser = null;
 let clubId = null;
 let currentUserRole = null;
 let isEditingAnnouncement = false;
+let cameFromEmptyStateCard = false;
 
 let currentClubName = null;
 let currentSchoolId = null;
@@ -157,10 +167,13 @@ function scrollToAnnouncement(announcementId) {
     }
 }
 
-function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
+function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null, isFirstCard = false) {
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = 'announcement-card editing-announcement-card';
+    if (isNewAnnouncement && isFirstCard) {
+        cardDiv.className += ' editing-announcement-card-first';
+    }
     cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`;
     cardDiv.dataset.isNewAnnouncement = isNewAnnouncement;
 
@@ -170,11 +183,11 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
         <h3>${isNewAnnouncement ? 'SHARE WITH SCHOOL' : 'EDIT POST'}</h3>
         <div class="field-section">
             <label for="edit-title-${id}">Title</label>
-            <input type="text" id="edit-title-${id}" value="${initialData.title || ''}" required>
+            <input type="text" id="edit-title-${id}" placeholder="Title your post" value="${escapeHtml(initialData.title || '')}" required>
         </div>
         <div class="field-section">
             <label for="edit-content-${id}">Content</label>
-            <textarea id="edit-content-${id}" rows="5" required>${initialData.content || ''}</textarea>
+            <textarea id="edit-content-${id}" rows="5" placeholder="Write something for your school" required>${escapeHtml(initialData.content || '')}</textarea>
         </div>
         <div class="announcement-card-actions">
             <button class="save-btn">SAVE</button>
@@ -196,8 +209,9 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
                 cardDiv.remove();
             }
         } else {
+            const wasFirstCard = cardDiv.classList.contains('editing-announcement-card-first');
             cardDiv.remove();
-            if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
+            if (wasFirstCard && noAnnouncementsMessage) {
                 noAnnouncementsMessage.style.display = 'block';
             }
             addAnnouncementButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -217,7 +231,9 @@ async function addNewAnnouncementEditingCard() {
         return;
     }
 
-    const newCardElement = createEditingCardElement({}, true);
+    const isFirstCard = cameFromEmptyStateCard && totalCount === 0;
+    cameFromEmptyStateCard = false;
+    const newCardElement = createEditingCardElement({}, true, null, isFirstCard);
 
     noAnnouncementsMessage.style.display = 'none';
     announcementsContainer.prepend(newCardElement);
@@ -280,6 +296,7 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
 
             isEditingAnnouncement = false;
             if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+            addAnnouncementButton.style.display = 'block';
 
             const newCard = createAnnouncementDisplayCard(newData, newData.id);
             cardDiv.replaceWith(newCard);
@@ -310,7 +327,11 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     } catch (error) {
         console.error("Error saving announcement:", error);
         isEditingAnnouncement = false;
-        await showAppAlert("Something went wrong while saving this post.");
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage(existingAnnouncementId ? "edit posts" : "post to the school feed"));
+        } else {
+            await showAppAlert("Something went wrong while saving this post.");
+        }
     }
 }
 
@@ -352,7 +373,7 @@ async function renderAnnouncementPage() {
 
     if (totalCount === 0) {
         noAnnouncementsMessage.style.display = 'block';
-        addAnnouncementButton.style.display = 'block';
+        addAnnouncementButton.style.display = 'none';
         hidePagination();
         return;
     }
@@ -468,7 +489,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
     if (canEditDelete) {
         actionButtonsHtml = `
             <div class="announcement-meta-row">
-                <span class="announcement-meta-text">${announcementData.createdByName} · ${formatTimestamp(announcementData.createdAt)}</span>
+                <span class="announcement-meta-text">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</span>
                 <div class="announcement-meta-btns">
                     <button class="edit-btn" data-announcement-id="${announcementId}">
                         <i class="fa-solid fa-pencil"></i>
@@ -480,11 +501,11 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
             </div>
         `;
     } else {
-        actionButtonsHtml = `<p class="announcement-meta">${announcementData.createdByName} · ${formatTimestamp(announcementData.createdAt)}</p>`;
+        actionButtonsHtml = `<p class="announcement-meta">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</p>`;
     }
 
     cardDiv.innerHTML = `
-        <h3>${announcementData.title}</h3>
+        <h3>${escapeHtml(announcementData.title)}</h3>
         <p>${linkifyText(announcementData.content)}</p>
         ${actionButtonsHtml}
     `;
@@ -543,6 +564,9 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
             hidePagination();
         } else {
             const pageToShow = Math.min(currentPage, totalPages);
+            for (let p = 1; p < pageToShow; p++) {
+                await fetchPage(p);
+            }
             await renderPage(pageToShow, true);
         }
 
@@ -550,13 +574,18 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
         // showAppAlert("Post deleted successfully!");
     } catch (error) {
         console.error("Error deleting post:", error);
-        await showAppAlert("Something went wrong while deleting this post.");
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("delete posts"));
+        } else {
+            await showAppAlert("Something went wrong while deleting this post.");
+        }
     }
 }
 
 function linkifyText(text) {
+    const escaped = escapeHtml(text);
     const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
-    return text.replace(urlPattern, (url) => {
+    return escaped.replace(urlPattern, (url) => {
         let href = url.startsWith('http') ? url : 'https://' + url;
         return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
@@ -586,4 +615,18 @@ function showContainerError(container, message, showRetry = false) {
             </div>
         </div>
     `;
+}
+
+document.getElementById('empty-state-share-btn').addEventListener('click', () => {
+    cameFromEmptyStateCard = true;
+    addNewAnnouncementEditingCard();
+});
+
+
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
 }

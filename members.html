@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=67" rel="stylesheet" />
+    <link href="styles.css?v=68" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Members</title>
@@ -85,6 +85,12 @@
         <option value="admin">Admin</option>
         <option value="manager">Manager</option>
       </select>
+      <div id="transfer-confirm-row" class="transfer-confirm-row hidden">
+        <label id="transfer-confirm-label" class="checkbox-row-label">
+          <input type="checkbox" id="transfer-confirm-checkbox" />
+          <span id="transfer-confirm-text">Yes, transfer the role to this member.</span>
+        </label>
+      </div>
       <div class="popup-bottom-actions">
         <button id="submit-role-change" class="fancy-button">UPDATE</button>
         <button id="remove-member-popup-btn" class="remove-member-popup-btn">REMOVE</button>
@@ -93,6 +99,6 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js?v=2"></script> 
-    <script type="module" src="members.js?v=17"></script>
+    <script type="module" src="members.js?v=18"></script>
   </body>
 </html>

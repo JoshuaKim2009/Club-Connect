@@ -663,7 +663,7 @@ input:-ms-input-placeholder {
 }
 
 .fancy-black-button:hover {
-  filter: brightness(1.1);
+  /* filter: brightness(1.1); */
   transform: translateY(1px);
   box-shadow: 0px 1px 0px #000000;
 }
@@ -990,6 +990,55 @@ input:-ms-input-placeholder {
   font-size: 20px;
 }
 
+.transfer-confirm-row {
+  text-align: left;
+  margin-bottom: -6px;
+}
+
+#transfer-confirm-text {
+  position: relative;
+  top: 2px;
+  left: -2px;
+}
+
+.transfer-confirm-row .checkbox-row-label {
+  width: calc(100% - 20px);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.transfer-confirm-invalid {
+  border-color: #cc0000 !important;
+  animation: input-shake 0.3s ease-in-out;
+}
+
+.transfer-confirm-invalid span {
+  color: #cc0000;
+}
+
+#transfer-confirm-checkbox {
+  position: relative;
+}
+
+.transfer-confirm-invalid #transfer-confirm-checkbox {
+  border-color: #cc0000;
+}
+
+.transfer-confirm-invalid #transfer-confirm-checkbox:checked {
+  background-color: #cc0000;
+}
+
+#transfer-confirm-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(40deg);
+}
 
 #role-management-popup h3 {
   margin: 0;
@@ -1143,7 +1192,7 @@ input:-ms-input-placeholder {
 }
 
 .remove-member-popup-btn:hover {
-  filter: brightness(1.1);
+  /* filter: brightness(1.1); */
   transform: translateY(1px);
   box-shadow: 0px 1px 0px #000000;
 }
@@ -1750,7 +1799,7 @@ input[type="checkbox"]:checked {
 }
 
 .view-availability-btn:hover {
-  filter: brightness(1.05);
+  /* filter: brightness(1.05); */
   background: linear-gradient(#ffffff, #f0f0f0);
 }
 
@@ -2058,6 +2107,57 @@ input[type="checkbox"]:checked {
   font-size: 18px;
   color: var(--bg-accent);
   margin: 0;
+  text-wrap: pretty;
+}
+
+.empty-state-card .fancy-button {
+  margin-top: 10px;
+  font-size: 22px;
+  padding: 6px 20px;
+}
+
+.empty-state-dashed-title,
+.empty-state-dashed-subtitle {
+  font-family: var(--primary-font-family);
+  margin: 0;
+}
+
+.empty-state-card-dashed {
+  border: 2px dashed white;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 26px 16px;
+  text-align: center;
+  width: calc(85% - 16px);
+  max-width: 584px;
+  margin: 20px auto;
+  cursor: pointer;
+  transition: transform 0.05s ease-in-out, background 0.1s ease-in-out;
+}
+
+.empty-state-card-dashed:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* .empty-state-card-dashed:active {
+  transform: scale(0.98); 
+} */
+
+.empty-state-card-dashed i {
+  font-size: 34px;
+  color: #ffffff;
+}
+
+.empty-state-dashed-title {
+  font-size: 26px;
+  color: #ffffff;
+  margin: 8px 0 2px;
+  text-wrap: balance;
+}
+
+.empty-state-dashed-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
   text-wrap: pretty;
 }
 
@@ -2685,7 +2785,7 @@ input[type="checkbox"]:checked {
 }
 
 .club-form-section .fancy-button:hover {
-  filter: brightness(1);
+  /* filter: brightness(1); */
   transform: translateY(1px);
   box-shadow: 0px 1px 0px #000000;
 }

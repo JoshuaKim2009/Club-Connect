@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <link href="styles.css?v=67" rel="stylesheet" />
+        <link href="styles.css?v=68" rel="stylesheet" />
         <meta name="theme-color" id="theme-color-meta" content="#1c375f">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Club Connect | Public Posts</title>
@@ -35,7 +35,11 @@
             }
 
             .empty-state-card {
-                margin-top: 16px !important;
+                margin-top: -47px !important;
+            }
+
+            .editing-announcement-card-first {
+                margin-top: -47px !important; 
             }
         </style>
     </head>
@@ -61,7 +65,8 @@
             <div id="noAnnouncementsMessage" class="empty-state-card" style="display: none;">
                 <i class="fa-solid fa-earth-americas"></i>
                 <p class="empty-state-title">Share with your school</p>
-                <p class="empty-state-subtitle">Write a post to be shared beyond your club.</p>
+                <p class="empty-state-subtitle">Posts here go out to every club, not just yours.</p>
+                <button id="empty-state-share-btn" class="fancy-button">SHARE POST</button>
             </div>
             <div id="announcementsContainer" class="fancy-black-label"></div>
             <div id="pagination-controls" style="display: none;">
@@ -71,6 +76,6 @@
 
         <script src="theme.js?v=12"></script>
         <script type="module" src="dialog.js?v=2"></script>
-        <script type="module" src="public_announcement_creation.js?v=3"></script>
+        <script type="module" src="public_announcement_creation.js?v=4"></script>
     </body>
 </html>

@@ -465,6 +465,7 @@ body {
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 0.2s ease, transform 0.2s ease;
+    position: relative;
 }
 
 .message-options-overlay.show .message-options-modal {
@@ -512,6 +513,15 @@ body {
 /* Actions Section */
 .message-options-actions {
     padding: 8px;
+}
+
+.message-options-modal.no-actions .message-options-preview {
+    border-bottom: none;
+    border-radius: 12px;
+}
+
+.message-options-modal.no-actions .message-options-actions {
+    display: none;
 }
 
 .message-option-button {
@@ -930,6 +940,71 @@ body.scroll-locked {
 
 .modal-reactions-row::-webkit-scrollbar { display: none; }
 
+
+.modal-reactions-float {
+    position: absolute;
+    top: -38px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(#ffffff, #f7f7f7);
+    border: 2px solid black;
+    border-radius: 20px;
+    padding: 6px 10px;
+    box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.14);
+    z-index: 2;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.message-options-overlay.show .modal-reactions-float {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reaction-pick-btn-sm {
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .reaction-pick-btn-sm:hover {
+        transform: scale(1.05);
+        background: radial-gradient(circle at center, #eeeeee, #dddddd);
+    }
+}
+
+.reaction-pick-btn-sm:active {
+    transform: scale(0.95);
+}
+
+.reaction-pick-btn-sm.mine {
+    background: radial-gradient(circle at center, #b3c8ff, #7fa0ff);
+}
+
+.reaction-pick-btn-sm.mine:hover {
+    background: radial-gradient(circle at center, #c3d4ff, #93b0ff);
+}
+
+.reaction-pick-btn-more {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    position: relative;
+    top: -1px;
+}
+
 .reaction-pick-btn {
     font-size: 22px;
     background: radial-gradient(circle at center, #ffffff, #f7f7f7);
@@ -1039,6 +1114,12 @@ body.scroll-locked {
     border: 2px solid black;
     box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.25);
     width: fit-content;
+    animation: bubble-float 2.4s ease-in-out infinite;
+}
+
+@keyframes bubble-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
 }
 
 .chat-loading-bubble .dot {
