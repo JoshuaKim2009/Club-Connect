@@ -1364,7 +1364,7 @@ function scrollToEditedEvent(eventId, occurrenceDateStr = null) {
     const isFullyVisible = (rect.top >= headerHeight && rect.bottom <= window.innerHeight);
 
     if (!isFullyVisible) {
-        const targetY = rect.top + window.scrollY - 90;
+        const targetY = rect.top + window.scrollY - 95;
         window.scrollTo({
             top: targetY,
             behavior: 'smooth'

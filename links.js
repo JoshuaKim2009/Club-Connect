@@ -305,7 +305,7 @@ function createCategoryElement(category) {
 }
 
 async function deleteCategory(category) {
-    const confirmed = await showAppConfirm(`Are you sure you want to delete the entire "${category.title}" folder?`);
+    const confirmed = await showAppConfirm(`Are you sure you want to delete the "${category.title}" folder?`);
     if (!confirmed) return;
     try {
         await deleteDoc(doc(db, "clubs", clubId, "resourceSections", category.id));
@@ -319,6 +319,9 @@ async function deleteCategory(category) {
         if (visibleCategories.length === 0) {
             resourcesContainer.innerHTML = '';
             noResourcesMessage.style.display = isAdmin() ? 'none' : 'block';
+            // noResourcesMessageAdmin.style.display = 'none';
+            // addCategoryButton.style.display = isAdmin() ? 'block' : 'none';
+            // resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
             noResourcesMessageAdmin.style.display = isAdmin() ? 'block' : 'none';
             addCategoryButton.style.display = isAdmin() ? 'none' : 'none';
             resourcesContainer.style.marginTop = '0px';
@@ -366,6 +369,17 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
 
     let linksSection = null;
 
+    function syncLinksFromDOM() {
+        if (!linksSection) return;
+        const rows = linksSection.querySelectorAll('.edit-link-row');
+        rows.forEach((row, i) => {
+            if (editingCategory.links[i]) {
+                editingCategory.links[i].title = row.querySelector('.edit-link-title-input').value;
+                editingCategory.links[i].url = row.querySelector('.edit-link-url-input').value;
+            }
+        });
+    }
+
     function buildLinksSection() {
         if (linksSection) linksSection.remove();
 
@@ -378,6 +392,7 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
                 addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
                 addBtn.title = 'Add link';
                 addBtn.addEventListener('click', () => {
+                    syncLinksFromDOM();
                     editingCategory.links.push({ title: '', url: '' });
                     buildLinksSection();
                     const rows = linksSection.querySelectorAll('.edit-link-row');
@@ -409,6 +424,7 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
         addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
         addBtn.title = 'Add link';
         addBtn.addEventListener('click', () => {
+            syncLinksFromDOM();
             editingCategory.links.push({ title: '', url: '' });
             buildLinksSection();
             const rows = linksSection.querySelectorAll('.edit-link-row');
@@ -576,6 +592,7 @@ function buildLinkRow(link, index, editingCategory, rebuildLinks) {
     row.appendChild(inner);
 
     trashBtn.addEventListener('click', () => {
+        syncLinksFromDOM();
         editingCategory.links.splice(index, 1);
         rebuildLinks();
     });
@@ -779,7 +796,7 @@ function scrollToCategory(categoryId) {
     const isFullyVisible = rect.top >= headerHeight && rect.bottom <= window.innerHeight;
 
     if (!isFullyVisible) {
-        window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
+        window.scrollTo({ top: rect.top + window.pageYOffset - 95, behavior: 'smooth' });
     }
 }
 

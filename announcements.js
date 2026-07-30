@@ -172,12 +172,22 @@ function scrollToAnnouncement(announcementId) {
     if (!card) return;
 
     const headerHeight = document.querySelector('.chat-header').offsetHeight;
-    const rect = card.getBoundingClientRect();
-    const isFullyVisible = rect.top >= headerHeight && rect.bottom <= window.innerHeight;
+    const top = documentTopOf(card);
+    const bottom = top + card.offsetHeight;
+
+    const viewTop = window.pageYOffset + headerHeight;
+    const viewBottom = window.pageYOffset + window.innerHeight;
+    const isFullyVisible = top >= viewTop && bottom <= viewBottom;
 
     if (!isFullyVisible) {
-        window.scrollTo({ top: rect.top + window.pageYOffset - 90, behavior: 'smooth' });
+        window.scrollTo({ top: top - 52, behavior: 'smooth' });
     }
+}
+
+function documentTopOf(el) {
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) y += node.offsetTop;
+    return y;
 }
 
 function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {

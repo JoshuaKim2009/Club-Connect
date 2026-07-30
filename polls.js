@@ -414,7 +414,7 @@ function setupRealtimePollsListener() {
                     animateCardIn(pollCard, 0);
                     if (pendingScrollToNew) {
                         pendingScrollToNew = false;
-                        scrollToPoll(pollId);
+                        requestAnimationFrame(() => scrollToPoll(pollId));
                     }
                 }
             } else if (change.type === "modified") {
@@ -901,7 +901,7 @@ function scrollToPoll(pollId) {
     const viewBottom = window.pageYOffset + window.innerHeight;
     if (top >= viewTop && bottom <= viewBottom) return;
 
-    window.scrollTo({ top: top - headerHeight - 12, behavior: 'smooth' });
+    window.scrollTo({ top: top - 52, behavior: 'smooth' });
 }
 
 function isPermissionError(error) {
