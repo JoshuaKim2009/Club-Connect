@@ -323,7 +323,7 @@ async function deleteCategory(category) {
             // addCategoryButton.style.display = isAdmin() ? 'block' : 'none';
             // resourcesContainer.style.marginTop = isAdmin() ? '-12px' : '-48px';
             noResourcesMessageAdmin.style.display = isAdmin() ? 'block' : 'none';
-            addCategoryButton.style.display = isAdmin() ? 'none' : 'none';
+            addCategoryButton.style.display = 'none';
             resourcesContainer.style.marginTop = '0px';
         } else {
             renderAllCategories(true);
@@ -482,7 +482,11 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
                 });
                 isEditingCategory = false;
                 await fetchAndDisplayCategories();
-                requestAnimationFrame(() => scrollToCategory(docRef.id));
+                if (isFirstCard) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    requestAnimationFrame(() => scrollToCategory(docRef.id));
+                }
             } catch (e) {
                 doneBtn.disabled = false;
                 secondaryBtn.disabled = false;
