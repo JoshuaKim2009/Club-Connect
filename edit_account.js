@@ -34,6 +34,11 @@ const editCountyDropdownList = document.getElementById('edit-county-dropdown-lis
 const editSchool = document.getElementById('editSchool');
 const editSchoolDropdownList = document.getElementById('edit-school-dropdown-list');
 
+let originalDisplayName = '';
+let originalState = '';
+let originalCounty = '';
+let originalSchool = '';
+
 function hideLoadingScreen() {
     const overlay = document.getElementById('loading-overlay');
     const content = document.getElementById('content');
@@ -231,7 +236,6 @@ onAuthStateChanged(auth, async (user) => {
     }
     displayNameInput.value = user.displayName || '';
 
-    // Prefill school fields if the user already has them on file
     try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
         if (userSnap.exists()) {
@@ -249,6 +253,11 @@ onAuthStateChanged(auth, async (user) => {
     } catch (e) {
         console.error("Could not load existing school info:", e);
     }
+
+    originalDisplayName = displayNameInput.value.trim();
+    originalState = editState.value.trim();
+    originalCounty = editCounty.value.trim();
+    originalSchool = editSchool.value.trim();
 
     hideLoadingScreen();
 });
@@ -281,6 +290,17 @@ saveBtn.addEventListener('click', async () => {
             await showAppAlert("Please enter your school name.");
             return;
         }
+    }
+
+    const nothingChanged =
+        newDisplayName === originalDisplayName &&
+        editState.value.trim() === originalState &&
+        county === originalCounty &&
+        rawSchool === originalSchool;
+
+    if (nothingChanged) {
+        await showAppAlert("You haven't changed anything.");
+        return;
     }
 
     saveBtn.style.width = saveBtn.offsetWidth + 'px';
