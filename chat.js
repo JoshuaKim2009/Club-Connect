@@ -1,10 +1,10 @@
 //chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, setDoc, where, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, updateDoc, getCountFromServer, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-// import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-storage.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, endBefore, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 import { handleUserSwitch } from './auth-guard.js';
+import { ROLE_LABELS } from './roleLabels.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -18,9 +18,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-//const storage = getStorage(app);
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '💀', '😭'];
+const DELETED_MESSAGE_TEXT = "This message was deleted";
 
 
 const db = initializeFirestore(app, {
@@ -30,20 +30,11 @@ const db = initializeFirestore(app, {
 });
 
 
-let messageCount = 0;
-
-let isLoggedIn = false;
-let userEmail = "";
-let userName = "";
-let role = null;
 let clubId = null;
 let currentUser = null;
 let newestDoc = null;
-const MAX_IMAGES_PER_SEND = 5;
-let pendingImages = [];
-let isDropdownOpen = false;
 let updateLastSeenTimeout = null;
-let unsubscribeEdits = null;
+let editsUnsubs = [];
 
 
 let unsubscribeMessages = null;
@@ -56,20 +47,14 @@ let previousSenderId = null;
 let previousDateKey = null;
 let loadedMessageIds = new Set();
 let selectedMessageForOptions = null;
-let replyingToMessage = null;
+const userNameCache = new Map();
+let memberNames = {};
 
 const chatInput = document.getElementById('chatInput');
 const inputContainer = document.getElementById('inputContainer');
 const chatMessages = document.getElementById('chatMessages');
 const sendButton = document.getElementById('sendButton');
 const backButton = document.getElementById("back-button");
-
-const addButton = document.getElementById('addButton');
-const uploadDropdown = document.getElementById('uploadDropdown');
-const imageUploadOption = document.getElementById('imageUploadOption');
-// const pollOption = document.getElementById('pollOption');
-const imageFileInput = document.getElementById('imageFileInput');
-const pendingImagesContainer = document.getElementById('pendingImagesContainer');
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -78,32 +63,35 @@ function getUrlParameter(name) {
 
 clubId = getUrlParameter('clubId');
 
-async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) return null;
+// Names come from the user doc so they never go stale, but each uid is only ever read once.
+async function primeUserNames(uids) {
+    const unique = [...new Set(uids)].filter(uid => uid && !userNameCache.has(uid));
 
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const clubRef = doc(db, "clubs", clubId);
-            const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        if (role !== null) sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
+    for (const uid of unique) {
+        if (memberNames[uid]) userNameCache.set(uid, memberNames[uid]);
     }
+
+    const missing = unique.filter(uid => !userNameCache.has(uid));
+    if (missing.length === 0) return;
+    
+    await Promise.all(missing.map(async (uid) => {
+        try {
+            const userSnap = await getDoc(doc(db, "users", uid));
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                userNameCache.set(uid, data.name || data.displayName || "Unknown");
+            } else {
+                userNameCache.set(uid, "Unknown");
+            }
+        } catch (error) {
+            console.error(`Error fetching name for user ${uid}:`, error);
+        }
+    }));
+}
+
+function resolveDisplayName(uid) {
+    if (!uid) return "Unknown";
+    return userNameCache.get(uid) || "Unknown";
 }
 
 
@@ -120,14 +108,15 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     currentUser = user;
-    isLoggedIn = true;
-    userName = user.displayName || "";
-    userEmail = user.email || "";
 
     if (clubId) {
-        const rolePromise = getMemberRoleForClub(clubId, currentUser.uid);
-        const messagesPromise = loadInitialMessages();
-        [role] = await Promise.all([rolePromise, messagesPromise]);
+        try {
+            const clubSnap = await getDoc(doc(db, "clubs", clubId));
+            if (clubSnap.exists()) memberNames = { ...(clubSnap.data().memberNames || {}) };
+        } catch (error) {
+            console.error("Could not load member names:", error);
+        }
+        await loadInitialMessages();
         startRealtimeListener();
     } else {
         window.location.href = 'your_clubs.html';
@@ -136,24 +125,10 @@ onAuthStateChanged(auth, async (user) => {
 
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
-    const returnToPage = getUrlParameter('returnTo');
-
-    if (currentClubId) {
-        let redirectUrl = 'your_clubs.html';
-
-        if (returnToPage === 'manager') {
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        } else if (returnToPage === 'member') {
-            redirectUrl = `club_page_member.html?id=${currentClubId}`;
-        } else {
-            console.warn("Invalid or missing 'returnTo' parameter, defaulting to manager page.");
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        }
-        window.location.href = redirectUrl;
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
-}
+    window.location.href = currentClubId
+        ? `club_page.html?clubId=${currentClubId}`
+        : 'your_clubs.html';
+};
 
 if (backButton) {
     backButton.addEventListener("click", () => {
@@ -191,6 +166,8 @@ async function loadInitialMessages() {
             previousDateKey = getMessageDateKey(docs[PAGE_SIZE].data().createdAt);
         }
 
+        await primeUserNames(reversedDocs.map(docSnap => docSnap.data().createdByUid));
+
         for (let i = 0; i < reversedDocs.length; i++) {
             const docSnap = reversedDocs[i];
             const messageData = docSnap.data();
@@ -202,7 +179,7 @@ async function loadInitialMessages() {
             if (currentDateKey && currentDateKey !== previousDateKey) {
                 const dateSeparator = document.createElement('div');
                 dateSeparator.className = 'date-separator';
-                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt ? messageData.createdAt.toDate() : new Date())}</span>`;
                 chatMessages.appendChild(dateSeparator);
                 previousDateKey = currentDateKey;
                 previousSenderId = null; 
@@ -215,8 +192,6 @@ async function loadInitialMessages() {
             
             previousSenderId = messageData.createdByUid;
             previousDateKey = currentDateKey;
-            messageCount++;
-            console.log(messageCount);
         }
 
         if (chatMessages.querySelectorAll('.message-wrapper').length === 0) {
@@ -230,6 +205,7 @@ async function loadInitialMessages() {
         });
 
     } catch (error) {
+        console.error("Error loading messages:", error);
         showChatState('error');
     } finally {
         requestAnimationFrame(() => {
@@ -269,8 +245,9 @@ async function loadOlderMessages() {
         hasMoreMessages = docs.length > PAGE_SIZE;
         const messageDocs = hasMoreMessages ? docs.slice(0, PAGE_SIZE) : docs;
         
+        const previousOldestDoc = oldestDoc;
         oldestDoc = messageDocs[messageDocs.length - 1];
-        
+
         const reversedDocs = [...messageDocs].reverse();
         const tempFragment = document.createDocumentFragment();
 
@@ -281,6 +258,8 @@ async function loadOlderMessages() {
             tempPreviousSenderId = nextOlderMessage.createdByUid;
             tempPreviousDateKey = getMessageDateKey(nextOlderMessage.createdAt);
         }
+
+        await primeUserNames(reversedDocs.map(docSnap => docSnap.data().createdByUid));
 
         for (let i = 0; i < reversedDocs.length; i++) {
             const docSnap = reversedDocs[i];
@@ -297,7 +276,7 @@ async function loadOlderMessages() {
             if (currentDateKey && currentDateKey !== tempPreviousDateKey) {
                 const dateSeparator = document.createElement('div');
                 dateSeparator.className = 'date-separator show';
-                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt.toDate())}</span>`;
+                dateSeparator.innerHTML = `<span class="date-separator-text">${formatDateSeparator(messageData.createdAt ? messageData.createdAt.toDate() : new Date())}</span>`;
                 tempFragment.appendChild(dateSeparator);
                 tempPreviousDateKey = currentDateKey;
                 tempPreviousSenderId = null;
@@ -308,9 +287,6 @@ async function loadOlderMessages() {
             messageElement.classList.add('show');
             tempFragment.appendChild(messageElement);
             tempPreviousSenderId = messageData.createdByUid;
-
-            messageCount+=1;
-            console.log(messageCount);
         }
         
         if (tempFragment.children.length > 0) {
@@ -329,22 +305,22 @@ async function loadOlderMessages() {
                     } else if (!existingFirstWrapper.querySelector('.sender-name')) {
                         const senderName = document.createElement('div');
                         senderName.className = 'sender-name';
-                        const lastMsgData = reversedDocs[reversedDocs.length - 1].data();
-                        senderName.textContent = lastMsgData.createdByName || "Anonymous";
+                        senderName.textContent = resolveDisplayName(existingFirstSenderId);
                         existingFirstWrapper.insertBefore(senderName, existingFirstWrapper.firstChild);
                     }
                 }
             }
             chatMessages.insertBefore(tempFragment, chatMessages.firstChild);
-            
+
             const newScrollHeight = chatMessages.scrollHeight;
             chatMessages.scrollTop = chatMessages.scrollTop + (newScrollHeight - previousScrollHeight);
         }
+
+        watchEdits(oldestDoc, previousOldestDoc);
     } catch (error) {
-        console.error(error);
+        console.error("Error loading older messages:", error);
     } finally {
         isLoadingOlder = false;
-        startEditsListener();
     }
 }
 
@@ -379,6 +355,7 @@ function startRealtimeListener() {
                 }
                 const showSenderName = previousSenderId !== messageData.createdByUid;
                 document.querySelector('.chat-state-overlay')?.remove();
+                await primeUserNames([messageData.createdByUid]);
                 await displayMessage(messageId, messageData, showSenderName);
                 previousSenderId = messageData.createdByUid;
                 if (messageData.createdAt) newestDoc = change.doc;
@@ -387,26 +364,26 @@ function startRealtimeListener() {
         }
     }, (error) => { console.error("Error:", error); });
 
-    startEditsListener();
+    watchEdits(oldestDoc);
 }
 
 
-function startEditsListener() {
-    if (unsubscribeEdits) {
-        unsubscribeEdits();
-        unsubscribeEdits = null;
-    }
-    if (!oldestDoc) return;
+function watchEdits(startDoc = null, endBeforeDoc = null) {
+    if (!clubId) return;
+
     const messagesRef = collection(db, "clubs", clubId, "messages");
-    unsubscribeEdits = onSnapshot(
-        query(messagesRef, orderBy("createdAt", "asc"), startAt(oldestDoc)),
-        (snapshot) => {
-            for (const change of snapshot.docChanges()) {
-                if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
-                if (change.type === "removed") { removeMessage(change.doc.id); loadedMessageIds.delete(change.doc.id); }
-            }
+    const parts = [orderBy("createdAt", "asc")];
+    if (startDoc) parts.push(startAt(startDoc));
+    if (endBeforeDoc) parts.push(endBefore(endBeforeDoc));
+
+    const unsub = onSnapshot(query(messagesRef, ...parts), (snapshot) => {
+        for (const change of snapshot.docChanges()) {
+            if (change.type === "modified") updateMessage(change.doc.id, change.doc.data());
+            if (change.type === "removed") { removeMessage(change.doc.id); loadedMessageIds.delete(change.doc.id); }
         }
-    );
+    }, (error) => console.error("Edits listener error:", error));
+
+    editsUnsubs.push(unsub);
 }
 
 function createMessageElement(messageId, messageData, showSenderName) {
@@ -427,7 +404,7 @@ function createMessageElement(messageId, messageData, showSenderName) {
         senderName.className = 'sender-name';
         
         const nameText = document.createElement('span');
-        nameText.textContent = messageData.createdByName || "Anonymous";
+        nameText.textContent = resolveDisplayName(messageData.createdByUid);
         senderName.appendChild(nameText);
         
         const timestamp = document.createElement('span');
@@ -444,89 +421,21 @@ function createMessageElement(messageId, messageData, showSenderName) {
         messageWrapper.appendChild(senderName);
     }
 
-    if (messageData.replyTo) {
-        const replyPreview = document.createElement('div');
-        replyPreview.className = 'reply-preview-container';
-        if (messageData.createdByUid === currentUser.uid) {
-            replyPreview.classList.add('sent');
-        }
-        
-        const replyBubbleContainer = document.createElement('div');
-        replyBubbleContainer.className = 'reply-bubble-container';
-
-        const replyName = document.createElement('div');
-        replyName.className = 'reply-name';
-        replyName.textContent = messageData.replyTo.senderName;
-
-        const replyBubble = document.createElement('div');
-        replyBubble.className = 'reply-bubble';
-        replyBubble.dataset.replyToMessageId = messageData.replyTo.messageId;
-
-        const replyText = document.createElement('div');
-        replyText.className = 'reply-text';
-        const maxLength = 50;
-        let displayText = messageData.replyTo.text;
-        if (displayText.length > maxLength) {
-            displayText = displayText.substring(0, maxLength) + '...';
-        }
-        replyText.textContent = displayText;
-        if (messageData.replyTo.text === "This message was deleted") {
-            replyText.style.fontStyle = 'italic';
-            replyText.style.opacity = '0.6';
-        }
-
-        replyBubble.appendChild(replyText);
-        replyBubbleContainer.appendChild(replyName);
-        replyBubbleContainer.appendChild(replyBubble);
-        replyPreview.appendChild(replyBubbleContainer);
-
-        
-        replyBubbleContainer.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const currentWrapper = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
-            const currentReplyText = currentWrapper?.querySelector('.reply-text')?.textContent;
-            const updatedData = { ...messageData, replyTo: { ...messageData.replyTo, text: currentReplyText || messageData.replyTo.text }};
-            showThreadView(messageId, updatedData);
-        });
-        
-        messageWrapper.appendChild(replyPreview);
-
-        addReplyLineConnector(messageWrapper, replyPreview);
-    }
-
-    let messageContent;
-
-    if (messageData.type === "image" && messageData.imageUrl) {
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'message message-image';
-        if (messageData.createdByUid === currentUser.uid) {
-            imageContainer.classList.add('sent');
-        }
-        
-        const img = document.createElement('img');
-        img.src = messageData.imageUrl;
-        img.alt = "Image";
-        img.style.maxWidth = "100%";
-        img.style.borderRadius = "8px";
-        img.style.display = "block";
-        
-        imageContainer.appendChild(img);
-        messageWrapper.appendChild(imageContainer);
-        messageContent = imageContainer;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    if (messageData.deleted) {
+        messageDiv.textContent = DELETED_MESSAGE_TEXT;
+        messageDiv.classList.add('deleted-message');
     } else {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message';
         messageDiv.innerHTML = linkifyText(messageData.message);
-        if (messageData.deleted) {
-            messageDiv.classList.add('deleted-message');
-        }
-        if (messageData.createdByUid === currentUser.uid) {
-            messageDiv.classList.add('sent');
-        }
-        
-        messageWrapper.appendChild(messageDiv);
-        messageContent = messageDiv; 
     }
+    if (messageData.createdByUid === currentUser.uid) {
+        messageDiv.classList.add('sent');
+    }
+
+    messageWrapper.appendChild(messageDiv);
+    const messageContent = messageDiv;
+
     let pressTimer;
     let touchStartY = 0;
 
@@ -589,10 +498,6 @@ async function displayMessage(messageId, messageData, showSenderName) {
         messageElement.classList.add('show');
     });
 
-    messageCount+=1;
-    
-    console.log(messageCount);
-    
     if (updateLastSeenTimeout) {
         clearTimeout(updateLastSeenTimeout);
     }
@@ -606,19 +511,11 @@ function updateMessage(messageId, messageData) {
     if (!messageWrapper) return;
     const bubble = messageWrapper.querySelector('.message');
     if (bubble) {
-        bubble.innerHTML = linkifyText(messageData.message);
         if (messageData.deleted) {
+            bubble.textContent = DELETED_MESSAGE_TEXT;
             bubble.classList.add('deleted-message');
-        }
-    }
-    const replyTextEl = messageWrapper.querySelector('.reply-text');
-    if (replyTextEl && messageData.replyTo) {
-        replyTextEl.textContent = messageData.replyTo.text.length > 50 
-            ? messageData.replyTo.text.substring(0, 50) + '...' 
-            : messageData.replyTo.text;
-        if (messageData.replyTo.text === "This message was deleted") {
-            replyTextEl.style.fontStyle = 'italic';
-            replyTextEl.style.opacity = '0.6';
+        } else {
+            bubble.innerHTML = linkifyText(messageData.message);
         }
     }
     renderReactions(messageWrapper, messageData.reactions || []);
@@ -629,7 +526,6 @@ function removeMessage(messageId) {
     if (messageWrapper) {
         messageWrapper.remove();
     }
-    console.log("Removed message:", messageId);
 }
 
 async function saveMessage() {
@@ -643,45 +539,29 @@ async function saveMessage() {
     const messageData = {
         message: text,
         createdByUid: currentUser.uid,
-        createdByName: currentUser.displayName || "Anonymous",
         clubId: clubId,
         createdAt: serverTimestamp(),
         type: "text"
     };
 
-    if (replyingToMessage) {
-        messageData.replyTo = {
-            messageId: replyingToMessage.id,
-            text: replyingToMessage.text,
-            senderName: replyingToMessage.senderName,
-            type: replyingToMessage.type || "text",
-            imageUrl: replyingToMessage.imageUrl || null,
-            createdByUid: replyingToMessage.createdByUid
-        };
-    }
-
     batch.set(newMessageRef, messageData);
 
     try {
         await batch.commit();
-        
-        //await updateLastSeenMessages();
         chatInput.value = "";
-        if (replyingToMessage) {
-            cancelReply();
-        }
     } catch (error) {
         console.error("Failed to send message:", error);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("send messages in this chat"));
+        } else {
+            await showAppAlert("Something went wrong while sending your message.");
+        }
     }
 }
 
 
 if (sendButton) {
     sendButton.addEventListener('click', async () => {
-        
-        if (pendingImages.length > 0) {
-            await saveImages();
-        }
         if (chatInput.value.trim()) {
             await saveMessage();
         }
@@ -691,10 +571,6 @@ if (sendButton) {
 if (chatInput) {
     chatInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
-            
-            if (pendingImages.length > 0) {
-                await saveImages();
-            }
             if (chatInput.value.trim()) {
                 await saveMessage();
             }
@@ -708,136 +584,32 @@ if (chatMessages) {
             loadOlderMessages();
         }
     });
-    chatMessages.addEventListener('wheel', (e) => {
-        if (replyingToMessage) e.preventDefault();
-    }, { passive: false });
-}
-
-async function saveImages() {
-    clearPendingImages();
-    await showAppAlert("Image sending not implemented");
 }
 
 async function updateLastSeenMessages() {
-    console.log("called update Last seen");
     if (!currentUser || !clubId) return;
 
     const memberDocRef = doc(db, "clubs", clubId, "members", currentUser.uid);
 
-    await updateDoc(memberDocRef, {
-        lastSeenMessages: serverTimestamp()
-    });
-    console.log("Updated timestamp");
-}
-
-if (addButton) {
-    addButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        isDropdownOpen = !isDropdownOpen;
-        uploadDropdown.classList.toggle('show', isDropdownOpen);
-    });
-}
-
-document.addEventListener('click', (e) => {
-    if (isDropdownOpen && 
-        !uploadDropdown.contains(e.target) && 
-        !addButton.contains(e.target)) {
-        isDropdownOpen = false;
-        uploadDropdown.classList.remove('show');
-    }
-});
-
-if (imageUploadOption) {
-    imageUploadOption.addEventListener('click', () => {
-        imageFileInput.click();
-        isDropdownOpen = false;
-        uploadDropdown.classList.remove('show');
-    });
-}
-
-// if (pollOption) {
-//     pollOption.addEventListener('click', () => {
-//         isDropdownOpen = false;
-//         uploadDropdown.classList.remove('show');
-//         createPollEditCard();
-//     });
-// }
-
-if (imageFileInput) {
-    imageFileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        
-        if (pendingImages.length + files.length > MAX_IMAGES_PER_SEND) {
-            showAppAlert(`You can only send up to ${MAX_IMAGES_PER_SEND} images at once`);
-            return;
-        }
-        
-        files.forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const previewUrl = URL.createObjectURL(file);
-                pendingImages.push({ file, previewUrl });
-                addPendingImagePreview(previewUrl, pendingImages.length - 1);
-            }
+    try {
+        await updateDoc(memberDocRef, {
+            lastSeenMessages: serverTimestamp()
         });
-        
-        imageFileInput.value = '';
-    });
-}
-
-// function createPollEditCard(){
-//     showAppAlert("adding soon");
-// }
-
-
-function addPendingImagePreview(previewUrl, index) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pending-image-wrapper';
-    wrapper.dataset.index = index;
-    
-    const img = document.createElement('img');
-    img.src = previewUrl;
-    
-    const removeBtn = document.createElement('div');
-    removeBtn.className = 'pending-image-remove';
-    removeBtn.textContent = '×';
-    removeBtn.addEventListener('click', () => removePendingImage(index));
-    
-    wrapper.appendChild(img);
-    wrapper.appendChild(removeBtn);
-    pendingImagesContainer.appendChild(wrapper);
-}
-
-function removePendingImage(index) {
-    const imageData = pendingImages[index];
-    if (imageData) {
-        URL.revokeObjectURL(imageData.previewUrl);
+    } catch (error) {
+        console.error("Failed to update last seen:", error);
     }
-    
-    pendingImages.splice(index, 1);
-    
-    pendingImagesContainer.innerHTML = '';
-    pendingImages.forEach((img, i) => {
-        addPendingImagePreview(img.previewUrl, i);
-    });
 }
-
-function clearPendingImages() {
-    pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
-    pendingImages = [];
-    pendingImagesContainer.innerHTML = '';
-}
-
 
 
 function showMessageOptions(messageId, messageData, messageElement) {
-    if (messageData.deleted) return;
+    if (messageData.deleted || messageElement.querySelector('.deleted-message')) return;
     selectedMessageForOptions = {
         id: messageId,
         data: messageData,
         element: messageElement
     };
     
-    document.getElementById('modalSenderName').textContent = messageData.createdByName || "Anonymous";
+    document.getElementById('modalSenderName').textContent = resolveDisplayName(messageData.createdByUid);
     const deleteBtn = document.getElementById('deleteOptionButton');
     const isOwner = messageData.createdByUid === currentUser.uid;
     deleteBtn.style.display = isOwner ? 'flex' : 'none';
@@ -894,161 +666,16 @@ function hideMessageOptions() {
     modal.style.opacity = '';
     modal.style.pointerEvents = '';
 
-    if (!replyingToMessage) {
-        chatMessages.classList.remove('blur-background');
-    }
+    chatMessages.classList.remove('blur-background');
     document.getElementById('messageOptionsOverlay').classList.remove('show');
     selectedMessageForOptions = null;
 }
-
-function startReply(messageId, messageData) {
-    replyingToMessage = {
-        id: messageId,
-        text: messageData.type === "image" ? "Image" : messageData.message,
-        senderName: messageData.createdByName || "Anonymous",
-        type: messageData.type || "text",
-        imageUrl: messageData.imageUrl || null,
-        createdByUid: messageData.createdByUid
-    };
-    
-    document.getElementById('replyToName').textContent = replyingToMessage.senderName;
-    document.getElementById('replyToMessage').textContent = replyingToMessage.text;
-    
-    document.getElementById('replyPreviewBar').classList.add('show');
-
-    document.body.classList.add('scroll-locked');
-    
-    chatMessages.classList.add('scroll-locked');
-
-    chatMessages.classList.add('blur-background');
-    
-    // chatMessages.style.paddingBottom = `calc(165px + env(safe-area-inset-bottom) + 20px)`;
-    
-    chatInput.focus();
-}
-
-function cancelReply() {
-    replyingToMessage = null;
-    
-    document.getElementById('replyPreviewBar').classList.remove('show');
-    
-    chatMessages.classList.remove('scroll-locked');
-    chatMessages.classList.remove('blur-background');
-    
-    // chatMessages.style.paddingBottom = `calc(85px + env(safe-area-inset-bottom) + 20px)`;
-    document.body.classList.remove('scroll-locked');
-    document.body.style.touchAction = ''; 
-}
-
-chatInput.addEventListener('blur', () => {
-    // Keyboard was dismissed — release body lock but keep reply state
-    document.body.classList.remove('scroll-locked');
-    document.body.style.touchAction = '';
-    chatMessages.classList.remove('scroll-locked');
-    // Don't cancel the reply itself, just unblock touches
-});
-
-document.getElementById('cancelReplyButton')?.addEventListener('click', cancelReply);
 
 document.getElementById('messageOptionsOverlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'messageOptionsOverlay') {
         hideMessageOptions();
     }
 });
-
-// document.getElementById('replyOptionButton')?.addEventListener('click', () => {
-//     if (selectedMessageForOptions) {
-//         startReply(selectedMessageForOptions.id, selectedMessageForOptions.data);
-//         hideMessageOptions();
-//     }
-// });
-
-
-
-function showThreadView(replyMessageId, replyMessageData) {
-    if (!replyMessageData.replyTo) return;
-    const threadOverlay = document.createElement('div');
-    threadOverlay.className = 'thread-view-overlay';
-    threadOverlay.id = 'threadViewOverlay';
-    
-    const threadContainer = document.createElement('div');
-    threadContainer.className = 'thread-view-container';
-    
-    const originalMsgWrapper = document.createElement('div');
-    originalMsgWrapper.className = 'thread-message-wrapper';
-    if (replyMessageData.replyTo.createdByUid === currentUser.uid) {
-        originalMsgWrapper.classList.add('sent');
-    }
-    if (replyMessageData.replyTo.type === 'image') {
-        originalMsgWrapper.innerHTML = `
-            <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
-            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''} message-image">
-                <img src="${replyMessageData.replyTo.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
-            </div>
-        `;
-    } else {
-        originalMsgWrapper.innerHTML = `
-            <div class="thread-sender-name">${replyMessageData.replyTo.senderName}</div>
-            <div class="thread-message ${replyMessageData.replyTo.createdByUid === currentUser.uid ? 'sent' : ''}">${linkifyText(replyMessageData.replyTo.text)}</div>
-        `;
-    }
-
-    if (replyMessageData.replyTo.text === "This message was deleted") {
-        const threadMsg = originalMsgWrapper.querySelector('.thread-message');
-        if (threadMsg) {
-            threadMsg.style.fontStyle = 'italic';
-            threadMsg.style.opacity = '0.6';
-        }
-    }
-    
-    const replyMsgWrapper = document.createElement('div');
-    replyMsgWrapper.className = 'thread-message-wrapper';
-    if (replyMessageData.createdByUid === currentUser.uid) {
-        replyMsgWrapper.classList.add('sent');
-    }
-    if (replyMessageData.type === 'image') {
-        replyMsgWrapper.innerHTML = `
-            <div class="thread-sender-name">${replyMessageData.createdByName}</div>
-            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''} message-image">
-                <img src="${replyMessageData.imageUrl}" alt="Image" style="max-width: 100%; border-radius: 8px;">
-            </div>
-        `;
-    } else {
-        replyMsgWrapper.innerHTML = `
-            <div class="thread-sender-name">${replyMessageData.createdByName}</div>
-            <div class="thread-message ${replyMessageData.createdByUid === currentUser.uid ? 'sent' : ''}">${linkifyText(replyMessageData.message)}</div>
-        `;
-    }
-    
-    threadContainer.appendChild(originalMsgWrapper);
-    threadContainer.appendChild(replyMsgWrapper);
-    threadOverlay.appendChild(threadContainer);
-    
-    document.body.appendChild(threadOverlay);
-    
-    chatMessages.classList.add('thread-blur');
-    
-    requestAnimationFrame(() => {
-        threadOverlay.classList.add('show');
-    });
-    
-    threadOverlay.addEventListener('click', (e) => {
-        hideThreadView();
-    });
-}
-
-function hideThreadView() {
-    const threadOverlay = document.getElementById('threadViewOverlay');
-    if (threadOverlay) {
-        threadOverlay.classList.remove('show');
-        chatMessages.classList.remove('thread-blur');
-        setTimeout(() => {
-            threadOverlay.remove();
-        }, 300);
-    }
-}
-
-
 
 
 function scrollToBottom() {
@@ -1112,53 +739,20 @@ if (inputContainer) {
 
 
 
-
-function addReplyLineConnector(wrapper, preview) {
-    requestAnimationFrame(() => {
-        const bubble = preview.querySelector('.reply-bubble');
-        const msg = wrapper.querySelector('.message');
-        
-        if (!bubble || !msg) return;
-        
-        const bw = bubble.offsetWidth;
-        const mw = msg.offsetWidth;
-        const sent = wrapper.classList.contains('sent');
-        
-        const L = document.createElement('i');
-        L.className = 'fa-solid fa-l reply-icon';
-        
-        const longer = bw > mw;
-        
-        if (sent) {
-            L.style.transform = longer ? 'translateY(-50%)' : 'scaleY(-1) translateY(50%)';
-        } else {
-            L.style.transform = longer ? 'scaleX(-1) translateY(-50%)' : 'scale(-1, -1) translateY(50%)';
-        }
-        
-        L.style.position = 'absolute';
-        L.style.top = '50%';
-        
-        if (longer) {
-            L.style[sent ? 'left' : 'right'] = '-25px';
-            msg.style.position = 'relative';
-            msg.appendChild(L);
-        } else {
-            L.style[sent ? 'left' : 'right'] = '-25px';
-            bubble.style.position = 'relative';
-            bubble.appendChild(L);
-        }
-    });
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
-
-
-
 function linkifyText(text) {
+    const escaped = escapeHtml(text);
     const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
-    
-    return text.replace(urlPattern, (url) => {
+    return escaped.replace(urlPattern, (url) => {
         let href = url.startsWith('http') ? url : 'https://' + url;
-        
         return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
     });
 }
@@ -1190,6 +784,14 @@ function getMessageDateKey(timestamp) {
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
+}
+
 document.getElementById('deleteOptionButton')?.addEventListener('click', async () => {
     if (!selectedMessageForOptions) return;
 
@@ -1205,20 +807,21 @@ document.getElementById('deleteOptionButton')?.addEventListener('click', async (
     }
 
     const msgRef = doc(db, "clubs", clubId, "messages", messageToDelete.id);
-    const messagesRef = collection(db, "clubs", clubId, "messages");
     const batch = writeBatch(db);
-    batch.update(msgRef, { deleted: true, message: "This message was deleted", type: "text", reactions: [] });
+    batch.update(msgRef, { deleted: true, reactions: [] });
 
-    const repliesQuery = query(messagesRef, where("replyTo.messageId", "==", messageToDelete.id));
-    const repliesSnap = await getDocs(repliesQuery);
-    repliesSnap.forEach(replyDoc => {
-        batch.update(replyDoc.ref, { "replyTo.text": "This message was deleted" });
-    });
-
-    await batch.commit();
-    hideMessageOptions();
+    try {
+        await batch.commit();
+        hideMessageOptions();
+    } catch (error) {
+        console.error("Error deleting message:", error);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("delete this message"));
+        } else {
+            await showAppAlert("Something went wrong while deleting this message.");
+        }
+    }
 });
-
 
 
 
@@ -1232,10 +835,19 @@ async function toggleReaction(messageId, emoji, shouldAdd = null) {
     const remove = shouldAdd !== null ? !shouldAdd
         : !!chatMessages.querySelector(`[data-message-id="${messageId}"] .reaction-chip[data-emoji="${emoji}"].mine`);
 
-    if (remove) {
-        await updateDoc(msgRef, { reactions: arrayRemove(entry) });
-    } else {
-        await updateDoc(msgRef, { reactions: arrayUnion(entry) });
+    try {
+        if (remove) {
+            await updateDoc(msgRef, { reactions: arrayRemove(entry) });
+        } else {
+            await updateDoc(msgRef, { reactions: arrayUnion(entry) });
+        }
+    } catch (error) {
+        console.error("Error updating reaction:", error);
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("react to this message"));
+        } else {
+            await showAppAlert("Something went wrong while saving your reaction.");
+        }
     }
 }
 
@@ -1385,6 +997,20 @@ function showChatState(type) {
     const existing = document.querySelector('.chat-state-overlay');
 
     if (type === 'loading' && existing?.querySelector('.chat-loading-bubble')) {
+        return;
+    }
+
+    if (type === 'empty' && existing?.querySelector('.chat-loading-bubble')) {
+        const bubble = existing.querySelector('.chat-loading-bubble');
+        bubble.classList.add('settled');
+
+        const text = document.createElement('p');
+        text.className = 'fancy-label empty-text';
+        text.style.marginTop = '-4px';
+        text.textContent = 'NO MESSAGES YET';
+        existing.appendChild(text);
+
+        setTimeout(() => text.classList.add('show'), 320);
         return;
     }
 

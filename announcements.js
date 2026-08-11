@@ -1,9 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection, query, orderBy, limit, startAfter, getDocs, getCountFromServer, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, collection, query, orderBy, limit, startAfter, getDocs, getCountFromServer, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
-
+import { ROLE_LABELS } from './roleLabels.js';
+import { getRole, peekRole } from './roleCache.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -22,7 +23,7 @@ const db = initializeFirestore(app, {
 const auth = getAuth(app);
 
 function escapeHtml(str) {
-    return String(str)
+    return String(str ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -30,6 +31,20 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+let memberNames = {};
+
+async function resolveName(uid) {
+    if (!uid) return "Unknown";
+    if (memberNames[uid]) return memberNames[uid];
+    try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        memberNames[uid] = (userSnap.exists() && userSnap.data().name) ? userSnap.data().name : "Unknown";
+        return memberNames[uid];
+    } catch (error) {
+        console.error(`Failed to resolve name for ${uid}:`, error);
+        return "Unknown";
+    }
+}
 
 let currentUser = null;
 let clubId = null;
@@ -49,6 +64,9 @@ let currentPageAnnouncements = [];
 const announcementsContainer = document.getElementById('announcementsContainer');
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage');
 const addAnnouncementButton = document.getElementById('add-announcement-button');
+const noAnnouncementsMessageAdmin = document.getElementById('noAnnouncementsMessageAdmin');
+
+document.getElementById('empty-state-announcement-btn').addEventListener('click', addNewAnnouncementEditingCard);
 
 document.body.classList.add('no-scroll');
 
@@ -57,55 +75,11 @@ function getUrlParameter(name) {
     return params.get(name) || '';
 }
 
-async function getClubRole(clubId, uid, clubSnap = null) {
-    if (!clubId || !uid) return null;
-
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const snap = clubSnap || await getDoc(doc(db, "clubs", clubId));
-            role = (snap.exists() && snap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        if (role !== null) sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
-    }
-}
-
 window.goToClubPage = function () {
     const currentClubId = getUrlParameter('clubId');
-    const returnToPage = getUrlParameter('returnTo');
-
-    console.log("goToClubPage: clubId = ", currentClubId);
-    console.log("goToClubPage: returnToPage = ", returnToPage);
-
-    if (currentClubId) {
-        let redirectUrl = 'your_clubs.html';
-
-        if (returnToPage === 'manager') {
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        } else if (returnToPage === 'member') {
-            redirectUrl = `club_page_member.html?id=${currentClubId}`;
-        } else {
-            console.warn("Invalid or missing 'returnTo' parameter, defaulting to manager page.");
-            redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        }
-        window.location.href = redirectUrl;
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
+    window.location.href = currentClubId
+        ? `club_page.html?clubId=${currentClubId}`
+        : 'your_clubs.html';
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -132,7 +106,8 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        currentUserRole = await getClubRole(clubId, currentUser.uid, clubSnap);
+        memberNames = { ...(clubSnap.data().memberNames || {}) };
+        currentUserRole = await getRole(db, clubId, currentUser.uid, clubSnap);
 
         if (currentUserRole === null) {
             hideLoadingScreen();
@@ -190,10 +165,10 @@ function documentTopOf(el) {
     return y;
 }
 
-function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null) {
+function createEditingCardElement(initialData = {}, isNewAnnouncement = true, announcementIdToUpdate = null, isFirstCard = false) {
     isEditingAnnouncement = true;
     const cardDiv = document.createElement('div');
-    cardDiv.className = 'announcement-card editing-announcement-card';
+    cardDiv.className = (isNewAnnouncement && isFirstCard) ? 'announcement-card editing-announcement-card editing-announcement-card-first' : 'announcement-card editing-announcement-card';
     cardDiv.dataset.editId = announcementIdToUpdate || `new-${Date.now()}`;
     cardDiv.dataset.isNewAnnouncement = isNewAnnouncement;
 
@@ -230,8 +205,8 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
             }
         } else {
             cardDiv.remove();
-            if (announcementsContainer && announcementsContainer.querySelectorAll('.announcement-card').length === 0 && noAnnouncementsMessage) {
-                noAnnouncementsMessage.style.display = 'block';
+            if (announcementsContainer.querySelectorAll('.announcement-card').length === 0) {
+                noAnnouncementsMessageAdmin.style.display = 'block';
             }
             if (addAnnouncementButton) addAnnouncementButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -250,10 +225,11 @@ async function addNewAnnouncementEditingCard() {
         return;
     }
 
-    const newCardElement = createEditingCardElement({}, true);
+    const isFirstCard = announcementsContainer.querySelectorAll('.announcement-card').length === 0;
+    const newCardElement = createEditingCardElement({}, true, null, isFirstCard);
 
     if (announcementsContainer) {
-        if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+        noAnnouncementsMessageAdmin.style.display = 'none';
         announcementsContainer.prepend(newCardElement);
     }
 }
@@ -263,17 +239,17 @@ async function createAnnouncement(clubId, title, content, user) {
         title,
         content,
         createdByUid: user.uid,
-        createdByName: user.displayName || "Unknown",
         clubId,
         createdAt: serverTimestamp()
  	};
   	const collectionRef = collection(db, "clubs", clubId, "announcements");
   	const announcementRef = await addDoc(collectionRef, announcementData);
-  	const newSnap = await getDoc(announcementRef);
 	// returns all the doc data and the firestore doc ID. This is used to display the new announcement to the user without having to do another database read 
     return {
-        ...newSnap.data({ serverTimestamps: 'estimate' }), 
-        id: announcementRef.id 
+        ...announcementData,
+        createdAt: Timestamp.now(),
+        authorName: await resolveName(user.uid),
+        id: announcementRef.id
     };
 }
 
@@ -284,11 +260,13 @@ async function updateAnnouncement(clubId, announcementId, title, content) {
         title, 
         content 
  	});   
-  	const announcementSnap = await getDoc(announcementRef); 
+  	const cached = currentPageAnnouncements.find(a => a.id === announcementId) || {};
     // returns object with the newly updated document fields and its firestore doc ID to display the updated announcement without having to do another read
     return { 
-        ...announcementSnap.data({ serverTimestamps: 'estimate' }), 
-        id: announcementSnap.id 
+        ...cached,
+        title,
+        content,
+        id: announcementId
   	};
 }
 
@@ -304,6 +282,8 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
 
     try {
         if (existingAnnouncementId) {
+            isEditingAnnouncement = false;
+            noAnnouncementsMessageAdmin.style.display = 'none';
             const updatedData = await updateAnnouncement(clubId, existingAnnouncementId, title, content);
 
             const index = currentPageAnnouncements.findIndex(a => a.id === existingAnnouncementId);
@@ -321,7 +301,8 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
             const newData = await createAnnouncement(clubId, title, content, currentUser);
 
             isEditingAnnouncement = false;
-            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+            noAnnouncementsMessageAdmin.style.display = 'none';
+            if (addAnnouncementButton) addAnnouncementButton.style.display = 'block';
 
             const newCard = createAnnouncementDisplayCard(newData, newData.id);
             cardDiv.replaceWith(newCard);
@@ -361,7 +342,6 @@ async function saveAnnouncement(cardDiv, existingAnnouncementId = null) {
     }
 }
 
-let allAnnouncements = [];
 
 function announcementsQueryBase() {
     return query(collection(db, "clubs", clubId, "announcements"), orderBy("createdAt", "desc"));
@@ -383,6 +363,8 @@ async function fetchPage(page) {
     const docs = [];
     snap.forEach((d) => docs.push({ id: d.id, ...d.data() }));
     if (snap.docs.length > 0) cursors[page] = snap.docs[snap.docs.length - 1];
+    await Promise.all([...new Set(docs.map(d => d.createdByUid))].map(uid => resolveName(uid)));
+    docs.forEach(d => { d.authorName = memberNames[d.createdByUid] || "Unknown"; });
     return docs;
 }
 
@@ -395,14 +377,15 @@ async function renderAnnouncementPage() {
         if (currentUserRole === 'member') {
             announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
             announcementsContainer.style.marginTop = '0px';
-            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'block';
+            noAnnouncementsMessageAdmin.style.display = 'none';
         } else {
-            if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+            noAnnouncementsMessageAdmin.style.display = 'block';
+            if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         }
         hidePagination();
         return;
     }
-    if (noAnnouncementsMessage) noAnnouncementsMessage.style.display = 'none';
+    noAnnouncementsMessageAdmin.style.display = 'none';
     await renderPage(1, false);
 }
 
@@ -521,7 +504,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
     if (canEditDelete) {
         actionButtonsHtml = `
             <div class="announcement-meta-row">
-                <span class="announcement-meta-text">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</span>
+                <span class="announcement-meta-text">${escapeHtml(announcementData.authorName)} · ${formatTimestamp(announcementData.createdAt)}</span>
                 <div class="announcement-meta-btns">
                     <button class="edit-btn" data-announcement-id="${announcementId}">
                         <i class="fa-solid fa-pencil"></i>
@@ -533,7 +516,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
             </div>
         `;
     } else {
-        actionButtonsHtml = `<p class="announcement-meta">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</p>`;
+        actionButtonsHtml = `<p class="announcement-meta">${escapeHtml(announcementData.authorName)} · ${formatTimestamp(announcementData.createdAt)}</p>`;
     }
 
     cardDiv.innerHTML = `
@@ -547,7 +530,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
         if (editBtn) editBtn.addEventListener('click', () => editAnnouncement(announcementId));
 
         const deleteBtn = cardDiv.querySelector('.delete-btn');
-        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAnnouncement(announcementId, announcementData.title));
+        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAnnouncement(announcementId));
     }
 
     return cardDiv;
@@ -576,7 +559,7 @@ async function editAnnouncement(announcementId) {
     targetDisplayCard.replaceWith(editingCard);
 }
 
-async function deleteAnnouncement(announcementId, announcementTitle) {
+async function deleteAnnouncement(announcementId) {
     if (!currentUser || !clubId) {
         await showAppAlert("You must be logged in and viewing a club to delete announcements.");
         return;
@@ -597,6 +580,9 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
             announcementsContainer.innerHTML = '';
             if (currentUserRole === 'member') {
                 announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+            } else {
+                noAnnouncementsMessageAdmin.style.display = 'block';
+                if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
             }
             hidePagination();
         } else {
@@ -677,5 +663,5 @@ function isPermissionError(error) {
 }
 
 function permissionDeniedMessage(actionPhrase) {
-    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

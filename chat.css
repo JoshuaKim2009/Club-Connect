@@ -1112,7 +1112,7 @@ body.scroll-locked {
     background: radial-gradient(circle at center, #ffffff, #eeeeee);
     border-radius: 15px 15px 15px 0;
     border: 2px solid black;
-    box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.25);
+    box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.16);
     width: fit-content;
     animation: bubble-float 2.4s ease-in-out infinite;
 }
@@ -1137,6 +1137,34 @@ body.scroll-locked {
 @keyframes dot-bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
     30% { transform: translateY(-9px); opacity: 1; }
+}
+
+.chat-loading-bubble.settled {
+    animation: bubble-jump-up 0.5s cubic-bezier(.34,1.56,.64,1) forwards, none;
+}
+.chat-loading-bubble.settled .dot {
+    animation: none !important;
+    opacity: 0.55;
+}
+
+@keyframes bubble-jump-up {
+    0% { transform: translateY(0); }
+    55% { transform: translateY(-12px) scale(0.94); }
+    75% { transform: translateY(-9px) scale(1.02); }
+    100% { transform: translateY(-10px) scale(1); }
+}
+
+.empty-text {
+    opacity: 0;
+    transform: scale(0.7);
+}
+.empty-text.show {
+    animation: text-pop-in 0.45s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes text-pop-in {
+    0% { opacity: 0; transform: scale(0.7); }
+    60% { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 

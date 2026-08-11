@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=68" rel="stylesheet" />
+    <link href="styles.css?v=69" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Links</title>
@@ -61,10 +61,11 @@
           <button id="reorder-button" style="display: none;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button>
       </div>
       <p id="noResourcesMessage" class="fancy-label" style="display: none;">NO LINKS YET</p>
-      <div id="noResourcesMessageAdmin" class="empty-state-card-dashed" style="display: none;" role="button" tabindex="0">
+      <div id="noResourcesMessageAdmin" class="empty-state-card-dashed static" style="display: none;">
         <i class="fa-solid fa-folder-plus"></i>
         <p class="empty-state-dashed-title">Share links with your club</p>
         <p class="empty-state-dashed-subtitle">Create a folder to organize links for you club.</p>
+        <button id="empty-state-links-btn" class="fancy-button">NEW FOLDER</button>
       </div>
       <div id="resourcesContainer"></div>
 
@@ -88,7 +89,7 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js?v=2"></script>
-    <script type="module" src="links.js?v=31"></script>
+    <script type="module" src="links.js?v=32"></script>
     <!-- <script type="module" src="loading.js?v=2"></script> -->
   </body>
 </html>

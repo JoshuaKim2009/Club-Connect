@@ -1,3 +1,13 @@
+// A queue so showAppAlert/showAppConfirm never stack — if one is already open,
+// the next call waits for it to close before mounting its own overlay.
+let dialogQueue = Promise.resolve();
+
+function enqueueDialog(showFn) {
+    const run = () => showFn();
+    const result = dialogQueue.then(run, run);
+    dialogQueue = result.catch(() => {});
+    return result;
+}
 
 /**
  * Displays a custom HTML alert dialog.
@@ -7,7 +17,7 @@
  * @returns {Promise<void>} Resolves when the custom alert dialog is closed.
  */
 export async function showAppAlert(message, title = 'Notification') {
-    return new Promise(resolve => {
+    return enqueueDialog(() => new Promise(resolve => {
         const body = document.body;
 
         body.classList.add('no-scroll');
@@ -49,13 +59,9 @@ export async function showAppAlert(message, title = 'Notification') {
 
         okBtn.addEventListener("click", closeDialog);
 
-        // A small delay to ensure DOM is ready and CSS applied, often helps with rendering
-        // This makes sure the dialog is properly positioned and visible.
-        setTimeout(() => {
-            panel.style.display = 'flex'; // Ensure it's visible
-            overlay.style.display = 'block'; // Ensure overlay is visible
-        }, 50); 
-    });
+        panel.style.display = 'flex';
+        overlay.style.display = 'block';
+    }));
 }
 
 // This function creates and manages your custom HTML confirm dialog
@@ -67,7 +73,7 @@ export async function showAppAlert(message, title = 'Notification') {
  * @returns {Promise<boolean>} Resolves with `true` if OK, `false` if Cancel.
  */
 export async function showAppConfirm(message, title = 'Confirm Action') {
-    return new Promise(resolve => {
+    return enqueueDialog(() => new Promise(resolve => {
         const body = document.body;
 
         body.classList.add('no-scroll');
@@ -126,12 +132,7 @@ export async function showAppConfirm(message, title = 'Confirm Action') {
         yesBtn.addEventListener("click", handleYes);
         noBtn.addEventListener("click", handleNo);
 
-        // A small delay to ensure DOM is ready and CSS applied
-        // setTimeout(() => {
-        //     panel.style.display = 'flex';
-        //     overlay.style.display = 'block';
-        // }, 50);
         panel.style.display = 'flex';
         overlay.style.display = 'block';
-    });
+    }));
 }

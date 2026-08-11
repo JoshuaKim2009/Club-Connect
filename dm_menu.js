@@ -27,6 +27,20 @@ const newDmModal = document.getElementById('new-dm-modal');
 const newDmOverlay = document.getElementById('new-dm-overlay');
 const cancelNewDmButton = document.getElementById('cancel-new-dm-button');
 let cachedMembers = null;
+const userNameCache = new Map();
+
+async function getCurrentUserName(uid, fallbackName) {
+    if (userNameCache.has(uid)) return userNameCache.get(uid);
+    try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        const name = snap.exists() ? (snap.data().name || fallbackName) : fallbackName;
+        userNameCache.set(uid, name);
+        return name;
+    } catch (err) {
+        console.warn('Could not fetch current name for', uid, err);
+        return fallbackName;
+    }
+}
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -34,7 +48,6 @@ function getUrlParameter(name) {
 }
 
 const clubId = getUrlParameter('clubId');
-const returnTo = getUrlParameter('returnTo');
 document.body.classList.add('no-scroll');
 let loadingScreenHidden = false;
 const contentEl = document.getElementById('content');
@@ -62,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
         hideLoadingScreen();
-        loadDms();
+        loadDms(clubSnap);
     } catch (error) {
         console.error(error);
         showContainerError("Oops! Something went wrong.", true);
@@ -72,13 +85,9 @@ onAuthStateChanged(auth, async (user) => {
 
 if (backButton) {
     backButton.addEventListener('click', () => {
-        if (returnTo === 'manager') {
-            window.location.href = `club_page_manager.html?id=${clubId}`;
-        } else if (returnTo === 'member') {
-            window.location.href = `club_page_member.html?id=${clubId}`;
-        } else {
-            window.location.href = 'your_clubs.html';
-        }
+        window.location.href = clubId
+            ? `club_page.html?clubId=${clubId}`
+            : 'your_clubs.html';
     });
 }
 
@@ -86,18 +95,21 @@ function createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadC
     const card = document.createElement('div');
     card.className = 'dm-card';
 
-    const initial = otherName.charAt(0).toUpperCase();
+    const displayInitial = otherName.charAt(0).toUpperCase();
+    // use the second letter for color variety so people who share a first letter don't always get the same avatar color. Fall back to the first letter for one char names
+    const colorSeedLetter = (otherName.charAt(1) || otherName.charAt(0)).toUpperCase();
+
     let messageText = "messages";
     if (unreadCount === 1){
         messageText = "message";
     }
-    const avatarColor = getColorFromLetter(initial);
+    const avatarColor = getColorFromLetter(colorSeedLetter);
 
     card.innerHTML = `
-        <div class="dm-card-avatar" style="background-color: ${avatarColor};">${initial}</div>
+        <div class="dm-card-avatar" style="background-color: ${avatarColor};">${escapeHtml(displayInitial)}</div>
         <div class="dm-card-body">
-            <div class="dm-card-name">${otherName}</div>
-            <div class="dm-card-preview">${lastMessage}</div>
+            <div class="dm-card-name">${escapeHtml(otherName)}</div>
+            <div class="dm-card-preview">${escapeHtml(lastMessage)}</div>
         </div>
         <div class="dm-card-meta">
             <div class="dm-card-time">${timeStr}</div>
@@ -106,7 +118,7 @@ function createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadC
     `;
 
     card.addEventListener('click', () => {
-        window.location.href = `direct_messages.html?convId=${convId}&otherUid=${otherUid}&otherName=${encodeURIComponent(otherName)}&clubId=${clubId}&returnTo=${returnTo}`;
+        window.location.href = `direct_messages.html?convId=${convId}&otherUid=${otherUid}&otherName=${encodeURIComponent(otherName)}&clubId=${clubId}`;
     });
 
     return card;
@@ -114,27 +126,24 @@ function createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadC
 
 function getColorFromLetter(letter) {
     const colors = [
-        'rgb(130, 80, 180)',
-        'rgb(60, 140, 130)',
-        'rgb(190, 75, 75)',
-        'rgb(75, 150, 60)',
-        'rgb(60, 110, 190)',
-        'rgb(190, 130, 45)',
+        'rgb(161, 122, 201)',
+        'rgb(0, 175, 137)',
+        'rgb(223, 89, 89)',
+        'rgb(216, 87, 166)',
+        'rgb(51, 149, 214)',
+        'rgb(207, 144, 72)',
     ];
     const index = letter.charCodeAt(0) % colors.length;
     return colors[index];
 }
 
 
-async function loadDms() {
+let renderToken = 0;
+
+async function loadDms(clubSnap) {
     const list = document.getElementById('dm-list');
 
-    const memberUIDsPromise = getDoc(doc(db, 'clubs', clubId))
-        .then(snap => snap.exists() ? new Set(snap.data().memberUIDs || []) : null)
-        .catch(err => {
-            console.warn('Could not fetch club members for DM filtering, showing all:', err);
-            return null;
-        });
+    const memberUIDsSet = new Set(clubSnap.data().memberUIDs || []);
 
     const q = query(
         collection(db, 'directMessages'),
@@ -145,19 +154,30 @@ async function loadDms() {
     let isInitialDmLoad = true;
 
     onSnapshot(q, async (snapshot) => {
-        const memberUIDsSet = await memberUIDsPromise; 
-        list.querySelectorAll('.dm-card').forEach(c => c.remove());
+        const myToken = ++renderToken;
 
-        let cardIndex = 0;
-        snapshot.forEach((docSnap) => {
+        const rows = [];
+        for (const docSnap of snapshot.docs) {
             const data = docSnap.data();
-            if (!data.lastMessageText) return;
+            if (!data.lastMessageText) continue;
 
             const otherUid = data.participants.find(uid => uid !== currentUser.uid);
-            if (memberUIDsSet && !memberUIDsSet.has(otherUid)) return;
+            if (!memberUIDsSet.has(otherUid)) continue;
 
-            const convId = docSnap.id;
-            const otherName = data.participantNames?.[otherUid] || 'Unknown';
+            rows.push({ convId: docSnap.id, data, otherUid });
+        }
+
+        const names = await Promise.all(rows.map(r =>
+            getCurrentUserName(r.otherUid, r.data.participantNames?.[r.otherUid] || 'Unknown')
+        ));
+
+        if (myToken !== renderToken) return;
+
+        list.querySelectorAll('.dm-card').forEach(c => c.remove());
+
+        rows.forEach((r, i) => {
+            const { convId, data, otherUid } = r;
+            const otherName = names[i];
             const unreadCount = data.unreadCounts?.[currentUser.uid] || 0;
             const lastMessage = data.lastMessageText || '';
             const lastMessageAt = data.lastMessageAt?.toDate();
@@ -185,8 +205,20 @@ async function loadDms() {
 
             const card = createDmCard(convId, otherUid, otherName, lastMessage, timeStr, unreadCount);
             list.appendChild(card);
-            if (isInitialDmLoad) animateCardIn(card, cardIndex++);
+            if (isInitialDmLoad) animateCardIn(card, i);
         });
+
+        const noDmsMessage = document.getElementById('no-dms-message');
+        if (noDmsMessage) {
+            const shouldShow = list.querySelectorAll('.dm-card').length === 0;
+            const isAlreadyShown = noDmsMessage.style.display === 'block';
+            if (shouldShow && !isAlreadyShown) {
+                noDmsMessage.style.display = 'block';
+                animateCardIn(noDmsMessage);
+            } else if (!shouldShow) {
+                noDmsMessage.style.display = 'none';
+            }
+        }
 
         isInitialDmLoad = false;
     }, (error) => {
@@ -255,7 +287,13 @@ function renderMemberList(members) {
     memberList.innerHTML = '';
 
     if (members.length === 0) {
-        memberList.innerHTML = '<p class="fancy-black-label">No other members found.</p>';
+        memberList.innerHTML = `
+            <div class="member-list-empty">
+                <i class="fa-solid fa-user-group"></i>
+                <p class="member-list-empty-title">It's just you so far</p>
+                <p class="member-list-empty-subtitle">Invite others to join the club</p>
+            </div>
+        `;
         return;
     }
 
@@ -296,7 +334,7 @@ async function openOrCreateConversation(otherUid, otherName) {
         });
     }
 
-    window.location.href = `direct_messages.html?convId=${convId}&otherUid=${otherUid}&otherName=${encodeURIComponent(otherName)}&clubId=${clubId}&returnTo=${returnTo}`;
+    window.location.href = `direct_messages.html?convId=${convId}&otherUid=${otherUid}&otherName=${encodeURIComponent(otherName)}&clubId=${clubId}`;
 }
 
 if (newDmButton) {
@@ -315,6 +353,7 @@ function animateCardIn(card, index = 0) {
     card.style.opacity = '0';
     card.style.transform = 'translateY(16px)';
     card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+    void card.offsetHeight;
     setTimeout(() => {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
@@ -365,4 +404,13 @@ function showContainerError(message, showRetry = false, topMargin = '142px') {
             </div>
         </div>
     `;
+}
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

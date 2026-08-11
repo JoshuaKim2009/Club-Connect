@@ -1,0 +1,565 @@
+#add-collab-button {
+  margin: -25px auto 15px auto;
+  display: block;
+}
+
+.collab-tab-row {
+  display: flex;
+  gap: 14px;
+  width: calc(85% + 20px);
+  max-width: 620px;
+  margin: 16px auto;
+}
+
+.collab-tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border: 2px solid black;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(#ffffff, #f7f7f7);
+  box-shadow: 0px 2px 0px #000000;
+  font-family: var(--primary-font-family);
+  font-size: 22px;
+  color: black;
+  /* transition: all 0.05s ease-in-out; */
+}
+
+.collab-tab-selected {
+  box-shadow: none;
+  transform: translateY(2px);
+  outline: 3px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 4px;
+  cursor: default;
+  pointer-events: none;
+}
+
+.collab-card {
+  --collab-club: #486a9e;
+  --collab-club-mine: #5a8f5a;
+  box-sizing: border-box;
+  border: 2px solid black;
+  box-shadow: 0px 2px 0px #000000;
+  border-radius: 10px;
+  background: #fff;
+  margin: 16px auto;
+  width: calc(85% + 20px);
+  max-width: 620px;
+  overflow: hidden;
+  text-align: left;
+  font-family: var(--primary-font-family, sans-serif);
+  color: #111;
+  line-height: 1.4;
+}
+
+.collab-card * {
+  box-sizing: border-box;
+}
+
+.collab-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px 0;
+  font-family: var(--primary-font-family);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #777777;
+}
+
+.collab-strip-right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+
+.collab-strip-time {
+  white-space: nowrap;
+}
+
+.collab-body {
+  padding: 6px 14px 10px;
+}
+
+.collab-card h3 {
+  font-weight: normal;
+  font-size: 27px;
+  line-height: 1.1;
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+}
+
+.collab-chips {
+  margin: 0 0 9px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-left: -1px;
+}
+
+.collab-chip {
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 1px 10px;
+  border: 1.5px solid #ccc;
+  border-radius: 11px;
+  background: #fff;
+  color: #555;
+}
+
+.collab-chip-from {
+  background: var(--collab-club);
+  border-color: var(--collab-club);
+  color: #fff;
+}
+
+.collab-chip-you {
+  background: var(--collab-club-mine);
+  border-color: var(--collab-club-mine);
+  color: #fff;
+}
+
+.collab-chip-arrow {
+  color: #aaa;
+  font-size: 15px;
+}
+
+.collab-desc {
+  font-size: 18px;
+  line-height: 1.35;
+  color: #000000;
+  margin: 0;
+  overflow-wrap: anywhere;
+  max-height: 5.4em;
+  overflow: hidden;
+}
+
+.collab-card.is-open .collab-desc {
+  max-height: none;
+  overflow: visible;
+}
+
+.collab-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  border-top: 2px dotted #000;
+  border-bottom: 1.5px solid #e6e6e3;
+  background: #fff;
+  font-family: var(--primary-font-family);
+  font-size: 18px;
+  color: #777;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.collab-toggle:hover {
+  background: #f8f9fa;
+}
+
+.collab-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.collab-toggle-label i {
+  font-size: 15px;
+  color: inherit;
+}
+
+.collab-toggle-caret {
+  font-size: 15px;
+  color: #666;
+  transition: transform 0.18s ease;
+}
+
+.collab-toggle.open .collab-toggle-caret {
+  transform: rotate(180deg);
+}
+
+.collab-thread-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+}
+
+.collab-thread-panel.open {
+  grid-template-rows: 1fr;
+}
+
+.collab-thread-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.collab-comment-list {
+  padding: 10px 14px 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 transparent;
+}
+
+.collab-comment-list:empty {
+  padding: 0;
+}
+
+.collab-comment-list:not(:empty) {
+  border-bottom: 1.5px solid #e6e6e3;
+}
+
+.collab-comment-row:first-child {
+  margin-top: 8px;
+}
+
+.collab-comment-list::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 6px;
+}
+
+.collab-comment-list::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.collab-comment-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.collab-comment-list::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 3px;
+}
+
+.collab-comment-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.collab-comment-row {
+  display: flex;
+  gap: 9px;
+  padding: 0 0 10px;
+}
+
+.collab-avatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--collab-club);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.collab-comment-row.is-my-club .collab-avatar {
+  background: var(--collab-club-mine);
+}
+
+.collab-comment-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.collab-comment-who {
+  font-size: 20px;
+  line-height: 24px;
+  color: #111;
+  margin: 0;
+}
+
+.collab-comment-meta {
+  font-size: 16px;
+  color: #9a9a9a;
+  margin-left: 5px;
+}
+
+.collab-comment-text {
+  margin: 1px 0 0;
+  font-size: 18px;
+  line-height: 24px;
+  color: #333;
+  overflow-wrap: anywhere;
+}
+
+.collab-comment-del {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 6px;
+  font-size: 13px;
+  color: #bbb;
+  cursor: pointer;
+}
+
+.collab-comment-del:hover {
+  color: #555;
+}
+
+.collab-thread-empty {
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 17px;
+  color: #777;
+  text-align: center;
+}
+
+.collab-compose-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 13px;
+}
+
+.collab-compose-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 2px solid #000;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #fff;
+  font-family: var(--primary-font-family);
+  font-size: 18px;
+  color: #111;
+}
+
+.collab-compose-input::placeholder {
+  color: #9a9a9a;
+}
+
+.collab-compose-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 40%, transparent);
+}
+
+.collab-compose-btn {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #000;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.12s ease;
+}
+
+.collab-compose-btn:active {
+  transform: scale(0.93);
+}
+
+.collab-compose-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.collab-club-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.collab-club-picker:empty {
+  display: none;
+}
+
+.collab-club-pill {
+  border: 2px solid #000;
+  border-radius: 16px;
+  padding: 6px 8px 6px 14px;
+  font-size: 18px;
+  cursor: default;
+  background: #000;
+  color: #fff;
+  font-family: var(--primary-font-family);
+}
+
+
+.collab-search-wrap {
+  position: relative;
+}
+
+.collab-club-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: var(--primary-font-family);
+  font-size: 18px;
+}
+
+.collab-club-search-input:focus {
+  outline: none;
+}
+
+.collab-club-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  background-color: rgb(0, 0, 0);
+  border: 1px solid #000000;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  font-family: var(--primary-font-family);
+  box-sizing: border-box;
+  color: white;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #000000;
+  border-top: none;
+}
+
+.collab-club-dropdown-item:hover {
+  background-color: #222222;
+}
+
+.collab-club-dropdown-item {
+  padding: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.collab-club-dropdown.show {
+  display: block;
+}
+
+.collab-club-dropdown:not(.show) {
+  display: none;
+}
+
+.collab-club-dropdown:empty {
+  display: none !important;
+}
+
+.collab-club-pill button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.collab-club-pill button:hover {
+  opacity: 1;
+}
+
+.collab-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.collab-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  font-size: 16px;
+  padding: 0 6px;
+  margin-left: 6px;
+  font-family: var(--primary-font-family);
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
+}
+
+.collab-tab-btn .collab-tab-badge {
+  background: #000;
+  color: #fff;
+}
+
+.collab-load-more {
+  display: block;
+  width: 100%;
+  padding: 2px 0 11px;
+  border: none;
+  background: none;
+  font-family: var(--primary-font-family);
+  font-size: 17px;
+  color: #8a8a8a;
+  cursor: pointer;
+  text-align: center;
+}
+
+.collab-load-more:hover {
+  color: #333;
+}
+
+.collab-load-more:disabled {
+  color: #c4c4c4;
+  cursor: default;
+}
+
+@keyframes empty-state-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.collab-card,
+.empty-state-card-dashed.static {
+  cursor: default;
+  animation: empty-state-fade-in 0.25s ease-out forwards;
+}
+
+
+.collab-load-more-list {
+  width: calc(85% + 20px);
+  max-width: 620px;
+  margin: 0 auto 16px;
+  padding: 10px 0 12px;
+  font-size: 19px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.collab-load-more-list:hover {
+  color: #ffffff;
+}
+
+.collab-load-more-list:active {
+  transform: translateY(1px);
+}
+
+.collab-load-more-list:disabled {
+  color: rgba(255, 255, 255, 0.45);
+  cursor: default;
+  transform: none;
+}
+
+.collab-load-more-list i {
+  font-size: 15px;
+  margin-left: 5px;
+  vertical-align: 1px;
+}

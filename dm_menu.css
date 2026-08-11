@@ -300,3 +300,34 @@
     margin-top: 20px;
     font-family: var(--primary-font-family);
 }
+
+.wide-empty-state {
+    box-sizing: border-box;
+    width: calc(85% + 20px) !important;
+    max-width: 820px !important;
+    margin-top: 0;
+}
+
+.member-list-empty {
+  text-align: center;
+  padding: 30px 10px;
+}
+
+.member-list-empty i {
+  font-size: 28px;
+  color: var(--bg-accent);
+}
+
+.member-list-empty-title {
+  font-family: var(--primary-font-family);
+  font-size: 24px;
+  color: var(--bg-accent);
+  margin: 8px 0 2px;
+}
+
+.member-list-empty-subtitle {
+  font-family: var(--primary-font-family);
+  font-size: 18px;
+  color: var(--bg-accent);
+  margin: 0;
+}

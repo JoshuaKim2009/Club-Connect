@@ -2,12 +2,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, serverTimestamp, deleteDoc, query, collection, getDocs, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, serverTimestamp, deleteDoc, query, collection, getDocs, arrayRemove, arrayUnion } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
 import { handleUserSwitch } from './auth-guard.js';
 import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName } from './school-utils.js';
-
+import { cacheRole } from './roleCache.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -28,7 +28,6 @@ const db = initializeFirestore(app, {
 const auth = getAuth(app);
 
 let currentUser = null;
-let currentUserEmail = null;
 let currentClubId = null;
 let originalClubData = null;
 
@@ -175,7 +174,7 @@ function hideLoadingScreen() {
 
 async function loadClubData(clubId, managerUid) {
     if (!clubId) {
-        window.location.href = `club_page_manager.html?id=${clubId}`;
+        window.location.href = 'your_clubs.html';
         return;
     }
 
@@ -188,11 +187,14 @@ async function loadClubData(clubId, managerUid) {
             const isManager = clubData.managerUid === managerUid;
             let isAdminOfThisClub = false;
 
-            if (!isManager && managerUid) {
-                const memberRef = doc(db, "clubs", clubId, "members", managerUid);
-                const memberDoc = await getDoc(memberRef);
-                if (memberDoc.exists() && memberDoc.data().role === 'admin') {
-                    isAdminOfThisClub = true;
+            if (isManager) {
+                cacheRole(clubId, managerUid, 'manager');
+            } else if (managerUid) {
+                const memberDoc = await getDoc(doc(db, "clubs", clubId, "members", managerUid));
+                if (memberDoc.exists()) {
+                    const role = memberDoc.data().role || 'member';
+                    cacheRole(clubId, managerUid, role);
+                    if (role === 'admin') isAdminOfThisClub = true;
                 }
             }
 
@@ -239,6 +241,7 @@ async function loadClubData(clubId, managerUid) {
             if (clubData.category) categoryInput.value = clubData.category;
 
             originalClubData = {
+                schoolId: clubData.schoolId || null,
                 schoolName: clubData.schoolName || '',
                 clubName: clubData.clubName || '',
                 clubActivity: clubData.clubActivity || '',
@@ -275,7 +278,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     currentUser = user;
-    currentUserEmail = user.email;
 
     if (currentClubId) {
         await loadClubData(currentClubId, currentUser.uid);
@@ -435,20 +437,40 @@ submitButton.addEventListener("click", async function(event){
         });
         console.log("Club document updated with ID: ", currentClubId);
 
+        const nameChanged = clubName !== originalClubData.clubName;
+        const schoolChanged = schoolId !== originalClubData.schoolId;
+
+        if (nameChanged || schoolChanged) {
+            if (originalClubData.schoolId) {
+                await updateDoc(doc(db, "schools", originalClubData.schoolId), {
+                    clubs: arrayRemove({ id: currentClubId, name: originalClubData.clubName })
+                });
+            }
+            await updateDoc(doc(db, "schools", schoolId), {
+                clubs: arrayUnion({ id: currentClubId, name: clubName })
+            });
+        }
+
         clearLoading(submitButton);
         await showAppAlert(`Club "${clubName}" updated successfully!`);
-        window.location.href = `club_page_manager.html?id=${currentClubId}`;
+        window.location.href = `club_page.html?clubId=${currentClubId}`;
 
     } catch (error) {
         console.error("Error updating club:", error);
         clearLoading(submitButton);
-        await showAppAlert("Something went wrong while updating your club. Please try again.");
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("update this club"));
+        } else {
+            await showAppAlert("Something went wrong while updating your club. Please try again.");
+        }
     }
 });
 
 
-backButton.addEventListener("click", async function(event){
-    window.location.href = `club_page_manager.html?id=${currentClubId}`;
+backButton.addEventListener("click", function(){
+    window.location.href = currentClubId
+        ? `club_page.html?clubId=${currentClubId}`
+        : 'your_clubs.html';
 });
 
 
@@ -545,15 +567,21 @@ async function deleteClub(clubId) {
             await Promise.all([deleteMembersPromise, ...otherDeletes]);
             console.log(`All subcollections deleted for club ${clubId}.`);
 
-            console.log(`Deleting club document with ID: ${clubId}...`);
-            await deleteDoc(clubRef);
-            console.log(`Club document ${clubId} deleted.`);
-
             if (joinCode) {
                 console.log(`Deleting join code ${joinCode}...`);
                 const joinCodeRef = doc(db, "join_codes", joinCode);
                 await deleteDoc(joinCodeRef);
                 console.log(`Join code ${joinCode} deleted.`);
+            }
+
+            console.log(`Deleting club document with ID: ${clubId}...`);
+            await deleteDoc(clubRef);
+            console.log(`Club document ${clubId} deleted.`);
+
+            if (clubData.schoolId) {
+                await updateDoc(doc(db, "schools", clubData.schoolId), {
+                    clubs: arrayRemove({ id: clubId, name: clubData.clubName })
+                });
             }
 
             console.log(`Removing club ID ${clubId} from manager ${currentUser.uid}'s managed_clubs list...`);
@@ -573,7 +601,11 @@ async function deleteClub(clubId) {
 
     } catch (error) {
         console.error("Error deleting club:", error);
-        await showAppAlert("Something went wrong while deleting your club. Please try again, or contact support if the issue continues.");
+        if (isPermissionError(error)) {
+            await showAppAlert(permissionDeniedMessage("delete this club"));
+        } else {
+            await showAppAlert("Something went wrong while deleting your club. Please try again, or contact support if the issue continues.");
+        }
     }
 }
 
@@ -778,4 +810,12 @@ function showContainerError(message, showRetry = false, topMargin = '165px') {
             </div>
         </div>
     `;
+}
+
+function isPermissionError(error) {
+    return error && error.code === 'permission-denied';
+}
+
+function permissionDeniedMessage(actionPhrase) {
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

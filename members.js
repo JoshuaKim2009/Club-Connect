@@ -1,9 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, deleteField, serverTimestamp, runTransaction, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
 import { handleUserSwitch } from './auth-guard.js';
+import { getRole, cacheRole } from './roleCache.js';
 
 document.querySelector('#role-select option[value="member"]').textContent = ROLE_LABELS.member;
 document.querySelector('#role-select option[value="admin"]').textContent = ROLE_LABELS.admin;
@@ -42,6 +43,7 @@ const transferConfirmLabel = document.getElementById('transfer-confirm-label');
 const transferConfirmCheckbox = document.getElementById('transfer-confirm-checkbox');
 const transferConfirmText = document.getElementById('transfer-confirm-text');
 const dynamicWrapper = document.getElementById('dynamic-sections-wrapper');
+const removeMemberButton = document.getElementById('remove-member-popup-btn');
 
 let currentMemberRoleInPopup = null;
 let selectedMemberUid = null;
@@ -50,6 +52,7 @@ let managerUid = "";
 let myName = "";
 let myUid = "";
 let firstLoad = true;
+let isLeavingClub = false;
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -58,15 +61,9 @@ function getUrlParameter(name) {
 
 window.goToClubPage = function() {
     const currentClubId = getUrlParameter('clubId');
-    if (currentClubId) {
-        if (role === 'manager' || role === 'admin') {
-            window.location.href = `club_page_manager.html?id=${currentClubId}`;
-        } else {
-            window.location.href = `club_page_member.html?id=${currentClubId}`;
-        }
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
+    window.location.href = currentClubId
+        ? `club_page.html?clubId=${currentClubId}`
+        : 'your_clubs.html';
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -94,7 +91,7 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        role = await getMemberRoleForClub(clubId, currentUser.uid);
+        role = await getRole(db, clubId, currentUser.uid, clubSnap);
 
         if (role === null) {
             document.body.classList.remove('no-scroll');
@@ -113,38 +110,6 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-function capitalizeFirstLetter(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) return null;
-
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const clubRef = doc(db, "clubs", clubId);
-            const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        if (role !== null) sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
-    }
-}
-
 function sortMembersAlphabetically(names, uids, roles = null) {
     const combined = names.map((name, i) => ({ name, uid: uids[i], role: roles ? roles[i] : undefined }));
     combined.sort((a, b) => a.name.localeCompare(b.name));
@@ -156,13 +121,14 @@ function sortMembersAlphabetically(names, uids, roles = null) {
 }
 
 
-async function approveMember(clubID, memberID) {
+async function approveMember(clubID, memberID, memberName) {
     if (!clubID || !memberID) { console.error("approveMember: missing args."); return; }
     try {
         const batch = writeBatch(db);
         batch.update(doc(db, "clubs", clubID), {
             memberUIDs: arrayUnion(memberID),
-            pendingMemberUIDs: arrayRemove(memberID)
+            pendingMemberUIDs: arrayRemove(memberID),
+            [`memberNames.${memberID}`]: memberName || "Unknown"
         });
         batch.update(doc(db, "users", memberID), { member_clubs: arrayUnion(clubID) });
         batch.set(doc(db, "clubs", clubID, "members", memberID), {
@@ -200,7 +166,10 @@ async function removeMember(clubID, memberID) {
     if (!clubID || !memberID) { console.error("removeMember: missing args."); return; }
     try {
         const batch = writeBatch(db);
-        batch.update(doc(db, "clubs", clubID), { memberUIDs: arrayRemove(memberID) });
+        batch.update(doc(db, "clubs", clubID), {
+            memberUIDs: arrayRemove(memberID),
+            [`memberNames.${memberID}`]: deleteField()
+        });
         batch.update(doc(db, "users", memberID), {
             member_clubs: arrayRemove(clubID),
             admin_clubs: arrayRemove(clubID)
@@ -254,7 +223,8 @@ async function transferClubManagement(clubID, newManagerUid) {
 
             const newManagerEmail = newManagerUserDoc.data().email || null;
             const previousManagerUserRef = doc(db, "users", previousManagerUid);
-            await transaction.get(previousManagerUserRef);
+            const previousManagerUserDoc = await transaction.get(previousManagerUserRef);
+            if (!previousManagerUserDoc.exists()) throw new Error(`Previous manager user document (${previousManagerUid}) does not exist!`);
 
             transaction.update(clubRef, { managerUid: newManagerUid, managerEmail: newManagerEmail });
             transaction.update(previousManagerUserRef, {
@@ -322,8 +292,11 @@ function displayPendingMembers(memberNames, memberUids) {
         approveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
         approveBtn.className = "approve-member-btn";
         approveBtn.addEventListener("click", async () => {
+            if (approveBtn.disabled) return;
+            approveBtn.disabled = true;
+            denyBtn.disabled = true;
             console.log(`Approving member: ${name} (UID: ${memberUid})`);
-            await approveMember(clubId, memberUid);
+            await approveMember(clubId, memberUid, name);
             // Realtime listeners handle the UI refresh
         });
         actionButtonsDiv.appendChild(approveBtn);
@@ -332,6 +305,9 @@ function displayPendingMembers(memberNames, memberUids) {
         denyBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
         denyBtn.className = "deny-member-btn";
         denyBtn.addEventListener("click", async () => {
+            if (denyBtn.disabled) return;
+            denyBtn.disabled = true;
+            approveBtn.disabled = true;
             console.log(`Denying member: ${name} (UID: ${memberUid})`);
             await denyMember(clubId, memberUid);
             // Realtime listeners handle the UI refresh
@@ -352,11 +328,13 @@ function buildMemberActions(memberUid, memberName, memberRole) {
         leaveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
         leaveBtn.className = "options-member-btn";
         leaveBtn.addEventListener("click", async () => {
+            if (isLeavingClub) return;
             if (memberRole === 'manager') {
                 await showAppAlert(`Transfer the ${ROLE_LABELS.manager.toLowerCase()} role before leaving the club.`);
                 return;
             }
             if (await showAppConfirm("Are you sure you want to leave this club?")) {
+                isLeavingClub = true;
                 await removeMember(clubId, myUid);
                 window.location.href = 'your_clubs.html';
             }
@@ -385,7 +363,14 @@ function buildMemberActions(memberUid, memberName, memberRole) {
         return actionButtonsDiv;
     }
 
-    return null;
+    const placeholder = document.createElement("button");
+    placeholder.className = "options-member-btn options-member-btn--placeholder";
+    placeholder.innerHTML = '<i class="fa-solid fa-gear"></i>';
+    placeholder.disabled = true;
+    placeholder.tabIndex = -1;
+    placeholder.setAttribute('aria-hidden', 'true');
+    actionButtonsDiv.appendChild(placeholder);
+    return actionButtonsDiv;
 }
 
 function displayMembers(memberNames, memberUids, memberRoles) {
@@ -442,12 +427,38 @@ function openRoleManagementPopup(memberUid, memberName, currentRole) {
     roleManagementPopup.style.display = 'flex';
 }
 
-function closeRoleManagementPopup() {
-    selectedMemberUid = null;
+function hideRoleManagementPopup() {
     popupOverlay.style.display = 'none';
     roleManagementPopup.style.display = 'none';
+}
+
+function showRoleManagementPopup() {
+    popupOverlay.style.display = 'flex';
+    roleManagementPopup.style.display = 'flex';
+}
+
+function closeRoleManagementPopup() {
+    selectedMemberUid = null;
+    hideRoleManagementPopup();
     document.body.classList.remove('no-scroll');
     resetTransferConfirmRow();
+}
+
+function isRoleManagementPopupOpen() {
+    return roleManagementPopup.style.display === 'flex';
+}
+
+async function popupAlert(message, title) {
+    hideRoleManagementPopup();
+    await showAppAlert(message, title);
+    closeRoleManagementPopup();
+}
+
+async function popupConfirm(message) {
+    hideRoleManagementPopup();
+    const confirmed = await showAppConfirm(message);
+    if (!confirmed) showRoleManagementPopup();
+    return confirmed;
 }
 
 function updateTransferConfirmRow() {
@@ -484,22 +495,21 @@ transferConfirmCheckbox.addEventListener('change', () => {
     }
 });
 
-document.getElementById('remove-member-popup-btn').addEventListener('click', async () => {
-    const memberName = memberNameForRoleDisplay.textContent.replace('Manage ', '');
-    if (await showAppConfirm(`Are you sure you want to remove ${memberName} from this club?`)) {
-        await removeMember(clubId, selectedMemberUid);
+removeMemberButton.addEventListener('click', async () => {
+    const memberName = memberNameForRoleDisplay.textContent;
+    if (await popupConfirm(`Are you sure you want to remove ${memberName} from this club?`)) {
+        const uidToRemove = selectedMemberUid;
         closeRoleManagementPopup();
+        await removeMember(clubId, uidToRemove);
     }
 });
 
 submitRoleChangeButton.addEventListener('click', async () => {
     const newRole = roleSelect.value;
-    const memberName = memberNameForRoleDisplay.textContent.replace('Manage ', '');
 
     if (role === 'admin') {
         if (currentMemberRoleInPopup !== 'member' || newRole !== 'admin') {
-            await showAppAlert(`${ROLE_LABELS.admin}s can only promote ${ROLE_LABELS.member.toLowerCase()}s to ${ROLE_LABELS.admin.toLowerCase()}.`);
-            closeRoleManagementPopup();
+            await popupAlert(`${ROLE_LABELS.admin}s can only promote ${ROLE_LABELS.member.toLowerCase()}s to ${ROLE_LABELS.admin.toLowerCase()}.`);
             return;
         }
     }
@@ -509,21 +519,32 @@ submitRoleChangeButton.addEventListener('click', async () => {
         return;
     }
 
-    try {
-        if (newRole === "admin" || newRole === "member") {
-            await updateMemberRole(clubId, selectedMemberUid, newRole);
-            closeRoleManagementPopup();
-        } else if (newRole === "manager") {
-            if (!transferConfirmCheckbox.checked) {
-                shakeTransferConfirm();
-                return;
-            }
-            await transferClubManagement(clubId, selectedMemberUid);
-        } else {
-            console.warn(`Attempted to set an unknown role: ${newRole}`);
-            await showAppAlert(`Invalid role selected: ${getRoleLabel(newRole)}. No update performed.`);
-            closeRoleManagementPopup();
+    if (newRole === "manager") {
+        if (!transferConfirmCheckbox.checked) {
+            shakeTransferConfirm();
+            return;
         }
+        const uid = selectedMemberUid;
+        closeRoleManagementPopup();
+        try {
+            await transferClubManagement(clubId, uid);
+        } catch (error) {
+            console.error("Error transferring club management:", error);
+        }
+        return;
+    }
+
+    if (newRole !== "admin" && newRole !== "member") {
+        console.warn(`Attempted to set an unknown role: ${newRole}`);
+        await popupAlert(`Invalid role selected: ${getRoleLabel(newRole)}. No update performed.`);
+        return;
+    }
+
+    const uid = selectedMemberUid;
+    closeRoleManagementPopup();
+
+    try {
+        await updateMemberRole(clubId, uid, newRole);
     } catch (error) {
         console.error("Error changing member role:", error);
         if (isPermissionError(error)) {
@@ -550,9 +571,11 @@ async function fetchAndDisplayMembers() {
 
         const clubData = clubSnap.data();
         const actualManagerUid = clubData.managerUid;
+        const managerNamesMap = clubData.memberNames || {};
         let actualManagerName = `Unknown ${ROLE_LABELS.manager}`;
-
-        if (actualManagerUid) {
+        if (actualManagerUid && managerNamesMap[actualManagerUid]) {
+            actualManagerName = managerNamesMap[actualManagerUid];
+        } else if (actualManagerUid) {
             const managerUserSnap = await getDoc(doc(db, "users", actualManagerUid));
             if (managerUserSnap.exists() && managerUserSnap.data().name) {
                 actualManagerName = managerUserSnap.data().name;
@@ -562,17 +585,42 @@ async function fetchAndDisplayMembers() {
         managerName = actualManagerName;
         managerUid = actualManagerUid;
 
-        if (role === 'manager' || role === 'admin') {
-            const pendingMemberUids = clubData.pendingMemberUIDs || [];
-            const pendingNames = [];
-            const pendingIds = [];
+        const isAdminView = role === 'manager' || role === 'admin';
+        const pendingMemberUids = isAdminView ? (clubData.pendingMemberUIDs || []) : [];
+        const approvedMemberUids = clubData.memberUIDs || [];
+        const memberNamesMap = clubData.memberNames || {};
 
-            await Promise.all(pendingMemberUids.map(async (uid) => {
-                const userSnap = await getDoc(doc(db, "users", uid));
-                pendingNames.push(userSnap.exists() ? (userSnap.data().name || `User (${uid})`) : `Unknown User (${uid})`);
-                pendingIds.push(uid);
-            }));
+        const pendingNames = [];
+        const pendingIds = [];
+        const approvedNames = [];
+        const approvedIds = [];
+        const approvedRoles = [];
 
+        const pendingFetch = Promise.all(pendingMemberUids.map(async (uid) => {
+            const userSnap = await getDoc(doc(db, "users", uid));
+            pendingNames.push(userSnap.exists() ? (userSnap.data().name || `User (${uid})`) : `Unknown User (${uid})`);
+            pendingIds.push(uid);
+        }));
+
+        const approvedFetch = Promise.all(approvedMemberUids.map(async (uid) => {
+            const needsFallback = !memberNamesMap[uid];
+            const [roleSnap, userSnap] = await Promise.all([
+                getDoc(doc(db, "clubs", clubId, "members", uid)),
+                needsFallback ? getDoc(doc(db, "users", uid)) : Promise.resolve(null)
+            ]);
+
+            const memberRole = (roleSnap.exists() && roleSnap.data().role) ? roleSnap.data().role : 'member';
+            const resolvedName = memberNamesMap[uid]
+                || (userSnap && userSnap.exists() ? (userSnap.data().name || `User (${uid})`) : `Unknown User (${uid})`);
+
+            approvedNames.push(resolvedName);
+            approvedIds.push(uid);
+            approvedRoles.push(memberRole);
+        }));
+
+        await Promise.all([pendingFetch, approvedFetch]);
+
+        if (isAdminView) {
             const sortedPending = sortMembersAlphabetically(pendingNames, pendingIds);
             displayPendingMembers(sortedPending.names, sortedPending.uids);
 
@@ -588,24 +636,6 @@ async function fetchAndDisplayMembers() {
         } else {
             pendingRequestsContainer.style.display = 'none';
         }
-
-        // Approved members
-        const approvedMemberUids = clubData.memberUIDs || [];
-        const approvedNames = [];
-        const approvedIds = [];
-        const approvedRoles = [];
-
-        await Promise.all(approvedMemberUids.map(async (uid) => {
-            const [userSnap, roleSnap] = await Promise.all([
-                getDoc(doc(db, "users", uid)),
-                getDoc(doc(db, "clubs", clubId, "members", uid))
-            ]);
-
-            const memberRole = (roleSnap.exists() && roleSnap.data().role) ? roleSnap.data().role : 'member';
-            approvedNames.push(userSnap.exists() ? (userSnap.data().name || `User (${uid})`) : `Unknown User (${uid})`);
-            approvedIds.push(uid);
-            approvedRoles.push(memberRole);
-        }));
 
         const sortedApproved = sortMembersAlphabetically(approvedNames, approvedIds, approvedRoles);
         displayMembers(sortedApproved.names, sortedApproved.uids, sortedApproved.roles);
@@ -633,19 +663,46 @@ function setupRealtimeListeners() {
 
     onSnapshot(docRef, async (docSnap) => {
         if (mainDocInitial) { mainDocInitial = false; return; }
+        if (isLeavingClub) return;
         if (docSnap.exists() && currentUser) {
             console.log("Main doc changed, refreshing members list...");
             await fetchAndDisplayMembers();
         }
     });
 
-    onSnapshot(membersRef, async () => {
+    onSnapshot(membersRef, async (snapshot) => {
         if (membersColInitial) { membersColInitial = false; return; }
-        sessionStorage.removeItem(`role_${clubId}_${currentUser.uid}`);
-        console.log("Role update detected! Updating the Member List UI...");
-        if (currentUser && clubId) {
-            await fetchAndDisplayMembers();
+
+        const myChange = snapshot.docChanges().find(change => change.doc.id === currentUser.uid);
+        if (myChange) {
+            const newRole = myChange.type === 'removed'
+                ? null
+                : (myChange.doc.data().role || 'member');
+
+            if (newRole !== role) {
+                const previousRole = role;
+                role = newRole;
+                cacheRole(clubId, currentUser.uid, role);
+
+                if (isRoleManagementPopupOpen()) {
+                    closeRoleManagementPopup();
+                }
+
+                if (role === null) {
+                    if (isLeavingClub) return;
+                    document.body.classList.remove('no-scroll');
+                    showContainerError(dynamicWrapper, "You're no longer a member of this club.", false, '75px');
+                    return;
+                }
+
+                if (previousRole !== null) {
+                    await showAppAlert(`Your role for this club has been updated to ${getRoleLabel(role)}!`);
+                }
+            }
         }
+
+        console.log("Member list changed, updating UI...");
+        await fetchAndDisplayMembers();
     });
 }
 
@@ -678,5 +735,5 @@ function isPermissionError(error) {
 }
 
 function permissionDeniedMessage(actionPhrase) {
-    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

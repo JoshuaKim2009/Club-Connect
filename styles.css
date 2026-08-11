@@ -1118,6 +1118,11 @@ input:-ms-input-placeholder {
   background: transparent;
 }
 
+.options-member-btn--placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .popup-bottom-actions {
   display: flex;
   gap: 10px;
@@ -2124,6 +2129,7 @@ input[type="checkbox"]:checked {
 
 .empty-state-card-dashed {
   border: 2px dashed white;
+  /* border: 2px solid black; */
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
   padding: 26px 16px;
@@ -2159,6 +2165,24 @@ input[type="checkbox"]:checked {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.7);
   text-wrap: pretty;
+}
+
+.empty-state-card-dashed.static {
+  cursor: default;
+}
+
+.empty-state-card-dashed.static:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.empty-state-card-dashed.static:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.empty-state-card-dashed .fancy-button {
+  margin-top: 12px;
+  font-size: 22px;
+  padding: 6px 20px;
 }
 
 .announcement-card {
@@ -2216,11 +2240,15 @@ input[type="checkbox"]:checked {
 }
 
 .announcement-card .announcement-meta {
-  display: block; 
-  text-align: left;
-  font-size: 20px; 
-  color: #666; 
-  margin-top: 10px; 
+  font-size: 0.9em;
+  color: #666;
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
 
 .announcement-card .announcement-card-actions {

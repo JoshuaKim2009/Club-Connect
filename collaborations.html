@@ -2,16 +2,16 @@
 <html>
     <head>
         <link href="styles.css?v=69" rel="stylesheet" />
+        <link href="collaborations.css?v=1" rel="stylesheet" />
         <meta name="theme-color" id="theme-color-meta" content="#1c375f">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Club Connect | Public Posts</title>
+        <title>Club Connect | Collaborations</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
         <style>
             body {
                 font-family: var(--primary-font-family);
@@ -34,15 +34,8 @@
                 color: #003d7a;
             }
 
-            .empty-state-card {
-                margin-top: -45px !important;
-            }
-
-            .editing-announcement-card-first {
-                margin-top: -45px !important; 
-            }
-            .empty-state-card-dashed.static {
-                margin-top: -45px !important;
+            .empty-state-card-dashed {
+                margin-top: 0 !important;
             }
         </style>
     </head>
@@ -58,27 +51,48 @@
             <button id="back-button" class="fancy-button" onclick="goToClubPage()">
             <i class="fa-solid fa-circle-left"></i>
             </button>
-            <span class="chat-title">PUBLIC POSTS</span>
+            <span class="chat-title">COLLABORATIONS</span>
         </div>
 
         <div id="content">
             <h1 id="clubScheduleTitle"></h1>
-            <button id="add-announcement-button" class="fancy-button" style="display: none;">SHARE</button>
+            <button id="add-collab-button" class="fancy-button" style="display: none;">NEW COLLAB</button>
 
-            <div id="noAnnouncementsMessage" class="empty-state-card-dashed static" style="display: none;">
-                <i class="fa-solid fa-earth-americas"></i>
-                <p class="empty-state-dashed-title">Share with your school</p>
-                <p class="empty-state-dashed-subtitle">Connect with students beyond your club</p>
-                <button id="empty-state-share-btn" class="fancy-button">SHARE POST</button>
+            
+
+            <div id="editing-collab-card" class="announcement-card editing-announcement-card" style="display: none;">
+                <h3>NEW COLLABORATION</h3>
+                <div class="field-section">
+                    <label>Send to</label>
+                    <div id="collab-picked-pills" class="collab-club-picker"></div>
+                    <div class="collab-search-wrap">
+                        <input type="text" id="collab-club-search" class="collab-club-search-input" placeholder="Search clubs...">
+                        <div id="collab-club-dropdown" class="collab-club-dropdown"></div>
+                    </div>
+                </div>
+                <div class="field-section">
+                <label for="collab-title-input">Title</label>
+                <input type="text" id="collab-title-input" placeholder="Enter collaboration title..." required>
+                </div>
+                <div class="field-section">
+                <label for="collab-desc-input">Description</label>
+                <textarea id="collab-desc-input" rows="4" placeholder="Describe your collaboration..." required></textarea>
+                </div>
+                <div class="announcement-card-actions">
+                <button id="collab-post-btn" class="save-btn">POST</button>
+                <button id="collab-cancel-btn" class="cancel-btn">CANCEL</button>
+                </div>
             </div>
-            <div id="announcementsContainer" class="fancy-black-label"></div>
-            <div id="pagination-controls" style="display: none;">
-                <div id="pagination-inner"></div>
+
+            <div class="collab-tab-row">
+                <button id="sent-tab-btn" class="collab-tab-btn collab-tab-selected">SENT</button>
+                <button id="received-tab-btn" class="collab-tab-btn">RECEIVED</button>
             </div>
+            <div id="collabContainer"></div>
         </div>
 
         <script src="theme.js?v=12"></script>
-        <script type="module" src="dialog.js?v=2"></script>
-        <script type="module" src="public_announcement_creation.js?v=6"></script>
+        <script type="module" src="dialog.js"></script>
+        <script type="module" src="collaborations.js?v=1"></script>
     </body>
 </html>

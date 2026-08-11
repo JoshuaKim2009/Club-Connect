@@ -320,6 +320,7 @@ submitButton.addEventListener("click", async function(event){
             stateLower: normalizedState.toLowerCase(),
             county: countyName,
             countyLower: countyName.toLowerCase(),
+            clubs: arrayUnion({ id: newClubId, name: clubName })
         }, { merge: true });
 
         batch1.set(newClubRef, {
@@ -335,6 +336,7 @@ submitButton.addEventListener("click", async function(event){
             managerEmail: currentUserEmail,
             joinCode: joinCode,
             memberUIDs: [currentUser.uid],
+            memberNames: { [currentUser.uid]: currentUser.displayName || "Unknown" },
             pendingMemberUIDs: [],
             managerUid: currentUser.uid,
             createdAt: serverTimestamp(),

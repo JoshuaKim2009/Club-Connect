@@ -3,7 +3,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
-
+import { getRoleLabel, ROLE_LABELS } from './roleLabels.js';
+import { getRole } from './roleCache.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -22,7 +23,7 @@ const db = initializeFirestore(app, {
 const auth = getAuth(app);
 
 function escapeHtml(str) {
-    return String(str)
+    return String(str ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -30,10 +31,26 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+let memberNames = {};
+
+async function resolveName(uid) {
+    if (!uid) return "Unknown";
+    if (memberNames[uid]) return memberNames[uid];
+    try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        memberNames[uid] = (userSnap.exists() && userSnap.data().name) ? userSnap.data().name : "Unknown";
+        return memberNames[uid];
+    } catch (error) {
+        console.error(`Failed to resolve name for ${uid}:`, error);
+        return "Unknown";
+    }
+}
+
 let currentUser = null;
 let clubId = null;
 let currentUserRole = null;
 let isEditingAnnouncement = false;
+let canPost = false;
 let cameFromEmptyStateCard = false;
 
 let currentClubName = null;
@@ -58,40 +75,10 @@ function getUrlParameter(name) {
     return params.get(name) || '';
 }
 
-async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) return null;
-
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const clubRef = doc(db, "clubs", clubId);
-            const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        if (role !== null) sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
-    }
-}
-
 window.goToClubPage = function () {
-    if (clubId) {
-        window.location.href = `club_page_manager.html?id=${clubId}`;
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
+    window.location.href = clubId
+        ? `club_page.html?clubId=${clubId}`
+        : 'your_clubs.html';
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -121,17 +108,20 @@ onAuthStateChanged(auth, async (user) => {
         const clubData = clubSnap.data();
         currentClubName = clubData.clubName || 'Unnamed Club';
         currentSchoolId = clubData.schoolId || null;
+        memberNames = { ...(clubData.memberNames || {}) };
 
-        currentUserRole = await getMemberRoleForClub(clubId, currentUser.uid);
+        currentUserRole = await getRole(db, clubId, currentUser.uid, clubSnap);
 
-        if (currentUserRole !== 'manager' && currentUserRole !== 'admin') {
+        if (currentUserRole === null) {
             hideLoadingScreen();
-            showContainerError(announcementsContainer, "You don't have permission to view this page.");
+            showContainerError(announcementsContainer, "You're not a member of this club.");
             addAnnouncementButton.style.display = 'none';
             return;
         }
 
-        if (addAnnouncementButton) {
+        canPost = currentUserRole === 'manager' || currentUserRole === 'admin';
+
+        if (canPost && addAnnouncementButton) {
             addAnnouncementButton.onclick = addNewAnnouncementEditingCard;
         }
 
@@ -193,11 +183,11 @@ function createEditingCardElement(initialData = {}, isNewAnnouncement = true, an
         <h3>${isNewAnnouncement ? 'SHARE WITH SCHOOL' : 'EDIT POST'}</h3>
         <div class="field-section">
             <label for="edit-title-${id}">Title</label>
-            <input type="text" id="edit-title-${id}" placeholder="Title your post" value="${escapeHtml(initialData.title || '')}" required>
+            <input type="text" id="edit-title-${id}" value="${escapeHtml(initialData.title || '')}" required>
         </div>
         <div class="field-section">
             <label for="edit-content-${id}">Content</label>
-            <textarea id="edit-content-${id}" rows="5" placeholder="Write something for your school" required>${escapeHtml(initialData.content || '')}</textarea>
+            <textarea id="edit-content-${id}" rows="5" required>${escapeHtml(initialData.content || '')}</textarea>
         </div>
         <div class="announcement-card-actions">
             <button class="save-btn">SAVE</button>
@@ -254,7 +244,6 @@ async function createAnnouncement(clubId, title, content, user, schoolId, clubNa
         title,
         content,
         createdByUid: user.uid,
-        createdByName: user.displayName || "Anonymous",
         clubId,
         clubName,
         schoolId,
@@ -265,6 +254,7 @@ async function createAnnouncement(clubId, title, content, user, schoolId, clubNa
     const newSnap = await getDoc(annRef);
     return {
         ...newSnap.data({ serverTimestamps: 'estimate' }),
+        authorName: await resolveName(user.uid),
         id: annRef.id
     };
 }
@@ -275,6 +265,7 @@ async function updateAnnouncement(clubId, announcementId, title, content) {
     const annSnap = await getDoc(annRef);
     return {
         ...annSnap.data({ serverTimestamps: 'estimate' }),
+        authorName: await resolveName(annSnap.data().createdByUid),
         id: annSnap.id
     };
 }
@@ -371,6 +362,9 @@ async function fetchPage(page) {
         cursors[page] = snap.docs[snap.docs.length - 1];
     }
 
+    await Promise.all([...new Set(docs.map(d => d.createdByUid))].map(uid => resolveName(uid)));
+    docs.forEach(d => { d.authorName = memberNames[d.createdByUid] || "Unknown"; });
+
     return docs;
 }
 
@@ -382,7 +376,13 @@ async function renderAnnouncementPage() {
     await refreshCount();
 
     if (totalCount === 0) {
-        noAnnouncementsMessage.style.display = 'block';
+        if (canPost) {
+            noAnnouncementsMessage.style.display = 'block';
+        } else {
+            noAnnouncementsMessage.style.display = 'none';
+            announcementsContainer.innerHTML = '<p class="fancy-label">NO POSTS YET</p>';
+            announcementsContainer.style.marginTop = '0px';
+        }
         addAnnouncementButton.style.display = 'none';
         hidePagination();
         return;
@@ -423,7 +423,10 @@ async function renderPage(page, skipAnimation = false) {
 
     announcementsContainer.innerHTML = '';
 
-    if (currentPage === 1) {
+    if (!canPost) {
+        addAnnouncementButton.style.display = 'none';
+        announcementsContainer.style.marginTop = '-45px';
+    } else if (currentPage === 1) {
         addAnnouncementButton.style.display = 'block';
         announcementsContainer.style.marginTop = '0px';
     } else {
@@ -493,13 +496,13 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
     cardDiv.className = 'announcement-card display-announcement-card';
     cardDiv.dataset.announcementId = announcementId;
 
-    const canEditDelete = announcementData.createdByUid === currentUser.uid;
+    const canEditDelete = canPost && announcementData.createdByUid === currentUser.uid;
     let actionButtonsHtml = '';
 
     if (canEditDelete) {
         actionButtonsHtml = `
             <div class="announcement-meta-row">
-                <span class="announcement-meta-text">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</span>
+                <span class="announcement-meta-text">${escapeHtml(announcementData.authorName)} · ${formatTimestamp(announcementData.createdAt)}</span>
                 <div class="announcement-meta-btns">
                     <button class="edit-btn" data-announcement-id="${announcementId}">
                         <i class="fa-solid fa-pencil"></i>
@@ -511,7 +514,7 @@ function createAnnouncementDisplayCard(announcementData, announcementId) {
             </div>
         `;
     } else {
-        actionButtonsHtml = `<p class="announcement-meta">${escapeHtml(announcementData.createdByName)} · ${formatTimestamp(announcementData.createdAt)}</p>`;
+        actionButtonsHtml = `<p class="announcement-meta">${escapeHtml(announcementData.authorName)} · ${formatTimestamp(announcementData.createdAt)}</p>`;
     }
 
     cardDiv.innerHTML = `
@@ -571,6 +574,8 @@ async function deleteAnnouncement(announcementId, announcementTitle) {
 
         if (totalCount === 0) {
             announcementsContainer.innerHTML = '';
+            addAnnouncementButton.style.display = 'none';
+            noAnnouncementsMessage.style.display = 'block';
             hidePagination();
         } else {
             const pageToShow = Math.min(currentPage, totalPages);
@@ -628,6 +633,7 @@ function showContainerError(container, message, showRetry = false) {
 }
 
 document.getElementById('empty-state-share-btn').addEventListener('click', () => {
+    if (!canPost) return;
     cameFromEmptyStateCard = true;
     addNewAnnouncementEditingCard();
 });
@@ -638,5 +644,5 @@ function isPermissionError(error) {
 }
 
 function permissionDeniedMessage(actionPhrase) {
-    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

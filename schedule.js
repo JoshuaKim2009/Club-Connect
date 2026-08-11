@@ -1,9 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocFromServer, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
-
+import { handleUserSwitch } from './auth-guard.js';
+import { getRole, peekRole } from './roleCache.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -27,12 +28,18 @@ let role = null;
 let isEditingEvent = false;
 
 let eventDocsMap = new Map();
+let memberNames = {};
 const userCache = new Map();
 const userRsvpMap = new Map(); 
 
+let eventsPrimed = false;
+let eventsListenerFailed = false;
+
 const eventsContainer = document.getElementById('eventsContainer');
-const noEventsMessage = document.getElementById('noEventsMessage');
 const addEventButton = document.getElementById('add-event-button');
+const noEventsMessageAdmin = document.getElementById('noEventsMessageAdmin');
+
+document.getElementById('empty-state-event-btn').addEventListener('click', addNewEventEditingCard);
 
 document.body.classList.add('no-scroll');
 
@@ -44,60 +51,42 @@ function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
 }
 
-async function getClubRole(clubId, uid, clubSnap = null) {
-    if (!clubId || !uid) return null;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        let memberRoleSnap;
-        try {
-            memberRoleSnap = await getDocFromServer(memberRoleRef);
-        } catch (error) {
-            console.warn("Could not verify role from server, falling back to cache:", error);
-            memberRoleSnap = await getDoc(memberRoleRef);
-        }
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const snap = clubSnap || await getDoc(doc(db, "clubs", clubId));
-            role = (snap.exists() && snap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
+// Checks if this date still one the event actually happens on?
+function isScheduledOn(eventData, dateString) {
+    if (!eventData.isWeekly) {
+        return eventData.eventDate === dateString;
     }
+
+    if (dateString < eventData.weeklyStartDate || dateString > eventData.weeklyEndDate) {
+        return false;
+    }
+
+    const dayName = dayNamesMap[new Date(dateString + 'T00:00:00').getDay()];
+    return (eventData.daysOfWeek || []).includes(dayName);
 }
 
-
-async function checkEventFreshness(eventId, occurrenceDateString = null) {
-    let eventSnap;
-    try {
-        eventSnap = await getDocFromServer(doc(db, "clubs", clubId, "events", eventId));
-    } catch (error) {
-        console.warn("Could not verify event freshness from server, falling back to cache:", error);
-        try {
-            eventSnap = await getDoc(doc(db, "clubs", clubId, "events", eventId));
-        } catch (fallbackError) {
-            console.error("Cache fallback for event freshness check failed too:", fallbackError);
-            return { live: true, unverified: true };
-        }
+// Reads the map the events listener keeps current, so this costs nothing and can be called on every tap.
+function checkEventFreshness(eventId, occurrenceDateString = null) {
+    if (eventsListenerFailed) {
+        return { live: true, unverified: true };
     }
 
-    if (!eventSnap.exists()) {
+    const freshData = eventDocsMap.get(eventId);
+
+    if (!freshData) {
         return { live: false, reason: 'deleted' };
     }
 
-    const freshData = eventSnap.data();
-    eventDocsMap.set(eventId, { id: eventId, ...freshData });
+    if (occurrenceDateString) {
+        if (freshData.isWeekly) {
+            const exceptions = freshData.exceptions || [];
+            if (exceptions.includes(occurrenceDateString)) {
+                return { live: false, reason: 'canceled', freshData };
+            }
+        }
 
-    if (occurrenceDateString && freshData.isWeekly) {
-        const exceptions = freshData.exceptions || [];
-        if (exceptions.includes(occurrenceDateString)) {
-            return { live: false, reason: 'canceled', freshData };
+        if (!isScheduledOn(freshData, occurrenceDateString)) {
+            return { live: false, reason: 'moved', freshData };
         }
     }
 
@@ -108,27 +97,32 @@ async function checkEventFreshness(eventId, occurrenceDateString = null) {
 }
 
 function staleEventMessage(actionPhrase, reason, deletedPhrase = "it was recently deleted") {
-    const cause = reason === 'canceled' ? 'it was recently canceled' : deletedPhrase;
+    let cause;
+    if (reason === 'canceled') {
+        cause = 'it was recently canceled';
+    } else if (reason === 'moved') {
+        cause = 'it was recently rescheduled';
+    } else {
+        cause = deletedPhrase;
+    }
     return `You cannot ${actionPhrase}, because ${cause}. Please reload for the most up-to-date schedule.`;
 }
 
 window.goToClubPage = function () {
     const currentClubId = getUrlParameter('clubId');
-    const returnToPage = getUrlParameter('returnTo');
-    if (currentClubId) {
-        let redirectUrl = 'your_clubs.html';
-        if (returnToPage === 'manager') redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        else if (returnToPage === 'member') redirectUrl = `club_page_member.html?id=${currentClubId}`;
-        else redirectUrl = `club_page_manager.html?id=${currentClubId}`;
-        window.location.href = redirectUrl;
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
+    window.location.href = currentClubId
+        ? `club_page.html?clubId=${currentClubId}`
+        : 'your_clubs.html';
 };
 
 
 
 onAuthStateChanged(auth, async (user) => {
+    if (!handleUserSwitch(user)) {
+        if (!user) window.location.href = 'login.html';
+        return;
+    }
+
     currentUser = user;
     clubId = getUrlParameter('clubId');
 
@@ -148,7 +142,8 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
-            role = await getClubRole(clubId, currentUser.uid, clubSnap);
+            memberNames = { ...(clubSnap.data().memberNames || {}) };
+            role = await getRole(db, clubId, currentUser.uid, clubSnap);
 
             if (role === null) {
                 hideLoadingScreen();
@@ -158,19 +153,14 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             await Promise.all([
-                fetchAndDisplayEvents(),
+                watchEvents(),
                 prefetchUserRsvps()
             ]);
             hideLoadingScreen();
             requestAnimationFrame(() => requestAnimationFrame(() => renderAllEvents()));
 
-            if (addEventButton) {
-                if (role === 'manager' || role === 'admin') {
-                    addEventButton.style.display = 'block';
-                    addEventButton.addEventListener('click', addNewEventEditingCard);
-                } else {
-                    addEventButton.style.display = 'none';
-                }
+            if (addEventButton && (role === 'manager' || role === 'admin')) {
+                addEventButton.addEventListener('click', addNewEventEditingCard);
             }
 
         } catch (error) {
@@ -185,23 +175,37 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-async function fetchAndDisplayEvents() {
-    if (!clubId) return;
-
-    try {
+// Keeps eventDocsMap in step with the server for the life of the page. This only ever touches the map, never the DOM
+function watchEvents() {
+    return new Promise((resolve, reject) => {
         const eventsRef = collection(db, "clubs", clubId, "events");
         const q = query(eventsRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
 
-        eventDocsMap.clear();
-        querySnapshot.forEach(docSnap => {
-            eventDocsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+        onSnapshot(q, (snapshot) => {
+            eventsListenerFailed = false;
+
+            
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'removed') {
+                    eventDocsMap.delete(change.doc.id);
+                } else {
+                    eventDocsMap.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
+                }
+            });
+
+            if (!eventsPrimed) {
+                eventsPrimed = true;
+                resolve();
+            }
+        }, (error) => {
+            console.error("Error listening to events:", error);
+            eventsListenerFailed = true;
+            if (!eventsPrimed) {
+                eventsPrimed = true;
+                reject(error);
+            }
         });
-
-    } catch (error) {
-        console.error("Error fetching events:", error);
-        throw error;
-    }
+    });
 }
 
 function renderAllEvents() {
@@ -212,13 +216,19 @@ function renderAllEvents() {
     const isAdmin = role === 'manager' || role === 'admin';
 
     if (allOccurrences.length === 0) {
-        if (role === 'member') eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
-        if (noEventsMessage) noEventsMessage.style.display = 'block';
+        if (isAdmin) {
+            noEventsMessageAdmin.style.display = 'block';
+            if (addEventButton) addEventButton.style.display = 'none';
+        } else {
+            eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+            noEventsMessageAdmin.style.display = 'none';
+        }
         eventsContainer.style.marginTop = '0px';
         return;
     }
 
-    if (noEventsMessage) noEventsMessage.style.display = 'none';
+    noEventsMessageAdmin.style.display = 'none';
+    if (addEventButton) addEventButton.style.display = isAdmin ? 'block' : 'none';
     eventsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
 
     allOccurrences.forEach((occurrence, index) => {
@@ -294,6 +304,16 @@ function refreshCardsForEvent(eventId) {
         return;
     }
 
+    const isAdmin = role === 'manager' || role === 'admin';
+    const stillShowingEmptyState = eventsContainer.querySelectorAll('.display-event-card').length === 0;
+
+    if (stillShowingEmptyState) {
+        eventsContainer.innerHTML = '';
+        eventsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
+        noEventsMessageAdmin.style.display = 'none';
+        if (isAdmin && addEventButton) addEventButton.style.display = 'block';
+    }
+
     newOccurrences.forEach(occ => {
         const allCurrentCards = Array.from(eventsContainer.querySelectorAll('.display-event-card'));
         const newCard = createSingleOccurrenceDisplayCard(occ.eventData, occ.occurrenceDate, occ.originalEventId);
@@ -305,7 +325,7 @@ function refreshCardsForEvent(eventId) {
             const existingEventId = existingCard.dataset.originalEventId;
             const existingEventData = eventDocsMap.get(existingEventId);
             if (!existingEventData) continue;
-            const existingDateTime = new Date(formatLocalDate(new Date(existingDate)) + 'T' + existingEventData.startTime + ':00').getTime();
+            const existingDateTime = new Date(existingDate + 'T' + existingEventData.startTime + ':00').getTime();
             if (occDateTime <= existingDateTime) {
                 eventsContainer.insertBefore(newCard, existingCard);
                 inserted = true;
@@ -315,7 +335,7 @@ function refreshCardsForEvent(eventId) {
         if (!inserted) eventsContainer.appendChild(newCard);
     });
 
-    if (noEventsMessage) noEventsMessage.style.display = 'none';
+    noEventsMessageAdmin.style.display = 'none';
 }
 
 function removeCardsForEvent(eventId) {
@@ -330,11 +350,14 @@ function checkIfEmpty() {
     const remaining = eventsContainer.querySelectorAll('.display-event-card');
     
     if (remaining.length === 0) {
-        if (role === 'member') {
+        const isAdmin = role === 'manager' || role === 'admin';
+        if (isAdmin) {
+            eventsContainer.innerHTML = '';
+            noEventsMessageAdmin.style.display = 'block';
+            if (addEventButton) addEventButton.style.display = 'none';
+        } else {
             eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
-        }
-        if (noEventsMessage) {
-            noEventsMessage.style.display = 'block';
+            noEventsMessageAdmin.style.display = 'none';
         }
         eventsContainer.style.marginTop = '0px';
 
@@ -346,29 +369,30 @@ function checkIfEmpty() {
 }
 
 
-
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to add events."); return; }
     if (isEditingEvent) { await showAppAlert("Please finish editing the current event before adding a new one."); return; }
 
-    const newCard = createEditingCardElement({}, true);
+    const isFirstCard = eventsContainer.querySelectorAll('.display-event-card').length === 0;
+    const newCard = createEditingCardElement({}, true, null, false, null, null, isFirstCard);
     if (eventsContainer) {
-        if (noEventsMessage) noEventsMessage.style.display = 'none';
+        noEventsMessageAdmin.style.display = 'none';
         eventsContainer.prepend(newCard);
     }
 }
 
 
 
-function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null) {
+function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null, isFirstCard = false) {
     isEditingEvent = true;
     const cardDiv = document.createElement('div');
-    cardDiv.className = 'event-card editing-event-card';
+    cardDiv.className = (isNewEvent && isFirstCard) ? 'event-card editing-event-card editing-event-card-first' : 'event-card editing-event-card';
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const currentEditId = eventIdToUpdate || `new-${Date.now()}`;
 
     cardDiv.dataset.editId = currentEditId;
     cardDiv.dataset.isNewEvent = isNewEvent;
+    cardDiv.dataset.isFirstCard = isFirstCard;
     if (isEditingInstance) {
         cardDiv.dataset.isEditingInstance = 'true';
         cardDiv.dataset.originalEventIdForInstance = originalEventIdForInstance;
@@ -383,7 +407,7 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 
         <div class="field-section">
             <label for="edit-name-${currentEditId}">Event Name:</label>
-            <input type="text" id="edit-name-${currentEditId}" value="${initialData.eventName || ''}" required>
+            <input type="text" id="edit-name-${currentEditId}" value="${escapeHtml(initialData.eventName || '')}" required>
         </div>
 
         <div class="field-section event-type-toggle" style="display: ${isNewEvent ? 'block' : 'none'};">
@@ -440,17 +464,17 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
 
         <div class="field-section">
             <label for="edit-address-${currentEditId}">Address:</label>
-            <input type="text" id="edit-address-${currentEditId}" value="${initialData.address || ''}" required>
+            <input type="text" id="edit-address-${currentEditId}" value="${escapeHtml(initialData.address || '')}" required>
         </div>
 
         <div class="field-section">
             <label for="edit-location-${currentEditId}">Specific Location:</label>
-            <input type="text" id="edit-location-${currentEditId}" value="${initialData.location || ''}" required>
+            <input type="text" id="edit-location-${currentEditId}" value="${escapeHtml(initialData.location || '')}" required>
         </div>
 
         <div class="field-section">
             <label for="edit-notes-${currentEditId}">Notes (Optional):</label>
-            <input type="text" id="edit-notes-${currentEditId}" value="${initialData.notes || ''}">
+            <input type="text" id="edit-notes-${currentEditId}" value="${escapeHtml(initialData.notes || '')}">
         </div>
 
         <div class="event-card-actions">
@@ -554,8 +578,7 @@ async function createEvent(clubId, eventFields, user) {
    	const eventData = {
         ...eventFields,
         createdAt: serverTimestamp(),
-        createdByUid: user.uid,
-        createdByName: user.displayName || "Unknown"
+        createdByUid: user.uid
     };
 
     const eventsRef = collection(db, "clubs", clubId, "events");
@@ -582,6 +605,7 @@ async function updateEvent(clubId, eventId, eventFields, existingExceptions = []
 async function saveEvent(cardDiv, existingEventId = null) {
     const tempDomId = cardDiv.dataset.editId;
     const isNewEvent = cardDiv.dataset.isNewEvent === 'true';
+    const isFirstCard = cardDiv.dataset.isFirstCard === 'true';
     const isEditingInstance = cardDiv.dataset.isEditingInstance === 'true';
     const originalEventIdForInstance = cardDiv.dataset.originalEventIdForInstance;
     const originalOccurrenceDateForInstance = cardDiv.dataset.originalOccurrenceDate;
@@ -648,14 +672,14 @@ async function saveEvent(cardDiv, existingEventId = null) {
 
     try {
         if (isEditingInstance) {
-            const freshness = await checkEventFreshness(originalEventIdForInstance, originalOccurrenceDateForInstance);
+            const freshness = checkEventFreshness(originalEventIdForInstance, originalOccurrenceDateForInstance);
             if (!freshness.live) {
                 isEditingEvent = false;
                 await showAppAlert(staleEventMessage("edit this event", freshness.reason));
                 return;
             }
         } else if (existingEventId) {
-            const freshness = await checkEventFreshness(existingEventId);
+            const freshness = checkEventFreshness(existingEventId);
             if (!freshness.live) {
                 isEditingEvent = false;
                 await showAppAlert(staleEventMessage("edit this event", freshness.reason));
@@ -693,12 +717,18 @@ async function saveEvent(cardDiv, existingEventId = null) {
             if (!rsvpsSnap.empty) {
                 const batch = writeBatch(db);
                 rsvpsSnap.forEach(rsvpDoc => {
-                    const newId = `${savedEventId}_${originalOccurrenceDateForInstance}_${rsvpDoc.data().userId}`;
+                    const newId = `${savedEventId}_${eventDate}_${rsvpDoc.data().userId}`;
                     const newRef = doc(db, "clubs", clubId, "occurrenceRsvps", newId);
-                    batch.set(newRef, { ...rsvpDoc.data(), eventId: savedEventId });
+                    batch.set(newRef, { ...rsvpDoc.data(), eventId: savedEventId, occurrenceDate: eventDate });
                     batch.delete(rsvpDoc.ref);
                 });
                 await batch.commit();
+                userRsvpMap.forEach((status, key) => {
+                    if (key === `${originalEventIdForInstance}_${originalOccurrenceDateForInstance}`) {
+                        userRsvpMap.delete(key);
+                        userRsvpMap.set(`${savedEventId}_${eventDate}`, status);
+                    }
+                });
             }
 
             cardDiv.remove();
@@ -729,7 +759,11 @@ async function saveEvent(cardDiv, existingEventId = null) {
             refreshCardsForEvent(savedEventId);
         }
 
-        scrollToEditedEvent(savedEventId, savedOccurrenceDate);
+        if (isNewEvent && !isEditingInstance && !existingEventId && isFirstCard) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            scrollToEditedEvent(savedEventId, savedOccurrenceDate);
+        }
         await showAppAlert("Event saved successfully!");
 
     } catch (error) {
@@ -749,7 +783,7 @@ async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to edit events."); return; }
     if (isEditingEvent) { await showAppAlert("Please finish editing the current event before starting another edit."); return; }
 
-    const freshness = await checkEventFreshness(eventId, occurrenceDateString);
+    const freshness = checkEventFreshness(eventId, occurrenceDateString);
     if (!freshness.live) {
         await showAppAlert(staleEventMessage("edit this event", freshness.reason));
         return;
@@ -793,7 +827,7 @@ async function editEvent(eventId, occurrenceDateString = null) {
 
 
 async function cancelSingleOccurrence(eventId, occurrenceDateString) {
-    const freshness = await checkEventFreshness(eventId, occurrenceDateString);
+    const freshness = checkEventFreshness(eventId, occurrenceDateString);
     if (!freshness.live) {
         await showAppAlert(staleEventMessage("delete this event", freshness.reason, "it was already deleted"));
         return;
@@ -868,45 +902,42 @@ async function deleteEvent(clubId, eventId) {
 
 
 async function deleteEventSeries(clubId, eventId) {
-    const batch = writeBatch(db);
+    // Gather every doc that has to go, then delete in batches
+    const refsToDelete = [];
 
     const eventRef = doc(db, "clubs", clubId, "events", eventId);
-    batch.delete(eventRef);
-    const rsvpsQuery = query(
-    collection(db, "clubs", clubId, "occurrenceRsvps"),
+    refsToDelete.push(eventRef);
+
+    const rsvpsSnap = await getDocs(query(
+        collection(db, "clubs", clubId, "occurrenceRsvps"),
         where("eventId", "==", eventId)
-    );
-    const rsvpsSnap = await getDocs(rsvpsQuery);
+    ));
+    rsvpsSnap.forEach(d => refsToDelete.push(d.ref));
 
-    rsvpsSnap.forEach(rsvpDoc => {
-        batch.delete(rsvpDoc.ref);
-    });
-
-    const overridesQuery = query(
-    collection(db, "clubs", clubId, "events"),
+    const overridesSnap = await getDocs(query(
+        collection(db, "clubs", clubId, "events"),
         where("parentRecurringEventId", "==", eventId)
-    );
-    const overridesSnap = await getDocs(overridesQuery);
-    const overrideIDs = overridesSnap.docs.map(doc => doc.id);
+    ));
+    const overrideIDs = overridesSnap.docs.map(d => d.id);
+    overridesSnap.forEach(d => refsToDelete.push(d.ref));
 
-    overridesSnap.forEach(overrideDoc => {
-        batch.delete(overrideDoc.ref);
-    });
-
-    if (overrideIDs.length > 0){
-        const overridesRsvpsQuery = query(
+    for (let i = 0; i < overrideIDs.length; i += 30) {
+        const chunk = overrideIDs.slice(i, i + 30);
+        const snap = await getDocs(query(
             collection(db, "clubs", clubId, "occurrenceRsvps"),
-            where("eventId", "in", overrideIDs)
-        );
-        const overridesRsvpsSnap = await getDocs(overridesRsvpsQuery);
-        overridesRsvpsSnap.forEach(rsvpDoc => {
-            batch.delete(rsvpDoc.ref);
-        });
+            where("eventId", "in", chunk)
+        ));
+        snap.forEach(d => refsToDelete.push(d.ref));
     }
-	await batch.commit();
 
-	// returns list of deleted event IDs which includes the main event and all the override IDs. Used to remove the right cards from DOM quickly without having to get them again from Firestore.
-	return [eventId,...overrideIDs];
+    for (let i = 0; i < refsToDelete.length; i += 450) {
+        const batch = writeBatch(db);
+        refsToDelete.slice(i, i + 450).forEach(ref => batch.delete(ref));
+        await batch.commit();
+    }
+
+    // The main event plus every override, so the caller can pull the right cards
+    return [eventId, ...overrideIDs];
 }
 
 async function addExceptionDate(clubId, eventId, dateString) {
@@ -916,7 +947,7 @@ async function addExceptionDate(clubId, eventId, dateString) {
 
 
 async function handleDeleteEvent(eventId, isWeekly, skipConfirm = false) {
-    const freshness = await checkEventFreshness(eventId);
+    const freshness = checkEventFreshness(eventId);
     if (!freshness.live) {
         if (!skipConfirm) {
             await showAppAlert(staleEventMessage(isWeekly ? "delete this event series" : "delete this event", freshness.reason, "it was already deleted"));
@@ -1024,7 +1055,7 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
 
     cardDiv.innerHTML = `
         <div class="event-card-header">
-            <h3 class="event-card-title">${eventData.eventName}</h3>
+            <h3 class="event-card-title">${escapeHtml(eventData.eventName)}</h3>
         </div>
         <div class="event-date-strip">
             <i class="fa-regular fa-calendar"></i>
@@ -1038,16 +1069,16 @@ function createSingleOccurrenceDisplayCard(eventData, occurrenceDate, originalEv
             </div>
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-solid fa-location-dot"></i></span>
-                <span class="einfo-text">${eventData.address}</span>
+                <span class="einfo-text">${escapeHtml(eventData.address)}</span>
             </div>
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-solid fa-thumbtack"></i></span>
-                <span class="einfo-text">${eventData.location}</span>
+                <span class="einfo-text">${escapeHtml(eventData.location)}</span>
             </div>
             ${eventData.notes ? `
             <div class="einfo-row">
                 <span class="einfo-icon"><i class="fa-regular fa-pen-to-square"></i></span>
-                <span class="einfo-text">${eventData.notes}</span>
+                <span class="einfo-text">${escapeHtml(eventData.notes)}</span>
             </div>` : ''}
         </div>
 
@@ -1134,13 +1165,12 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
     const previousStatus = userRsvpMap.get(key) || null;
     const newStatus = (previousStatus === status) ? null : status;
 
-    // --- Optimistic update: happens instantly, before any network call ---
     if (newStatus === null) userRsvpMap.delete(key);
     else userRsvpMap.set(key, newStatus);
     updateRsvpButtonsUI(originalEventId, occurrenceDateString, newStatus);
 
     try {
-        const freshness = await checkEventFreshness(originalEventId, occurrenceDateString);
+        const freshness = checkEventFreshness(originalEventId, occurrenceDateString);
         if (!freshness.live) {
             revertRsvpUI(key, previousStatus, originalEventId, occurrenceDateString);
             await showAppAlert(staleEventMessage("provide an RSVP for this event", freshness.reason));
@@ -1158,7 +1188,6 @@ async function saveRsvpStatus(originalEventId, occurrenceDateString, status) {
                 eventId: originalEventId,
                 occurrenceDate: occurrenceDateString,
                 userId: userUid,
-                userName: currentUser.displayName || "Unknown User",
                 timestamp: serverTimestamp(),
                 clubId,
                 status: newStatus,
@@ -1194,7 +1223,7 @@ function updateRsvpButtonsUI(originalEventId, occurrenceDateString, currentStatu
 async function showRsvpDetailsModal(eventId, occurrenceDateString) {
     if (!clubId) { await showAppAlert("Error: Club ID not found."); return; }
 
-    const freshness = await checkEventFreshness(eventId, occurrenceDateString);
+    const freshness = checkEventFreshness(eventId, occurrenceDateString);
     if (!freshness.live) {
         await showAppAlert(staleEventMessage("view responses for this event", freshness.reason));
         return;
@@ -1252,9 +1281,12 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
 
         const rsvpDocs = rsvpsSnap.docs.map(d => d.data());
 
-        const names = await Promise.all(rsvpDocs.map(async data => {
-            const name = data.userName || await getUserNameCached(data.userId);
-            return { status: data.status, name };
+        await Promise.all(
+            [...new Set(rsvpDocs.map(d => d.userId))].map(uid => resolveName(uid))
+        );
+        const names = rsvpDocs.map(data => ({
+            status: data.status,
+            name: memberNames[data.userId] || "Unknown User"
         }));
 
         const going = [], maybe = [], notGoing = [];
@@ -1271,7 +1303,7 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
                     <span class="rsvp-count">${names.length}</span>
                 </div>
                 <div class="rsvp-namelist">
-                    ${names.map(n => `<div class="rsvp-name-row">${n}</div>`).join('')}
+                    ${names.map(n => `<div class="rsvp-name-row">${escapeHtml(n)}</div>`).join('')}
                 </div>
             </div>
         `;
@@ -1313,6 +1345,19 @@ async function showRsvpDetailsModal(eventId, occurrenceDateString) {
         } else {
             await showAppAlert("Something went wrong while loading RSVP details.");
         }
+    }
+}
+
+async function resolveName(uid) {
+    if (!uid) return "Unknown User";
+    if (memberNames[uid]) return memberNames[uid];
+    try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        memberNames[uid] = (userSnap.exists() && userSnap.data().name) ? userSnap.data().name : "Unknown User";
+        return memberNames[uid];
+    } catch (error) {
+        console.error(`Failed to resolve name for ${uid}:`, error);
+        return "Unknown User";
     }
 }
 
@@ -1451,11 +1496,20 @@ function formatLocalDate(date) {
     return `${year}-${month}-${day}`;
 }
 
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 
 function isPermissionError(error) {
     return error && error.code === 'permission-denied';
 }
 
 function permissionDeniedMessage(actionPhrase) {
-    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

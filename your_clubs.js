@@ -93,7 +93,7 @@ function buildCardHTML(clubName, roleLabel, memberCount) {
   return `
     <div class="cc-card-inner">
       <div class="cc-card-body">
-        <span class="club-card-name">${clubName}</span>
+        <span class="club-card-name">${escapeHtml(clubName)}</span>
         <div class="cc-card-meta-row">
           <span class="club-role-pill">${roleLabel}</span>
           <span class="club-card-meta">
@@ -114,6 +114,7 @@ async function loadAllClubs() {
 
         if (!userDocSnap.exists()) {
             showNoClubsCard(container);
+            hideLoadingScreen();
             return;
         }
 
@@ -142,7 +143,7 @@ async function loadAllClubs() {
             btn.style.setProperty('--accent', ACCENT.manager);
             btn.innerHTML = buildCardHTML(data.clubName, ROLE_LABELS.manager, memberCount);
             btn.addEventListener("click", () => {
-                window.location.href = `club_page_manager.html?id=${managedClubs[i]}`;
+                window.location.href = `club_page.html?clubId=${managedClubs[i]}`;
             });
 
             container.appendChild(btn);
@@ -175,12 +176,8 @@ async function loadAllClubs() {
             btn.style.animationDelay = `${cardIndex * 100}ms`;
             btn.style.setProperty('--accent', accentColor);
             btn.innerHTML = buildCardHTML(data.clubName, getRoleLabel(role), memberCount);
-            btn.addEventListener("click", async () => {
-                if (role === 'manager' || role === 'admin') {
-                    window.location.href = `club_page_manager.html?id=${id}`;
-                } else {
-                    window.location.href = `club_page_member.html?id=${id}`;
-                }
+            btn.addEventListener("click", () => {
+                window.location.href = `club_page.html?clubId=${id}`;
             });
 
             container.appendChild(btn);
@@ -226,4 +223,14 @@ function showNoClubsCard(container) {
   card.querySelector("#createPill").addEventListener("click", () => {
     window.location.href = "create_club.html";
   });
+}
+
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

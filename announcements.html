@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=68" rel="stylesheet" />
+    <link href="styles.css?v=69" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Announcements</title>
@@ -33,6 +33,14 @@
         .message-link:active {
             color: #003d7a;
         }
+
+        .empty-state-card-dashed.static {
+            margin-top: -45px !important;
+        }
+
+        .editing-announcement-card-first {
+            margin-top: -45px !important;
+        }
     </style>
   </head>
   <body>
@@ -51,10 +59,15 @@
     </div>
 
     <div id="content">
-      <!-- <h1 id="clubAnnouncementsTitle"></h1> -->
       <h1 id="clubScheduleTitle"></h1>
       <button id="add-announcement-button" class="fancy-button" style="display: none;">POST</button>
-      
+
+      <div id="noAnnouncementsMessageAdmin" class="empty-state-card-dashed static" style="display: none;">
+        <i class="fa-solid fa-bullhorn"></i>
+        <p class="empty-state-dashed-title">No announcements yet</p>
+        <p class="empty-state-dashed-subtitle">Keep all your members in the loop</p>
+        <button id="empty-state-announcement-btn" class="fancy-button">POST</button>
+      </div>
 
       <div id="announcementsContainer" class="fancy-black-label">
           <p id="noAnnouncementsMessage" style="display: none;">No announcements yet.</p>
@@ -66,7 +79,7 @@
 
     <script src="theme.js?v=12"></script>
     <script type="module" src="dialog.js?v=2"></script> 
-    <script type="module" src="announcements.js?v=16"></script>
+    <script type="module" src="announcements.js?v=17"></script>
     <!-- <script type="module" src="loading.js?v=2"></script> -->
   </body>
 </html>

@@ -18,7 +18,8 @@ import {
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
-
+import { ROLE_LABELS } from './roleLabels.js';
+import { getRole } from './roleCache.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -37,7 +38,7 @@ const db   = initializeFirestore(app, {
 const auth = getAuth(app);
 
 function escapeHtml(str) {
-    return String(str)
+    return String(str ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -68,34 +69,6 @@ function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
 }
 
-async function getMemberRoleForClub(clubId, uid) {
-    if (!clubId || !uid) return null;
-
-    const cacheKey = `role_${clubId}_${uid}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const memberRoleRef = doc(db, "clubs", clubId, "members", uid);
-        const memberRoleSnap = await getDoc(memberRoleRef);
-
-        let role;
-        if (memberRoleSnap.exists()) {
-            role = memberRoleSnap.data().role || 'member';
-        } else {
-            const clubRef = doc(db, "clubs", clubId);
-            const clubSnap = await getDoc(clubRef);
-            role = (clubSnap.exists() && clubSnap.data().managerUid === uid) ? 'manager' : null;
-        }
-
-        if (role !== null) sessionStorage.setItem(cacheKey, role);
-        return role;
-    } catch (error) {
-        console.error(`Error fetching role for user ${uid} in club ${clubId}:`, error);
-        return null;
-    }
-}
-
 function isAdmin() {
     return currentUserRole === 'manager' || currentUserRole === 'admin';
 }
@@ -106,14 +79,9 @@ function hideOverlay() { categoryOverlay.style.display = 'none';  document.body.
 
 
 window.goToClubPage = function () {
-    const returnTo = getUrlParameter('returnTo');
-    if (clubId) {
-        window.location.href = returnTo === 'member'
-            ? `club_page_member.html?id=${clubId}`
-            : `club_page_manager.html?id=${clubId}`;
-    } else {
-        window.location.href = 'your_clubs.html';
-    }
+    window.location.href = clubId
+        ? `club_page.html?clubId=${clubId}`
+        : 'your_clubs.html';
 };
 
 
@@ -139,7 +107,7 @@ onAuthStateChanged(auth, async (user) => {
             showContainerError(resourcesContainer, "This club doesn't exist.");
             return;
         }
-        currentUserRole = await getMemberRoleForClub(clubId, user.uid);
+        currentUserRole = await getRole(db, clubId, user.uid, clubSnap);
         if (currentUserRole === null) {
             hideLoadingScreen();
             noResourcesMessage.style.display = 'none';
@@ -477,7 +445,7 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
                     order: categoriesCache.length,
                     createdAt: serverTimestamp(),
                     createdByUid: currentUser.uid,
-                    createdByName: currentUser.displayName || "Anonymous",
+                    createdByName: currentUser.displayName || "Unknown",
                     clubId
                 });
                 isEditingCategory = false;
@@ -738,16 +706,9 @@ document.getElementById('save-link-button').addEventListener('click', async () =
 });
 
 
-noResourcesMessageAdmin.addEventListener('click', () => {
+document.getElementById('empty-state-links-btn').addEventListener('click', () => {
     cameFromEmptyStateCard = true;
     handleAddCategory();
-});
-noResourcesMessageAdmin.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        cameFromEmptyStateCard = true;
-        handleAddCategory();
-    }
 });
 
 [
@@ -810,5 +771,5 @@ function isPermissionError(error) {
 }
 
 function permissionDeniedMessage(actionPhrase) {
-    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club manager if you think this is a mistake.`;
+    return `You don't have permission to ${actionPhrase}. Try reloading the page, and reach out to a club ${ROLE_LABELS.manager.toLowerCase()} if you think this is a mistake.`;
 }

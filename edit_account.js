@@ -38,6 +38,7 @@ let originalDisplayName = '';
 let originalState = '';
 let originalCounty = '';
 let originalSchool = '';
+let myClubIds = [];
 
 function hideLoadingScreen() {
     const overlay = document.getElementById('loading-overlay');
@@ -249,6 +250,11 @@ onAuthStateChanged(auth, async (user) => {
             if (data.state && data.county) {
                 await loadSchoolsFor(data.state, data.county);
             }
+            myClubIds = [...new Set([
+                ...(data.member_clubs || []),
+                ...(data.managed_clubs || []),
+                ...(data.admin_clubs || [])
+            ])];
         }
     } catch (e) {
         console.error("Could not load existing school info:", e);
@@ -274,7 +280,6 @@ saveBtn.addEventListener('click', async () => {
     const county = editCounty.value.trim();
     const rawSchool = editSchool.value.trim();
 
-    // School fields are optional here — only validate/save them if the user filled something in
     const hasAnySchoolInput = editState.value.trim() || county || rawSchool;
 
     if (hasAnySchoolInput) {
@@ -330,6 +335,19 @@ saveBtn.addEventListener('click', async () => {
         }
 
         await updateDoc(doc(db, "users", user.uid), updatePayload);
+
+        if (newDisplayName !== originalDisplayName && myClubIds.length > 0) {
+            const results = await Promise.allSettled(
+                myClubIds.map(clubId =>
+                    updateDoc(doc(db, "clubs", clubId), { [`memberNames.${user.uid}`]: newDisplayName })
+                )
+            );
+            results.forEach((result, i) => {
+                if (result.status === 'rejected') {
+                    console.error(`Failed to sync new name to club ${myClubIds[i]}:`, result.reason);
+                }
+            });
+        }
 
         const data = { displayName: newDisplayName, email: user.email, uid: user.uid };
         localStorage.setItem('cc-user', JSON.stringify(data));

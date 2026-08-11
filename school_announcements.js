@@ -6,6 +6,7 @@ import {
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
+import { getRole } from './roleCache.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -33,6 +34,21 @@ let totalCount = 0;
 let totalPages = 1;
 let cursors = [null];
 let currentPageAnnouncements = [];
+
+let memberNames = {};
+
+async function resolveName(uid) {
+    if (!uid) return "Unknown";
+    if (memberNames[uid]) return memberNames[uid];
+    try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        memberNames[uid] = (userSnap.exists() && userSnap.data().name) ? userSnap.data().name : "Unknown";
+        return memberNames[uid];
+    } catch (error) {
+        console.error(`Failed to resolve name for ${uid}:`, error);
+        return "Unknown";
+    }
+}
 
 const announcementsContainer = document.getElementById('announcementsContainer');
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage');
@@ -152,7 +168,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshCount(schoolId);
 
     if (totalCount === 0) {
-      showEmpty("NOTHING SHARED YET!");
+      showEmpty("NOTHING HERE YET!");
       hidePagination();
       hideLoadingScreen();
       return;
@@ -218,7 +234,7 @@ async function renderPage(page) {
   const pageItems = await fetchSchoolAnnouncementsPage(currentSchoolId, currentPage);
 
   if (pageItems.length === 0) {
-    showEmpty("NOTHING SHARED YET!");
+    showEmpty("NOTHING HERE YET!");
     hidePagination();
     return;
   }
@@ -259,21 +275,19 @@ function createAnnouncementCard(data) {
 
   cardDiv.innerHTML = `
     <h3>
-      <span class="club-label ${canNavigate ? 'club-label--link' : ''}" data-club-id="${data.clubId}">${data.clubName}</span><br>
-      ${data.title}
+      <span class="club-label ${canNavigate ? 'club-label--link' : ''}" data-club-id="${escapeHtml(data.clubId)}">${escapeHtml(data.clubName)}</span><br>
+      ${escapeHtml(data.title)}
     </h3>
     <p>${linkifyText(data.content)}</p>
     <p class="announcement-meta">
-      ${data.createdByName} · ${formatTimestamp(data.createdAt)}
+      ${escapeHtml(data.authorName)} · ${formatTimestamp(data.createdAt)}
     </p>
   `;
 
   if (canNavigate) {
     const label = cardDiv.querySelector('.club-label--link');
     label.addEventListener('click', () => {
-      window.location.href = (data.role === 'manager' || data.role === 'admin')
-        ? `club_page_manager.html?id=${data.clubId}`
-        : `club_page_member.html?id=${data.clubId}`;
+      window.location.href = `club_page.html?clubId=${data.clubId}`;
     });
   }
 
@@ -284,16 +298,24 @@ async function attachClubInfo(announcements, uid) {
   const uniqueClubIds = [...new Set(announcements.map(a => a.clubId))];
 
   const infoByClub = {};
-  for (const clubId of uniqueClubIds) {
+  await Promise.all(uniqueClubIds.map(async (clubId) => {
     const clubSnap = await getDoc(doc(db, "clubs", clubId));
     const clubName = clubSnap.exists() ? (clubSnap.data().clubName || 'Unknown Club') : 'Unknown Club';
-    const role = await getClubRole(clubId, uid);
+    if (clubSnap.exists()) {
+      Object.assign(memberNames, clubSnap.data().memberNames || {});
+    }
+    const role = await getRole(db, clubId, uid, clubSnap.exists() ? clubSnap : undefined);
     infoByClub[clubId] = { clubName, role };
-  }
+  }));
+
+  await Promise.all(
+    [...new Set(announcements.map(a => a.createdByUid))].map(uid => resolveName(uid))
+  );
 
   announcements.forEach(a => {
     a.clubName = a.clubName || infoByClub[a.clubId].clubName;
     a.role = infoByClub[a.clubId].role;
+    a.authorName = memberNames[a.createdByUid] || "Unknown";
   });
 }
 
@@ -312,30 +334,19 @@ function formatTimestamp(timestamp) {
 }
 
 function linkifyText(text) {
+  const escaped = escapeHtml(text);
   const urlPattern = /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?)/g;
-  return text.replace(urlPattern, (url) => {
+  return escaped.replace(urlPattern, (url) => {
     const href = url.startsWith('http') ? url : 'https://' + url;
     return `<a href="${href}" target="_blank" class="message-link">${url}</a>`;
   });
 }
 
-async function getClubRole(clubId, uid) {
-  const cacheKey = `role_${clubId}_${uid}`;
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) return cached;
-  try {
-    const memberSnap = await getDoc(doc(db, "clubs", clubId, "members", uid));
-    let role = null;
-    if (memberSnap.exists() && memberSnap.data().role) {
-      role = memberSnap.data().role;
-    } else {
-      const clubSnap = await getDoc(doc(db, "clubs", clubId));
-      if (clubSnap.exists() && clubSnap.data().managerUid === uid) role = 'manager';
-    }
-    if (role !== null) sessionStorage.setItem(cacheKey, role);
-    return role;
-  } catch (e) {
-    console.error("Error fetching role:", e);
-    return null;
-  }
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
