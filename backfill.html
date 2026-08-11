@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSVP cleanup — remove userName</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --ink: #12161c;
+        --paper: #eceff3;
+        --line: #12161c;
+        --go: #1c375f;
+        --warn: #8a5a00;
+        --bad: #8c2020;
+        --ok: #1f5c34;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 24px 16px 64px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Teko", sans-serif;
+        font-size: 18px;
+        display: flex;
+        justify-content: center;
+    }
+    .shell { width: 100%; max-width: 620px; }
+    h1 {
+        font-size: 40px;
+        line-height: 1;
+        margin: 0 0 4px;
+        letter-spacing: 0.5px;
+    }
+    .sub { margin: 0 0 20px; opacity: 0.7; }
+    .panel {
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        background: linear-gradient(#ffffff, #f5f5f5);
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    .panel h2 {
+        font-size: 24px;
+        margin: 0 0 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    label { display: block; margin-bottom: 4px; }
+    input[type="email"], input[type="password"] {
+        width: 100%;
+        font-family: "Teko", sans-serif;
+        font-size: 20px;
+        padding: 4px 10px;
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--ink);
+        margin-bottom: 12px;
+        outline: none;
+    }
+    button {
+        font-family: "Teko", sans-serif;
+        font-size: 22px;
+        letter-spacing: 1px;
+        padding: 4px 18px;
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        background: linear-gradient(#ffffff, #e8e8e8);
+        color: var(--ink);
+        cursor: pointer;
+    }
+    button:hover:not(:disabled) { background: linear-gradient(#ffffff, #dcdcdc); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:focus-visible { outline: 3px solid var(--go); outline-offset: 2px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .checkline { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+    .checkline input { margin-top: 5px; }
+    .note {
+        border-left: 4px solid var(--warn);
+        padding-left: 10px;
+        margin: 0 0 14px;
+        opacity: 0.85;
+    }
+    #log {
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 12px;
+        height: 300px;
+        overflow-y: auto;
+        font-size: 16px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .l-info { color: var(--ink); }
+    .l-ok { color: var(--ok); }
+    .l-warn { color: var(--warn); }
+    .l-bad { color: var(--bad); }
+    .l-head { font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+    .tally {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        font-size: 20px;
+    }
+    .tally b { font-size: 26px; display: block; line-height: 1; }
+    .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+    <h1>RSVP cleanup</h1>
+    <p class="sub">Removes the stale <code>userName</code> field from occurrenceRsvps documents.</p>
+
+    <div class="panel" id="auth-panel">
+        <h2>Sign in</h2>
+        <p class="note">Use the account that manages the clubs you want to clean. Credentials go straight to Firebase Auth and are never stored by this page.</p>
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password">
+        <div class="row">
+            <button id="signin-btn">Sign in</button>
+            <span id="auth-status"></span>
+        </div>
+    </div>
+
+    <div class="panel hidden" id="run-panel">
+        <h2>Run</h2>
+        <p class="note">Sweeps every club in the database. Scan first — it only reads, and tells you exactly how many documents would change. Nothing is written until you click Remove.</p>
+        <div class="row">
+            <button id="scan-btn">Scan</button>
+            <button id="clean-btn" disabled>Remove userName</button>
+            <button id="signout-btn">Sign out</button>
+        </div>
+        <div class="tally" id="tally"></div>
+    </div>
+
+    <div id="log"><span class="l-info">Waiting for sign in.</span></div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, collection, getDocs, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+    authDomain: "club-connect-data.firebaseapp.com",
+    projectId: "club-connect-data",
+    storageBucket: "club-connect-data.firebasestorage.app",
+    messagingSenderId: "903230180616",
+    appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+    measurementId: "G-B8DR377JX6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const BATCH_LIMIT = 450;
+
+const el = {
+    authPanel: document.getElementById('auth-panel'),
+    runPanel: document.getElementById('run-panel'),
+    email: document.getElementById('email'),
+    password: document.getElementById('password'),
+    signin: document.getElementById('signin-btn'),
+    signout: document.getElementById('signout-btn'),
+    authStatus: document.getElementById('auth-status'),
+    scan: document.getElementById('scan-btn'),
+    clean: document.getElementById('clean-btn'),
+    tally: document.getElementById('tally'),
+    log: document.getElementById('log')
+};
+
+let currentUser = null;
+let scanned = null;   // { clubId: [docRef, ...] }
+
+function log(msg, cls = 'l-info') {
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = msg;
+    el.log.appendChild(line);
+    el.log.scrollTop = el.log.scrollHeight;
+}
+
+function clearLog() { el.log.innerHTML = ''; }
+
+function showTally(items) {
+    el.tally.innerHTML = items.map(([n, label]) => `<span><b>${n}</b>${label}</span>`).join('');
+}
+
+el.signin.addEventListener('click', async () => {
+    const email = el.email.value.trim();
+    const password = el.password.value;
+    if (!email || !password) { el.authStatus.textContent = 'Enter an email and password.'; return; }
+
+    el.signin.disabled = true;
+    el.authStatus.textContent = 'Signing in…';
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        el.authStatus.textContent = `Sign in failed: ${error.code || error.message}`;
+        el.signin.disabled = false;
+    }
+});
+
+el.password.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') el.signin.click();
+});
+
+el.signout.addEventListener('click', async () => {
+    await signOut(auth);
+    scanned = null;
+    el.clean.disabled = true;
+    el.tally.innerHTML = '';
+    clearLog();
+    log('Signed out.');
+});
+
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    el.signin.disabled = false;
+    if (user) {
+        el.password.value = '';
+        el.authPanel.classList.add('hidden');
+        el.runPanel.classList.remove('hidden');
+        clearLog();
+        log(`Signed in as ${user.email}`, 'l-ok');
+        log(`uid: ${user.uid}`);
+        log('Click Scan to see what would change.');
+    } else {
+        el.authPanel.classList.remove('hidden');
+        el.runPanel.classList.add('hidden');
+        el.authStatus.textContent = '';
+    }
+});
+
+async function getClubIds() {
+    const snap = await getDocs(collection(db, "clubs"));
+    log(`Clubs in database: ${snap.size}`);
+    return snap.docs.map(d => d.id);
+}
+
+el.scan.addEventListener('click', async () => {
+    el.scan.disabled = true;
+    el.clean.disabled = true;
+    scanned = null;
+    clearLog();
+    log('SCANNING (read only)', 'l-head');
+
+    try {
+        const clubIds = await getClubIds();
+        if (clubIds.length === 0) {
+            log('No clubs to scan.', 'l-warn');
+            el.scan.disabled = false;
+            return;
+        }
+
+        const found = {};
+        let totalDocs = 0;
+        let totalStale = 0;
+
+        for (const clubId of clubIds) {
+            try {
+                const snap = await getDocs(collection(db, "clubs", clubId, "occurrenceRsvps"));
+                const stale = snap.docs.filter(d => d.data().userName !== undefined);
+                totalDocs += snap.size;
+                totalStale += stale.length;
+                if (stale.length > 0) found[clubId] = stale.map(d => d.ref);
+                log(`${clubId} — ${snap.size} RSVPs, ${stale.length} with userName`,
+                    stale.length > 0 ? 'l-warn' : 'l-info');
+            } catch (error) {
+                log(`${clubId} — could not read: ${error.code || error.message}`, 'l-bad');
+            }
+        }
+
+        scanned = found;
+        const clubsAffected = Object.keys(found).length;
+
+        log('');
+        log(`Scan complete. ${totalStale} of ${totalDocs} RSVPs carry userName, across ${clubsAffected} club(s).`, 'l-head');
+        showTally([[totalDocs, ' read'], [totalStale, ' to clean'], [clubsAffected, ' clubs']]);
+
+        if (totalStale === 0) {
+            log('Nothing to do.', 'l-ok');
+        } else {
+            log('Click Remove userName to write the changes.');
+            el.clean.disabled = false;
+        }
+    } catch (error) {
+        log(`Scan failed: ${error.code || error.message}`, 'l-bad');
+    } finally {
+        el.scan.disabled = false;
+    }
+});
+
+el.clean.addEventListener('click', async () => {
+    if (!scanned) return;
+
+    const total = Object.values(scanned).reduce((n, refs) => n + refs.length, 0);
+    if (!confirm(`Remove the userName field from ${total} RSVP document(s)? This cannot be undone.`)) return;
+
+    el.clean.disabled = true;
+    el.scan.disabled = true;
+    log('');
+    log('REMOVING', 'l-head');
+
+    let cleaned = 0;
+    let failed = 0;
+
+    for (const [clubId, refs] of Object.entries(scanned)) {
+        for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+            const chunk = refs.slice(i, i + BATCH_LIMIT);
+            const batch = writeBatch(db);
+            chunk.forEach(ref => batch.update(ref, { userName: deleteField() }));
+            try {
+                await batch.commit();
+                cleaned += chunk.length;
+                log(`${clubId} — cleaned ${chunk.length}`, 'l-ok');
+            } catch (error) {
+                failed += chunk.length;
+                log(`${clubId} — batch of ${chunk.length} failed: ${error.code || error.message}`, 'l-bad');
+            }
+        }
+    }
+
+    log('');
+    log(`Done. ${cleaned} cleaned, ${failed} failed.`, failed > 0 ? 'l-warn' : 'l-ok');
+    showTally([[cleaned, ' cleaned'], [failed, ' failed']]);
+
+    if (failed > 0) {
+        log('Failed batches are almost always permission-denied. Enable the temporary override rule for your uid, then scan and run again.', 'l-warn');
+    }
+
+    scanned = null;
+    el.scan.disabled = false;
+});
+</script>
+</body>
+</html>
