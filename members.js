@@ -479,7 +479,7 @@ function resetTransferConfirmRow() {
 }
 
 function shakeTransferConfirm() {
-    transferConfirmText.textContent = `You must check this box to transfer the ${ROLE_LABELS.manager.toLowerCase()} role.`;
+    // transferConfirmText.textContent = `You must check this box to transfer the ${ROLE_LABELS.manager.toLowerCase()} role.`;
     transferConfirmLabel.classList.remove('transfer-confirm-invalid');
     void transferConfirmLabel.offsetWidth; 
     transferConfirmLabel.classList.add('transfer-confirm-invalid');
