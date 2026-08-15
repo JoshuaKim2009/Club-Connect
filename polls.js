@@ -37,7 +37,7 @@ let currentUser = null;
 let pendingScrollToNew = false;
 let pendingEditingCardToRemove = null;
 let currentMemberUIDs = new Set();
-
+const votesInFlight = new Set();
 
 const addPollButton = document.getElementById('add-poll-button');
 const noPollsMessageAdmin = document.getElementById('no-polls-message-admin');
@@ -564,9 +564,9 @@ function createPollCard(pollData, pollId) {
         radio.addEventListener('click', (e) => {
             const clickedRadio = e.currentTarget;
             const pollId = clickedRadio.dataset.pollId;
+            if (votesInFlight.has(pollId)) return;
             const optionIndex = parseInt(clickedRadio.dataset.optionIndex);
             const currentPollData = pollDataCache.get(pollId);
-
             if (clickedRadio.dataset.wasChecked === 'true') {
                 clickedRadio.checked = false;
                 clickedRadio.dataset.wasChecked = 'false';
@@ -650,7 +650,12 @@ function updatePollCard(existingCard, pollData, pollId) {
                 const span = document.createElement('span');
                 span.className = 'poll-vote-count';
                 span.textContent = `${voteCount} vote${voteCount !== 1 ? 's' : ''}`;
+                span.style.opacity = '0';
+                span.style.transition = 'opacity 0.35s ease-out';
                 label.appendChild(span);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    span.style.opacity = '1';
+                }));
             }
         } else {
             if (voteCountElement) {
@@ -668,11 +673,17 @@ function updatePollCard(existingCard, pollData, pollId) {
             } else {
                 const barHTML = `
                     <div class="poll-results-bar">
-                        <div class="poll-bar" style="width: ${percentage}%"></div>
-                        <span class="poll-percentage">${percentage}%</span>
+                        <div class="poll-bar" style="width: 0%; transition: width 0.5s cubic-bezier(.22,.9,.34,1)"></div>
+                        <span class="poll-percentage" style="opacity:0; transition: opacity 0.35s ease-out">${percentage}%</span>
                     </div>
                 `;
                 optionElement.querySelector('.poll-option-header').insertAdjacentHTML('afterend', barHTML);
+                const newBar = optionElement.querySelector('.poll-bar');
+                const newPct = optionElement.querySelector('.poll-percentage');
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    newBar.style.width = `${percentage}%`;
+                    newPct.style.opacity = '1';
+                }));
             }
         } else {
             if (resultsBar) {
@@ -700,6 +711,8 @@ async function handleVote(pollId, optionIndex) {
         return;
     }
 
+    votesInFlight.add(pollId);
+
     const pollRef = doc(db, "clubs", clubId, "polls", pollId);
     const userUid = currentUser.uid;
 
@@ -722,7 +735,6 @@ async function handleVote(pollId, optionIndex) {
                 }
             });
 
-            // toggle logic (same as yours, just safer)
             if (previousVoteIndex === optionIndex) {
                 options[optionIndex].votes =
                     options[optionIndex].votes.filter(uid => uid !== userUid);
@@ -745,6 +757,8 @@ async function handleVote(pollId, optionIndex) {
         } else {
             await showAppAlert("Something went wrong while saving your vote.");
         }
+    } finally {
+        votesInFlight.delete(pollId);
     }
 }
 
