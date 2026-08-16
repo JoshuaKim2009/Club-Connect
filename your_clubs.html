@@ -36,26 +36,26 @@
         align-items: center;
         justify-content: center;
         gap: 7px;
-        padding: 10px 8px;
+        padding: 13px 8px;
         border-radius: 10px;
         border: 2px solid black;
         box-shadow: 0px 2px 0px #000000;
         cursor: pointer;
         font-family: var(--primary-font-family);
-        font-size: 20px;
+        font-size: 22px;
         letter-spacing: 0.07em;
         line-height: 1;
         text-transform: uppercase;
         -webkit-tap-highlight-color: transparent;
         transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out;
-        font-size: min(20px, 4.2vw) !important;
+        font-size: min(22px, 4.5vw) !important;
         -webkit-text-size-adjust: none;
         text-size-adjust: none;
       }
 
       .action-pill i {
-        font-size: 20px;
-        font-size: min(20px, 4.2vw) !important;
+        font-size: 22px;
+        font-size: min(22px, 4.5vw) !important;
       }
 
       .action-pill:hover {
@@ -85,8 +85,8 @@
         color: #fff;
       } */
 
-      .action-create  { background: linear-gradient(#ffc084 0%, #f0b176 110%); color: #000000; }
-      .action-join    { background: linear-gradient(#8dcf8a 0%, #76b373 140%);  color: #000000; }
+      .action-create  { background: linear-gradient(#ffc084 0%, #f5b67c 110%); color: #000000; }
+      .action-join    { background: linear-gradient(#8dcf8a 0%, #85c482 140%);  color: #000000; }
       .action-discover{ background: linear-gradient(#bbaff7 0%, #a79be2 115%);  color: #000000; }
 
       .yc-section {
@@ -279,7 +279,7 @@
 
       #roleModal { display: none; }
 
-      @media (max-width: 420px) {
+      /* @media (max-width: 420px) {
         .action-pill {
           font-size: 17px;
         }
@@ -289,7 +289,7 @@
         .club-card-name {
           font-size: 23px;
         }
-      }
+      } */
     </style>
   </head>
   <body>
@@ -316,11 +316,6 @@
         <button id="join-club-button" class="action-pill action-join">
           <i class="fa-solid fa-arrow-right-to-bracket"></i>
           <span>Join</span>
-        </button>
-        <button id="discover-club-button-main" class="action-pill action-discover"
-                onclick="window.location.href='club_discovery.html?from=your_clubs'">
-          <i class="fa-solid fa-compass"></i>
-          <span>Discover</span>
         </button>
       </div>
     </div>
