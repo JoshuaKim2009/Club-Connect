@@ -8,7 +8,7 @@
   --input-bg: var(--bg-dark);
   --header-bg-end: #000000;
   --header-bg-start: var(--bg-dark);
-  --min-layout-width: 320px;
+  --min-layout-width: 290px;
 }
 
 * {
@@ -2981,7 +2981,7 @@ input[type="checkbox"]:checked {
 
 .club-form-actions .fancy-button {
   font-size: 26px;
-  min-width: 120px;
+  /* min-width: 120px; */
 }
 
 .fancy-outline-button {
@@ -3009,6 +3009,7 @@ input[type="checkbox"]:checked {
 }
 
 .form-action-btn {
+  font-size: clamp(23px, 4.5vw, 28px) !important;
   flex: 1;
   min-width: 0;
 }
@@ -3237,7 +3238,7 @@ input[type="checkbox"]:checked {
   width: 100%;
   max-width: none;
   margin-bottom: 0;
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .comm-grid {
@@ -3321,7 +3322,7 @@ input[type="checkbox"]:checked {
 #scheduleSection > #viewScheduleButton {
   width: 100%;
   max-width: none;
-  font-size: 24px;
+  font-size: 22px;
   box-sizing: border-box;
   margin-bottom: 0;
 }
