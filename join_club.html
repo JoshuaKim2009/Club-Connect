@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=69" rel="stylesheet" />
+    <link href="styles.css?v=70" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Club Connect | Join</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcEA..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
       body {
@@ -17,105 +19,102 @@
         padding-top: env(safe-area-inset-top);
         background: var(--bg-dark);
       }
+
       .pageTitle {
         margin-top: 110px;
       }
-      #joinClubForm {
+
+      .join-menu {
         padding-top: 113px;
       }
-      /* #discover-club-button {
-        background: linear-gradient(#cecece, #b4b4b4);
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-      } */
-      /* #discover-club-button::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -200%;
-        width: 300%;
-        height: 100%;
-        background: linear-gradient(
-          120deg,
-          transparent 20%,
-          rgba(255,255,255,0.25) 27%,
-          transparent 34%,
-          transparent 54%,
-          rgba(255,255,255,0.25) 61%,
-          transparent 68%
-        );
-        animation: shimmer 2s infinite linear;
-      } */
-      @keyframes shimmer {
-        0%   { left: -200%; }
-        100% { left: 150%; }
+
+      .join-menu-card {
+        margin-bottom: 28px;
       }
-      #join-code-input::placeholder {
-        text-transform: none;
+
+      .join-menu-button {
+        width: 170px;
+        min-width: 85%;
+        margin-top: -5px !important;
       }
     </style>
-
   </head>
+
   <body>
+
     <div class="chat-header">
       <button id="back-button" class="fancy-button" onclick="goToHome()">
         <i class="fa-solid fa-circle-left"></i>
       </button>
+
       <span class="chat-title">JOIN</span>
     </div>
 
-    <!-- <h1 class="pageTitle">JOIN A CLUB</h1> -->
+    <div class="join-menu">
 
-    <form id="joinClubForm">
-      <div class="club-form-card">
+      <!-- JOIN WITH CODE -->
+      <div class="club-form-card join-menu-card">
         <h2>USE JOIN CODE</h2>
 
-        <div class="club-form-section">
-          <label for="club-name-input">Club Name</label>
-          <input class="fancy-input" id="club-name-input"
-                placeholder="Club name" required name="club-name-input"
-                autocomplete="off">
+        <div class="club-form-actions">
+          <button
+            id="join-code-button"
+            class="fancy-button join-menu-button">
+            USE JOIN CODE
+          </button>
         </div>
+      </div>
 
-        <div class="club-form-section">
-          <label for="join-code-input">Join Code</label>
-          <input class="fancy-input" id="join-code-input"
-                placeholder="6 character code" required name="join-code-input"
-                style="text-transform: uppercase" maxlength="6" value=""
-                autocomplete="off">
-        </div>
+
+      <!-- DISCOVER CLUBS -->
+      <div class="club-form-card join-menu-card">
+        <h2>SEARCH CLUBS</h2>
 
         <div class="club-form-actions">
-          <button id="submit-join-club-button" type="submit" class="fancy-button">SEND REQUEST</button>
+          <button
+            id="discover-club-button"
+            class="fancy-button join-menu-button">
+            SEARCH CLUBS
+          </button>
         </div>
       </div>
-    </form>
 
-    <div class="club-form-card" style="margin-bottom: 16px; margin-top: -10px;">
-      <h2>DISCOVER CLUBS</h2>
-      <div class="club-form-actions">
-        <button id="discover-club-button" class="fancy-button">
-          SEARCH CLUBS
-          <!-- <i class="fa-solid fa-magnifying-glass" style="font-size: 0.9em; margin-left: 8px;"></i> -->
-        </button>
-      </div>
+
+      <!-- CLUB MATCHER -->
+      <!-- <div class="club-form-card join-menu-card">
+        <h2>CLUB MATCHER</h2>
+
+        <div class="club-form-actions">
+          <button
+            id="find-club-button"
+            class="fancy-button join-menu-button">
+            FIND A CLUB
+          </button>
+        </div>
+      </div> -->
+
     </div>
 
-    <hr style="background-color: transparent; height: 150px; border: none;">
+    <script>
+      function goToHome() {
+        window.location.href = "your_clubs.html";
+      }
 
-    
+      document.getElementById("join-code-button").addEventListener("click", () => {
+        window.location.href = "join_code.html";
+      });
 
-      <script>
-        function goToHome(){
-          window.location.href = "your_clubs.html";
-        }
-      </script>
+      document.getElementById("discover-club-button").addEventListener("click", () => {
+        window.location.href = "club_discovery.html?";
+      });
 
-      <script src="theme.js?v=12"></script>
-      <script type="module" src="dialog.js?v=3"></script> 
-      <script type="module" src="join_club.js?v=6"></script>
+    //   document.getElementById("find-club-button").addEventListener("click", () => {
+    //     window.location.href = "playground.html";
+    //   });
+    </script>
+
+    <script src="theme.js?v=12"></script>
+    <script type="module" src="dialog.js?v=3"></script>
+
   </body>
 </html>

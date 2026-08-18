@@ -150,9 +150,9 @@ body {
 }
 
 .step-dot.active {
-  background: linear-gradient(#000000, #000000);
-  color: rgb(255, 255, 255);
   border-color: black;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-light) 30%, transparent);
 }
 
 .step-dot.done {

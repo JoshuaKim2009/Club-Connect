@@ -4,6 +4,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { showAppAlert } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
 import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName } from './school-utils.js';
+import { setSchoolInfoCache } from './school-cache-utils.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -319,10 +320,11 @@ saveBtn.addEventListener('click', async () => {
         await updateProfile(user, { displayName: newDisplayName });
 
         const updatePayload = { name: newDisplayName };
+        let school = null;
 
         if (hasAnySchoolInput) {
             const schoolResult = normalizeSchoolName(rawSchool);
-            const school = schoolResult.valid ? schoolResult.normalized : rawSchool;
+            school = schoolResult.valid ? schoolResult.normalized : rawSchool;
             const schoolId = await getOrCreateSchool(db, state, county, school);
 
             updatePayload.state = state;
@@ -335,6 +337,10 @@ saveBtn.addEventListener('click', async () => {
         }
 
         await updateDoc(doc(db, "users", user.uid), updatePayload);
+
+        if (hasAnySchoolInput) {
+            setSchoolInfoCache(user.uid, { state, county, school });
+        }
 
         if (newDisplayName !== originalDisplayName && myClubIds.length > 0) {
             const results = await Promise.allSettled(

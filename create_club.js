@@ -1,11 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, collection, addDoc, updateDoc, arrayUnion, runTransaction, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { showAppAlert, showAppConfirm } from './dialog.js';
 import { handleUserSwitch } from './auth-guard.js';
 import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName, schoolDocId } from './school-utils.js';
-
+import { validateRequiredFields } from './validation-utils.js';
+import { getSchoolInfoCache, setSchoolInfoCache } from './school-cache-utils.js';
+import { initTagInput } from './tag-input.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -18,10 +19,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
 const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 const auth = getAuth(app);
 
@@ -31,19 +31,58 @@ const JOIN_CODE_LENGTH = 6;
 const JOIN_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
 
 const STATE_ABBREVS = {
-    'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California',
-    'CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia',
-    'HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa',
-    'KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland',
-    'MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi',
-    'MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire',
-    'NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina',
-    'ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania',
-    'RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee',
-    'TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington',
-    'WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming',
-    'DC': 'District of Columbia',
-    'D.C.': 'District of Columbia',
+	'AL': 'Alabama',
+	'AK': 'Alaska',
+	'AZ': 'Arizona',
+	'AR': 'Arkansas',
+	'CA': 'California',
+	'CO': 'Colorado',
+	'CT': 'Connecticut',
+	'DE': 'Delaware',
+	'FL': 'Florida',
+	'GA': 'Georgia',
+	'HI': 'Hawaii',
+	'ID': 'Idaho',
+	'IL': 'Illinois',
+	'IN': 'Indiana',
+	'IA': 'Iowa',
+	'KS': 'Kansas',
+	'KY': 'Kentucky',
+	'LA': 'Louisiana',
+	'ME': 'Maine',
+	'MD': 'Maryland',
+	'MA': 'Massachusetts',
+	'MI': 'Michigan',
+	'MN': 'Minnesota',
+	'MS': 'Mississippi',
+	'MO': 'Missouri',
+	'MT': 'Montana',
+	'NE': 'Nebraska',
+	'NV': 'Nevada',
+	'NH': 'New Hampshire',
+	'NJ': 'New Jersey',
+	'NM': 'New Mexico',
+	'NY': 'New York',
+	'NC': 'North Carolina',
+	'ND': 'North Dakota',
+	'OH': 'Ohio',
+	'OK': 'Oklahoma',
+	'OR': 'Oregon',
+	'PA': 'Pennsylvania',
+	'RI': 'Rhode Island',
+	'SC': 'South Carolina',
+	'SD': 'South Dakota',
+	'TN': 'Tennessee',
+	'TX': 'Texas',
+	'UT': 'Utah',
+	'VT': 'Vermont',
+	'VA': 'Virginia',
+	'WA': 'Washington',
+	'WV': 'West Virginia',
+	'WI': 'Wisconsin',
+	'WY': 'Wyoming',
+	'DC': 'District of Columbia',
+	'D.C.': 'District of Columbia',
 };
 
 let COUNTIES = [];
@@ -52,138 +91,168 @@ const schoolCacheByCounty = new Map();
 
 
 const countiesReady = fetch('counties.json')
-  .then(res => res.json())
-  .then(data => {
-    COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
-  });
+	.then(res => res.json())
+	.then(data => {
+		COUNTIES = data.map(c => ({
+			fips: c.A,
+			state: c.B,
+			name: c.C
+		}));
+	});
 
 async function loadSchoolsFor(state, county) {
-  if (!state || !county) {
-    CACHED_SCHOOLS = [];
-    return;
-  }
-  const key = `${state}|${county}`;
-  if (!schoolCacheByCounty.has(key)) {
-    schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
-  }
-  CACHED_SCHOOLS = schoolCacheByCounty.get(key);
+	if (!state || !county) {
+		CACHED_SCHOOLS = [];
+		return;
+	}
+	const key = `${state}|${county}`;
+	if (!schoolCacheByCounty.has(key)) {
+		schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
+	}
+	CACHED_SCHOOLS = schoolCacheByCounty.get(key);
 }
 
 
 const CLUB_CATEGORIES = [
-  'Academic',
-  'Activism',
-  'Athletics',
-  'Art',
-  'Business',
-  'Community Service',
-  'Culture & Identity',
-  'Health & Wellness',
-  'Hobbies',
-  'Honor Societies',
-  'Humanities',
-  'Language',
-  'Leadership',
-  'Literature',
-  'Media',
-  'Other',
-  'Public Speaking',
-  'STEM',
-  'Student Government'
+	'Academic',
+	'Activism',
+	'Athletics',
+	'Art',
+	'Business',
+	'Community Service',
+	'Culture & Identity',
+	'Health & Wellness',
+	'Hobbies',
+	'Honor Societies',
+	'Humanities',
+	'Language',
+	'Leadership',
+	'Literature',
+	'Media',
+	'Public Speaking',
+	'STEM',
+	'Student Government',
+	'Other'
 ];
 
 const categoryInput = document.getElementById("category-select");
 const categoryDropdownList = document.getElementById("category-dropdown-list");
 
 CLUB_CATEGORIES.forEach(cat => {
-  const div = document.createElement('div');
-  div.className = 'state-option';
-  div.textContent = cat;
-  div.onclick = () => {
-    categoryInput.value = cat;
-    categoryDropdownList.classList.remove('show');
-  };
-  categoryDropdownList.appendChild(div);
+	const div = document.createElement('div');
+	div.className = 'state-option';
+	div.textContent = cat;
+	div.onclick = () => {
+		categoryInput.value = cat;
+		categoryDropdownList.classList.remove('show');
+	};
+	categoryDropdownList.appendChild(div);
 });
 
 categoryInput.addEventListener('click', function() {
-  categoryDropdownList.classList.toggle('show');
+	categoryDropdownList.classList.toggle('show');
 });
 
 document.addEventListener('click', function(e) {
-  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
-    categoryDropdownList.classList.remove('show');
-  }
+	if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+		categoryDropdownList.classList.remove('show');
+	}
 });
 
 function setLoading(btn) {
-    btn._origHTML = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>';
+	btn._origHTML = btn.innerHTML;
+	btn.disabled = true;
+	btn.innerHTML = '<span class="spinner"></span>';
 }
 
 function clearLoading(btn) {
-    btn.disabled = false;
-    btn.innerHTML = btn._origHTML;
+	btn.disabled = false;
+	btn.innerHTML = btn._origHTML;
 }
 
 onAuthStateChanged(auth, async (user) => {
-    if (!handleUserSwitch(user)) {
-        if (!user) window.location.href = 'login.html';
-        return;
-    }
-    currentUser = user;
-    currentUserEmail = user.email;
-    submitButton.disabled = false;
+	if (!handleUserSwitch(user)) {
+		if (!user) window.location.href = 'login.html';
+		return;
+	}
+	currentUser = user;
+	currentUserEmail = user.email;
+	submitButton.disabled = false;
 
-    try {
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-            if (data.state) {
-                stateInput.value = data.state;
-                handleCountyVisibility(data.state);
-            }
-            if (data.county) {
-                countyInput.value = data.county;
-                await countiesReady;
-                const matchedCounty = COUNTIES.find(c => c.state === data.state && c.name === data.county);
-                if (matchedCounty) {
-                    selectedCountyFips = matchedCounty.fips;
-                }
-            }
-            if (data.state && data.county) {
-                await loadSchoolsFor(data.state, data.county);
-            }
-            if (data.school) {
-                schoolNameInput.value = data.school;
-            }
-        }
-    } catch (e) {
-        console.error("Could not prefill school info:", e);
-    }
+	await applyHomeSchoolInfo(user.uid);
 
-    hideLoadingScreen();
+	hideLoadingScreen();
 });
 
+async function applyHomeSchoolInfo(uid) {
+	let schoolInfo = getSchoolInfoCache(uid);
+
+	if (!schoolInfo) {
+		schoolInfo = await fetchSchoolInfoFromFirestore(uid);
+		if (schoolInfo) {
+			setSchoolInfoCache(uid, schoolInfo);
+		}
+	}
+
+	if (!schoolInfo) return;
+
+	if (schoolInfo.state) {
+		stateInput.value = schoolInfo.state;
+		handleCountyVisibility(schoolInfo.state);
+	}
+	if (schoolInfo.county) {
+		countyInput.value = schoolInfo.county;
+		await countiesReady;
+		const matchedCounty = COUNTIES.find(c => c.state === schoolInfo.state && c.name === schoolInfo.county);
+		if (matchedCounty) {
+			selectedCountyFips = matchedCounty.fips;
+		}
+	}
+	if (schoolInfo.state && schoolInfo.county) {
+		await loadSchoolsFor(schoolInfo.state, schoolInfo.county);
+	}
+	if (schoolInfo.school) {
+		schoolNameInput.value = schoolInfo.school;
+	}
+}
+
+async function fetchSchoolInfoFromFirestore(uid) {
+	try {
+		const userSnap = await getDoc(doc(db, "users", uid));
+		if (userSnap.exists()) {
+			const data = userSnap.data();
+			return {
+				state: data.state || '',
+				county: data.county || '',
+				school: data.school || ''
+			};
+		}
+	} catch (e) {
+		console.error("Could not prefill school info:", e);
+	}
+	return null;
+}
+
 function hideLoadingScreen() {
-    const overlay = document.getElementById('loading-overlay');
-    const content = document.getElementById('content');
-    if (overlay) {
-        overlay.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
-        overlay.addEventListener('transitionend', () => {
-            if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
-        }, { once: true });
-    } else {
-        document.body.classList.remove('no-scroll');
-    }
-    if (content) {
-        content.style.display = 'block';
-        Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
-            item.classList.add('revealed-child');
-        });
-    }
+	const overlay = document.getElementById('loading-overlay');
+	const content = document.getElementById('content');
+	if (overlay) {
+		overlay.classList.add('hidden');
+		document.body.classList.remove('no-scroll');
+		overlay.addEventListener('transitionend', () => {
+			if (overlay.classList.contains('hidden')) overlay.style.display = 'none';
+		}, {
+			once: true
+		});
+	} else {
+		document.body.classList.remove('no-scroll');
+	}
+	if (content) {
+		content.style.display = 'block';
+		Array.from(content.querySelectorAll(':scope > *')).forEach(item => {
+			item.classList.add('revealed-child');
+		});
+	}
 }
 
 document.body.classList.add('no-scroll');
@@ -192,7 +261,6 @@ const submitButton = document.getElementById("submit-club-button");
 const schoolNameInput = document.getElementById("school-name-select");
 const clubNameInput = document.getElementById("club-name-select");
 const clubDescriptionInput = document.getElementById("description-input");
-const clubActivityInput = document.getElementById("main-activity-select");
 const clubSponsorInput = document.getElementById("sponsor-select");
 const clubLeaderInput = document.getElementById("club-leader-select");
 const schoolEmailInput = document.getElementById("school-email-select");
@@ -201,232 +269,384 @@ const meetingScheduleInput = document.getElementById("meeting-schedule-select");
 const stateInput = document.getElementById("state-select");
 const countyInput = document.getElementById("county-select");
 const countyDropdownList = document.getElementById("county-dropdown-list");
+const clubTopicsField = document.getElementById("club-topics-select");
+const topicsInput = initTagInput(clubTopicsField);
 
 countyInput.closest('.club-form-section').style.display = 'none';
-
 
 let selectedCountyFips = null;
 
 
 const createVisStrips = document.querySelectorAll('#visibility-strip-group-create .club-vis-strip');
 createVisStrips.forEach(strip => {
-  strip.addEventListener('click', () => {
-    createVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
-    strip.classList.add('club-vis-strip-selected');
-  });
+	strip.addEventListener('click', () => {
+		createVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
+		strip.classList.add('club-vis-strip-selected');
+	});
 });
 
 function getSelectedVisibility(groupId) {
-  const selected = document.querySelector(`#${groupId} .club-vis-strip-selected`);
-  return selected ? selected.dataset.value : null;
+	const selected = document.querySelector(`#${groupId} .club-vis-strip-selected`);
+	return selected ? selected.dataset.value : null;
 }
+
+
+const TOTAL_CLUB_STEPS = 4;
+let currentClubStep = 1;
+
+const clubStepEls = [1, 2, 3, 4].map(n => document.getElementById(`club-step-${n}`));
+const clubStepDots = [1, 2, 3, 4].map(n => document.getElementById(`club-dot-${n}`));
+const clubStepConns = [1, 2, 3].map(n => document.getElementById(`club-conn-${n}`));
+const clubStepSubtitle = document.getElementById('club-step-subtitle');
+const backClubStepButton = document.getElementById('back-club-step-button');
+
+const CLUB_STEP_SUBTITLES = {
+	1: 'STEP 1 &middot; CLUB BASICS',
+	2: 'STEP 2 &middot; ABOUT YOUR CLUB',
+	3: 'STEP 3 &middot; OPTIONAL INFO',
+	4: 'STEP 4 &middot; CLUB VISIBILITY',
+};
+
+function getStepRequiredFields(step) {
+	const state = stateInput.value.trim();
+	const normalizedState = normalizeState(state);
+	const countyRequired = state && !(normalizedState && NO_COUNTY_STATES[normalizedState]);
+
+	if (step === 1) {
+		const fields = [{
+				label: "Club Name",
+				value: clubNameInput.value.trim()
+			},
+			{
+				label: "State",
+				value: state
+			},
+			{
+				label: "School Name",
+				value: schoolNameInput.value.trim()
+			},
+		];
+		if (countyRequired) {
+			fields.push({
+				label: "County",
+				value: countyInput.value.trim()
+			});
+		}
+		return fields;
+	}
+	if (step === 2) {
+		return [{
+				label: "Category",
+				value: categoryInput.value
+			},
+			{
+				label: "Description",
+				value: clubDescriptionInput.value.trim()
+			},
+		];
+	}
+	if (step === 4) {
+		return [{
+			label: "Visibility",
+			value: getSelectedVisibility('visibility-strip-group-create')
+		}, ];
+	}
+	return [];
+}
+
+function showClubStep(step) {
+	clubStepEls.forEach((el, i) => el.classList.toggle('visible', i + 1 === step));
+	clubStepSubtitle.innerHTML = CLUB_STEP_SUBTITLES[step];
+
+	clubStepDots.forEach((dot, i) => {
+		const n = i + 1;
+		dot.classList.remove('active', 'done');
+		if (n < step) {
+			dot.classList.add('done');
+			dot.innerHTML = '<i class="fa-solid fa-check"></i>';
+		} else if (n === step) {
+			dot.classList.add('active');
+			dot.textContent = n;
+		} else {
+			dot.textContent = n;
+		}
+	});
+	clubStepConns.forEach((conn, i) => conn.classList.toggle('done', i + 1 < step));
+
+	backClubStepButton.classList.toggle('hidden-slot', step === 1);
+	submitButton.textContent = step === TOTAL_CLUB_STEPS ? 'CREATE' : 'NEXT';
+
+	window.scrollTo(0, 0);
+}
+
+backClubStepButton.addEventListener('click', () => {
+	if (currentClubStep > 1) {
+		currentClubStep--;
+		showClubStep(currentClubStep);
+	}
+});
+
+showClubStep(currentClubStep);
 
 
 submitButton.disabled = true;
 
-submitButton.addEventListener("click", async function(event){
-    event.preventDefault();
+submitButton.addEventListener("click", async function(event) {
+	event.preventDefault();
 
-    if (!currentUser || !currentUser.uid) {
-        await showAppAlert("You must be logged in to create a club.");
-        console.warn("Attempted club creation by unauthenticated user. Aborting.");
-        return; 
-    }
+	if (!currentUser || !currentUser.uid) {
+		await showAppAlert("You must be logged in to create a club.");
+		console.warn("Attempted club creation by unauthenticated user. Aborting.");
+		return;
+	}
 
-    const rawSchoolName = schoolNameInput.value.trim();
-    const clubName = clubNameInput.value.trim();
-    const clubDescription = clubDescriptionInput.value.trim();
-    const clubActivity = clubActivityInput.value.trim();
-    const state = stateInput.value.trim();
-    const clubSponsor = clubSponsorInput.value.trim();
-    const clubLeader = clubLeaderInput.value.trim();
-    const schoolEmail = schoolEmailInput.value.trim();
-    const roomNumber = roomNumberInput.value.trim();
-    const meetingSchedule = meetingScheduleInput.value.trim();
-    const countyName = countyInput.value.trim();
-    const countyFips = selectedCountyFips;
-    const clubCategory = categoryInput.value;
+	if (currentClubStep < TOTAL_CLUB_STEPS) {
+		const stepFields = getStepRequiredFields(currentClubStep);
+		const stepValid = await validateRequiredFields(stepFields);
+		if (!stepValid) return;
 
-    if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
-        await showAppAlert("Please fill in all club details.");
-        return; 
-    }
+		currentClubStep++;
+		showClubStep(currentClubStep);
+		return;
+	}
 
-    if (clubDescription.length > 500) {
-        await showAppAlert("Description must be 500 characters or less.");
-        return;
-    }
+	const rawSchoolName = schoolNameInput.value.trim();
+	const clubName = clubNameInput.value.trim();
+	const clubDescription = clubDescriptionInput.value.trim();
+	const state = stateInput.value.trim();
+	const clubSponsor = clubSponsorInput.value.trim();
+	const clubLeader = clubLeaderInput.value.trim();
+	const schoolEmail = schoolEmailInput.value.trim();
+	const roomNumber = roomNumberInput.value.trim();
+	const meetingSchedule = meetingScheduleInput.value.trim();
+	const countyName = countyInput.value.trim();
+	const countyFips = selectedCountyFips;
+	const clubCategory = categoryInput.value;
+	const clubTopics = topicsInput.getTags();
+	const clubVisibility = getSelectedVisibility('visibility-strip-group-create');
 
-    const normalizedState = normalizeState(state);
+	const normalizedState = normalizeState(state);
+	const countyRequired = state && !(normalizedState && NO_COUNTY_STATES[normalizedState]);
 
-    if (!normalizedState) {
-        await showAppAlert("Please enter a valid state");
-        return;
-    }
+	const requiredFields = [{
+			label: "Club Name",
+			value: clubName
+		},
+		{
+			label: "School Name",
+			value: rawSchoolName
+		},
+		{
+			label: "State",
+			value: state
+		},
+		{
+			label: "Category",
+			value: clubCategory
+		},
+		{
+			label: "Description",
+			value: clubDescription
+		},
+		{
+			label: "Visibility",
+			value: clubVisibility
+		},
+	];
+	if (countyRequired) {
+		requiredFields.push({
+			label: "County",
+			value: countyName
+		});
+	}
 
-    if (!clubCategory) {
-        await showAppAlert("Please select a category.");
-        return;
-    }
+	const requiredFieldsValid = await validateRequiredFields(requiredFields);
+	if (!requiredFieldsValid) return;
 
-    const schoolNameResult = normalizeSchoolName(rawSchoolName);
-    let schoolName = rawSchoolName;
+	if (clubDescription.length > 500) {
+		await showAppAlert("Description must be 500 characters or less.");
+		return;
+	}
 
-    if (!schoolNameResult.valid) {
-        const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES if to continue or NO to correct it.`);
-        if (!confirmed) {
-            return;
-        }
-        schoolName = rawSchoolName; 
-    } else {
-        if (schoolNameResult.normalized !== rawSchoolName) {
-            const confirmed = await showAppConfirm(`We recommend changing "${rawSchoolName}" to "${schoolNameResult.normalized}". Would you like to use the recommended version?`);
-            if (!confirmed) {
-                schoolName = rawSchoolName;
-            } else {
-                schoolName = schoolNameResult.normalized;
-            }
-        }
-    }
+	if (!normalizedState) {
+		await showAppAlert("Please enter a valid state");
+		return;
+	}
 
-    const clubVisibility = getSelectedVisibility('visibility-strip-group-create');
-    if (!clubVisibility) {
-        await showAppAlert("Please select a club visibility (Public or Private).");
-        return;
-    }
+	const schoolNameResult = normalizeSchoolName(rawSchoolName);
+	let schoolName = rawSchoolName;
 
-    setLoading(submitButton);
+	if (!schoolNameResult.valid) {
+		const confirmed = await showAppConfirm(`"${rawSchoolName}" looks like an abbreviation. Click YES if to continue or NO to correct it.`);
+		if (!confirmed) {
+			return;
+		}
+		schoolName = rawSchoolName;
+	} else {
+		if (schoolNameResult.normalized !== rawSchoolName) {
+			const confirmed = await showAppConfirm(`We recommend changing "${rawSchoolName}" to "${schoolNameResult.normalized}". Would you like to use the recommended version?`);
+			if (!confirmed) {
+				schoolName = rawSchoolName;
+			} else {
+				schoolName = schoolNameResult.normalized;
+			}
+		}
+	}
 
-    try {
-        const joinCode = await getUniqueJoinCode();
-        if (!joinCode) {
-            await showAppAlert("Failed to generate a unique join code. Please try again.");
-            return;
-        }
-        console.log(`join code: ${joinCode}`);
+	setLoading(submitButton);
 
-        const newClubRef = doc(collection(db, "clubs"));
-        const newClubId = newClubRef.id;
+	try {
+		const joinCode = await getUniqueJoinCode();
+		if (!joinCode) {
+			await showAppAlert("Failed to generate a unique join code. Please try again.");
+			return;
+		}
+		console.log(`join code: ${joinCode}`);
 
-        const schoolId = schoolDocId(normalizedState, countyName, schoolName);
+		const newClubRef = doc(collection(db, "clubs"));
+		const newClubId = newClubRef.id;
 
-        const batch1 = writeBatch(db);
+		const schoolId = schoolDocId(normalizedState, countyName, schoolName);
 
-        batch1.set(doc(db, "schools", schoolId), {
-            schoolId,
-            name: schoolName,
-            nameLower: schoolName.toLowerCase(),
-            state: normalizedState,
-            stateLower: normalizedState.toLowerCase(),
-            county: countyName,
-            countyLower: countyName.toLowerCase(),
-            clubs: arrayUnion({ id: newClubId, name: clubName })
-        }, { merge: true });
+		const batch1 = writeBatch(db);
 
-        batch1.set(newClubRef, {
-            schoolName: schoolName,
-            schoolId: schoolId,
-            state: normalizedState,
-            clubName: clubName,
-            clubNameLower: clubName.toLowerCase(),
-            schoolNameLower: schoolName.toLowerCase(),
-            stateLower: normalizedState.toLowerCase(),
-            description: clubDescription,
-            clubActivity: clubActivity,
-            managerEmail: currentUserEmail,
-            joinCode: joinCode,
-            memberUIDs: [currentUser.uid],
-            memberNames: { [currentUser.uid]: currentUser.displayName || "Unknown" },
-            pendingMemberUIDs: [],
-            managerUid: currentUser.uid,
-            createdAt: serverTimestamp(),
-            visibility: clubVisibility,
-            category: clubCategory,
-            categoryLower: clubCategory.toLowerCase(),
-            clubSponsor: clubSponsor,
-            clubLeader: clubLeader,
-            schoolEmail: schoolEmail,
-            roomNumber: roomNumber,
-            meetingSchedule: meetingSchedule,
-            countyName: countyName,
-            countyFips: countyFips || null
-        });
+		batch1.set(doc(db, "schools", schoolId), {
+			schoolId,
+			name: schoolName,
+			nameLower: schoolName.toLowerCase(),
+			state: normalizedState,
+			stateLower: normalizedState.toLowerCase(),
+			county: countyName,
+			countyLower: countyName.toLowerCase(),
+			clubs: arrayUnion({
+				id: newClubId,
+				name: clubName
+			})
+		}, {
+			merge: true
+		});
 
-        await batch1.commit();
+		batch1.set(newClubRef, {
+			schoolName: schoolName,
+			schoolId: schoolId,
+			state: normalizedState,
+			clubName: clubName,
+			clubNameLower: clubName.toLowerCase(),
+			schoolNameLower: schoolName.toLowerCase(),
+			stateLower: normalizedState.toLowerCase(),
+			description: clubDescription,
+			managerEmail: currentUserEmail,
+			joinCode: joinCode,
+			memberUIDs: [currentUser.uid],
+			memberNames: {
+				[currentUser.uid]: currentUser.displayName || "Unknown"
+			},
+			pendingMemberUIDs: [],
+			managerUid: currentUser.uid,
+			createdAt: serverTimestamp(),
+			visibility: clubVisibility,
+			category: clubCategory,
+			categoryLower: clubCategory.toLowerCase(),
+			topics: clubTopics,
+			clubSponsor: clubSponsor,
+			clubLeader: clubLeader,
+			schoolEmail: schoolEmail,
+			roomNumber: roomNumber,
+			meetingSchedule: meetingSchedule,
+			countyName: countyName,
+			countyFips: countyFips || null
+		});
 
-        const batch2 = writeBatch(db);
+		await batch1.commit();
 
-        batch2.set(doc(db, "clubs", newClubId, "members", currentUser.uid), {
-            role: "manager",
-            joinedAt: serverTimestamp()
-        });
+		const batch2 = writeBatch(db);
 
-        batch2.update(doc(db, "join_codes", joinCode), { clubId: newClubId, reserved: false });
+		batch2.set(doc(db, "clubs", newClubId, "members", currentUser.uid), {
+			role: "manager",
+			joinedAt: serverTimestamp()
+		});
 
-        batch2.update(doc(db, "users", currentUser.uid), {
-            managed_clubs: arrayUnion(newClubId)
-        });
+		batch2.update(doc(db, "join_codes", joinCode), {
+			clubId: newClubId,
+			reserved: false
+		});
 
-        await batch2.commit();
+		batch2.update(doc(db, "users", currentUser.uid), {
+			managed_clubs: arrayUnion(newClubId)
+		});
 
-        console.log("Club created with ID: ", newClubId);
+		await batch2.commit();
 
-        await showAppAlert(`Club "${clubName}" saved successfully!`);
-        window.location.href = "your_clubs.html";
+		console.log("Club created with ID: ", newClubId);
 
-        schoolNameInput.value = '';
-        clubNameInput.value = '';
-        clubDescriptionInput.value = '';
-        clubActivityInput.value = '';
-        stateInput.value = '';
-        clubSponsorInput.value = '';
-        clubLeaderInput.value = '';
-        schoolEmailInput.value = '';
-        roomNumberInput.value = '';
-        meetingScheduleInput.value = '';
+    clearLoading(submitButton);
 
-    } catch (error) {
-        console.error("Error creating club or updating user profile:", error);
-        await showAppAlert("Something went wrong while creating your club. Please try again.");
-    } finally {
-        clearLoading(submitButton);
-    }
+    const step4Dot = document.getElementById('club-dot-4');
+
+    step4Dot.classList.remove('active');
+    step4Dot.classList.add('done');
+    step4Dot.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+		await showAppAlert(`Club "${clubName}" created successfully!`);
+		window.location.href = "your_clubs.html";
+
+		schoolNameInput.value = '';
+		clubNameInput.value = '';
+		clubDescriptionInput.value = '';
+		topicsInput.setTags([]);
+		stateInput.value = '';
+		clubSponsorInput.value = '';
+		clubLeaderInput.value = '';
+		schoolEmailInput.value = '';
+		roomNumberInput.value = '';
+		meetingScheduleInput.value = '';
+
+	} catch (error) {
+		console.error("Error creating club or updating user profile:", error);
+		await showAppAlert("Something went wrong while creating your club. Please try again.");
+	} finally {
+		clearLoading(submitButton);
+	}
 });
 
 
 function generateRandomCode(length, characters) {
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
+	let result = '';
+	const charactersLength = characters.length;
+	for (let i = 0; i < length; i++) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return result;
 }
 
 
 async function getUniqueJoinCode() {
-    while (true) { 
-        const potentialCode = generateRandomCode(JOIN_CODE_LENGTH, JOIN_CODE_CHARS);
-        const joinCodeRef = doc(db, "join_codes", potentialCode); 
+	while (true) {
+		const potentialCode = generateRandomCode(JOIN_CODE_LENGTH, JOIN_CODE_CHARS);
+		const joinCodeRef = doc(db, "join_codes", potentialCode);
 
-        try {
-            await runTransaction(db, async (transaction) => {
-                const joinCodeDoc = await transaction.get(joinCodeRef);
-                if (joinCodeDoc.exists()) {
-                    throw new Error("Code exists, retry transaction");
-                }
-                transaction.set(joinCodeRef, { reserved: true, createdAt: new Date(), generatedBy: currentUser.uid });
-            });
-            console.log(`Successfully reserved unique join code: ${potentialCode}`);
-            return potentialCode; 
-        } catch (e) {
-            if (e.message === "Code exists, retry transaction") {
-                console.log(`Join code ${potentialCode} already exists, retrying generation.`);
-            } else {
-                console.error("Error during join code reservation transaction:", e);
-            }
-        }
-    }
+		try {
+			await runTransaction(db, async (transaction) => {
+				const joinCodeDoc = await transaction.get(joinCodeRef);
+				if (joinCodeDoc.exists()) {
+					throw new Error("Code exists, retry transaction");
+				}
+				transaction.set(joinCodeRef, {
+					reserved: true,
+					createdAt: new Date(),
+					generatedBy: currentUser.uid
+				});
+			});
+			console.log(`Successfully reserved unique join code: ${potentialCode}`);
+			return potentialCode;
+		} catch (e) {
+			if (e.message === "Code exists, retry transaction") {
+				console.log(`Join code ${potentialCode} already exists, retrying generation.`);
+			} else {
+				console.error("Error during join code reservation transaction:", e);
+			}
+		}
+	}
 }
 
 
@@ -434,167 +654,185 @@ const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Color
 
 
 const NO_COUNTY_STATES = {
-  'District of Columbia': { fips: '11001', name: 'District of Columbia' },
-  'Puerto Rico': { fips: null, name: 'Puerto Rico' },
-  'Guam': { fips: null, name: 'Guam' },
-  'U.S. Virgin Islands': { fips: null, name: 'U.S. Virgin Islands' },
-  'American Samoa': { fips: null, name: 'American Samoa' },
-  'Northern Mariana Islands': { fips: null, name: 'Northern Mariana Islands' },
+	'District of Columbia': {
+		fips: '11001',
+		name: 'District of Columbia'
+	},
+	'Puerto Rico': {
+		fips: null,
+		name: 'Puerto Rico'
+	},
+	'Guam': {
+		fips: null,
+		name: 'Guam'
+	},
+	'U.S. Virgin Islands': {
+		fips: null,
+		name: 'U.S. Virgin Islands'
+	},
+	'American Samoa': {
+		fips: null,
+		name: 'American Samoa'
+	},
+	'Northern Mariana Islands': {
+		fips: null,
+		name: 'Northern Mariana Islands'
+	},
 };
 
 function handleCountyVisibility(stateName) {
-  const noCounty = NO_COUNTY_STATES[stateName];
-  if (!stateName) {
-    countyInput.closest('.club-form-section').style.display = 'none';
-    countyInput.value = '';
-    selectedCountyFips = null;
-  } else if (noCounty) {
-    countyInput.value = noCounty.name;
-    selectedCountyFips = noCounty.fips;
-    countyInput.disabled = true;
-    countyInput.closest('.club-form-section').style.display = 'none';
-  } else {
-    countyInput.value = '';
-    selectedCountyFips = null;
-    countyInput.disabled = false;
-    countyInput.closest('.club-form-section').style.display = '';
-  }
+	const noCounty = NO_COUNTY_STATES[stateName];
+	if (!stateName) {
+		countyInput.closest('.club-form-section').style.display = 'none';
+		countyInput.value = '';
+		selectedCountyFips = null;
+	} else if (noCounty) {
+		countyInput.value = noCounty.name;
+		selectedCountyFips = noCounty.fips;
+		countyInput.disabled = true;
+		countyInput.closest('.club-form-section').style.display = 'none';
+	} else {
+		countyInput.value = '';
+		selectedCountyFips = null;
+		countyInput.disabled = false;
+		countyInput.closest('.club-form-section').style.display = '';
+	}
 }
 
 function normalizeState(input) {
-  const trimmed = input.trim();
-  const upper = trimmed.toUpperCase();
+	const trimmed = input.trim();
+	const upper = trimmed.toUpperCase();
 
-  const abbrevKey = upper.replace(/\./g, ''); 
-  if (STATE_ABBREVS[abbrevKey]) return STATE_ABBREVS[abbrevKey];
-  if (STATE_ABBREVS[upper]) return STATE_ABBREVS[upper];
+	const abbrevKey = upper.replace(/\./g, '');
+	if (STATE_ABBREVS[abbrevKey]) return STATE_ABBREVS[abbrevKey];
+	if (STATE_ABBREVS[upper]) return STATE_ABBREVS[upper];
 
-  const stripped = trimmed.toLowerCase().replace(/[,\.]/g, '').replace(/\s+/g, ' ').trim();
-  if (
-    stripped === 'washington dc' ||
-    stripped === 'washington d c' ||
-    stripped === 'washington district of columbia' ||
-    stripped === 'district of columbia'
-  ) {
-    return 'District of Columbia';
-  }
+	const stripped = trimmed.toLowerCase().replace(/[,\.]/g, '').replace(/\s+/g, ' ').trim();
+	if (
+		stripped === 'washington dc' ||
+		stripped === 'washington d c' ||
+		stripped === 'washington district of columbia' ||
+		stripped === 'district of columbia'
+	) {
+		return 'District of Columbia';
+	}
 
-  return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
+	return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
 }
 
 
 const stateDropdownList = document.getElementById('state-dropdown-list');
 
 stateInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  stateDropdownList.innerHTML = '';
+	const value = this.value.toLowerCase();
+	stateDropdownList.innerHTML = '';
 
-  const fullNameMatch = states.find(s => s.toLowerCase() === value.trim());
-  handleCountyVisibility(fullNameMatch || '');
+	const fullNameMatch = states.find(s => s.toLowerCase() === value.trim());
+	handleCountyVisibility(fullNameMatch || '');
 
-  if (value) {
-    const normalized = normalizeState(this.value.trim());
-    const filtered = states.filter(state =>
-      state.toLowerCase().includes(value) ||
-      (normalized && state === normalized)
-    );
-    if (filtered.length > 0) {
-      filtered.forEach(state => {
-        const div = document.createElement('div');
-        div.className = 'state-option';
-        div.textContent = state;
-        div.onclick = () => {
-            stateInput.value = state;
-            stateDropdownList.classList.remove('show');
-            countyDropdownList.innerHTML = '';
-            countyDropdownList.classList.remove('show');
-            handleCountyVisibility(state);
-        };
-        stateDropdownList.appendChild(div);
-      });
-      stateDropdownList.classList.add('show');
-    } else {
-      stateDropdownList.classList.remove('show');
-    }
-  } else {
-    stateDropdownList.classList.remove('show');
-    handleCountyVisibility('');
-  }
+	if (value) {
+		const normalized = normalizeState(this.value.trim());
+		const filtered = states.filter(state =>
+			state.toLowerCase().includes(value) ||
+			(normalized && state === normalized)
+		);
+		if (filtered.length > 0) {
+			filtered.forEach(state => {
+				const div = document.createElement('div');
+				div.className = 'state-option';
+				div.textContent = state;
+				div.onclick = () => {
+					stateInput.value = state;
+					stateDropdownList.classList.remove('show');
+					countyDropdownList.innerHTML = '';
+					countyDropdownList.classList.remove('show');
+					handleCountyVisibility(state);
+				};
+				stateDropdownList.appendChild(div);
+			});
+			stateDropdownList.classList.add('show');
+		} else {
+			stateDropdownList.classList.remove('show');
+		}
+	} else {
+		stateDropdownList.classList.remove('show');
+		handleCountyVisibility('');
+	}
 });
 
 document.addEventListener('click', function(e) {
-  if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
-    stateDropdownList.classList.remove('show');
-  }
+	if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
+		stateDropdownList.classList.remove('show');
+	}
 });
 
 
 countyInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  const currentState = normalizeState(stateInput.value.trim());
-  countyDropdownList.innerHTML = '';
+	const value = this.value.toLowerCase();
+	const currentState = normalizeState(stateInput.value.trim());
+	countyDropdownList.innerHTML = '';
 
-  let pool = currentState
-    ? COUNTIES.filter(c => c.state === currentState)
-    : COUNTIES;
+	let pool = currentState ?
+		COUNTIES.filter(c => c.state === currentState) :
+		COUNTIES;
 
-  if (value) {
-    pool = pool.filter(c => c.name.toLowerCase().includes(value));
-  }
+	if (value) {
+		pool = pool.filter(c => c.name.toLowerCase().includes(value));
+	}
 
-  if (pool.length > 0) {
-    pool.forEach(county => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = county.name;
-      div.onclick = () => {
-        countyInput.value = county.name;
-        selectedCountyFips = county.fips;
-        countyDropdownList.classList.remove('show');
-        loadSchoolsFor(normalizeState(stateInput.value), county.name);
-      };
-      countyDropdownList.appendChild(div);
-    });
-    countyDropdownList.classList.add('show');
-  } else {
-    countyDropdownList.classList.remove('show');
-  }
+	if (pool.length > 0) {
+		pool.forEach(county => {
+			const div = document.createElement('div');
+			div.className = 'state-option';
+			div.textContent = county.name;
+			div.onclick = () => {
+				countyInput.value = county.name;
+				selectedCountyFips = county.fips;
+				countyDropdownList.classList.remove('show');
+				loadSchoolsFor(normalizeState(stateInput.value), county.name);
+			};
+			countyDropdownList.appendChild(div);
+		});
+		countyDropdownList.classList.add('show');
+	} else {
+		countyDropdownList.classList.remove('show');
+	}
 });
 
 document.addEventListener('click', function(e) {
-  if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
-    countyDropdownList.classList.remove('show');
-  }
+	if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
+		countyDropdownList.classList.remove('show');
+	}
 });
 
 
 const schoolDropdownList = document.getElementById('school-dropdown-list');
 
 schoolNameInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  schoolDropdownList.innerHTML = '';
+	const value = this.value.toLowerCase();
+	schoolDropdownList.innerHTML = '';
 
-  const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
+	const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
 
-  if (value && pool.length > 0) {
-    pool.forEach(school => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = school.name;
-      div.onclick = () => {
-        schoolNameInput.value = school.name;
-        schoolDropdownList.classList.remove('show');
-      };
-      schoolDropdownList.appendChild(div);
-    });
-    schoolDropdownList.classList.add('show');
-  } else {
-    schoolDropdownList.classList.remove('show');
-  }
+	if (value && pool.length > 0) {
+		pool.forEach(school => {
+			const div = document.createElement('div');
+			div.className = 'state-option';
+			div.textContent = school.name;
+			div.onclick = () => {
+				schoolNameInput.value = school.name;
+				schoolDropdownList.classList.remove('show');
+			};
+			schoolDropdownList.appendChild(div);
+		});
+		schoolDropdownList.classList.add('show');
+	} else {
+		schoolDropdownList.classList.remove('show');
+	}
 });
 
 document.addEventListener('click', function(e) {
-  if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
-    schoolDropdownList.classList.remove('show');
-  }
+	if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
+		schoolDropdownList.classList.remove('show');
+	}
 });

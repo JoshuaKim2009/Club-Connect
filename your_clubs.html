@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=69" rel="stylesheet" />
+    <link href="styles.css?v=70" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Connect | Clubs</title>
@@ -48,14 +48,14 @@
         text-transform: uppercase;
         -webkit-tap-highlight-color: transparent;
         transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, filter 0.05s ease-in-out;
-        font-size: min(22px, 4.5vw) !important;
+        font-size: clamp(16px, 4.5vw, 22px) !important;
         -webkit-text-size-adjust: none;
         text-size-adjust: none;
       }
 
       .action-pill i {
         font-size: 22px;
-        font-size: min(22px, 4.5vw) !important;
+        font-size: clamp(16px, 4.5vw, 22px) !important;
       }
 
       .action-pill:hover {

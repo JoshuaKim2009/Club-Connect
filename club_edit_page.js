@@ -8,6 +8,8 @@ import { ROLE_LABELS } from './roleLabels.js';
 import { handleUserSwitch } from './auth-guard.js';
 import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName } from './school-utils.js';
 import { cacheRole } from './roleCache.js';
+import { validateRequiredFields } from './validation-utils.js';
+import { initTagInput } from './tag-input.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -71,10 +73,10 @@ const CLUB_CATEGORIES = [
   'Leadership',
   'Literature',
   'Media',
-  'Other',
   'Public Speaking',
   'STEM',
-  'Student Government'
+  'Student Government',
+  'Other'
 ];
 
 const categoryInput = document.getElementById("category-edit");
@@ -121,7 +123,6 @@ function clearLoading(btn) {
 const submitButton = document.getElementById("update-club-button");
 const schoolNameInput = document.getElementById("school-name-edit");
 const clubNameInput = document.getElementById("club-name-edit");
-const clubActivityInput = document.getElementById("main-activity-edit");
 const clubDescriptionInput = document.getElementById("description-edit");
 const deleteButton = document.getElementById("delete-club-button");
 const backButton = document.getElementById("back-button-edit");
@@ -133,6 +134,8 @@ const roomNumberInput = document.getElementById("room-number-edit");
 const meetingScheduleInput = document.getElementById("meeting-schedule-edit");
 const countyInput = document.getElementById("county-edit");
 const countyDropdownList = document.getElementById("county-dropdown-list-edit");
+const clubTopicsField = document.getElementById("club-topics-edit");
+const topicsInput = initTagInput(clubTopicsField);
 
 countyInput.closest('.club-form-section').style.display = 'none';
 
@@ -142,7 +145,6 @@ let selectedCountyFips = null;
 submitButton.disabled = true;
 schoolNameInput.disabled = true;
 clubNameInput.disabled = true;
-clubActivityInput.disabled = true;
 clubDescriptionInput.disabled = true;
 categoryInput.disabled = true;
 clubSponsorInput.disabled = true;
@@ -151,6 +153,7 @@ schoolEmailInput.disabled = true;
 roomNumberInput.disabled = true;
 meetingScheduleInput.disabled = true;
 countyInput.disabled = true;
+topicsInput.setDisabled(true);
 
 function hideLoadingScreen() {
     const overlay = document.getElementById('loading-overlay');
@@ -206,7 +209,6 @@ async function loadClubData(clubId, managerUid) {
 
             schoolNameInput.value = clubData.schoolName || '';
             clubNameInput.value = clubData.clubName || '';
-            clubActivityInput.value = clubData.clubActivity || '';
             clubDescriptionInput.value = clubData.description || '';
             stateInput.value = clubData.state || '';
             clubSponsorInput.value = clubData.clubSponsor || '';
@@ -214,6 +216,7 @@ async function loadClubData(clubId, managerUid) {
             schoolEmailInput.value = clubData.schoolEmail || '';
             roomNumberInput.value = clubData.roomNumber || '';
             meetingScheduleInput.value = clubData.meetingSchedule || '';
+            topicsInput.setTags(clubData.topics || []);
             handleCountyVisibility(clubData.state || '');
             countyInput.value = clubData.countyName || '';
             selectedCountyFips = clubData.countyFips || null;
@@ -225,7 +228,6 @@ async function loadClubData(clubId, managerUid) {
 
             schoolNameInput.disabled = false;
             clubNameInput.disabled = false;
-            clubActivityInput.disabled = false;
             clubDescriptionInput.disabled = false;
             submitButton.disabled = false;
             stateInput.disabled = false;
@@ -235,6 +237,7 @@ async function loadClubData(clubId, managerUid) {
             schoolEmailInput.disabled = false;
             roomNumberInput.disabled = false;
             meetingScheduleInput.disabled = false;
+            topicsInput.setDisabled(false);
             if (!NO_COUNTY_STATES[clubData.state]) {
                 countyInput.disabled = false;
             }
@@ -244,11 +247,11 @@ async function loadClubData(clubId, managerUid) {
                 schoolId: clubData.schoolId || null,
                 schoolName: clubData.schoolName || '',
                 clubName: clubData.clubName || '',
-                clubActivity: clubData.clubActivity || '',
                 description: clubData.description || '',
                 state: clubData.state || '',
                 visibility: clubData.visibility || 'public',
                 category: clubData.category || '',
+                topics: clubData.topics || [],
                 clubSponsor: clubData.clubSponsor || '',
                 clubLeader: clubData.clubLeader || '',
                 schoolEmail: clubData.schoolEmail || '',
@@ -302,6 +305,13 @@ function getSelectedVisibilityEdit() {
 }
 
 
+function sameTags(a, b) {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((t, i) => t === sortedB[i]);
+}
+
 submitButton.addEventListener("click", async function(event){
     event.preventDefault();
 
@@ -322,7 +332,6 @@ submitButton.addEventListener("click", async function(event){
 
     const rawSchoolName = schoolNameInput.value.trim();
     const clubName = clubNameInput.value.trim();
-    const clubActivity = clubActivityInput.value.trim();
     const clubDescription = clubDescriptionInput.value.trim();
     const state = stateInput.value.trim();
     const clubSponsor = clubSponsorInput.value.trim();
@@ -333,17 +342,18 @@ submitButton.addEventListener("click", async function(event){
     const countyName = countyInput.value.trim();
     const countyFips = selectedCountyFips;
     const clubCategory = categoryInput.value;
+    const clubTopics = topicsInput.getTags();
     const clubVisibility = getSelectedVisibilityEdit();
 
     if (
         originalClubData &&
         rawSchoolName === originalClubData.schoolName &&
         clubName === originalClubData.clubName &&
-        clubActivity === originalClubData.clubActivity &&
         clubDescription === originalClubData.description &&
         state === originalClubData.state &&
         clubVisibility === originalClubData.visibility &&
         clubCategory === originalClubData.category && 
+        sameTags(clubTopics, originalClubData.topics) &&
         clubSponsor === originalClubData.clubSponsor &&
         clubLeader === originalClubData.clubLeader &&
         schoolEmail === originalClubData.schoolEmail &&
@@ -357,8 +367,23 @@ submitButton.addEventListener("click", async function(event){
         return;
     }
 
-    if (!clubName || !rawSchoolName || !state || !clubActivity || !clubDescription) {
-        await showAppAlert("Please fill in all club details.");
+    const normalizedState = normalizeState(state);
+    const countyRequired = state && !(normalizedState && NO_COUNTY_STATES[normalizedState]);
+
+    const requiredFields = [
+        { label: "Club Name", value: clubName },
+        { label: "School Name", value: rawSchoolName },
+        { label: "State", value: state },
+        { label: "Category", value: clubCategory },
+        { label: "Description", value: clubDescription },
+        { label: "Visibility", value: clubVisibility },
+    ];
+    if (countyRequired) {
+        requiredFields.push({ label: "County", value: countyName });
+    }
+
+    const requiredFieldsValid = await validateRequiredFields(requiredFields);
+    if (!requiredFieldsValid) {
         submitButton.disabled = false;
         return;
     }
@@ -369,8 +394,6 @@ submitButton.addEventListener("click", async function(event){
         return;
     }
 
-    const normalizedState = normalizeState(state);
-    
     if (!normalizedState) {
         await showAppAlert("Please enter a valid state");
         submitButton.disabled = false;
@@ -398,12 +421,6 @@ submitButton.addEventListener("click", async function(event){
         }
     }
 
-    if (!clubVisibility) {
-        await showAppAlert("Please select a club visibility.");
-        submitButton.disabled = false;
-        return;
-    }
-
     setLoading(submitButton);
 
     try {
@@ -421,12 +438,12 @@ submitButton.addEventListener("click", async function(event){
             schoolNameLower: schoolName.toLowerCase(),
             stateLower: normalizedState.toLowerCase(),
             description: clubDescription,
-            clubActivity: clubActivity,
             lastModifiedBy: currentUser.uid,
             lastModifiedAt: serverTimestamp(),
             visibility: clubVisibility,
             category: clubCategory,
             categoryLower: clubCategory.toLowerCase(),
+            topics: clubTopics,
             clubSponsor: clubSponsor,
             clubLeader: clubLeader,
             schoolEmail: schoolEmail,

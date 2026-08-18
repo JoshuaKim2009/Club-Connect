@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="styles.css?v=69" rel="stylesheet" />
+    <link href="styles.css?v=70" rel="stylesheet" />
     <meta name="theme-color" id="theme-color-meta" content="#1c375f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,16 +88,15 @@
         </div>
 
         <div class="club-form-section">
-          <label for="main-activity-edit">Main Activity <span class="required-mark">*</span></label>
-          <input class="fancy-input" id="main-activity-edit"
-                placeholder="e.g. Chess, Robotics, Art" required autocomplete="off">
+          <label for="description-edit">Description <span class="required-mark">*</span></label>
+          <textarea id="description-edit" class="fancy-input"
+                    rows="3" placeholder="Describe your club"
+                    required maxlength="500"></textarea>
         </div>
 
         <div class="club-form-section">
-          <label for="description-edit">Description <span class="required-mark">*</span></label>
-          <textarea id="description-edit" class="fancy-input"
-                    rows="3" placeholder="Describe your club and any important information"
-                    required maxlength="500"></textarea>
+          <label>Club Topics</label>
+          <div class="topics-box" id="club-topics-edit"></div>
         </div>
 
         <div class="club-form-section">
@@ -154,8 +153,8 @@
         </div>
 
         <div class="club-form-actions">
-          <button id="update-club-button" type="submit" class="fancy-button">UPDATE</button>
-          <button id="delete-club-button" type="button" class="fancy-button">DELETE</button>
+          <button id="update-club-button" type="submit" class="fancy-button form-action-btn">UPDATE</button>
+          <button id="delete-club-button" type="button" class="fancy-button form-action-btn">DELETE</button>
         </div>
       </div>
 
@@ -166,7 +165,7 @@
     <script src="theme.js?v=12"></script>
     <!-- <script type="module" src="loading_instant.js"></script> -->
     <script type="module" src="dialog.js?v=3"></script> 
-    <script type="module" src="club_edit_page.js?v=18"></script>
+    <script type="module" src="club_edit_page.js?v=19"></script>
 
     
 

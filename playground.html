@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Club Connect — Embedding Playground</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .score {
+            font-size: 52px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .interpretation {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .vector {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .explanation {
+            line-height: 1.7;
+            color: #444;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🧠 Club Connect Embedding Playground</h1>
+
+    <p class="subtitle">
+        Compare two pieces of text based on their semantic meaning.
+    </p>
+
+
+    <!-- INPUTS -->
+
+    <div class="card">
+
+        <label for="text1">
+            Text 1 — Student Interests
+        </label>
+
+        <textarea id="text1">I love robotics and building machines.</textarea>
+
+
+        <br><br>
+
+
+        <label for="text2">
+            Text 2 — Club Description
+        </label>
+
+        <textarea id="text2">Students design autonomous robots and engineering projects.</textarea>
+
+
+        <button id="compareButton" onclick="compareTexts()">
+            Calculate Similarity
+        </button>
+
+
+        <div id="status" class="status">
+            Model not loaded yet.
+        </div>
+
+    </div>
+
+
+    <!-- RESULT -->
+
+    <div class="card">
+
+        <h2>Semantic Similarity</h2>
+
+        <div id="score" class="score">
+            —
+        </div>
+
+        <div id="interpretation" class="interpretation">
+            Enter two texts and click Calculate.
+        </div>
+
+    </div>
+
+
+    <!-- VECTORS -->
+
+    <div class="card">
+
+        <h2>What the AI actually produced</h2>
+
+        <p>
+            Each sentence gets converted into a vector containing hundreds
+            of numbers.
+        </p>
+
+        <h3>Text 1 vector</h3>
+
+        <div id="vector1" class="vector">
+            —
+        </div>
+
+
+        <h3>Text 2 vector</h3>
+
+        <div id="vector2" class="vector">
+            —
+        </div>
+
+    </div>
+
+
+    <!-- EXPLANATION -->
+
+    <div class="card">
+
+        <h2>What's happening?</h2>
+
+        <div class="explanation">
+
+            <p>
+                The embedding model converts each piece of text into a
+                numerical representation called an <strong>embedding</strong>.
+            </p>
+
+            <p>
+                Texts with similar meanings tend to produce vectors that
+                point in similar directions.
+            </p>
+
+            <p>
+                We then calculate the <strong>cosine similarity</strong>
+                between the two vectors.
+            </p>
+
+            <p>
+                For example:
+            </p>
+
+            <pre>
+"robotics"
+       ↓
+[0.12, -0.83, 0.41, 0.09, ...]
+
+"building autonomous machines"
+       ↓
+[0.15, -0.79, 0.38, 0.12, ...]
+
+              ↓
+
+       Cosine Similarity
+
+              ↓
+
+            HIGH
+            </pre>
+
+            <p>
+                Notice that the two sentences don't need to contain the
+                same words. That's the major difference between this and
+                simple keyword matching or TF-IDF.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!--
+    Transformers.js
+
+    This downloads and runs the embedding model
+    directly in the browser.
+-->
+
+<script type="module">
+
+    import { pipeline }
+        from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+
+    let embedder = null;
+
+
+    /*
+        ==========================================
+        LOAD MODEL
+        ==========================================
+    */
+
+    async function loadModel() {
+
+        const status =
+            document.getElementById("status");
+
+        const button =
+            document.getElementById("compareButton");
+
+
+        status.textContent =
+            "Loading embedding model... (first load may take a while)";
+
+        button.disabled = true;
+
+
+        /*
+            all-MiniLM-L6-v2 is a small,
+            popular sentence embedding model.
+        */
+
+        embedder = await pipeline(
+            "feature-extraction",
+            "Xenova/all-MiniLM-L6-v2"
+        );
+
+
+        status.textContent =
+            "Model loaded! You can now compare texts.";
+
+        button.disabled = false;
+
+    }
+
+
+    /*
+        ==========================================
+        GET EMBEDDING
+        ==========================================
+    */
+
+    async function getEmbedding(text) {
+
+        const output =
+            await embedder(
+                text,
+                {
+                    pooling: "mean",
+                    normalize: true
+                }
+            );
+
+
+        return Array.from(output.data);
+
+    }
+
+
+    /*
+        ==========================================
+        COSINE SIMILARITY
+        ==========================================
+    */
+
+    function cosineSimilarity(a, b) {
+
+        let dotProduct = 0;
+
+        let magnitudeA = 0;
+
+        let magnitudeB = 0;
+
+
+        for (let i = 0; i < a.length; i++) {
+
+            dotProduct +=
+                a[i] * b[i];
+
+            magnitudeA +=
+                a[i] * a[i];
+
+            magnitudeB +=
+                b[i] * b[i];
+
+        }
+
+
+        magnitudeA =
+            Math.sqrt(magnitudeA);
+
+        magnitudeB =
+            Math.sqrt(magnitudeB);
+
+
+        return dotProduct /
+            (magnitudeA * magnitudeB);
+
+    }
+
+
+    /*
+        ==========================================
+        COMPARE
+        ==========================================
+    */
+
+    window.compareTexts = async function() {
+
+        const text1 =
+            document.getElementById("text1").value;
+
+        const text2 =
+            document.getElementById("text2").value;
+
+
+        const status =
+            document.getElementById("status");
+
+        const button =
+            document.getElementById("compareButton");
+
+
+        if (!text1.trim() || !text2.trim()) {
+
+            alert("Enter text in both boxes.");
+
+            return;
+
+        }
+
+
+        button.disabled = true;
+
+        status.textContent =
+            "Generating embeddings...";
+
+
+        /*
+            Generate embeddings
+        */
+
+        const embedding1 =
+            await getEmbedding(text1);
+
+        const embedding2 =
+            await getEmbedding(text2);
+
+
+        /*
+            Calculate similarity
+        */
+
+        const similarity =
+            cosineSimilarity(
+                embedding1,
+                embedding2
+            );
+
+
+        /*
+            Convert to percentage
+        */
+
+        const percentage =
+            Math.round(similarity * 100);
+
+
+        document.getElementById("score")
+            .textContent =
+            percentage + "%";
+
+
+        /*
+            Interpretation
+        */
+
+        let interpretation;
+
+
+        if (similarity >= 0.80) {
+
+            interpretation =
+                "🔥 Extremely strong semantic similarity";
+
+        } else if (similarity >= 0.65) {
+
+            interpretation =
+                "🟢 Strong semantic similarity";
+
+        } else if (similarity >= 0.50) {
+
+            interpretation =
+                "🟡 Moderate semantic similarity";
+
+        } else if (similarity >= 0.30) {
+
+            interpretation =
+                "🟠 Weak semantic similarity";
+
+        } else {
+
+            interpretation =
+                "🔴 Very little semantic similarity";
+
+        }
+
+
+        document.getElementById("interpretation")
+            .textContent =
+            interpretation;
+
+
+        /*
+            Show first 20 vector values
+        */
+
+        document.getElementById("vector1")
+            .textContent =
+            JSON.stringify(
+                embedding1.slice(0, 20),
+                null,
+                2
+            );
+
+
+        document.getElementById("vector2")
+            .textContent =
+            JSON.stringify(
+                embedding2.slice(0, 20),
+                null,
+                2
+            );
+
+
+        status.textContent =
+            `Done! Embeddings contain ${embedding1.length} dimensions.`;
+
+
+        button.disabled = false;
+
+    };
+
+
+    /*
+        Load the model immediately
+    */
+
+    loadModel();
+
+</script>
+
+</body>
+</html>

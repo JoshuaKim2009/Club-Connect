@@ -45,7 +45,7 @@
 }
 
 .chat-title {
-  font-size: min(28px, 7.5vw) !important;
+  font-size: clamp(16px, 7.5vw, 28px) !important;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
 }
@@ -173,12 +173,12 @@
 
 #appearance-modal {
 	box-sizing: border-box;
-	width: 80%;
+	width: max(80%, calc(var(--min-layout-width) * 0.8));
 	max-width: 480px;
 	display: none;
 	position: fixed;
 	top: 50%;
-	left: 50%;
+  left: max(50%, calc(var(--min-layout-width) / 2));
 	transform: translate(-50%, -50%);
 	background: linear-gradient(#ffffff, #f7f7f7);
 	border: 2px solid black;

@@ -5,7 +5,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { showAppAlert } from './dialog.js';
 import { ROLE_LABELS } from './roleLabels.js';
 import { handleUserSwitch } from './auth-guard.js';
-
+import { getSchoolInfoCache, setSchoolInfoCache } from './school-cache-utils.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -39,10 +39,10 @@ const CLUB_CATEGORIES = [
   'Leadership',
   'Literature',
   'Media',
-  'Other',
   'Public Speaking',
   'STEM',
-  'Student Government'
+  'Student Government',
+  'Other'
 ];
 
 const categoryInput = document.getElementById("searchCategory");
@@ -114,8 +114,6 @@ function hideLoadingScreen() {
 }
 
 
-let didTheLocalSearch = false;
-
 onAuthStateChanged(auth, async (user) => {
     if (!handleUserSwitch(user)) {
         if (!user) window.location.href = 'login.html';
@@ -123,9 +121,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
 
-    if (!didTheLocalSearch) {
-        await prefillFromProfileIfNeeded(); 
-    }
+    await applyHomeSchoolInfo();
 
     hideLoadingScreen();
 });
@@ -142,8 +138,6 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
     const state = normalizeState(rawState);
     const selectedCategory = categoryInput.value;
     const selectedCounty = countySearchInput.value.trim().toLowerCase();
-
-    saveSearch(state, countySearchInput.value.trim(), document.getElementById("searchSchool").value.trim(), selectedCategory);
 
     if (!state) {
         clubsGrid.innerHTML = "";
@@ -226,7 +220,7 @@ document.getElementById("createClubForm").addEventListener("submit", async (e) =
                 data.schoolName || 'Unknown School',
                 data.state || '',
                 data.countyName || '',
-                data.clubActivity || '',
+                data.category || '',
                 data.description || '',
                 data.joinCode || '',
                 data.pendingMemberUIDs || [],
@@ -262,8 +256,7 @@ function scrollToResults() {
     window.scrollTo({ top: top - headerHeight + 100, behavior: 'smooth' });
 }
 
-function createClubCard(clubId, clubName, schoolName, state, countyName, activity, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor, clubLeader, schoolEmail, roomNumber, meetingSchedule) {
-    const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
+function createClubCard(clubId, clubName, schoolName, state, countyName, category, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor, clubLeader, schoolEmail, roomNumber, meetingSchedule) {    const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);
     const isMember  = currentUser && memberUIDs.includes(currentUser.uid);
     const stateAbbrev = Object.keys(STATE_ABBREVS).find(k => STATE_ABBREVS[k] === state) || state;
     const location = NO_COUNTY_STATES[state] ? state : countyName ? `${countyName}, ${stateAbbrev}` : state;
@@ -276,7 +269,7 @@ function createClubCard(clubId, clubName, schoolName, state, countyName, activit
     card.innerHTML = `
         <div class="club-card-header">
             <span class="club-card-name">${clubName}</span>
-            <span class="club-card-activity">${activity}</span>
+            <span class="club-card-activity">${category}</span>
         </div>
         <div class="club-card-body">
             <span><i class="fa-solid fa-school"></i> ${schoolName}</span>
@@ -467,8 +460,6 @@ function normalizeState(input) {
 
 
 
-didTheLocalSearch = restoreSavedSearch(); 
-
 let SEARCH_COUNTIES = [];
 fetch('counties.json')
 	.then(res => res.json())
@@ -519,10 +510,6 @@ document.addEventListener('click', function(e) {
 	}
 });
 
-function saveSearch(state, county, school, category) {
-	localStorage.setItem('discoverySearch', JSON.stringify({ state, county, school, category }));
-}
-
 function fadeText(el, value, delay = 0) {
     setTimeout(() => {
         el.value = value;
@@ -532,44 +519,39 @@ function fadeText(el, value, delay = 0) {
     }, delay);
 }
 
-function restoreSavedSearch() {
-    const saved = localStorage.getItem('discoverySearch');
-    if (!saved) return false;
-
-    const { state, county, school, category } = JSON.parse(saved);
-    if (state) {
-        updateCountySearchVisibility(state);
-        stateInput.value = state;
+function applySchoolInfoToFields(schoolInfo) {
+    if (schoolInfo.state) {
+        updateCountySearchVisibility(schoolInfo.state);
+        stateInput.value = schoolInfo.state;
     }
-    if (county) {
-        countySearchInput.value = county;
+    if (schoolInfo.county) {
+        countySearchInput.value = schoolInfo.county;
     }
-    if (school) {
-        document.getElementById('searchSchool').value = school;
+    if (schoolInfo.school) {
+        document.getElementById('searchSchool').value = schoolInfo.school;
     }
-    if (category) {
-        categoryInput.value = category;
-    }
-    return true;
 }
 
-async function prefillFromProfileIfNeeded() {
+async function applyHomeSchoolInfo() {
     if (!currentUser) return;
+
+    const cached = getSchoolInfoCache(currentUser.uid);
+    if (cached) {
+        applySchoolInfoToFields(cached);
+        return;
+    }
 
     try {
         const userSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (userSnap.exists()) {
             const data = userSnap.data();
-            if (data.state) {
-                updateCountySearchVisibility(data.state);
-                stateInput.value = data.state;
-            }
-            if (data.county) {
-                countySearchInput.value = data.county;
-            }
-            if (data.school) {
-                document.getElementById('searchSchool').value = data.school;
-            }
+            const schoolInfo = {
+                state: data.state || '',
+                county: data.county || '',
+                school: data.school || ''
+            };
+            applySchoolInfoToFields(schoolInfo);
+            setSchoolInfoCache(currentUser.uid, schoolInfo);
         }
     } catch (e) {
         console.error("Could not load user profile for search prefill:", e);

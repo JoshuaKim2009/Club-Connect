@@ -442,8 +442,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: max(100%, var(--min-layout-width));
+    height: 100%;
     z-index: 10000;
     display: none;
     align-items: center;
