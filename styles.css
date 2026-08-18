@@ -23,7 +23,8 @@ html {
 body {
   background-color: var(--bg-dark);
   min-height: 100vh;
-  margin: 5px; 
+  /* margin: 5px;  */
+  margin: 0;
   position: relative; 
   min-width: var(--min-layout-width);
 }

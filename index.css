@@ -412,20 +412,20 @@
   animation: lp-rise 0.75s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-#main-page-title {
-  width: min(88vw, 700px);
-  display: block;
+#main-page-title-wrapper {
+  filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.4));
+  width: min(max(88vw, 255.2px), 700px);
   margin: 0 auto 12px auto;
+  animation: lp-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#main-page-title {
+  display: block;
+  width: 100%;
+  height: auto;
   position: relative;
   z-index: 1;
   flex-shrink: 0;
-}
-
-#main-page-title-wrapper {
-  filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.4));
-  width: min(88vw, 700px);
-  margin: 0 auto 12px auto;
-  animation: lp-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 
