@@ -3251,7 +3251,7 @@ input[type="checkbox"]:checked {
   width: 100%;
   max-width: none;
   margin-bottom: 0;
-  font-size: clamp(20px, 4.5vw, 22px);
+  font-size: clamp(20px, 4.5vw, 24px);
 }
 
 .comm-grid {
@@ -3283,7 +3283,7 @@ input[type="checkbox"]:checked {
 }
 .comm-lbl {
   font-family: var(--primary-font-family);
-  font-size: 20px;
+  font-size: clamp(18px, 4.5vw, 20px);
   line-height: 1.1;
   text-align: center;
   pointer-events: none;
@@ -3291,7 +3291,7 @@ input[type="checkbox"]:checked {
 
 .community-lbl {
   font-family: var(--primary-font-family);
-  font-size: 22px;
+  font-size: clamp(19px, 4.5vw, 21px);
   line-height: 1.1;
   text-align: center;
   pointer-events: none;
@@ -3305,7 +3305,6 @@ input[type="checkbox"]:checked {
 @media (max-width: 750px) {
   .community-lbl {
     font-family: var(--primary-font-family);
-    font-size: 20px;
     line-height: 1.1;
     text-align: center;
     pointer-events: none;
@@ -3335,7 +3334,7 @@ input[type="checkbox"]:checked {
 #scheduleSection > #viewScheduleButton {
   width: 100%;
   max-width: none;
-  font-size: clamp(20px, 4.5vw, 22px);
+  font-size: clamp(20px, 4.5vw, 24px);
   box-sizing: border-box;
   margin-bottom: 0;
 }
