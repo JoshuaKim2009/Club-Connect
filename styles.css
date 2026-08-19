@@ -3251,7 +3251,7 @@ input[type="checkbox"]:checked {
   width: 100%;
   max-width: none;
   margin-bottom: 0;
-  font-size: clamp(20px, 4.5vw, 24px);
+  font-size: clamp(20px, 4.5vw, 22px);
 }
 
 .comm-grid {
@@ -3334,7 +3334,7 @@ input[type="checkbox"]:checked {
 #scheduleSection > #viewScheduleButton {
   width: 100%;
   max-width: none;
-  font-size: clamp(20px, 4.5vw, 24px);
+  font-size: clamp(20px, 4.5vw, 22px);
   box-sizing: border-box;
   margin-bottom: 0;
 }
