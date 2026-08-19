@@ -1,82 +1,83 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href="styles.css?v=73" rel="stylesheet" />
-    <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Connect | Events</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
-    <style>
-      body {
-        padding-bottom: 50px;  
-      }
+	<head>
+		<link href="styles.css?v=74" rel="stylesheet" />
+		<meta name="theme-color" id="theme-color-meta" content="#1c375f">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Club Connect | Events</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		
+		<style>
+			body {
+				padding-bottom: 50px;  
+			}
 
-      body {
-        font-family: var(--primary-font-family);
-        padding-top: env(safe-area-inset-top);
-        /* padding-bottom: env(safe-area-inset-bottom); */
-        background: var(--bg-dark);
-      }
+			body {
+				font-family: var(--primary-font-family);
+				padding-top: env(safe-area-inset-top);
+				/* padding-bottom: env(safe-area-inset-bottom); */
+				background: var(--bg-dark);
+			}
 
-      .editing-event-card input[type="text"],
-      .editing-event-card input[type="date"],
-      .editing-event-card input[type="time"],
-      .editing-event-card textarea {
-        color: black !important;
-      }
+			.editing-event-card input[type="text"],
+			.editing-event-card input[type="date"],
+			.editing-event-card input[type="time"],
+			.editing-event-card textarea {
+				color: black !important;
+			}
 
-      .rsvp-buttons {
-        gap: 7px;
-      }
+			.rsvp-buttons {
+				gap: 7px;
+			}
 
-      .empty-state-card-dashed.static {
-        margin-top: -45px !important;
-      }
+			.empty-state-card-dashed.static {
+				margin-top: -45px !important;
+			}
 
-      .editing-event-card-first {
-        margin-top: -45px !important;
-      }
-    </style>
-    
-  </head>
-  <body>
-    <div id="loading-overlay">
-      <div id="loading-overlay-inner">
-        <div class="loading-spinner"></div>
-        <p>LOADING...</p>
-      </div>
-    </div>
-    <div class="chat-header">
-        <button id="back-button" class="fancy-button" onclick="goToClubPage()">
-          <i class="fa-solid fa-circle-left"></i>
-        </button>
-        <span class="chat-title">SCHEDULE</span>
-    </div>
-    <div id="content">
-      <h1 id="clubScheduleTitle"></h1>
-      <button id="add-event-button" class="fancy-button" style="display: none;">ADD EVENT</button>
+			.editing-event-card-first {
+				margin-top: -45px !important;
+			}
+		</style>
+		
+	</head>
+	<body>
+		<div id="loading-overlay">
+			<div id="loading-overlay-inner">
+				<div class="loading-spinner"></div>
+				<p>LOADING...</p>
+			</div>
+		</div>
+		<div class="chat-header">
+			<button id="back-button" class="fancy-button" onclick="goToClubPage()">
+				<i class="fa-solid fa-circle-left"></i>
+			</button>
+			<span class="chat-title">SCHEDULE</span>
+		</div>
+		<div id="content">
+			<h1 id="clubScheduleTitle"></h1>
+			<button id="add-event-button" class="fancy-button" style="display: none;">ADD EVENT</button>
 
-      <div id="noEventsMessageAdmin" class="empty-state-card-dashed static" style="display: none;">
-          <i class="fa-solid fa-calendar-plus"></i>
-          <p class="empty-state-dashed-title">No events posted yet</p>
-          <p class="empty-state-dashed-subtitle">Get something on the calendar</p>
-          <button id="empty-state-event-btn" class="fancy-button">ADD EVENT</button>
-      </div>
+			<div id="noEventsMessageAdmin" class="empty-state-card-dashed static" style="display: none;">
+				<i class="fa-solid fa-calendar-plus"></i>
+				<p class="empty-state-dashed-title">No events posted yet</p>
+				<p class="empty-state-dashed-subtitle">Get something on the calendar</p>
+				<button id="empty-state-event-btn" class="fancy-button">ADD EVENT</button>
+			</div>
 
-      <div id="eventsContainer" class="fancy-black-label"></div>
-    </div>
+			<p id="no-events-message" class="fancy-label empty-state-text" style="display: none;"></p>
+			<div id="eventsContainer" class="fancy-black-label"></div>
+		</div>
 
-    <script src="theme.js?v=12"></script>
-    <script type="module" src="dialog.js?v=3"></script> 
-    <script type="module" src="schedule.js?v=31"></script>
-    <!-- <script type="module" src="loading.js?v=2"></script> -->
-  </body>
+		<script src="theme.js?v=12"></script>
+		<script type="module" src="dialog.js?v=3"></script> 
+		<script type="module" src="schedule.js?v=32"></script>
+		<!-- <script type="module" src="loading.js?v=2"></script> -->
+	</body>
 </html>
  
 

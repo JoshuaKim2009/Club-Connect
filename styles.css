@@ -611,6 +611,13 @@ input:-ms-input-placeholder {
   position: relative;
 }
 
+.empty-state-text {
+  text-align: center;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 #back-button,
 #back-button-edit {
   padding: 5px 15px;
@@ -916,7 +923,7 @@ input:-ms-input-placeholder {
 #pendingRequestsContainer h3,
 #membersContainer h3 {
     font-family: "New Amsterdam", sans-serif;
-    font-size: 42px;
+    font-size: clamp(36px, 4.5vw, 42px);
     font-weight: 400;
     letter-spacing: 0.03em;
     text-align: center;
@@ -2759,7 +2766,7 @@ input[type="checkbox"]:checked {
 
 .club-form-card h2 {
   font-family: "New Amsterdam", sans-serif;
-  font-size: 42px;
+  font-size: clamp(36px, 4.5vw, 42px);
   letter-spacing: 0.03em;
   font-weight: 400;
   text-align: center;

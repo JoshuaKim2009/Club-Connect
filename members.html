@@ -1,109 +1,109 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href="styles.css?v=73" rel="stylesheet" />
-    <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Connect | Members</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
-    <style>
-        body {
-            padding-bottom: 100px; 
-        }
-        body {
-            font-family: var(--primary-font-family);
-            padding-top: env(safe-area-inset-top);
-            background: var(--bg-dark);
-        }
-        #dynamic-sections-wrapper{
-            margin-top: 110px;
-            padding-top: 8px;
-        }
-        #dynamic-sections-wrapper {
-            position: relative;
-            min-height: calc(100vh - 200px);
-        }
+	<head>
+		<link href="styles.css?v=74" rel="stylesheet" />
+		<meta name="theme-color" id="theme-color-meta" content="#1c375f">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Club Connect | Members</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		
+		<style>
+			body {
+				padding-bottom: 100px; 
+			}
+			body {
+				font-family: var(--primary-font-family);
+				padding-top: env(safe-area-inset-top);
+				background: var(--bg-dark);
+			}
+			#dynamic-sections-wrapper{
+				margin-top: 110px;
+				padding-top: 8px;
+			}
+			#dynamic-sections-wrapper {
+				position: relative;
+				min-height: calc(100vh - 200px);
+			}
 
-        #pendingRequestsContainer, 
-        #membersContainer {
-            opacity: 0;
-            background: linear-gradient(#ffffff, #f7f7f7) !important;
-            transition: opacity 0.3s ease;
-        }
+			#pendingRequestsContainer, 
+			#membersContainer {
+				opacity: 0;
+				background: linear-gradient(#ffffff, #f7f7f7) !important;
+				transition: opacity 0.3s ease;
+			}
 
-        #dynamic-sections-wrapper.loaded #pendingRequestsContainer,
-        #dynamic-sections-wrapper.loaded #membersContainer {
-            opacity: 1;
-        }
+			#dynamic-sections-wrapper.loaded #pendingRequestsContainer,
+			#dynamic-sections-wrapper.loaded #membersContainer {
+				opacity: 1;
+			}
 
-        #dynamic-sections-wrapper.loaded #loading-overlay {
-            display: none;
-        }
+			#dynamic-sections-wrapper.loaded #loading-overlay {
+				display: none;
+			}
 
-        #pendingRequestsContainer,
-        #membersContainer {
-          padding-bottom: 2px;
-        }
+			#pendingRequestsContainer,
+			#membersContainer {
+				padding-bottom: 2px;
+			}
 
-        #transfer-confirm-checkbox {
-          flex-shrink: 0;
-          box-sizing: border-box;
-        }
-    </style>
-    
-  </head>
-  <body class="no-scroll">
-    <div class="chat-header">
-      <button id="back-button" class="fancy-button" onclick="goToClubPage()">
-        <i class="fa-solid fa-circle-left"></i>
-      </button>
-      <span class="chat-title">MEMBERS</span>
-    </div>
+			#transfer-confirm-checkbox {
+				flex-shrink: 0;
+				box-sizing: border-box;
+			}
+		</style>
+		
+	</head>
+	<body class="no-scroll">
+		<div class="chat-header">
+			<button id="back-button" class="fancy-button" onclick="goToClubPage()">
+				<i class="fa-solid fa-circle-left"></i>
+			</button>
+			<span class="chat-title">MEMBERS</span>
+		</div>
 
-    <!-- <h1 id="page-title" class="pageTitle">MEMBERS</h1> -->
-    
+		<!-- <h1 id="page-title" class="pageTitle">MEMBERS</h1> -->
+		
 
-    <div id="dynamic-sections-wrapper">
-        <div id="loading-overlay">
-          <div id="loading-overlay-inner">
-            <div class="loading-spinner"></div>
-            <p>LOADING...</p>
-          </div>
-        </div>
-        <div id="pendingRequestsContainer" class="fancy-black-label"></div>
-        <div id="membersContainer" class="fancy-black-label"></div>
-    </div>
+		<div id="dynamic-sections-wrapper">
+			<div id="loading-overlay">
+				<div id="loading-overlay-inner">
+					<div class="loading-spinner"></div>
+					<p>LOADING...</p>
+				</div>
+			</div>
+			<div id="pendingRequestsContainer" class="fancy-black-label"></div>
+			<div id="membersContainer" class="fancy-black-label"></div>
+		</div>
 
-    <div id="popup-overlay" style="display: none;"></div>
-    <div id="role-management-popup" style="display: none;">
-      <button id="cancel-role-change"><i class="fa-solid fa-xmark"></i></button>
-      <h3 id="member-name-for-role">Manage [Member Name]</h3>
-      <label for="role-select" id="role-select-label">Select New Role</label>
-      <select id="role-select">
-        <option value="member">Member</option>
-        <option value="admin">Admin</option>
-        <option value="manager">Manager</option>
-      </select>
-      <div id="transfer-confirm-row" class="transfer-confirm-row hidden">
-        <label id="transfer-confirm-label" class="checkbox-row-label">
-          <input type="checkbox" id="transfer-confirm-checkbox" />
-          <span id="transfer-confirm-text">Yes, transfer the role to this member.</span>
-        </label>
-      </div>
-      <div class="popup-bottom-actions">
-        <button id="submit-role-change" class="fancy-button">UPDATE</button>
-        <button id="remove-member-popup-btn" class="remove-member-popup-btn">REMOVE</button>
-      </div>
-    </div>
+		<div id="popup-overlay" style="display: none;"></div>
+		<div id="role-management-popup" style="display: none;">
+			<button id="cancel-role-change"><i class="fa-solid fa-xmark"></i></button>
+			<h3 id="member-name-for-role">Manage [Member Name]</h3>
+			<label for="role-select" id="role-select-label">Select New Role</label>
+			<select id="role-select">
+				<option value="member">Member</option>
+				<option value="admin">Admin</option>
+				<option value="manager">Manager</option>
+			</select>
+			<div id="transfer-confirm-row" class="transfer-confirm-row hidden">
+				<label id="transfer-confirm-label" class="checkbox-row-label">
+				<input type="checkbox" id="transfer-confirm-checkbox" />
+				<span id="transfer-confirm-text">Yes, transfer the role to this member.</span>
+				</label>
+			</div>
+			<div class="popup-bottom-actions">
+				<button id="submit-role-change" class="fancy-button">UPDATE</button>
+				<button id="remove-member-popup-btn" class="remove-member-popup-btn">REMOVE</button>
+			</div>
+		</div>
 
-    <script src="theme.js?v=12"></script>
-    <script type="module" src="dialog.js?v=3"></script> 
-    <script type="module" src="members.js?v=21"></script>
-  </body>
+		<script src="theme.js?v=12"></script>
+		<script type="module" src="dialog.js?v=3"></script> 
+		<script type="module" src="members.js?v=22"></script>
+	</body>
 </html>

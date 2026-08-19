@@ -1,120 +1,121 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href="styles.css?v=73" rel="stylesheet" />
-    <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<head>
+		<link href="styles.css?v=74" rel="stylesheet" />
+		<meta name="theme-color" id="theme-color-meta" content="#1c375f">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Club Connect | Join</title>
+		<title>Club Connect | Join</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcEA..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcEA..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <style>
-      body {
-        font-family: var(--primary-font-family);
-        padding-top: env(safe-area-inset-top);
-        background: var(--bg-dark);
-      }
+		<style>
+			body {
+				font-family: var(--primary-font-family);
+				padding-top: env(safe-area-inset-top);
+				background: var(--bg-dark);
+			}
 
-      .pageTitle {
-        margin-top: 110px;
-      }
+			.pageTitle {
+				margin-top: 110px;
+			}
 
-      .join-menu {
-        padding-top: 118px;
-      }
+			.join-menu {
+				padding-top: 118px;
+			}
 
-      .join-menu-card {
-        margin-bottom: 30px;
-      }
+			.join-menu-card {
+				margin-bottom: 30px;
+			}
 
-      .join-menu-button {
-        width: 170px;
-        min-width: 85%;
-        margin-top: -5px !important;
-      }
-    </style>
-  </head>
+			.join-menu-button {
+				width: 170px;
+				min-width: 85%;
+				margin-top: -5px !important;
+				font-size: clamp(24px, 4.5vw, 32px) !important;
+			}
+		</style>
+	</head>
 
-  <body>
+	<body>
 
-    <div class="chat-header">
-      <button id="back-button" class="fancy-button" onclick="goToHome()">
-        <i class="fa-solid fa-circle-left"></i>
-      </button>
+		<div class="chat-header">
+			<button id="back-button" class="fancy-button" onclick="goToHome()">
+				<i class="fa-solid fa-circle-left"></i>
+			</button>
 
-      <span class="chat-title">JOIN</span>
-    </div>
+			<span class="chat-title">JOIN</span>
+		</div>
 
-    <div class="join-menu">
+		<div class="join-menu">
 
-      <!-- JOIN WITH CODE -->
-      <div class="club-form-card join-menu-card">
-        <h2>USE JOIN CODE</h2>
+		<!-- JOIN WITH CODE -->
+		<div class="club-form-card join-menu-card">
+			<h2>USE A JOIN CODE</h2>
 
-        <div class="club-form-actions">
-          <button
-            id="join-code-button"
-            class="fancy-button join-menu-button">
-            USE JOIN CODE
-          </button>
-        </div>
-      </div>
-
-
-      <!-- DISCOVER CLUBS -->
-      <div class="club-form-card join-menu-card">
-        <h2>SEARCH CLUBS</h2>
-
-        <div class="club-form-actions">
-          <button
-            id="discover-club-button"
-            class="fancy-button join-menu-button">
-            SEARCH CLUBS
-          </button>
-        </div>
-      </div>
+			<div class="club-form-actions">
+				<button
+					id="join-code-button"
+					class="fancy-button join-menu-button">
+					USE JOIN CODE
+				</button>
+			</div>
+		</div>
 
 
-      <!-- CLUB MATCHER -->
-      <!-- <div class="club-form-card join-menu-card">
-        <h2>CLUB MATCHER</h2>
+		<!-- DISCOVER CLUBS -->
+		<div class="club-form-card join-menu-card">
+			<h2>DISCOVER CLUBS</h2>
 
-        <div class="club-form-actions">
-          <button
-            id="find-club-button"
-            class="fancy-button join-menu-button">
-            FIND A CLUB
-          </button>
-        </div>
-      </div> -->
+			<div class="club-form-actions">
+				<button
+					id="discover-club-button"
+					class="fancy-button join-menu-button">
+					DISCOVER CLUBS
+				</button>
+			</div>
+		</div>
 
-    </div>
 
-    <script>
-      function goToHome() {
-        window.location.href = "your_clubs.html";
-      }
+		<!-- CLUB MATCHER -->
+		<!-- <div class="club-form-card join-menu-card">
+			<h2>CLUB MATCHER</h2>
 
-      document.getElementById("join-code-button").addEventListener("click", () => {
-        window.location.href = "join_code.html";
-      });
+			<div class="club-form-actions">
+			<button
+				id="find-club-button"
+				class="fancy-button join-menu-button">
+				FIND A CLUB
+			</button>
+			</div>
+		</div> -->
 
-      document.getElementById("discover-club-button").addEventListener("click", () => {
-        window.location.href = "club_discovery.html?";
-      });
+		</div>
 
-    //   document.getElementById("find-club-button").addEventListener("click", () => {
-    //     window.location.href = "playground.html";
-    //   });
-    </script>
+		<script>
+		function goToHome() {
+			window.location.href = "your_clubs.html";
+		}
 
-    <script src="theme.js?v=12"></script>
-    <script type="module" src="dialog.js?v=3"></script>
+		document.getElementById("join-code-button").addEventListener("click", () => {
+			window.location.href = "join_code.html";
+		});
 
-  </body>
+		document.getElementById("discover-club-button").addEventListener("click", () => {
+			window.location.href = "club_discovery.html?";
+		});
+
+		//   document.getElementById("find-club-button").addEventListener("click", () => {
+		//     window.location.href = "playground.html";
+		//   });
+		</script>
+
+		<script src="theme.js?v=12"></script>
+		<script type="module" src="dialog.js?v=3"></script>
+
+	</body>
 </html>

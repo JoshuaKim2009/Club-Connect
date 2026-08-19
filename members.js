@@ -11,13 +11,13 @@ document.querySelector('#role-select option[value="admin"]').textContent = ROLE_
 document.querySelector('#role-select option[value="manager"]').textContent = ROLE_LABELS.manager;
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+    apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+    authDomain: "club-connect-data.firebaseapp.com",
+    projectId: "club-connect-data",
+    storageBucket: "club-connect-data.firebasestorage.app",
+    messagingSenderId: "903230180616",
+    appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+    measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);

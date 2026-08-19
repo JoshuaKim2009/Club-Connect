@@ -8,13 +8,13 @@ import { handleUserSwitch } from './auth-guard.js';
 import { getSchoolInfoCache, setSchoolInfoCache } from './school-cache-utils.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+	authDomain: "club-connect-data.firebaseapp.com",
+	projectId: "club-connect-data",
+	storageBucket: "club-connect-data.firebasestorage.app",
+	messagingSenderId: "903230180616",
+	appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+	measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -24,25 +24,25 @@ const db = initializeFirestore(app, {
 const auth = getAuth(app);
 
 const CLUB_CATEGORIES = [
-  'Academic',
-  'Activism',
-  'Athletics',
-  'Art',
-  'Business',
-  'Community Service',
-  'Culture & Identity',
-  'Health & Wellness',
-  'Hobbies',
-  'Honor Societies',
-  'Humanities',
-  'Language',
-  'Leadership',
-  'Literature',
-  'Media',
-  'Public Speaking',
-  'STEM',
-  'Student Government',
-  'Other'
+	'Academic',
+	'Activism',
+	'Athletics',
+	'Art',
+	'Business',
+	'Community Service',
+	'Culture & Identity',
+	'Health & Wellness',
+	'Hobbies',
+	'Honor Societies',
+	'Humanities',
+	'Language',
+	'Leadership',
+	'Literature',
+	'Media',
+	'Public Speaking',
+	'STEM',
+	'Student Government',
+	'Other'
 ];
 
 const categoryInput = document.getElementById("searchCategory");
@@ -53,40 +53,40 @@ let loadingScreenHidden = false;
 
 
 function buildCategoryDropdown() {
-  categoryDropdownList.innerHTML = '';
-  const allDiv = document.createElement('div');
-  allDiv.className = 'state-option';
-  allDiv.textContent = 'All Categories';
-  allDiv.onclick = () => {
-    categoryInput.value = '';
-    categoryInput.placeholder = 'All Categories';
-    categoryDropdownList.classList.remove('show');
-  };
-  categoryDropdownList.appendChild(allDiv);
+	categoryDropdownList.innerHTML = '';
+	const allDiv = document.createElement('div');
+	allDiv.className = 'state-option';
+	allDiv.textContent = 'All Categories';
+	allDiv.onclick = () => {
+		categoryInput.value = '';
+		categoryInput.placeholder = 'All Categories';
+		categoryDropdownList.classList.remove('show');
+	};
+	categoryDropdownList.appendChild(allDiv);
 
-  CLUB_CATEGORIES.forEach(cat => {
-    const div = document.createElement('div');
-    div.className = 'state-option';
-    div.textContent = cat;
-    div.onclick = () => {
-      categoryInput.value = cat;
-      categoryDropdownList.classList.remove('show');
-    };
-    categoryDropdownList.appendChild(div);
-  });
+	CLUB_CATEGORIES.forEach(cat => {
+		const div = document.createElement('div');
+		div.className = 'state-option';
+		div.textContent = cat;
+		div.onclick = () => {
+		categoryInput.value = cat;
+		categoryDropdownList.classList.remove('show');
+		};
+		categoryDropdownList.appendChild(div);
+	});
 }
 
 buildCategoryDropdown();
 
 categoryInput.addEventListener('click', function() {
-  buildCategoryDropdown();
-  categoryDropdownList.classList.toggle('show');
+  	buildCategoryDropdown();
+  	categoryDropdownList.classList.toggle('show');
 });
 
 document.addEventListener('click', function(e) {
-  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
-    categoryDropdownList.classList.remove('show');
-  }
+  	if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+    	categoryDropdownList.classList.remove('show');
+  	}
 });
 
 let currentUser = null;

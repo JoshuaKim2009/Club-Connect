@@ -220,7 +220,12 @@ function renderAllEvents() {
             noEventsMessageAdmin.style.display = 'block';
             if (addEventButton) addEventButton.style.display = 'none';
         } else {
-            eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+            eventsContainer.innerHTML = '';
+            const noEventsMessage = document.getElementById('no-events-message');
+            if (noEventsMessage) {
+                noEventsMessage.textContent = 'NO UPCOMING EVENTS';
+                noEventsMessage.style.display = 'block';
+            }
             noEventsMessageAdmin.style.display = 'none';
         }
         eventsContainer.style.marginTop = '0px';
@@ -228,6 +233,8 @@ function renderAllEvents() {
     }
 
     noEventsMessageAdmin.style.display = 'none';
+    const noEventsMessage = document.getElementById('no-events-message');
+    if (noEventsMessage) noEventsMessage.style.display = 'none';
     if (addEventButton) addEventButton.style.display = isAdmin ? 'block' : 'none';
     eventsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
 
@@ -311,6 +318,8 @@ function refreshCardsForEvent(eventId) {
         eventsContainer.innerHTML = '';
         eventsContainer.style.marginTop = isAdmin ? '0px' : '-45px';
         noEventsMessageAdmin.style.display = 'none';
+        const noEventsMessage = document.getElementById('no-events-message');
+        if (noEventsMessage) noEventsMessage.style.display = 'none';
         if (isAdmin && addEventButton) addEventButton.style.display = 'block';
     }
 
@@ -356,7 +365,12 @@ function checkIfEmpty() {
             noEventsMessageAdmin.style.display = 'block';
             if (addEventButton) addEventButton.style.display = 'none';
         } else {
-            eventsContainer.innerHTML = '<p class="fancy-label">NO UPCOMING EVENTS</p>';
+            eventsContainer.innerHTML = '';
+            const noEventsMessage = document.getElementById('no-events-message');
+            if (noEventsMessage) {
+                noEventsMessage.textContent = 'NO UPCOMING EVENTS';
+                noEventsMessage.style.display = 'block';
+            }
             noEventsMessageAdmin.style.display = 'none';
         }
         eventsContainer.style.marginTop = '0px';

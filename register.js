@@ -6,13 +6,13 @@ import { showAppAlert } from './dialog.js';
 import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName, schoolDocId } from './school-utils.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+	authDomain: "club-connect-data.firebaseapp.com",
+	projectId: "club-connect-data",
+	storageBucket: "club-connect-data.firebasestorage.app",
+	messagingSenderId: "903230180616",
+	appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+	measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -21,22 +21,22 @@ const db = getFirestore(app);
 
 
 function getRegisterErrorMessage(code) {
-  switch (code) {
-    case 'auth/email-already-in-use':
-      return "An account with this email already exists. Try logging in instead.";
-    case 'auth/invalid-email':
-      return "That doesn't look like a valid email address. Please double-check it.";
-    case 'auth/weak-password':
-      return "Your password is too weak. Try something longer with a mix of letters and numbers.";
-    case 'auth/operation-not-allowed':
-      return "Registration is currently unavailable. Please try again later.";
-    case 'auth/too-many-requests':
-      return "Too many attempts in a short time. Please wait a moment and try again.";
-    case 'auth/network-request-failed':
-      return "Couldn't reach the server. Please check your internet connection and try again.";
-    default:
-      return "Something went wrong while creating your account. Please try again.";
-  }
+	switch (code) {
+		case 'auth/email-already-in-use':
+			return "An account with this email already exists. Try logging in instead.";
+		case 'auth/invalid-email':
+			return "That doesn't look like a valid email address. Please double-check it.";
+		case 'auth/weak-password':
+			return "Your password is too weak. Try something longer with a mix of letters and numbers.";
+		case 'auth/operation-not-allowed':
+			return "Registration is currently unavailable. Please try again later.";
+		case 'auth/too-many-requests':
+			return "Too many attempts in a short time. Please wait a moment and try again.";
+		case 'auth/network-request-failed':
+			return "Couldn't reach the server. Please check your internet connection and try again.";
+		default:
+			return "Something went wrong while creating your account. Please try again.";
+	}
 }
 
 
@@ -50,47 +50,47 @@ const dot2 = document.getElementById("reg-dot-2");
 const conn1 = document.getElementById("reg-conn-1");
 
 function showStep(step) {
-  step1.classList.toggle("visible", step === 1);
-  step2.classList.toggle("visible", step === 2);
-  successStep.classList.toggle("visible", step === 3);
-  loginCard.classList.toggle("visible", step === 1);
+	step1.classList.toggle("visible", step === 1);
+	step2.classList.toggle("visible", step === 2);
+	successStep.classList.toggle("visible", step === 3);
+	loginCard.classList.toggle("visible", step === 1);
 
-  window.scrollTo(0, 0);
+	window.scrollTo(0, 0);
 }
 
 document.getElementById("register-next").addEventListener("click", async () => {
-  const state = normalizeState(regState.value);
-  const county = regCounty.value.trim();
-  const school = document.getElementById("regSchool").value.trim();
+	const state = normalizeState(regState.value);
+	const county = regCounty.value.trim();
+	const school = document.getElementById("regSchool").value.trim();
 
-  if (!state) {
-    await showAppAlert("Please select your state.");
-    return;
-  }
+	if (!state) {
+		await showAppAlert("Please select your state.");
+		return;
+	}
 
-  if (!NO_COUNTY_STATES[state] && !county) {
-    await showAppAlert("Please select your county.");
-    return;
-  }
+	if (!NO_COUNTY_STATES[state] && !county) {
+		await showAppAlert("Please select your county.");
+		return;
+	}
 
-  if (!school) {
-    await showAppAlert("Please enter your school name.");
-    return;
-  }
+	if (!school) {
+		await showAppAlert("Please enter your school name.");
+		return;
+	}
 
-  dot1.classList.add("done");
-  dot1.classList.remove("active");
-  dot2.classList.add("active");
-  conn1.classList.add("done");
-  showStep(2);
+	dot1.classList.add("done");
+	dot1.classList.remove("active");
+	dot2.classList.add("active");
+	conn1.classList.add("done");
+	showStep(2);
 });
 
 document.getElementById("register-back").addEventListener("click", () => {
-  dot2.classList.remove("active");
-  dot1.classList.add("active");
-  dot1.classList.remove("done");
-  conn1.classList.remove("done");
-  showStep(1);
+	dot2.classList.remove("active");
+	dot1.classList.add("active");
+	dot1.classList.remove("done");
+	conn1.classList.remove("done");
+	showStep(1);
 });
 
 
@@ -263,32 +263,32 @@ const regSchool = document.getElementById('regSchool');
 const regSchoolDropdownList = document.getElementById('reg-school-dropdown-list');
 
 regSchool.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  regSchoolDropdownList.innerHTML = '';
+	const value = this.value.toLowerCase();
+	regSchoolDropdownList.innerHTML = '';
 
-  const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
+	const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
 
-  if (value && pool.length > 0) {
-    pool.forEach(school => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = school.name;
-      div.onclick = () => {
-        regSchool.value = school.name;
-        regSchoolDropdownList.classList.remove('show');
-      };
-      regSchoolDropdownList.appendChild(div);
-    });
-    regSchoolDropdownList.classList.add('show');
-  } else {
-    regSchoolDropdownList.classList.remove('show');
-  }
+	if (value && pool.length > 0) {
+		pool.forEach(school => {
+		const div = document.createElement('div');
+		div.className = 'state-option';
+		div.textContent = school.name;
+		div.onclick = () => {
+			regSchool.value = school.name;
+			regSchoolDropdownList.classList.remove('show');
+		};
+		regSchoolDropdownList.appendChild(div);
+		});
+		regSchoolDropdownList.classList.add('show');
+	} else {
+		regSchoolDropdownList.classList.remove('show');
+	}
 });
 
 document.addEventListener('click', function(e) {
-  if (!regSchool.contains(e.target) && !regSchoolDropdownList.contains(e.target)) {
-    regSchoolDropdownList.classList.remove('show');
-  }
+	if (!regSchool.contains(e.target) && !regSchoolDropdownList.contains(e.target)) {
+		regSchoolDropdownList.classList.remove('show');
+	}
 });
 
 
@@ -296,122 +296,122 @@ document.addEventListener('click', function(e) {
 const submit = document.getElementById("register-submit");
 
 function resetSubmit() {
-  submit.disabled = false;
-  submit.innerHTML = "CREATE";
-  submit.style.width = "";
-  submit.style.height = "";
+	submit.disabled = false;
+	submit.innerHTML = "CREATE";
+	submit.style.width = "";
+	submit.style.height = "";
 }
 
 submit.addEventListener("click", async function(event) {
-  event.preventDefault();
+	event.preventDefault();
 
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
+	const name = document.getElementById("name").value.trim();
+	const email = document.getElementById("username").value.trim();
+	const password = document.getElementById("password").value;
+	const confirmPassword = document.getElementById("confirmPassword").value;
 
-  if (!name) {
-    await showAppAlert("Please enter your full name.");
-    return;
-  }
-  if (!email) {
-    await showAppAlert("Please enter your email address.");
-    return;
-  }
-  if (!/\S+@\S+\.\S+/.test(email)) {
-    await showAppAlert("That doesn't look like a valid email address. Please double-check it.");
-    return;
-  }
-  if (!password) {
-    await showAppAlert("Please enter a password.");
-    return;
-  }
-  if (password.length < 6) {
-    await showAppAlert("Your password is too weak.");
-    return;
-  }
-  if (password !== confirmPassword) {
-    await showAppAlert("Your passwords don't match. Please try again.");
-    return;
-  }
+	if (!name) {
+		await showAppAlert("Please enter your full name.");
+		return;
+	}
+	if (!email) {
+		await showAppAlert("Please enter your email address.");
+		return;
+	}
+	if (!/\S+@\S+\.\S+/.test(email)) {
+		await showAppAlert("That doesn't look like a valid email address. Please double-check it.");
+		return;
+	}
+	if (!password) {
+		await showAppAlert("Please enter a password.");
+		return;
+	}
+	if (password.length < 6) {
+		await showAppAlert("Your password is too weak.");
+		return;
+	}
+	if (password !== confirmPassword) {
+		await showAppAlert("Your passwords don't match. Please try again.");
+		return;
+	}
 
-  const state = normalizeState(regState.value);
-  const county = regCounty.value.trim();
-  const rawSchool = document.getElementById("regSchool").value.trim();
-  const schoolResult = normalizeSchoolName(rawSchool);
-  const school = schoolResult.valid ? schoolResult.normalized : rawSchool;
-
-
-  submit.style.width  = submit.offsetWidth  + 'px';
-  submit.style.height = submit.offsetHeight + 'px';
-  submit.disabled = true;
-  submit.innerHTML = '<span class="spinner"></span>';
-
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    await updateProfile(user, { displayName: name });
-
-    const schoolId = schoolDocId(state, county, school);
-
-    const batch = writeBatch(db);
-    batch.set(doc(db, "schools", schoolId), {
-      schoolId,
-      name: school,
-      nameLower: school.toLowerCase(),
-      state,
-      stateLower: state.toLowerCase(),
-      county,
-      countyLower: county.toLowerCase(),
-    }, { merge: true });
-    batch.set(doc(db, "users", user.uid), {
-      name,
-      email,
-      state,
-      stateLower: state.toLowerCase(),
-      county,
-      countyLower: county.toLowerCase(),
-      school,
-      schoolLower: school.toLowerCase(),
-      schoolId,
-    });
-    await batch.commit();
+	const state = normalizeState(regState.value);
+	const county = regCounty.value.trim();
+	const rawSchool = document.getElementById("regSchool").value.trim();
+	const schoolResult = normalizeSchoolName(rawSchool);
+	const school = schoolResult.valid ? schoolResult.normalized : rawSchool;
 
 
+	submit.style.width  = submit.offsetWidth  + 'px';
+	submit.style.height = submit.offsetHeight + 'px';
+	submit.disabled = true;
+	submit.innerHTML = '<span class="spinner"></span>';
 
-    localStorage.setItem('discoverySearch', JSON.stringify({ state, county, school, category: '' }));
+	try {
+		const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+		const user = userCredential.user;
 
-    const data = { displayName: user.displayName, email: user.email, uid: user.uid };
-    localStorage.setItem('cc-user', JSON.stringify(data));
-    sessionStorage.setItem('cc-user', JSON.stringify(data));
+		await updateProfile(user, { displayName: name });
 
-    const locationText = county ? `${county}, ${state}` : state;
-    document.getElementById("registerDoneSummary").innerHTML =
-      `Welcome, ${name}.<br>Your account has been created successfully!`;
+		const schoolId = schoolDocId(state, county, school);
 
-    dot2.classList.add("done");
-    dot2.classList.remove("active");
-    showStep(3);
+		const batch = writeBatch(db);
+		batch.set(doc(db, "schools", schoolId), {
+			schoolId,
+			name: school,
+			nameLower: school.toLowerCase(),
+			state,
+			stateLower: state.toLowerCase(),
+			county,
+			countyLower: county.toLowerCase(),
+		}, { merge: true });
+		batch.set(doc(db, "users", user.uid), {
+			name,
+			email,
+			state,
+			stateLower: state.toLowerCase(),
+			county,
+			countyLower: county.toLowerCase(),
+			school,
+			schoolLower: school.toLowerCase(),
+			schoolId,
+		});
+		await batch.commit();
 
-  } catch (error) {
-    await showAppAlert(getRegisterErrorMessage(error.code));
-    resetSubmit();
-  }
+
+
+		localStorage.setItem('discoverySearch', JSON.stringify({ state, county, school, category: '' }));
+
+		const data = { displayName: user.displayName, email: user.email, uid: user.uid };
+		localStorage.setItem('cc-user', JSON.stringify(data));
+		sessionStorage.setItem('cc-user', JSON.stringify(data));
+
+		const locationText = county ? `${county}, ${state}` : state;
+		document.getElementById("registerDoneSummary").innerHTML =
+		`Welcome, ${name}.<br>Your account has been created successfully!`;
+
+		dot2.classList.add("done");
+		dot2.classList.remove("active");
+		showStep(3);
+
+	} catch (error) {
+		await showAppAlert(getRegisterErrorMessage(error.code));
+		resetSubmit();
+	}
 });
 
 document.getElementById("register-continue").addEventListener("click", () => {
-  window.location.href = "index.html";
+	window.location.href = "index.html";
 });
 
 
 document.getElementById("registerForm").addEventListener("keydown", function(e) {
-  if (e.key !== "Enter") return;
-  e.preventDefault();
+	if (e.key !== "Enter") return;
+	e.preventDefault();
 
-  if (step1.classList.contains("visible")) {
-    document.getElementById("register-next").click();
-  } else if (step2.classList.contains("visible")) {
-    document.getElementById("register-submit").click();
-  }
+	if (step1.classList.contains("visible")) {
+		document.getElementById("register-next").click();
+	} else if (step2.classList.contains("visible")) {
+		document.getElementById("register-submit").click();
+	}
 });

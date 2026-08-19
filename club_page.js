@@ -8,13 +8,13 @@ import { handleUserSwitch } from './auth-guard.js';
 import { cacheRole } from './roleCache.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+	authDomain: "club-connect-data.firebaseapp.com",
+	projectId: "club-connect-data",
+	storageBucket: "club-connect-data.firebasestorage.app",
+	messagingSenderId: "903230180616",
+	appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+	measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -116,9 +116,15 @@ function showContainerError(message, showRetry = false, topMargin = '165px') {
 
 // Every button that just goes somewhere else with the club id attached.
 document.querySelectorAll('[data-page]').forEach((button) => {
+    if (button.id === 'collaborationsButton') return;
     button.addEventListener('click', () => {
         window.location.href = `${button.dataset.page}?clubId=${clubId}`;
     });
+});
+
+// Temporary: collaborations isn't built yet, just show a heads-up instead of navigating.
+document.getElementById('collaborationsButton')?.addEventListener('click', () => {
+    showAppAlert("Collaborations are coming soon!");
 });
 
 

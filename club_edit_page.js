@@ -11,13 +11,13 @@ import { validateRequiredFields } from './validation-utils.js';
 import { initTagInput } from './tag-input.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+    apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+    authDomain: "club-connect-data.firebaseapp.com",
+    projectId: "club-connect-data",
+    storageBucket: "club-connect-data.firebasestorage.app",
+    messagingSenderId: "903230180616",
+    appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+    measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -38,72 +38,72 @@ let CACHED_SCHOOLS = [];
 const schoolCacheByCounty = new Map();
 
 fetch('counties.json')
-  .then(res => res.json())
-  .then(data => {
-    COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
-  });
+    .then(res => res.json())
+    .then(data => {
+        COUNTIES = data.map(c => ({ fips: c.A, state: c.B, name: c.C }));
+    });
 
 async function loadSchoolsFor(state, county) {
-  if (!state || !county) {
-    CACHED_SCHOOLS = [];
-    return;
-  }
-  const key = `${state}|${county}`;
-  if (!schoolCacheByCounty.has(key)) {
-    schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
-  }
-  CACHED_SCHOOLS = schoolCacheByCounty.get(key);
+    if (!state || !county) {
+        CACHED_SCHOOLS = [];
+        return;
+    }
+    const key = `${state}|${county}`;
+    if (!schoolCacheByCounty.has(key)) {
+        schoolCacheByCounty.set(key, await fetchSchoolsForCounty(db, state, county));
+    }
+    CACHED_SCHOOLS = schoolCacheByCounty.get(key);
 }
 
 const CLUB_CATEGORIES = [
-  'Academic',
-  'Activism',
-  'Athletics',
-  'Art',
-  'Business',
-  'Community Service',
-  'Culture & Identity',
-  'Health & Wellness',
-  'Hobbies',
-  'Honor Societies',
-  'Humanities',
-  'Language',
-  'Leadership',
-  'Literature',
-  'Media',
-  'Public Speaking',
-  'STEM',
-  'Student Government',
-  'Other'
+    'Academic',
+    'Activism',
+    'Athletics',
+    'Art',
+    'Business',
+    'Community Service',
+    'Culture & Identity',
+    'Health & Wellness',
+    'Hobbies',
+    'Honor Societies',
+    'Humanities',
+    'Language',
+    'Leadership',
+    'Literature',
+    'Media',
+    'Public Speaking',
+    'STEM',
+    'Student Government',
+    'Other'
 ];
 
 const categoryInput = document.getElementById("category-edit");
 const categoryDropdownList = document.getElementById("category-dropdown-list-edit");
 
 CLUB_CATEGORIES.forEach(cat => {
-  const div = document.createElement('div');
-  div.className = 'state-option';
-  div.textContent = cat;
-  div.onclick = () => {
-    categoryInput.value = cat;
-    categoryDropdownList.classList.remove('show');
-  };
-  categoryDropdownList.appendChild(div);
+    const div = document.createElement('div');
+    div.className = 'state-option';
+    div.textContent = cat;
+    div.onclick = () => {
+        categoryInput.value = cat;
+        categoryDropdownList.classList.remove('show');
+    };
+    categoryDropdownList.appendChild(div);
 });
 
 categoryInput.addEventListener('click', function() {
-  categoryDropdownList.classList.toggle('show');
+    categoryDropdownList.classList.toggle('show');
 });
 
 document.addEventListener('click', function(e) {
-  if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
-    categoryDropdownList.classList.remove('show');
-  }
+    if (!categoryInput.contains(e.target) && !categoryDropdownList.contains(e.target)) {
+        categoryDropdownList.classList.remove('show');
+    }
 });
 
 function getClubIdFromUrl() {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('clubId');
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('clubId');
 }
 currentClubId = getClubIdFromUrl();
 
@@ -291,23 +291,23 @@ onAuthStateChanged(auth, async (user) => {
 
 const editVisStrips = document.querySelectorAll('#visibility-strip-group-edit .club-vis-strip');
 editVisStrips.forEach(strip => {
-  strip.addEventListener('click', () => {
-    editVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
-    strip.classList.add('club-vis-strip-selected');
-  });
+    strip.addEventListener('click', () => {
+        editVisStrips.forEach(s => s.classList.remove('club-vis-strip-selected'));
+        strip.classList.add('club-vis-strip-selected');
+    });
 });
 
 function getSelectedVisibilityEdit() {
-  const selected = document.querySelector('#visibility-strip-group-edit .club-vis-strip-selected');
-  return selected ? selected.dataset.value : null;
+    const selected = document.querySelector('#visibility-strip-group-edit .club-vis-strip-selected');
+    return selected ? selected.dataset.value : null;
 }
 
 
 function sameTags(a, b) {
-  if (a.length !== b.length) return false;
-  const sortedA = [...a].sort();
-  const sortedB = [...b].sort();
-  return sortedA.every((t, i) => t === sortedB[i]);
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((t, i) => t === sortedB[i]);
 }
 
 submitButton.addEventListener("click", async function(event){
@@ -628,31 +628,31 @@ const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Color
 
 
 const NO_COUNTY_STATES = {
-  'District of Columbia': { fips: '11001', name: 'District of Columbia' },
-  'Puerto Rico': { fips: null, name: 'Puerto Rico' },
-  'Guam': { fips: null, name: 'Guam' },
-  'U.S. Virgin Islands': { fips: null, name: 'U.S. Virgin Islands' },
-  'American Samoa': { fips: null, name: 'American Samoa' },
-  'Northern Mariana Islands': { fips: null, name: 'Northern Mariana Islands' },
+    'District of Columbia': { fips: '11001', name: 'District of Columbia' },
+    'Puerto Rico': { fips: null, name: 'Puerto Rico' },
+    'Guam': { fips: null, name: 'Guam' },
+    'U.S. Virgin Islands': { fips: null, name: 'U.S. Virgin Islands' },
+    'American Samoa': { fips: null, name: 'American Samoa' },
+    'Northern Mariana Islands': { fips: null, name: 'Northern Mariana Islands' },
 };
 
 function handleCountyVisibility(stateName) {
-  const noCounty = NO_COUNTY_STATES[stateName];
-  if (!stateName) {
-    countyInput.closest('.club-form-section').style.display = 'none';
-    countyInput.value = '';
-    selectedCountyFips = null;
-  } else if (noCounty) {
-    countyInput.value = noCounty.name;
-    selectedCountyFips = noCounty.fips;
-    countyInput.disabled = true;
-    countyInput.closest('.club-form-section').style.display = 'none';
-  } else {
-    countyInput.value = '';
-    selectedCountyFips = null;
-    countyInput.disabled = false;
-    countyInput.closest('.club-form-section').style.display = '';
-  }
+    const noCounty = NO_COUNTY_STATES[stateName];
+    if (!stateName) {
+        countyInput.closest('.club-form-section').style.display = 'none';
+        countyInput.value = '';
+        selectedCountyFips = null;
+    } else if (noCounty) {
+        countyInput.value = noCounty.name;
+        selectedCountyFips = noCounty.fips;
+        countyInput.disabled = true;
+        countyInput.closest('.club-form-section').style.display = 'none';
+    } else {
+        countyInput.value = '';
+        selectedCountyFips = null;
+        countyInput.disabled = false;
+        countyInput.closest('.club-form-section').style.display = '';
+    }
 }
 
 const STATE_ABBREVS = {
@@ -672,142 +672,142 @@ const STATE_ABBREVS = {
 };
 
 function normalizeState(input) {
-  const trimmed = input.trim();
-  const upper = trimmed.toUpperCase();
+    const trimmed = input.trim();
+    const upper = trimmed.toUpperCase();
 
-  const abbrevKey = upper.replace(/\./g, ''); 
-  if (STATE_ABBREVS[abbrevKey]) return STATE_ABBREVS[abbrevKey];
-  if (STATE_ABBREVS[upper]) return STATE_ABBREVS[upper];
+    const abbrevKey = upper.replace(/\./g, ''); 
+    if (STATE_ABBREVS[abbrevKey]) return STATE_ABBREVS[abbrevKey];
+    if (STATE_ABBREVS[upper]) return STATE_ABBREVS[upper];
 
-  const stripped = trimmed.toLowerCase().replace(/[,\.]/g, '').replace(/\s+/g, ' ').trim();
-  if (
-    stripped === 'washington dc' ||
-    stripped === 'washington d c' ||
-    stripped === 'washington district of columbia' ||
-    stripped === 'district of columbia'
-  ) {
-    return 'District of Columbia';
-  }
+    const stripped = trimmed.toLowerCase().replace(/[,\.]/g, '').replace(/\s+/g, ' ').trim();
+    if (
+        stripped === 'washington dc' ||
+        stripped === 'washington d c' ||
+        stripped === 'washington district of columbia' ||
+        stripped === 'district of columbia'
+    ) {
+        return 'District of Columbia';
+    }
 
-  return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
+    return states.find(s => s.toLowerCase() === trimmed.toLowerCase()) || null;
 }
 
 
 const stateDropdownList = document.getElementById('state-dropdown-list-edit');
 
 stateInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  stateDropdownList.innerHTML = '';
+    const value = this.value.toLowerCase();
+    stateDropdownList.innerHTML = '';
 
-  const fullNameMatch = states.find(s => s.toLowerCase() === value.trim());
-  handleCountyVisibility(fullNameMatch || '');
+    const fullNameMatch = states.find(s => s.toLowerCase() === value.trim());
+    handleCountyVisibility(fullNameMatch || '');
 
-  if (value) {
-    const normalized = normalizeState(this.value.trim());
-    const filtered = states.filter(state =>
-      state.toLowerCase().includes(value) ||
-      (normalized && state === normalized)
-    );
-    if (filtered.length > 0) {
-      filtered.forEach(state => {
-        const div = document.createElement('div');
-        div.className = 'state-option';
-        div.textContent = state;
-        div.onclick = () => {
-            stateInput.value = state;
+    if (value) {
+        const normalized = normalizeState(this.value.trim());
+        const filtered = states.filter(state =>
+        state.toLowerCase().includes(value) ||
+        (normalized && state === normalized)
+        );
+        if (filtered.length > 0) {
+            filtered.forEach(state => {
+                const div = document.createElement('div');
+                div.className = 'state-option';
+                div.textContent = state;
+                div.onclick = () => {
+                    stateInput.value = state;
+                    stateDropdownList.classList.remove('show');
+                    countyDropdownList.innerHTML = '';
+                    countyDropdownList.classList.remove('show');
+                    handleCountyVisibility(state);
+                };
+                stateDropdownList.appendChild(div);
+            });
+            stateDropdownList.classList.add('show');
+        } else {
             stateDropdownList.classList.remove('show');
-            countyDropdownList.innerHTML = '';
-            countyDropdownList.classList.remove('show');
-            handleCountyVisibility(state);
-        };
-        stateDropdownList.appendChild(div);
-      });
-      stateDropdownList.classList.add('show');
+        }
     } else {
-      stateDropdownList.classList.remove('show');
+        stateDropdownList.classList.remove('show');
+        handleCountyVisibility('');
     }
-  } else {
-    stateDropdownList.classList.remove('show');
-    handleCountyVisibility('');
-  }
 });
 
 
 document.addEventListener('click', function(e) {
-  if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
-    stateDropdownList.classList.remove('show');
-  }
+    if (!stateInput.contains(e.target) && !stateDropdownList.contains(e.target)) {
+        stateDropdownList.classList.remove('show');
+    }
 });
 
 
 countyInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  const currentState = normalizeState(stateInput.value.trim());
-  countyDropdownList.innerHTML = '';
+    const value = this.value.toLowerCase();
+    const currentState = normalizeState(stateInput.value.trim());
+    countyDropdownList.innerHTML = '';
 
-  let pool = currentState
-    ? COUNTIES.filter(c => c.state === currentState)
-    : COUNTIES;
+    let pool = currentState
+        ? COUNTIES.filter(c => c.state === currentState)
+        : COUNTIES;
 
-  if (value) {
-    pool = pool.filter(c => c.name.toLowerCase().includes(value));
-  }
+    if (value) {
+        pool = pool.filter(c => c.name.toLowerCase().includes(value));
+    }
 
-  if (pool.length > 0) {
-    pool.forEach(county => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = county.name;
-      div.onclick = () => {
-        countyInput.value = county.name;
-        selectedCountyFips = county.fips;
+    if (pool.length > 0) {
+        pool.forEach(county => {
+            const div = document.createElement('div');
+            div.className = 'state-option';
+            div.textContent = county.name;
+            div.onclick = () => {
+                countyInput.value = county.name;
+                selectedCountyFips = county.fips;
+                countyDropdownList.classList.remove('show');
+                loadSchoolsFor(normalizeState(stateInput.value), county.name);
+            };
+            countyDropdownList.appendChild(div);
+        });
+        countyDropdownList.classList.add('show');
+    } else {
         countyDropdownList.classList.remove('show');
-        loadSchoolsFor(normalizeState(stateInput.value), county.name);
-      };
-      countyDropdownList.appendChild(div);
-    });
-    countyDropdownList.classList.add('show');
-  } else {
-    countyDropdownList.classList.remove('show');
-  }
+    }
 });
 
 document.addEventListener('click', function(e) {
-  if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
-    countyDropdownList.classList.remove('show');
-  }
+    if (!countyInput.contains(e.target) && !countyDropdownList.contains(e.target)) {
+        countyDropdownList.classList.remove('show');
+    }
 });
 
 
 const schoolDropdownList = document.getElementById('school-dropdown-list-edit');
 
 schoolNameInput.addEventListener('input', function() {
-  const value = this.value.toLowerCase();
-  schoolDropdownList.innerHTML = '';
+    const value = this.value.toLowerCase();
+    schoolDropdownList.innerHTML = '';
 
-  const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
+    const pool = CACHED_SCHOOLS.filter(s => s.nameLower.includes(value));
 
-  if (value && pool.length > 0) {
-    pool.forEach(school => {
-      const div = document.createElement('div');
-      div.className = 'state-option';
-      div.textContent = school.name;
-      div.onclick = () => {
-        schoolNameInput.value = school.name;
+    if (value && pool.length > 0) {
+        pool.forEach(school => {
+            const div = document.createElement('div');
+            div.className = 'state-option';
+            div.textContent = school.name;
+            div.onclick = () => {
+                schoolNameInput.value = school.name;
+                schoolDropdownList.classList.remove('show');
+            };
+            schoolDropdownList.appendChild(div);
+        });
+        schoolDropdownList.classList.add('show');
+    } else {
         schoolDropdownList.classList.remove('show');
-      };
-      schoolDropdownList.appendChild(div);
-    });
-    schoolDropdownList.classList.add('show');
-  } else {
-    schoolDropdownList.classList.remove('show');
-  }
+    }
 });
 
 document.addEventListener('click', function(e) {
-  if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
-    schoolDropdownList.classList.remove('show');
-  }
+    if (!schoolNameInput.contains(e.target) && !schoolDropdownList.contains(e.target)) {
+        schoolDropdownList.classList.remove('show');
+    }
 });
 
 

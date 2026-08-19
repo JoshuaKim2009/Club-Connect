@@ -375,16 +375,18 @@ async function renderAnnouncementPage() {
 
     if (totalCount === 0) {
         if (currentUserRole === 'member') {
-            announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+            noAnnouncementsMessage.style.display = 'block';
             announcementsContainer.style.marginTop = '0px';
             noAnnouncementsMessageAdmin.style.display = 'none';
         } else {
+            noAnnouncementsMessage.style.display = 'none';
             noAnnouncementsMessageAdmin.style.display = 'block';
             if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';
         }
         hidePagination();
         return;
     }
+    noAnnouncementsMessage.style.display = 'none';
     noAnnouncementsMessageAdmin.style.display = 'none';
     await renderPage(1, false);
 }
@@ -579,7 +581,7 @@ async function deleteAnnouncement(announcementId) {
         if (totalCount === 0) {
             announcementsContainer.innerHTML = '';
             if (currentUserRole === 'member') {
-                announcementsContainer.innerHTML = '<p class="fancy-label">NO ANNOUNCEMENTS YET</p>';
+                noAnnouncementsMessage.style.display = 'block';
             } else {
                 noAnnouncementsMessageAdmin.style.display = 'block';
                 if (addAnnouncementButton) addAnnouncementButton.style.display = 'none';

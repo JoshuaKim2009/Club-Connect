@@ -7,13 +7,13 @@ import { handleUserSwitch } from './auth-guard.js';
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
-  authDomain: "club-connect-data.firebaseapp.com",
-  projectId: "club-connect-data",
-  storageBucket: "club-connect-data.firebasestorage.app",
-  messagingSenderId: "903230180616",
-  appId: "1:903230180616:web:a13856c505770bcc0b30bd",
-  measurementId: "G-B8DR377JX6"
+	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
+	authDomain: "club-connect-data.firebaseapp.com",
+	projectId: "club-connect-data",
+	storageBucket: "club-connect-data.firebasestorage.app",
+	messagingSenderId: "903230180616",
+	appId: "1:903230180616:web:a13856c505770bcc0b30bd",
+	measurementId: "G-B8DR377JX6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -23,9 +23,9 @@ const db = initializeFirestore(app, {
 });
 
 const ACCENT = {
-  manager: '#1c375f',
-  admin:   '#5480c4',
-  member:  '#6c747a',
+	manager: '#1c375f',
+	admin:   '#5480c4',
+	member:  '#6c747a',
 };
 
 let currentUser = null;

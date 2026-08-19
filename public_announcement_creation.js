@@ -66,6 +66,7 @@ let currentPageAnnouncements = [];
 
 const announcementsContainer = document.getElementById('announcementsContainer');
 const noAnnouncementsMessage = document.getElementById('noAnnouncementsMessage');
+const noPostsMessage = document.getElementById('noPostsMessage');
 const addAnnouncementButton = document.getElementById('add-announcement-button');
 
 document.body.classList.add('no-scroll');
@@ -375,12 +376,13 @@ async function renderAnnouncementPage() {
 
     await refreshCount();
 
-    if (totalCount === 0) {
+        if (totalCount === 0) {
         if (canPost) {
             noAnnouncementsMessage.style.display = 'block';
+            noPostsMessage.style.display = 'none';
         } else {
             noAnnouncementsMessage.style.display = 'none';
-            announcementsContainer.innerHTML = '<p class="fancy-label">NO POSTS YET</p>';
+            noPostsMessage.style.display = 'block';
             announcementsContainer.style.marginTop = '0px';
         }
         addAnnouncementButton.style.display = 'none';
@@ -389,6 +391,7 @@ async function renderAnnouncementPage() {
     }
 
     noAnnouncementsMessage.style.display = 'none';
+    noPostsMessage.style.display = 'none';
     await renderPage(1, false);
 }
 

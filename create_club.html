@@ -1,208 +1,208 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href="styles.css?v=73" rel="stylesheet" />
-    <meta name="theme-color" id="theme-color-meta" content="#1c375f">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<head>
+		<link href="styles.css?v=74" rel="stylesheet" />
+		<meta name="theme-color" id="theme-color-meta" content="#1c375f">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
-    <style>
-      body {
-        font-family: var(--primary-font-family);
-        padding-top: env(safe-area-inset-top);
-        background: var(--bg-dark);
-      }
-      .pageTitle{
-        margin-top: 110px;
-      }
-    </style>
+		<style>
+		body {
+			font-family: var(--primary-font-family);
+			padding-top: env(safe-area-inset-top);
+			background: var(--bg-dark);
+		}
+		.pageTitle{
+			margin-top: 110px;
+		}
+		</style>
 
-    
-    
-    <title>Club Connect | Create</title>
-  </head>
-  <body>
-    <div id="loading-overlay">
-      <div id="loading-overlay-inner">
-        <div class="loading-spinner"></div>
-        <p>LOADING...</p>
-      </div>
-    </div>
-    
-    <div class="chat-header">
-      <button id="back-button" class="fancy-button" onclick="goToHome()">
-        <i class="fa-solid fa-circle-left"></i>
-      </button>
-      <span class="chat-title">CREATE</span>
-    </div>
+		
+		
+		<title>Club Connect | Create</title>
+	</head>
+	<body>
+		<div id="loading-overlay">
+		<div id="loading-overlay-inner">
+			<div class="loading-spinner"></div>
+			<p>LOADING...</p>
+		</div>
+		</div>
+		
+		<div class="chat-header">
+		<button id="back-button" class="fancy-button" onclick="goToHome()">
+			<i class="fa-solid fa-circle-left"></i>
+		</button>
+		<span class="chat-title">CREATE</span>
+		</div>
 
-    <div id="content">
+		<div id="content">
 
-      <form id="createClubForm">
+		<form id="createClubForm">
 
-        <div class="club-form-card">
-          <div class="step-progress" id="club-step-progress">
-            <div class="step-dot active" id="club-dot-1">1</div>
-            <div class="step-connector" id="club-conn-1"></div>
-            <div class="step-dot" id="club-dot-2">2</div>
-            <div class="step-connector" id="club-conn-2"></div>
-            <div class="step-dot" id="club-dot-3">3</div>
-            <div class="step-connector" id="club-conn-3"></div>
-            <div class="step-dot" id="club-dot-4">4</div>
-          </div>
-          <h2>CREATE CLUB</h2>
-          <p class="step-subtitle" id="club-step-subtitle">STEP 1 OF 4 &middot; SCHOOL INFO</p>
+			<div class="club-form-card">
+			<div class="step-progress" id="club-step-progress">
+				<div class="step-dot active" id="club-dot-1">1</div>
+				<div class="step-connector" id="club-conn-1"></div>
+				<div class="step-dot" id="club-dot-2">2</div>
+				<div class="step-connector" id="club-conn-2"></div>
+				<div class="step-dot" id="club-dot-3">3</div>
+				<div class="step-connector" id="club-conn-3"></div>
+				<div class="step-dot" id="club-dot-4">4</div>
+			</div>
+			<h2>CREATE CLUB</h2>
+			<p class="step-subtitle" id="club-step-subtitle">STEP 1 OF 4 &middot; SCHOOL INFO</p>
 
-          <div class="club-step visible" id="club-step-1">
-            <div class="club-form-section">
-              <label for="club-name-select">Club Name <span class="required-mark">*</span></label>
-              <input class="fancy-input" id="club-name-select"
-                    placeholder="Club name" required
-                    name="club-name-select" autocomplete="off">
-            </div>
+			<div class="club-step visible" id="club-step-1">
+				<div class="club-form-section">
+				<label for="club-name-select">Club Name <span class="required-mark">*</span></label>
+				<input class="fancy-input" id="club-name-select"
+					placeholder="Club name" required
+					name="club-name-select" autocomplete="off">
+				</div>
 
-            <div class="club-form-section">
-              <label for="state-select">State/Territory <span class="required-mark">*</span></label>
-              <div class="state-dropdown-wrapper">
-                <input class="fancy-input" id="state-select"
-                      placeholder="State name" required
-                      name="state-select" value="" autocomplete="off">
-                <div class="state-dropdown-list" id="state-dropdown-list"></div>
-              </div>
-            </div>
+				<div class="club-form-section">
+				<label for="state-select">State/Territory <span class="required-mark">*</span></label>
+				<div class="state-dropdown-wrapper">
+					<input class="fancy-input" id="state-select"
+						placeholder="State name" required
+						name="state-select" value="" autocomplete="off">
+					<div class="state-dropdown-list" id="state-dropdown-list"></div>
+				</div>
+				</div>
 
-            <div class="club-form-section" style="display:none">
-              <label for="county-select">County <span class="required-mark">*</span></label>
-              <div class="state-dropdown-wrapper">
-                <input class="fancy-input" id="county-select"
-                      placeholder="County name"
-                      name="county-select" value="" autocomplete="off">
-                <div class="state-dropdown-list" id="county-dropdown-list"></div>
-              </div>
-            </div>
+				<div class="club-form-section" style="display:none">
+				<label for="county-select">County <span class="required-mark">*</span></label>
+				<div class="state-dropdown-wrapper">
+					<input class="fancy-input" id="county-select"
+						placeholder="County name"
+						name="county-select" value="" autocomplete="off">
+					<div class="state-dropdown-list" id="county-dropdown-list"></div>
+				</div>
+				</div>
 
-            <div class="club-form-section">
-              <label for="school-name-select">School Name <span class="required-mark">*</span></label>
-              <div class="state-dropdown-wrapper">
-                <input class="fancy-input" id="school-name-select"
-                      placeholder="Full name (no abbreviations)" required
-                      name="school-name-select" value="" autocomplete="off">
-                <div class="state-dropdown-list" id="school-dropdown-list"></div>
-              </div>
-            </div>
-          </div>
+				<div class="club-form-section">
+				<label for="school-name-select">School Name <span class="required-mark">*</span></label>
+				<div class="state-dropdown-wrapper">
+					<input class="fancy-input" id="school-name-select"
+						placeholder="Full name (no abbreviations)" required
+						name="school-name-select" value="" autocomplete="off">
+					<div class="state-dropdown-list" id="school-dropdown-list"></div>
+				</div>
+				</div>
+			</div>
 
-          <div class="club-step" id="club-step-2">
-            <div class="club-form-section">
-              <label for="category-select">Category <span class="required-mark">*</span></label>
-              <div class="category-dropdown-wrapper">
-                <input class="fancy-input" id="category-select" placeholder="Select a category" autocomplete="off" readonly>
-                <div class="category-dropdown-list" id="category-dropdown-list"></div>
-              </div>
-            </div>
+			<div class="club-step" id="club-step-2">
+				<div class="club-form-section">
+				<label for="category-select">Category <span class="required-mark">*</span></label>
+				<div class="category-dropdown-wrapper">
+					<input class="fancy-input" id="category-select" placeholder="Select a category" autocomplete="off" readonly>
+					<div class="category-dropdown-list" id="category-dropdown-list"></div>
+				</div>
+				</div>
 
-            <div class="club-form-section">
-              <label for="description-input">Description <span class="required-mark">*</span></label>
-              <textarea id="description-input" class="fancy-input"
-                        rows="3" placeholder="Describe your club"
-                        required name="description-input" maxlength="500"></textarea>
-            </div>
+				<div class="club-form-section">
+				<label for="description-input">Description <span class="required-mark">*</span></label>
+				<textarea id="description-input" class="fancy-input"
+					rows="3" placeholder="Describe your club"
+					required name="description-input" maxlength="500"></textarea>
+				</div>
 
-            <div class="club-form-section">
-              <label>Club Topics</label>
-              <div class="topics-box" id="club-topics-select"></div>
-            </div>
-          </div>
+				<div class="club-form-section">
+				<label>Club Topics</label>
+				<div class="topics-box" id="club-topics-select"></div>
+				</div>
+			</div>
 
-          <div class="club-step" id="club-step-3">
-            <div class="club-form-section">
-              <label for="sponsor-select">Club Sponsor</label>
-              <input class="fancy-input" id="sponsor-select"
-                    placeholder="Faculty or staff name" 
-                    name="sponsor-select" autocomplete="off">
-            </div>
+			<div class="club-step" id="club-step-3">
+				<div class="club-form-section">
+				<label for="sponsor-select">Club Sponsor</label>
+				<input class="fancy-input" id="sponsor-select"
+					placeholder="Faculty or staff name" 
+					name="sponsor-select" autocomplete="off">
+				</div>
 
-            <div class="club-form-section">
-              <label for="club-leader-select">Student Representative</label>
-              <input class="fancy-input" id="club-leader-select"
-                    placeholder="Student name"
-                    name="club-leader-select" autocomplete="off">
-            </div>
+				<div class="club-form-section">
+				<label for="club-leader-select">Student Representative</label>
+				<input class="fancy-input" id="club-leader-select"
+					placeholder="Student name"
+					name="club-leader-select" autocomplete="off">
+				</div>
 
-            <div class="club-form-section">
-              <label for="school-email-select">Student Representative Email</label>
-              <input class="fancy-input" id="school-email-select"
-                    placeholder="School email"
-                    name="school-email-select" autocomplete="off">
-            </div>
+				<div class="club-form-section">
+				<label for="school-email-select">Student Representative Email</label>
+				<input class="fancy-input" id="school-email-select"
+					placeholder="School email"
+					name="school-email-select" autocomplete="off">
+				</div>
 
-            <div class="club-form-section">
-              <label for="room-number-select">Meeting Location</label>
-              <input class="fancy-input" id="room-number-select"
-                    placeholder="Meeting room or location"
-                    name="room-number-select" autocomplete="off">
-            </div>
+				<div class="club-form-section">
+				<label for="room-number-select">Meeting Location</label>
+				<input class="fancy-input" id="room-number-select"
+					placeholder="Meeting room or location"
+					name="room-number-select" autocomplete="off">
+				</div>
 
-            <div class="club-form-section">
-              <label for="meeting-schedule-select">Typical Meeting Days</label>
-              <input class="fancy-input" id="meeting-schedule-select"
-                    placeholder="e.g. Every Tuesday during lunch"
-                    name="meeting-schedule-select" autocomplete="off">
-            </div>
-          </div>
+				<div class="club-form-section">
+				<label for="meeting-schedule-select">Typical Meeting Days</label>
+				<input class="fancy-input" id="meeting-schedule-select"
+					placeholder="e.g. Every Tuesday during lunch"
+					name="meeting-schedule-select" autocomplete="off">
+				</div>
+			</div>
 
-          <div class="club-step" id="club-step-4">
-            <div class="club-form-section">
-              <label>Club Visibility <span class="required-mark">*</span></label>
-              <div class="club-vis-strip-group" id="visibility-strip-group-create">
+			<div class="club-step" id="club-step-4">
+				<div class="club-form-section">
+				<label>Club Visibility <span class="required-mark">*</span></label>
+				<div class="club-vis-strip-group" id="visibility-strip-group-create">
 
-                <div class="club-vis-strip" data-value="public">
-                  <span class="club-vis-strip-title">PUBLIC</span>
-                  <span class="club-vis-strip-sub">
-                    Anyone can find your club on the discovery page and request to join.
-                    You approve or deny each request.
-                  </span>
-                </div>
+					<div class="club-vis-strip" data-value="public">
+					<span class="club-vis-strip-title">PUBLIC</span>
+					<span class="club-vis-strip-sub">
+						Anyone can find your club on the discovery page and request to join.
+						You approve or deny each request.
+					</span>
+					</div>
 
-                <div class="club-vis-strip" data-value="private">
-                  <span class="club-vis-strip-title">PRIVATE</span>
-                  <span class="club-vis-strip-sub">
-                    Your club won't appear in discovery. Members can only join using
-                    your club's unique access code.
-                  </span>
-                </div>
+					<div class="club-vis-strip" data-value="private">
+					<span class="club-vis-strip-title">PRIVATE</span>
+					<span class="club-vis-strip-sub">
+						Your club won't appear in discovery. Members can only join using
+						your club's unique access code.
+					</span>
+					</div>
 
-              </div>
-            </div>
-          </div>
+				</div>
+				</div>
+			</div>
 
-          <div class="club-form-actions">
-            <button type="button" id="back-club-step-button" class="fancy-outline-button hidden-slot form-action-btn">BACK</button>
-            <button id="submit-club-button" type="submit" class="fancy-button form-action-btn">NEXT</button>
-          </div>
-        </div>
-      </form>
-    </div>
-          
-    <script src="theme.js?v=12"></script>
-    <script type="module" src="dialog.js?v=3"></script> 
-    <script type="module" src="create_club.js?v=17"></script>
+			<div class="club-form-actions">
+				<button type="button" id="back-club-step-button" class="fancy-outline-button hidden-slot form-action-btn">BACK</button>
+				<button id="submit-club-button" type="submit" class="fancy-button form-action-btn">NEXT</button>
+			</div>
+			</div>
+		</form>
+		</div>
+			
+		<script src="theme.js?v=12"></script>
+		<script type="module" src="dialog.js?v=3"></script> 
+		<script type="module" src="create_club.js?v=18"></script>
 
-    
-    <script>
-      
-      function goToHome(){
-        window.location.href = "your_clubs.html";
-      }
-      
-    </script>
-    
-    
-  </body>
+		
+		<script>
+		
+		function goToHome(){
+			window.location.href = "your_clubs.html";
+		}
+		
+		</script>
+		
+		
+	</body>
 </html>
