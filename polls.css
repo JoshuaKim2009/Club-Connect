@@ -46,8 +46,9 @@ body {
     gap: 15px;
     font-family: var(--primary-font-family);
     color: black;
-    width: 500px;
-    max-width: 85%;
+    box-sizing: border-box;
+    width: 90%;
+    max-width: 620px;
     text-align: center;
     max-height: 80vh;
     overflow-y: auto;
@@ -323,8 +324,9 @@ body {
     box-shadow: 0px 2px 0px #000000;
     padding: 8px;
     margin: 8px auto;
-    width: 85%;
-    max-width: 600px;
+    box-sizing: border-box;
+    width: 90%;
+    max-width: 620px;
     text-align: center;
     font-family: var(--primary-font-family, sans-serif);
     line-height: 1.4;

@@ -13,7 +13,7 @@
 
 .dm-card {
     box-sizing: border-box;
-    width: calc(85% + 20px);
+    width: 90%;
     max-width: 820px;
     margin: 0 auto;
     background: linear-gradient(#ffffff, #f7f7f7);
@@ -121,7 +121,7 @@
     font-size: 26px !important;
     margin-bottom: 6px;
     box-sizing: border-box;
-    width: calc(85% + 20px) !important;
+    width: 90%;
     max-width: 820px !important;
     margin-left: auto !important;
     margin-right: auto !important;
@@ -303,7 +303,7 @@
 
 .wide-empty-state {
     box-sizing: border-box;
-    width: calc(85% + 20px) !important;
+    width: 90% !important;
     max-width: 820px !important;
     margin-top: 0;
 }

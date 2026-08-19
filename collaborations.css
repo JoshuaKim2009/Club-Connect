@@ -6,7 +6,8 @@
 .collab-tab-row {
   display: flex;
   gap: 14px;
-  width: calc(85% + 20px);
+  box-sizing: border-box;
+  width: 90%;
   max-width: 620px;
   margin: 16px auto;
 }
@@ -44,7 +45,8 @@
   border-radius: 10px;
   background: #fff;
   margin: 16px auto;
-  width: calc(85% + 20px);
+  box-sizing: border-box;
+  width: 90%;
   max-width: 620px;
   overflow: hidden;
   text-align: left;
@@ -536,7 +538,8 @@
 
 
 .collab-load-more-list {
-  width: calc(85% + 20px);
+  box-sizing: border-box;
+  width: 90%;
   max-width: 620px;
   margin: 0 auto 16px;
   padding: 10px 0 12px;

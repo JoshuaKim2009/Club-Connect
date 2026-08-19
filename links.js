@@ -384,7 +384,7 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
         linksSection.appendChild(linksLabel);
 
         editingCategory.links.forEach((link, index) => {
-            linksSection.appendChild(buildLinkRow(link, index, editingCategory, buildLinksSection));
+            linksSection.appendChild(buildLinkRow(link, index, editingCategory, buildLinksSection, syncLinksFromDOM));
         });
 
         const addBtn = document.createElement('button');
@@ -525,7 +525,7 @@ function openEditingCard(category, existingCard, startWithNewLink = false, isFir
 }
 
 
-function buildLinkRow(link, index, editingCategory, rebuildLinks) {
+function buildLinkRow(link, index, editingCategory, rebuildLinks, syncLinksFromDOM) {
     const row = document.createElement('div');
     row.className = 'edit-link-row';
 
