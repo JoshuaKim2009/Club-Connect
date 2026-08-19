@@ -361,10 +361,6 @@ button {
   max-width: 380px;
 }
 
-#submit-join-club-button {
-  margin: 0 auto;
-  display: block;
-}
 #submit-club-button {
   margin: 0 auto;
   display: block;
@@ -905,7 +901,7 @@ input:-ms-input-placeholder {
 #pendingRequestsContainer,
 #membersContainer {
     margin-top: 20px;
-    padding: 20px 20px 10px 20px;
+    padding: 14px 20px 10px 20px;
     border: 2px solid black;
     border-radius: 10px;
     background: linear-gradient(#ffffff, #f7f7f7);
@@ -2744,7 +2740,7 @@ input[type="checkbox"]:checked {
   border-radius: 10px;
   background: linear-gradient(#ffffff, #f7f7f7);
   box-shadow: 0px 2px 0px #000000;
-  padding: 20px 20px 10px 20px;
+  padding: 14px 20px 10px 20px;
   width: 80%;
   max-width: 576px;
   margin: 0 auto 40px auto;
@@ -3024,6 +3020,7 @@ input[type="checkbox"]:checked {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 8px;
   margin-bottom: 8px;
   justify-content: center;
 }
@@ -3060,12 +3057,12 @@ input[type="checkbox"]:checked {
 .step-connector {
   width: 22px;
   height: 3px;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0);
   border-radius: 2px;
 }
 
 .step-connector.done {
-  background: #000000;
+  background: rgba(0, 0, 0, 0);
 }
 
 .step-subtitle {
