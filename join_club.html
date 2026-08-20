@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<link href="styles.css?v=74" rel="stylesheet" />
+		<link href="styles.css?v=75" rel="stylesheet" />
 		<meta name="theme-color" id="theme-color-meta" content="#1c375f">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -18,6 +18,7 @@
 				font-family: var(--primary-font-family);
 				padding-top: env(safe-area-inset-top);
 				background: var(--bg-dark);
+				padding-bottom: 2px;
 			}
 
 			.pageTitle {
@@ -30,13 +31,15 @@
 
 			.join-menu-card {
 				margin-bottom: 30px;
+				font-size: 20px;
+				text-align: center;
 			}
 
 			.join-menu-button {
 				width: 170px;
 				min-width: 85%;
 				margin-top: -5px !important;
-				font-size: clamp(24px, 4.5vw, 32px) !important;
+				font-size: clamp(24px, 4.5vw, 28px) !important;
 			}
 		</style>
 	</head>
@@ -56,7 +59,7 @@
 		<!-- JOIN WITH CODE -->
 		<div class="club-form-card join-menu-card">
 			<h2>USE A JOIN CODE</h2>
-
+			<label>Have an invite code? Join instantly.</label>
 			<div class="club-form-actions">
 				<button
 					id="join-code-button"
@@ -70,7 +73,7 @@
 		<!-- DISCOVER CLUBS -->
 		<div class="club-form-card join-menu-card">
 			<h2>DISCOVER CLUBS</h2>
-
+			<label>Search clubs by school, state, and category.</label>
 			<div class="club-form-actions">
 				<button
 					id="discover-club-button"
@@ -82,17 +85,17 @@
 
 
 		<!-- CLUB MATCHER -->
-		<!-- <div class="club-form-card join-menu-card">
+		<div class="club-form-card join-menu-card">
 			<h2>CLUB MATCHER</h2>
-
+			<label>Get a personalized club recommendation.</label>
 			<div class="club-form-actions">
 			<button
 				id="find-club-button"
 				class="fancy-button join-menu-button">
-				FIND A CLUB
+				FIND MY CLUB
 			</button>
 			</div>
-		</div> -->
+		</div>
 
 		</div>
 
@@ -106,12 +109,12 @@
 		});
 
 		document.getElementById("discover-club-button").addEventListener("click", () => {
-			window.location.href = "club_discovery.html?";
+			window.location.href = "club_discovery.html";
 		});
 
-		//   document.getElementById("find-club-button").addEventListener("click", () => {
-		//     window.location.href = "playground.html";
-		//   });
+		  document.getElementById("find-club-button").addEventListener("click", () => {
+		    window.location.href = "club_matcher.html";
+		  });
 		</script>
 
 		<script src="theme.js?v=12"></script>

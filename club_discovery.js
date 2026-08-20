@@ -128,7 +128,7 @@ onAuthStateChanged(auth, async (user) => {
 
 
 
-document.getElementById("createClubForm").addEventListener("submit", async (e) => {
+document.getElementById("discoverClubForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const clubsGrid = document.getElementById("clubsGrid");
@@ -253,7 +253,7 @@ function scrollToResults() {
     const headerHeight = document.querySelector('.chat-header').offsetHeight;
     const top = documentTopOf(clubsGrid);
 
-    window.scrollTo({ top: top - headerHeight + 100, behavior: 'smooth' });
+    window.scrollTo({ top: top - headerHeight + 92, behavior: 'smooth' });
 }
 
 function createClubCard(clubId, clubName, schoolName, state, countyName, category, description, joinCode, pendingMemberUIDs, memberUIDs, clubSponsor, clubLeader, schoolEmail, roomNumber, meetingSchedule) {    const isPending = currentUser && pendingMemberUIDs.includes(currentUser.uid);

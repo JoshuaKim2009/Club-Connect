@@ -1,3 +1,11 @@
+:root {
+  --text-color: color-mix(in srgb, var(--bg-accent) 10%, rgb(135, 135, 135) 90%);
+}
+
+.club-form-card {
+  margin: 0 auto 30px auto !important;
+}
+
 .search-bar {
     display: flex;
     flex-direction: column;
@@ -10,12 +18,12 @@
 
 .search-bar .fancy-input,
 #searchButton {
-    width: 100%;
-    max-width: none !important;
+    /* width: 100%;
+    max-width: none !important; */
     box-sizing: border-box;
 }
 
-#searchButton {
+.search-button {
     background: linear-gradient(#ffffff, #f7f7f7);
     color: rgb(0, 0, 0);
     border: 2px solid black;
@@ -25,7 +33,7 @@
     box-shadow: 0px 2px 0px #000000;
     transition: all 0.05s ease-in-out;
     font-family: var(--primary-font-family);
-    font-size: 25px;
+    font-size: clamp(20px, 4.5vw, 25px) !important;
     width: 200px !important;
     max-width: 60% !important;
     box-sizing: border-box;
@@ -78,7 +86,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: 30px;
     margin: 15px auto 40px auto;
     box-sizing: border-box;
     width: 90%;
@@ -95,43 +103,50 @@
     border-radius: 10px;
     background: linear-gradient(#ffffff, #f7f7f7);
     box-shadow: 0px 2px 0px #000000;
-    padding: 12px;
+    padding: 10px 12px 12px 12px;
     font-family: var(--primary-font-family);
     color: black;
     overflow: hidden;
 }
 
 .club-card-header {
-    padding: 10px 14px 10px 14px;
-    margin: -12px -12px 12px -12px;
-    border-bottom: 2px dotted black;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    padding: 4px 4px 10px 4px;
+    margin-bottom: 6px;
     position: relative;
 }
 
-/* .club-card-header::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -10px;
-    height: 10px;
-    background: linear-gradient(to bottom, rgba(128,128,128,0.1), transparent);
-    pointer-events: none;
-} */
-
 .club-card-name {
-    font-size: 1.9em;
-    font-weight: normal;
-    line-height: 1.1;
-    color: black;
+    min-width: 0;
+    font-family: "New Amsterdam", sans-serif;
+    font-size: 27px;
+    font-weight: 400;
+    line-height: 1.05;
+    color: #111;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
 }
 
 .club-card-activity {
-    font-size: 1.1em;
-    color: #555;
+    position: static;
+    display: inline-block;
+    justify-self: end;
+    max-width: 180px;
+    font-size: 16px;
+    font-weight: 450;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    /* border: 2px solid black; */
+    color: white;
+    background: linear-gradient(75deg, var(--bg-accent), var(--bg-light) 150%);
+    padding: 3px 9px;
+    border-radius: 10px;
+    white-space: normal;
+    text-align: center;
+    overflow-wrap: break-word;
 }
 
 .club-card-body {
@@ -139,33 +154,35 @@
     flex-direction: column;
     gap: 6px;
     font-size: 18px;
-    color: #555;
-    padding: 6px 0 0 0;
+    color: var(--text-color);
+    padding-right: 5px;
+    padding-left: 5px;
 }
 
 .club-card-body span {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    color: #555;
+    color: var(--text-color);
 }
 
 
 .club-description {
     margin-top: 6px;
     font-size: 18px;
-    color: #555;
+    color: var(--text-color);
     line-height: 1.4;
     margin-bottom: 0;
 }
 
 .club-card-footer {
     display: flex;
-    justify-content: center;
-    padding: 10px 0 12px 0;
-    margin: 10px -12px -12px -12px;
+    justify-content: right;
+    padding: 10px 12px 12px 12px;
+    margin: 15px -12px -12px -12px;
     width: calc(100% + 24px);
-    border-top: 2px dotted black;
+    box-sizing: border-box;
+    border-top: 2px dotted var(--text-color);
     position: relative;
 }
 
@@ -184,9 +201,9 @@
 .club-join-wrapper {
     background: #f7f7f7;
     margin: 0 -12px -12px -12px;
-    padding: 10px 14px 12px 14px;
+    padding: 10px 12px 12px 12px;
     display: flex;
-    justify-content: center;
+    justify-content: right;
 }
 
 .club-join-btn {
@@ -195,21 +212,10 @@
     min-width: 170px;
     /* box-shadow: none; */
 }
-/* 
-.club-join-btn:hover {
-  transform: translateY(0px) !important;
-  box-shadow: none !important;
-  transform: scale(1.02)  !important;
-}
-
-.club-join-btn:active {
-  transform: translateY(0px) !important;
-  box-shadow: none !important;
-  transform: scale(0.98)  !important;
-} */
 
 .club-join-btn:disabled {
-    opacity: 0.5;
+    border: 2px solid var(--text-color);
+    color: var(--text-color);
     box-shadow: none;
     transform: none;
     cursor: default;
@@ -243,14 +249,14 @@
     font-weight: 400;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #555;
+    color: var(--text-color);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     font-family: var(--primary-font-family);
-    border-bottom: 2px dotted rgba(0, 0, 0);
+    border-bottom: 2px dotted var(--text-color);
     -webkit-tap-highlight-color: transparent;
     position: relative;
 }
@@ -276,7 +282,7 @@
     font-weight: 400;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #555;
+    color: var(--text-color);
 }
 
 
@@ -285,7 +291,7 @@
     flex-direction: column;
     gap: 6px;
     background: #f7f7f7;
-    padding: 10px 12px 10px 12px;
+    padding: 12px 17px 2px 17px;
     margin: 0 -12px;
 }
 
@@ -297,7 +303,7 @@
     display: flex;
     align-items: baseline;
     gap: 6px;
-    color: #555;
+    color: var(--text-color);
     font-size: 18px;
     font-weight: 400;
 }
@@ -305,12 +311,12 @@
 .club-more-drawer > span::before {
     content: '•';
     flex-shrink: 0;
-    color: #555;
+    color: var(--text-color);
 }
 
 .field-label {
     font-weight: 600;
-    color: #555;
+    color: var(--text-color);
     flex-shrink: 0;
 }
 
@@ -318,6 +324,6 @@
     width: 1.2em;
     text-align: center;
     flex-shrink: 0;
-    color: #555;
+    color: var(--text-color);
     margin-right: 5px;
 }

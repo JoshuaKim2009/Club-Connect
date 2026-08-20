@@ -229,6 +229,8 @@ button {
   font-weight: normal;
 }
 
+#discoverClubForm,
+#clubMatcherForm,
 #createClubForm {
   margin-top: 118px;
 }

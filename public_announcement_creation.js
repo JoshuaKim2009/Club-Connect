@@ -52,6 +52,7 @@ let currentUserRole = null;
 let isEditingAnnouncement = false;
 let canPost = false;
 let cameFromEmptyStateCard = false;
+let isClubPublic = false;
 
 let currentClubName = null;
 let currentSchoolId = null;
@@ -107,6 +108,17 @@ onAuthStateChanged(auth, async (user) => {
         }
 
         const clubData = clubSnap.data();
+		isClubPublic = clubData.visibility === 'public';
+
+		if (!isClubPublic) {
+			noAnnouncementsMessage.innerHTML = `
+				<i class="fa-solid fa-lock"></i>
+				<p class="empty-state-dashed-title">Public Posts Are Off</p>
+				<p class="empty-state-dashed-subtitle">
+					This club is private, so public posts are unavailable
+				</p>
+			`;
+		}
         currentClubName = clubData.clubName || 'Unnamed Club';
         currentSchoolId = clubData.schoolId || null;
         memberNames = { ...(clubData.memberNames || {}) };
@@ -374,9 +386,17 @@ async function renderAnnouncementPage() {
     cursors = [null];
     currentPage = 1;
 
+    if (!isClubPublic) {
+        noAnnouncementsMessage.style.display = 'block';
+        noPostsMessage.style.display = 'none';
+        addAnnouncementButton.style.display = 'none';
+        hidePagination();
+        return;
+    }
+
     await refreshCount();
 
-        if (totalCount === 0) {
+    if (totalCount === 0) {
         if (canPost) {
             noAnnouncementsMessage.style.display = 'block';
             noPostsMessage.style.display = 'none';
@@ -385,6 +405,7 @@ async function renderAnnouncementPage() {
             noPostsMessage.style.display = 'block';
             announcementsContainer.style.marginTop = '0px';
         }
+
         addAnnouncementButton.style.display = 'none';
         hidePagination();
         return;
@@ -418,6 +439,7 @@ function hideLoadingScreen() {
 }
 
 async function renderPage(page, skipAnimation = false) {
+	if (!isClubPublic) return;
     page = Math.max(1, Math.min(page, totalPages));
     currentPage = page;
 
