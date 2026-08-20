@@ -147,6 +147,7 @@
     white-space: normal;
     text-align: center;
     overflow-wrap: break-word;
+    margin-right: -2px;
 }
 
 .club-card-body {
