@@ -113,9 +113,9 @@ onAuthStateChanged(auth, async (user) => {
 		if (!isClubPublic) {
 			noAnnouncementsMessage.innerHTML = `
 				<i class="fa-solid fa-lock"></i>
-				<p class="empty-state-dashed-title">Public Posts Are Off</p>
+				<p class="empty-state-dashed-title">School Posts Are Off</p>
 				<p class="empty-state-dashed-subtitle">
-					This club is private, so public posts are unavailable
+					This club is private, so school posts are unavailable
 				</p>
 			`;
 		}
