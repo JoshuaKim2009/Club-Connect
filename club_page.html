@@ -82,102 +82,102 @@
 	</head>
 	<body>
 		<div id="loading-overlay">
-		<div id="loading-overlay-inner">
-			<div class="loading-spinner"></div>
-			<p>LOADING...</p>
-		</div>
+			<div id="loading-overlay-inner">
+				<div class="loading-spinner"></div>
+				<p>LOADING...</p>
+			</div>
 		</div>
 
 		<div class="chat-header">
-		<button id="back-button" class="fancy-button" onclick="goToHome()">
-			<i class="fa-solid fa-circle-left"></i>
-		</button>
-		<span class="chat-title">CLUB PAGE</span>
+			<button id="back-button" class="fancy-button" onclick="goToHome()">
+				<i class="fa-solid fa-circle-left"></i>
+			</button>
+			<span class="chat-title">CLUB PAGE</span>
 		</div>
 
 		<div id="content">
-		<h1 id="clubPageTitle"></h1>
-		<div id="clubDetails" class="fancy-label">
-			<p></p>
-		</div>
-		<hr style="background-color: transparent; height: 6px; border: none;">
-
-		<div id="adminActionsSection">
-			<h3>
-				CLUB OVERVIEW
-			</h3>
-			<div class="button-row-2">
-				<button id="edit-club-button" class="fancy-button" data-page="club_edit_page.html">EDIT CLUB</button>
-				<button id="view-members-button" class="fancy-button" data-page="members.html">
-					MEMBERS
-					<span id="pendingRequestsBadge" class="notification-badge"></span>
-				</button>
+			<h1 id="clubPageTitle"></h1>
+			<div id="clubDetails" class="fancy-label">
+				<p></p>
 			</div>
-			<button id="links-button" class="fancy-button" data-page="links.html">CLUB LINKS</button>
-		</div>
+			<hr style="background-color: transparent; height: 6px; border: none;">
 
-
-		<div id="scheduleSection">
-			<h3>
-				CLUB SCHEDULE
-			</h3>
-			<div id="closestEventDisplay">
-
-				<div class="event-card-loading">
-					<div class="loading-line"></div>
-					<div class="loading-line"></div>
-					<div class="loading-line"></div>
-					<div class="loading-line"></div>
-					<div class="loading-line"></div>
+			<div id="adminActionsSection">
+				<h3>
+					CLUB OVERVIEW
+				</h3>
+				<div class="button-row-2">
+					<button id="edit-club-button" class="fancy-button" data-page="club_edit_page.html">EDIT CLUB</button>
+					<button id="view-members-button" class="fancy-button" data-page="members.html">
+						MEMBERS
+						<span id="pendingRequestsBadge" class="notification-badge"></span>
+					</button>
 				</div>
-
+				<button id="links-button" class="fancy-button" data-page="links.html">CLUB LINKS</button>
 			</div>
-			<button id="viewScheduleButton" class="fancy-button" data-page="schedule.html">FULL SCHEDULE</button>
-		</div>
 
 
-		<div id="communicationSection">
-			<h3>
-				COMMUNICATION
-			</h3>
-			<div class="comm-grid">
-				<button id="chatButton" class="fancy-button" data-page="chat.html">
-					<i class="comm-icon fa-solid fa-comments"></i>
-					<span class="comm-lbl">CLUB CHAT</span>
-					<span id="unreadMessagesBadge" class="notification-badge"></span>
-				</button>
-				<button id="directMessagesButton" class="fancy-button" data-page="dm_menu.html">
-					<i class="comm-icon fa-solid fa-envelope"></i>
-					<span class="comm-lbl">MESSAGES</span>
-					<span id="unreadDirectMessagesBadge" class="notification-badge"></span>
-				</button>
-				<button id="announcementsButton" class="fancy-button" data-page="announcements.html">
-					<i class="comm-icon fa-solid fa-bullhorn"></i>
-					<span class="comm-lbl">ANNOUNCEMENTS</span>
-					<span id="unreadAnnouncementsBadge" class="notification-badge"></span>
-				</button>
-				<button id="pollsButton" class="fancy-button" data-page="polls.html">
-					<i class="comm-icon fa-solid fa-chart-bar"></i>
-					<span class="comm-lbl">POLLS</span>
-					<span id="unreadPollsBadge" class="notification-badge"></span>
-				</button>
+			<div id="scheduleSection">
+				<h3>
+					CLUB SCHEDULE
+				</h3>
+				<div id="closestEventDisplay">
+
+					<div class="event-card-loading">
+						<div class="loading-line"></div>
+						<div class="loading-line"></div>
+						<div class="loading-line"></div>
+						<div class="loading-line"></div>
+						<div class="loading-line"></div>
+					</div>
+
+				</div>
+				<button id="viewScheduleButton" class="fancy-button" data-page="schedule.html">FULL SCHEDULE</button>
 			</div>
-		</div>
 
 
-		<div id="communitySection">
-			<h3>PUBLIC POSTS</h3>
-			<div class="comm-grid">
-				<button id="publicAnnouncementsButton" class="fancy-button" data-page="public_announcement_creation.html">
-					<i class="community-icon comm-icon fa-solid fa-earth-americas"></i>
-					<span class="community-lbl">SHARE WITH SCHOOL</span>
-				</button>
-				<!-- <button id="collaborationsButton" class="fancy-button" data-page="collaborations.html">
-				<i class="community-icon comm-icon fa-solid fa-handshake"></i>
-				<span class="community-lbl">CONNECT</span>
-				</button> -->
+			<div id="communicationSection">
+				<h3>
+					COMMUNICATION
+				</h3>
+				<div class="comm-grid">
+					<button id="chatButton" class="fancy-button" data-page="chat.html">
+						<i class="comm-icon fa-solid fa-comments"></i>
+						<span class="comm-lbl">CLUB CHAT</span>
+						<span id="unreadMessagesBadge" class="notification-badge"></span>
+					</button>
+					<button id="directMessagesButton" class="fancy-button" data-page="dm_menu.html">
+						<i class="comm-icon fa-solid fa-envelope"></i>
+						<span class="comm-lbl">MESSAGES</span>
+						<span id="unreadDirectMessagesBadge" class="notification-badge"></span>
+					</button>
+					<button id="announcementsButton" class="fancy-button" data-page="announcements.html">
+						<i class="comm-icon fa-solid fa-bullhorn"></i>
+						<span class="comm-lbl">ANNOUNCEMENTS</span>
+						<span id="unreadAnnouncementsBadge" class="notification-badge"></span>
+					</button>
+					<button id="pollsButton" class="fancy-button" data-page="polls.html">
+						<i class="comm-icon fa-solid fa-chart-bar"></i>
+						<span class="comm-lbl">POLLS</span>
+						<span id="unreadPollsBadge" class="notification-badge"></span>
+					</button>
+				</div>
 			</div>
-		</div>
+
+
+			<div id="communitySection">
+				<h3>PUBLIC POSTS</h3>
+				<div class="comm-grid">
+					<button id="publicAnnouncementsButton" class="fancy-button" data-page="public_announcement_creation.html">
+						<i class="community-icon comm-icon fa-solid fa-earth-americas"></i>
+						<span class="community-lbl">SHARE WITH SCHOOL</span>
+					</button>
+					<!-- <button id="collaborationsButton" class="fancy-button" data-page="collaborations.html">
+					<i class="community-icon comm-icon fa-solid fa-handshake"></i>
+					<span class="community-lbl">CONNECT</span>
+					</button> -->
+				</div>
+			</div>
 
 		</div>
 
