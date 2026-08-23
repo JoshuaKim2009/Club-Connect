@@ -3304,7 +3304,7 @@ input[type="checkbox"]:checked {
   margin-right: 4px;
 }
 
-@media (max-width: 750px) {
+/* @media (max-width: 750px) {
   .community-lbl {
     font-family: var(--primary-font-family);
     line-height: 1.1;
@@ -3330,7 +3330,7 @@ input[type="checkbox"]:checked {
     padding: 12px 8px 10px;
     gap: 4px;
   }
-}
+} */
 
 #adminActionsSection > #links-button,
 #scheduleSection > #viewScheduleButton {
