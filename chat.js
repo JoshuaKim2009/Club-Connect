@@ -1,6 +1,6 @@
 //chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, endBefore, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, getDoc, collection, serverTimestamp, query, onSnapshot, orderBy, getDocs, limit, startAfter, startAt, endBefore, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { showAppAlert, showAppConfirm } from './dialog.js'; 
 import { handleUserSwitch } from './auth-guard.js';
@@ -23,11 +23,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '😂', '💀', '😭'];
 const DELETED_MESSAGE_TEXT = "This message was deleted";
 
 
-const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-    })
-});
+const db = getFirestore(app);
 
 
 let clubId = null;
