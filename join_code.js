@@ -99,7 +99,7 @@ if (submitButton) {
             
             
             await addPendingMemberRequest(clubUID);
-            window.location.href = "your_clubs.html";
+            window.location.href = "join_club.html";
             
 
 
