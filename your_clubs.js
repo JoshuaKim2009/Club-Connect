@@ -110,7 +110,11 @@ async function loadAllClubs() {
     const container = document.getElementById("clubContainer");
     try {
         const userDocRef = doc(db, "users", currentUser.uid);
+        console.log("1: starting user doc");
         const userDocSnap = await getDoc(userDocRef);
+        console.log("2: got user doc");
+        console.log("3: starting club docs");
+
 
         if (!userDocSnap.exists()) {
             showNoClubsCard(container);
@@ -127,6 +131,8 @@ async function loadAllClubs() {
             Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
             Promise.all(memberClubs.map(id => getDoc(doc(db, "clubs", id))))
         ]);
+
+        console.log("4: got all club docs");
 
         container.innerHTML = '';
         cardIndex = 0;
