@@ -113,7 +113,7 @@ async function loadAllClubs() {
         console.log("1: starting user doc");
 
         const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        const userDocSnap = await getDoc(userDocRef, { source: "server" });
 
         console.log("2: got user doc");
 
