@@ -6,8 +6,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { showAppAlert } from "./dialog.js";
 import { handleUserSwitch } from "./auth-guard.js";
 import { ROLE_LABELS } from "./roleLabels.js";
-import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
-
+import { getEmbedding, cosineSimilarity, warmEmbeddingModel } from "./embedding-utils.js";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -31,7 +30,6 @@ const auth = getAuth(app);
 
 document.body.classList.add("no-scroll");
 
-let embedder = null;
 
 let currentUser = null;
 let currentSchoolId = null;
@@ -40,10 +38,23 @@ let loadingScreenHidden = false;
 let pixelAdder = "160px";
 const clubsCache = new Map();
 
-const matcherForm = document.getElementById("clubMatcherForm");
-const interestsInput = document.getElementById("interests-input");
+warmEmbeddingModel();
+
+const matcherForm = document.getElementById("clubMatcherForm");const interestsInput = document.getElementById("interests-input");
 const clubsGrid = document.getElementById("clubsGrid");
 
+const matchButton = document.getElementById("match-button");
+
+function setLoading(btn) {
+	btn._origHTML = btn.innerHTML;
+	btn.disabled = true;
+	btn.innerHTML = '<span class="spinner"></span>';
+}
+
+function clearLoading(btn) {
+	btn.disabled = false;
+	btn.innerHTML = btn._origHTML;
+}
 
 function hideLoadingScreen() {
 	if (loadingScreenHidden) return;
@@ -233,7 +244,8 @@ matcherForm.addEventListener("submit", async (e) => {
 		return;
 	}
 
-		clearResults();
+	setLoading(matchButton);
+	clearResults();
 
 	console.log("Club Matcher interests:", interests);
 
@@ -243,6 +255,7 @@ matcherForm.addEventListener("submit", async (e) => {
 	} catch (error) {
 		console.error("Error fetching clubs:", error);
 		await showAppAlert("Something went wrong while finding clubs.");
+		clearLoading(matchButton);
 		return;
 	}
 
@@ -250,22 +263,31 @@ matcherForm.addEventListener("submit", async (e) => {
 
     if (allClubs.length === 0) {
         // handle empty state here
+        clearLoading(matchButton);
         return;
     }
 
-    const interestsVector = await getEmbedding(interests);
+        const interestsVector = await getEmbedding(interests);
 
     let maxSim = -Infinity;
     let maxClub = null;
+    const clubsMissingEmbeddings = [];
 
     for (let i = 0; i < allClubs.length; i++) {
         const club = allClubs[i];
-        const topics = club.topics || [];
-        const topicString = topics.join(", ");
-        const description = club.description || "";
 
-        const descriptionVector = await getEmbedding(description);
-        const topicsVector = await getEmbedding(topicString);
+        let descriptionVector = club.descriptionEmbedding;
+        let topicsVector = club.topicsEmbedding;
+
+        // Fallback for older clubs that haven't been backfilled yet.
+        if (!descriptionVector || !topicsVector) {
+            clubsMissingEmbeddings.push(club.clubName || club.id);
+            const topicString = (club.topics || []).join(", ");
+            [descriptionVector, topicsVector] = await Promise.all([
+                getEmbedding(club.description || ""),
+                getEmbedding(topicString)
+            ]);
+        }
 
         const similarity = Math.max(
             cosineSimilarity(interestsVector, descriptionVector),
@@ -278,63 +300,19 @@ matcherForm.addEventListener("submit", async (e) => {
         }
     }
 
+    if (clubsMissingEmbeddings.length > 0) {
+        console.warn("Clubs missing stored embeddings (consider running backfill):", clubsMissingEmbeddings);
+    }
+
     console.log("Best match:", maxClub.clubName, "score:", maxSim);
     if (maxClub) {
         renderClubMatch(maxClub);
     } else {
         await showAppAlert("No clubs found that matched your interests");
     }
+
+    clearLoading(matchButton);
 });
-
-
-// embedding model logic
-
-let modelLoadingPromise = null;
-
-function loadModel() {
-    if (!modelLoadingPromise) {
-        modelLoadingPromise = pipeline(
-        "feature-extraction",
-        "Xenova/all-MiniLM-L6-v2",
-        { dtype: "q8" }
-    ).then(model => {
-        embedder = model;
-        return model;
-    });
-    }
-    return modelLoadingPromise;
-}
-
-loadModel();
-
-async function getEmbedding(text) {
-    if (!embedder) {
-        await loadModel();
-    }
-
-    const output = await embedder(
-        text,
-        {
-            pooling: "mean",
-            normalize: true
-        }
-    );
-    return Array.from(output.data);
-}
-
-function cosineSimilarity(a, b) {
-    let dotProduct = 0;
-    let magnitudeA = 0;
-    let magnitudeB = 0;
-    for (let i = 0; i < a.length; i++) {
-        dotProduct += a[i] * b[i];
-        magnitudeA += a[i] * a[i];
-        magnitudeB += b[i] * b[i];
-    }
-    magnitudeA = Math.sqrt(magnitudeA);
-    magnitudeB = Math.sqrt(magnitudeB);
-    return dotProduct / (magnitudeA * magnitudeB);
-}
 
 
 // rendering the card 

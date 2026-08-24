@@ -9,6 +9,7 @@ import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName } from '.
 import { cacheRole } from './roleCache.js';
 import { validateRequiredFields } from './validation-utils.js';
 import { initTagInput } from './tag-input.js';
+import { getClubEmbeddings } from './embedding-utils.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -365,6 +366,10 @@ submitButton.addEventListener("click", async function(event){
         return;
     }
 
+    const contentChanged =
+        clubDescription !== originalClubData.description ||
+        !sameTags(clubTopics, originalClubData.topics);
+
     const normalizedState = normalizeState(state);
     const countyRequired = state && !(normalizedState && NO_COUNTY_STATES[normalizedState]);
 
@@ -419,6 +424,15 @@ submitButton.addEventListener("click", async function(event){
         }
     }
 
+    let embeddingFields = {};
+    if (contentChanged) {
+        const { descriptionEmbedding, topicsEmbedding } = await getClubEmbeddings({
+            description: clubDescription,
+            topics: clubTopics
+        });
+        embeddingFields = { descriptionEmbedding, topicsEmbedding };
+    }
+
     setLoading(submitButton);
 
     try {
@@ -448,7 +462,8 @@ submitButton.addEventListener("click", async function(event){
             roomNumber: roomNumber,
             meetingSchedule: meetingSchedule,
             countyName: countyName,
-            countyFips: countyFips || null
+            countyFips: countyFips || null,
+            ...embeddingFields
         });
         console.log("Club document updated with ID: ", currentClubId);
 

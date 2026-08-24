@@ -7,6 +7,7 @@ import { getOrCreateSchool, fetchSchoolsForCounty, normalizeSchoolName, schoolDo
 import { validateRequiredFields } from './validation-utils.js';
 import { getSchoolInfoCache, setSchoolInfoCache } from './school-cache-utils.js';
 import { initTagInput } from './tag-input.js';
+import { getClubEmbeddings } from './embedding-utils.js';
 
 const firebaseConfig = {
 	apiKey: "AIzaSyCBFod3ng-pAEdQyt-sCVgyUkq-U8AZ65w",
@@ -510,6 +511,11 @@ submitButton.addEventListener("click", async function(event) {
 
 		const batch1 = writeBatch(db);
 
+		const { descriptionEmbedding, topicsEmbedding } = await getClubEmbeddings({
+			description: clubDescription,
+			topics: clubTopics
+		});
+
 		batch1.set(doc(db, "schools", schoolId), {
 			schoolId,
 			name: schoolName,
@@ -535,6 +541,8 @@ submitButton.addEventListener("click", async function(event) {
 			schoolNameLower: schoolName.toLowerCase(),
 			stateLower: normalizedState.toLowerCase(),
 			description: clubDescription,
+			descriptionEmbedding: descriptionEmbedding,
+			topicsEmbedding: topicsEmbedding,
 			managerEmail: currentUserEmail,
 			joinCode: joinCode,
 			memberUIDs: [currentUser.uid],
