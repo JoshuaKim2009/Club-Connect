@@ -203,12 +203,12 @@ function showNoClubsCard(container) {
     <div class="cc-card-inner">
         <div class="cc-card-body">
         <span class="club-card-name">No Clubs Yet</span>
-        <div class="cc-card-meta-row">
-            <div style="display:flex; gap:8px;">
-              <span class="club-role-pill" id="joinPill" style="--accent:#5f6b78; cursor:pointer;">Join one</span>
-              <span class="club-role-pill" id="createPill" style="--accent:#5f6b78; cursor:pointer;">Create one</span>
+            <div class="cc-card-meta-row">
+                <div style="display:flex; gap:8px;">
+                <span class="club-role-pill" id="joinPill" style="--accent:#7f858a; cursor:pointer;">Join one</span>
+                <span class="club-role-pill" id="createPill" style="--accent:#7f858a; cursor:pointer;">Create one</span>
+                </div>
             </div>
-        </div>
         </div>
     </div>
   `;
