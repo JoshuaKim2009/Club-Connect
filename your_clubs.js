@@ -111,8 +111,12 @@ async function loadAllClubs() {
     try {
         const userDocRef = doc(db, "users", currentUser.uid);
         console.log("1: starting user doc");
-        const userDocSnap = await getDoc(userDocRef);
-        console.log("2: got user doc");
+        try {
+            const userDocSnap = await getDoc(userDocRef);
+            console.log("2: got user doc");
+        } catch (error) {
+            console.error("USER DOC ERROR:", error);
+        }
         console.log("3: starting club docs");
 
 
