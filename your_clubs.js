@@ -108,17 +108,14 @@ function buildCardHTML(clubName, roleLabel, memberCount) {
 
 async function loadAllClubs() {
     const container = document.getElementById("clubContainer");
-    try {
-        const userDocRef = doc(db, "users", currentUser.uid);
-        console.log("1: starting user doc");
-        try {
-            const userDocSnap = await getDoc(userDocRef);
-            console.log("2: got user doc");
-        } catch (error) {
-            console.error("USER DOC ERROR:", error);
-        }
-        console.log("3: starting club docs");
 
+    try {
+        console.log("1: starting user doc");
+
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        console.log("2: got user doc");
 
         if (!userDocSnap.exists()) {
             showNoClubsCard(container);
@@ -128,8 +125,10 @@ async function loadAllClubs() {
 
         const userData = userDocSnap.data();
         const managedClubs = userData.managed_clubs || [];
-        const memberClubs  = userData.member_clubs  || [];
-        const adminClubs   = new Set(userData.admin_clubs || []);
+        const memberClubs = userData.member_clubs || [];
+        const adminClubs = new Set(userData.admin_clubs || []);
+
+        console.log("3: starting club docs");
 
         const [managedSnaps, memberSnaps] = await Promise.all([
             Promise.all(managedClubs.map(id => getDoc(doc(db, "clubs", id)))),
