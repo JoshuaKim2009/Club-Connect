@@ -10,6 +10,7 @@ function loadModel() {
 		modelLoadingPromise = pipeline(
 			"feature-extraction",
 			"Xenova/all-MiniLM-L6-v2",
+			{ dtype: "q8" }
 		).then(model => {
 			embedder = model;
 			return model;
