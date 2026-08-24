@@ -463,8 +463,8 @@ submitButton.addEventListener("click", async function(event) {
 	const requiredFieldsValid = await validateRequiredFields(requiredFields);
 	if (!requiredFieldsValid) return;
 
-	if (clubDescription.length > 500) {
-		await showAppAlert("Description must be 500 characters or less.");
+	if (clubDescription.length > 1500) {
+		await showAppAlert("Description must be 1500 characters or less.");
 		return;
 	}
 
