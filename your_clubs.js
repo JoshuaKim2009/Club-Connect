@@ -212,9 +212,8 @@ function showNoClubsCard(container) {
         <span class="club-card-name">No Clubs Yet</span>
             <div class="cc-card-meta-row">
                 <div style="display:flex; gap:8px;">
-                    <span class="club-role-pill" id="joinPill" style="background: linear-gradient(165deg, var(--bg-accent), var(--bg-light) 180%); color: white; cursor:pointer;">Join one</span>
-                    <span class="club-role-pill" id="createPill" style="background: linear-gradient(165deg, var(--bg-accent), var(--bg-light) 180%); color: white; cursor:pointer;">Create one</span>
-                </div>
+                <span class="club-role-pill" id="joinPill" style="background: transparent; border: 2px solid black; color: #111; cursor:pointer;">Join one</span>
+                <span class="club-role-pill" id="createPill" style="background: transparent; border: 2px solid black; color: #111; cursor:pointer;">Create one</span>                </div>
             </div>
         </div>
     </div>
