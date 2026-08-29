@@ -618,6 +618,25 @@ async function fetchAndDisplayMembers() {
 
         await Promise.all([pendingFetch, approvedFetch]);
 
+        // ===== FAKE MEMBERS TEST BLOCK — DELETE TO REMOVE =====
+        const ALLOWED_TEST_EMAILS = ["jotae912@gmail.com", "190330@mcpsmd.net"];
+        if (currentUser && ALLOWED_TEST_EMAILS.includes(currentUser.email.toLowerCase())) {
+            const FAKE_MEMBERS = [
+                "Abraham Lincoln", "Albert Einstein", "Isaac Newton",
+                "Leonardo da Vinci", "William Shakespeare", "Benjamin Franklin", "Thomas Edison",
+                "Marie Curie", "Charles Darwin", "Nikola Tesla", "Galileo Galilei",
+                "Wolfgang Amadeus Mozart", "Ludwig van Beethoven", "Winston Churchill",
+                "Theodore Roosevelt", "Alexander Hamilton", "Napoleon Bonaparte",
+                "Cleopatra", "Julius Caesar"
+            ];
+            FAKE_MEMBERS.forEach((fakeName, i) => {
+                approvedNames.push(fakeName);
+                approvedIds.push(`fake-${i}`);
+                approvedRoles.push('member');
+            });
+        }
+        // ===== END FAKE MEMBERS TEST BLOCK =====
+
         if (isAdminView) {
             const sortedPending = sortMembersAlphabetically(pendingNames, pendingIds);
             displayPendingMembers(sortedPending.names, sortedPending.uids);
