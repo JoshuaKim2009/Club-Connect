@@ -484,12 +484,12 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         </div>
 
         <div class="field-section">
-            <label for="edit-address-${currentEditId}">Address:</label>
+            <label for="edit-address-${currentEditId}">Location:</label>
             <input type="text" id="edit-address-${currentEditId}" value="${escapeHtml(initialData.address || '')}" required>
         </div>
 
         <div class="field-section">
-            <label for="edit-location-${currentEditId}">Specific Location:</label>
+            <label for="edit-location-${currentEditId}">Meeting Spot:</label>
             <input type="text" id="edit-location-${currentEditId}" value="${escapeHtml(initialData.location || '')}" required>
         </div>
 
