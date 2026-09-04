@@ -28,6 +28,7 @@ let isEditingEvent = false;
 let eventDocsMap = new Map();
 let memberNames = {};
 const userCache = new Map();
+let clubSchoolName = '';
 const userRsvpMap = new Map(); 
 
 let eventsPrimed = false;
@@ -141,6 +142,7 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             memberNames = { ...(clubSnap.data().memberNames || {}) };
+            clubSchoolName = clubSnap.data().schoolName || '';
             role = await getRole(db, clubId, currentUser.uid, clubSnap);
 
             if (role === null) {
@@ -392,7 +394,7 @@ async function addNewEventEditingCard() {
     if (isEditingEvent) { await showAppAlert("Please finish editing the current event before adding a new one."); return; }
 
     const isFirstCard = eventsContainer.querySelectorAll('.display-event-card').length === 0;
-    const newCard = createEditingCardElement({}, true, null, false, null, null, isFirstCard);
+    const newCard = createEditingCardElement({ address: clubSchoolName }, true, null, false, null, null, isFirstCard);
     if (eventsContainer) {
         noEventsMessageAdmin.style.display = 'none';
         eventsContainer.prepend(newCard);
