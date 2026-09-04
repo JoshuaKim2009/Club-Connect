@@ -346,7 +346,13 @@ function refreshCardsForEvent(eventId) {
 }
 
 function removeCardsForEvent(eventId) {
-    eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
+    const cards = eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`);
+    cards.forEach(c => {
+        if (c.classList.contains('editing-event-card')) {
+            isEditingEvent = false;
+        }
+        c.remove();
+    });
     eventDocsMap.delete(eventId);
     checkIfEmpty();
 }
@@ -409,6 +415,9 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
         cardDiv.dataset.isEditingInstance = 'true';
         cardDiv.dataset.originalEventIdForInstance = originalEventIdForInstance;
         cardDiv.dataset.originalOccurrenceDate = originalOccurrenceDate;
+        cardDiv.dataset.originalEventId = originalEventIdForInstance;
+    } else if (eventIdToUpdate) {
+        cardDiv.dataset.originalEventId = eventIdToUpdate;
     }
 
     const isWeeklyChecked = initialData.isWeekly ? 'checked' : '';
@@ -996,7 +1005,13 @@ async function handleDeleteEvent(eventId, isWeekly, skipConfirm = false) {
 
         deletedIds.forEach(id => {
             if (id !== eventId) {
-                eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${id}"]`).forEach(c => c.remove());
+                const cards = eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${id}"]`);
+                cards.forEach(c => {
+                    if (c.classList.contains('editing-event-card')) {
+                        isEditingEvent = false;
+                    }
+                    c.remove();
+                });
                 eventDocsMap.delete(id);
             }
         });
