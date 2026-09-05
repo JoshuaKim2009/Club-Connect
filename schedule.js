@@ -23,7 +23,6 @@ const auth = getAuth(app);
 let currentUser = null;
 let clubId = null;
 let role = null;
-let isEditingEvent = false;
 
 let eventDocsMap = new Map();
 let memberNames = {};
@@ -44,7 +43,9 @@ document.body.classList.add('no-scroll');
 
 const dayNamesMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-
+function isCurrentlyEditing() {
+    return !!eventsContainer.querySelector('.editing-event-card');
+}
 
 function getUrlParameter(name) {
     return new URLSearchParams(window.location.search).get(name) || '';
@@ -348,13 +349,7 @@ function refreshCardsForEvent(eventId) {
 }
 
 function removeCardsForEvent(eventId) {
-    const cards = eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`);
-    cards.forEach(c => {
-        if (c.classList.contains('editing-event-card')) {
-            isEditingEvent = false;
-        }
-        c.remove();
-    });
+    eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${eventId}"]`).forEach(c => c.remove());
     eventDocsMap.delete(eventId);
     checkIfEmpty();
 }
@@ -391,7 +386,7 @@ function checkIfEmpty() {
 
 async function addNewEventEditingCard() {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to add events."); return; }
-    if (isEditingEvent) { await showAppAlert("Please finish editing the current event before adding a new one."); return; }
+    if (isCurrentlyEditing()) { await showAppAlert("Please finish editing the current event before adding a new one."); return; }
 
     const isFirstCard = eventsContainer.querySelectorAll('.display-event-card').length === 0;
     const newCard = createEditingCardElement({ address: clubSchoolName }, true, null, false, null, null, isFirstCard);
@@ -404,7 +399,6 @@ async function addNewEventEditingCard() {
 
 
 function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdToUpdate = null, isEditingInstance = false, originalEventIdForInstance = null, originalOccurrenceDate = null, isFirstCard = false) {
-    isEditingEvent = true;
     const cardDiv = document.createElement('div');
     cardDiv.className = (isNewEvent && isFirstCard) ? 'event-card editing-event-card editing-event-card-first' : 'event-card editing-event-card';
     const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -572,7 +566,6 @@ function createEditingCardElement(initialData = {}, isNewEvent = true, eventIdTo
     });
 
     cardDiv.querySelector('.cancel-btn').addEventListener('click', async () => {
-        isEditingEvent = false;
         if (!isNewEvent) {
             const fetchId = isEditingInstance ? originalEventIdForInstance : eventIdToUpdate;
             const eventData = eventDocsMap.get(fetchId);
@@ -697,14 +690,12 @@ async function saveEvent(cardDiv, existingEventId = null) {
         if (isEditingInstance) {
             const freshness = checkEventFreshness(originalEventIdForInstance, originalOccurrenceDateForInstance);
             if (!freshness.live) {
-                isEditingEvent = false;
                 await showAppAlert(staleEventMessage("edit this event", freshness.reason));
                 return;
             }
         } else if (existingEventId) {
             const freshness = checkEventFreshness(existingEventId);
             if (!freshness.live) {
-                isEditingEvent = false;
                 await showAppAlert(staleEventMessage("edit this event", freshness.reason));
                 return;
             }
@@ -755,7 +746,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
             }
 
             cardDiv.remove();
-            isEditingEvent = false;
             refreshCardsForEvent(originalEventIdForInstance);
             refreshCardsForEvent(savedEventId);
 
@@ -768,7 +758,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
             eventDocsMap.set(existingEventId, updatedData);
 
             cardDiv.remove();
-            isEditingEvent = false;
             refreshCardsForEvent(existingEventId);
         } else {
             const newEventData = await createEvent(clubId, eventDataToSave, currentUser);
@@ -778,7 +767,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
             eventDocsMap.set(savedEventId, newEventData);
 
             cardDiv.remove();
-            isEditingEvent = false;
             refreshCardsForEvent(savedEventId);
         }
 
@@ -791,7 +779,6 @@ async function saveEvent(cardDiv, existingEventId = null) {
 
     } catch (error) {
         console.error("Error saving event:", error);
-        isEditingEvent = false;
         if (isPermissionError(error)) {
             await showAppAlert(permissionDeniedMessage("edit events"));
         } else {
@@ -804,7 +791,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
 
 async function editEvent(eventId, occurrenceDateString = null) {
     if (!currentUser || !clubId) { await showAppAlert("You must be logged in and viewing a club to edit events."); return; }
-    if (isEditingEvent) { await showAppAlert("Please finish editing the current event before starting another edit."); return; }
+    if (isCurrentlyEditing()) { await showAppAlert("Please finish editing the current event before starting another edit."); return; }
 
     const freshness = checkEventFreshness(eventId, occurrenceDateString);
     if (!freshness.live) {
@@ -1007,13 +994,7 @@ async function handleDeleteEvent(eventId, isWeekly, skipConfirm = false) {
 
         deletedIds.forEach(id => {
             if (id !== eventId) {
-                const cards = eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${id}"]`);
-                cards.forEach(c => {
-                    if (c.classList.contains('editing-event-card')) {
-                        isEditingEvent = false;
-                    }
-                    c.remove();
-                });
+                eventsContainer.querySelectorAll(`.event-card[data-original-event-id="${id}"]`).forEach(c => c.remove());
                 eventDocsMap.delete(id);
             }
         });
