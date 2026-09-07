@@ -755,7 +755,7 @@ async function saveEvent(cardDiv, existingEventId = null) {
             savedEventId = existingEventId;
             savedOccurrenceDate = isWeekly ? null : eventDate;
 
-            eventDocsMap.set(existingEventId, updatedData);
+            eventDocsMap.set(existingEventId, { ...existingData, ...updatedData });
 
             cardDiv.remove();
             refreshCardsForEvent(existingEventId);
