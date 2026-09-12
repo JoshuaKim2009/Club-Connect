@@ -689,7 +689,7 @@
   background: linear-gradient(#ffffff, #f7f7f7);
   border: 2px solid black;
   border-radius: 10px;
-  box-shadow: 0px 0px 0px #000000;
+  box-shadow: 0px 2px 0px #000000;
   width: 52px;
   height: 52px;
   font-size: 22px;
@@ -730,6 +730,10 @@
   box-shadow: none;
   transform: translateX(-50%) scale(0.92);
   animation-play-state: paused;
+}
+
+#scroll-hint-btn:hover {
+  box-shadow: 0px 1px 0px #000000;
 }
 
 /* call to action */
