@@ -236,7 +236,6 @@ function createCategoryElement(category) {
                 const url = escapeHtml(link.url.startsWith('http') ? link.url : 'https://' + link.url);
                 return `<div class="link-item"><i class="fa-solid fa-link link-item-icon"></i><a href="${url}" target="_blank">${escapeHtml(link.title)}</a></div>`;
             }).join('')}
-            ${isAdmin() ? `<button class="add-link-button" data-category-id="${category.id}">+ Add Link</button>` : ''}
         </div>
     `;
     if (isAdmin()) {
@@ -256,10 +255,6 @@ function createCategoryElement(category) {
                 await Promise.all(updates);
             }
             openEditingCard(category, div);
-        });
-        div.querySelector('.add-link-button').addEventListener('click', () => {
-            if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
-            openEditingCard(category, div, true);
         });
         div.querySelector('.delete-category-button').addEventListener('click', () => {
             if (reorderMode) { showAppAlert("Finish reordering first!"); return; }
