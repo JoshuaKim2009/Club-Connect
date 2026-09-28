@@ -89,10 +89,18 @@ const DEMO_ANNOUNCEMENTS_RAW = [
 	{
 		authorName: "Nikola Tesla",
 		title: "Check out Robotics Club at the Club Fair",
-		content: "There will be a live robot demonstration. Visit us at Table 72 and sign up for the club!",
+		content: "We have started making progress on building the initial design for our first robot and we are excited to demo it at the club fair. Visit us at Table 72 and sign up for the club!",
 		clubName: "Robotics Club",
 		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
 		date: "2026-09-14 17:02"
+	},
+	{
+		authorName: "Benjamin Franklin",
+		title: "First school tournament complete!",
+		content: "Thanks to everyone who came out to our first in school chess tournament of the year yesterday! We had students of all experience levels compete, from people playing their first tournament to returning members who have been playing for years. It was great seeing everyone challenge themselves and meet other players. Congratulations to our winner Isaac Newton, and we hope to see even more students at our next meeting!",
+		clubName: "Chess Club",
+		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
+		date: "2026-09-18 16:13"
 	},
 	{
 		authorName: "Andrew Carnegie",
