@@ -32,139 +32,6 @@ let currentPageAnnouncements = [];
 
 let memberNames = {};
 
-// ===================== DEMO MODE (delete this whole block before shipping) =====================
-const DEMO_MODE = true;
-const DEMO_ALLOWED_EMAILS = ["jotae1628@gmail.com", "jotae912@gmail.com"];
-
-// Edit freely — add/remove/reorder entries.
-const DEMO_ANNOUNCEMENTS_RAW = [
-	{
-		authorName: "Albert Einstein",
-		title: "Calling all coders!",
-		content: "Interested in competitive programming? Come join the Competitive Coding Club every Monday in Room 250!",
-		clubName: "Competitive Coding Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-25 14:35"
-	},
-	{
-		authorName: "Leonardo Da Vinci",
-		title: "Art Supplies Drive",
-		content: "Art Club is hosting a supplies drive on Thursday at lunch. Bring new or gently used art supplies to support local students. They will be donated to nonprofits, shelters, churches, and schools with low-funded art programs.",
-		clubName: "Art Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-22 14:56"
-	},
-	{
-		authorName: "Abraham Lincoln",
-		title: "Join the Debate Team!",
-		content: "If you like speaking and debating, check out the Debate Team. At the Club Fair, we will be at the back right corner of the gym. Come by and sign up!",
-		clubName: "Debate Team",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-14 18:43"
-	},
-	{
-		authorName: "Mark Twain",
-		title: "Want to support literacy in our community?",
-		content: "The Literature Club is collecting books to donate to local libraries and schools. Bring your old favorites and help support literacy in our community! Please drop off your donations in the box outside Room 228.",
-		clubName: "Literature Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-21 07:12"
-	},
-	{
-		authorName: "George Washington",
-		title: "Help Plan Spirit Week!",
-		content: "Student Government is looking for student ideas for Spirit Week. Please submit your suggestions here: https://forms.gle/LsU3pTEBiCx4udEP7",
-		clubName: "Student Government",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-01 07:24"
-	},
-	{
-		authorName: "Marie Curie",
-		title: "Interested in Biomedical Science?",
-		content: "The BioMed Club is looking for students interested in exploring the field of biomedical science. Learn more at club day on the 15th!",
-		clubName: "BioMed Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-12 13:34"
-	},
-	{
-		authorName: "Nikola Tesla",
-		title: "Check out Robotics Club at the Club Fair",
-		content: "There will be a live robot demonstration. Visit us at Table 72 and sign up for the club!",
-		clubName: "Robotics Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-14 17:02"
-	},
-	{
-		authorName: "Andrew Carnegie",
-		title: "Join DECA!",
-		content: "DECA is a business club that helps students prepare for the future by exploring fields such as marketing, finance, hospitality, and management. Join DECA and learn how you can compete in events, develop real-world skills, and meet other students interested in business!",
-		clubName: "DECA",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-10 15:21"
-	},
-	{
-		authorName: "Jane Addams",
-		title: "Thanks everyone for an amazing turnout!!!!",
-		content: "Huge thanks to everyone who participated in our fall food drive! Together, we collected over 300 cans and nonperishable food items to donate to a local food pantry!!",
-		clubName: "Key Club",
-		clubId: "REPLACE_WITH_A_REAL_CLUB_ID",
-		date: "2026-09-05 11:09"
-	},
-];
-
-function isDemoUser(user) {
-	return DEMO_MODE && !!user && !!user.email &&
-		DEMO_ALLOWED_EMAILS.includes(user.email.toLowerCase());
-}
-
-function buildDemoAnnouncements() {
-	return DEMO_ANNOUNCEMENTS_RAW.map((item, i) => {
-		const fakeUid = `demo-fake-uid-${i}`;
-		memberNames[fakeUid] = item.authorName;
-		const parsedDate = new Date(item.date.replace(' ', 'T'));
-		return {
-			id: `demo-${i}`,
-			clubId: item.clubId,
-			clubName: item.clubName,
-			title: item.title,
-			content: item.content,
-			createdByUid: fakeUid,
-			createdAt: { toDate: () => parsedDate }
-		};
-	});
-}
-
-// Built once per page load: every real announcement for the school + the fakes, sorted together.
-let demoMergedList = null;
-
-async function getDemoMergedList(schoolId) {
-	if (demoMergedList) return demoMergedList;
-	const snap = await getDocs(schoolAnnouncementsQueryBase(schoolId));
-	const real = [];
-	snap.forEach(docSnap => real.push({ id: docSnap.id, ...docSnap.data() }));
-	const merged = [...real, ...buildDemoAnnouncements()];
-	merged.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-	demoMergedList = merged;
-	return merged;
-}
-
-// Drop-in replacements for refreshCount / fetchSchoolAnnouncementsPage.
-// Non-demo users: pass straight through to your real, untouched functions.
-async function refreshCountForDisplay(schoolId, user) {
-	if (!isDemoUser(user)) return refreshCount(schoolId);
-	const merged = await getDemoMergedList(schoolId);
-	totalCount = merged.length;
-	totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-}
-
-async function fetchPageForDisplay(schoolId, page, user) {
-	if (!isDemoUser(user)) return fetchSchoolAnnouncementsPage(schoolId, page);
-	const merged = await getDemoMergedList(schoolId);
-	const start = (page - 1) * PAGE_SIZE;
-	return merged.slice(start, start + PAGE_SIZE);
-}
-// ===================== END DEMO MODE =====================
-
 async function resolveName(uid) {
     if (!uid) return "Unknown";
     if (memberNames[uid]) return memberNames[uid];
@@ -293,10 +160,7 @@ onAuthStateChanged(auth, async (user) => {
 
 		cursors = [null];
 		currentPage = 1;
-
-		//temporary DELETE LATER
-		// await refreshCount(schoolId);
-		await refreshCountForDisplay(schoolId, user);
+		await refreshCount(schoolId);
 
 		if (totalCount === 0) {
 			showEmpty("NOTHING HERE YET!");
@@ -362,9 +226,7 @@ async function renderPage(page) {
 	page = Math.max(1, Math.min(page, totalPages));
 	currentPage = page;
 
-	// temporary DELETE LATER
-	// const pageItems = await fetchSchoolAnnouncementsPage(currentSchoolId, currentPage);
-	const pageItems = await fetchPageForDisplay(currentSchoolId, currentPage, currentUser);
+	const pageItems = await fetchSchoolAnnouncementsPage(currentSchoolId, currentPage);
 
 	if (pageItems.length === 0) {
 		showEmpty("NOTHING HERE YET!");
